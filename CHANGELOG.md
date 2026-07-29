@@ -6,9 +6,10 @@
 
 - Enforce complete public API documentation in `fusion-gpu`,
   `fusion-polyglot`, `fusion-diagnostics`, `fusion-engineering`, `fusion-phase`,
-  `fusion-types`, `fusion-nuclear`, `fusion-math`, and the `scpn-fusion-rs`
-  PyO3 crate; document their grid, adapter-selection, data-layout, parser,
-  numerical-operator, sensor, tomography, failure, and panic contracts.
+  `fusion-types`, `fusion-nuclear`, `fusion-math`, `fusion-ml`, and the
+  `scpn-fusion-rs` PyO3 crate; document their grid, adapter-selection,
+  data-layout, parser, numerical-operator, sensor, tomography, ML validation,
+  evidence-boundary, failure, and panic contracts.
 - Close the remaining top-level tool test-linkage gap with offline behavioural
   contracts for optional GPU diagnostics, public-source and QLKNN download
   custody, HDF-to-NPZ conversion, plot generation, compact surrogate math,

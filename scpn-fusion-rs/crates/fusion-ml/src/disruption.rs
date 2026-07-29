@@ -168,10 +168,15 @@ pub fn normalize_sequence(signal: &[f64], target_len: usize) -> Vec<f64> {
 /// Reduced toroidal asymmetry observables for disruption-risk coupling.
 #[derive(Debug, Clone, Copy)]
 pub struct ToroidalAsymmetryObservables {
+    /// Amplitude of the toroidal mode with mode number one.
     pub n1_amp: f64,
+    /// Amplitude of the toroidal mode with mode number two.
     pub n2_amp: f64,
+    /// Amplitude of the toroidal mode with mode number three.
     pub n3_amp: f64,
+    /// Aggregate non-axisymmetric amplitude indicator.
     pub asymmetry_index: f64,
+    /// Radial spread of the measured magnetic perturbation.
     pub radial_spread: f64,
 }
 
@@ -246,6 +251,10 @@ pub struct HybridAnomalyDetector {
 }
 
 impl HybridAnomalyDetector {
+    /// Construct a detector with bounded alarm and moment-update parameters.
+    ///
+    /// `threshold` is clamped to `[0, 1]`; `ema` is clamped to
+    /// `[1e-4, 1]` before online scoring begins.
     pub fn new(threshold: f64, ema: f64) -> Self {
         Self {
             threshold: threshold.clamp(0.0, 1.0),
@@ -343,6 +352,13 @@ pub struct MultiHeadAttention {
 }
 
 impl MultiHeadAttention {
+    /// Construct randomly initialised multi-head projections.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `n_heads` is zero. Callers must also choose dimensions that
+    /// make `d_model` divisible by `n_heads` for [`Self::forward`] to assemble
+    /// every projected feature without shape errors.
     pub fn new(d_model: usize, n_heads: usize) -> Self {
         let d_head = d_model / n_heads;
         let mut rng = rand::thread_rng();
@@ -395,6 +411,7 @@ pub struct FeedForward {
 }
 
 impl FeedForward {
+    /// Construct a randomly initialised two-layer feed-forward block.
     pub fn new(d_model: usize, dim_ff: usize) -> Self {
         let mut rng = rand::thread_rng();
         let s1 = (2.0 / (d_model + dim_ff) as f64).sqrt();
@@ -422,6 +439,12 @@ pub struct TransformerLayer {
 }
 
 impl TransformerLayer {
+    /// Construct one encoder layer from attention and feed-forward blocks.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `n_heads` is zero; `d_model` must also be divisible by
+    /// `n_heads` for subsequent forward passes.
     pub fn new(d_model: usize, n_heads: usize, dim_ff: usize) -> Self {
         TransformerLayer {
             attn: MultiHeadAttention::new(d_model, n_heads),

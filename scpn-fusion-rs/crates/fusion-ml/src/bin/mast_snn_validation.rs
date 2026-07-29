@@ -5,6 +5,12 @@
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — Rust MAST SNN Validation CLI
+//! Command-line runner for local MAST SNN validation and policy sweeps.
+//!
+//! The emitted reports remain diagnostic artifacts: this binary does not grant
+//! full-fidelity, facility, control-system, or safety acceptance.
+
+#![deny(missing_docs)]
 
 use fusion_ml::mast_snn::{
     default_policy_grid, evaluate_mast_snn_npz_panel, load_independent_label_manifest,

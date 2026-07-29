@@ -24,22 +24,35 @@ const MEMBRANE_TAU_S: f64 = 0.05e-3;
 const SPIKE_SCORE_THRESHOLD: f64 = 0.85;
 const MAX_NPZ_BYTES: u64 = 512 * 1024 * 1024;
 
+/// Locally cached time-series inputs for one MAST shot.
 #[derive(Debug, Clone)]
 pub struct ShotTrace {
+    /// Sample times in seconds.
     pub time_s: Vec<f64>,
+    /// Plasma-current samples in amperes.
     pub plasma_current_a: Vec<f64>,
+    /// Primary magnetic-channel samples in tesla.
     pub magnetic_trace_t: Vec<f64>,
+    /// All available magnetic-channel samples in tesla.
     pub magnetic_traces_t: Vec<Vec<f64>>,
+    /// Independently supplied or locally inferred disruption time in seconds.
     pub disruption_time_s: f64,
+    /// Human-readable provenance for the cached trace.
     pub source: String,
 }
 
+/// Deterministic configuration for local MAST SNN evaluation.
 #[derive(Debug, Clone)]
 pub struct MastSnnConfig {
+    /// Number of integrate-and-fire neurons.
     pub n_neurons: usize,
+    /// Number of deterministic weight-adaptation epochs.
     pub epochs: usize,
+    /// Random seed used to initialise neuron weights.
     pub seed: u64,
+    /// Minimum locally available training shots for the count gate.
     pub min_train_shots: usize,
+    /// Minimum detected validation shots for the count gate.
     pub min_validation_shots: usize,
 }
 
@@ -55,15 +68,21 @@ impl Default for MastSnnConfig {
     }
 }
 
+/// Outcome assigned to one local shot evaluation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ShotStatus {
+    /// A qualifying pre-disruption alarm was observed.
     Detected,
+    /// The trace was usable but no qualifying alarm was observed.
     NoDetection,
+    /// The local trace or detector inputs were unusable or absent.
     Unavailable,
+    /// No plasma-current flattop could be identified.
     NoFlattop,
 }
 
 impl ShotStatus {
+    /// Return the stable snake-case serialization label.
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Detected => "detected",
@@ -83,48 +102,80 @@ impl Serialize for ShotStatus {
     }
 }
 
+/// Diagnostic outcome for one requested MAST shot.
 #[derive(Debug, Clone, Serialize)]
 pub struct ShotEvaluation {
+    /// Facility shot identifier supplied by the caller.
     pub shot_id: i32,
+    /// Detector outcome for the shot.
     pub status: ShotStatus,
+    /// Provenance string when a local trace was loaded.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
+    /// Disruption time in seconds when known.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub disruption_time_s: Option<f64>,
+    /// First qualifying alarm time in seconds when detected.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub alarm_time_s: Option<f64>,
+    /// Time from alarm to disruption in milliseconds when detected.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lead_time_ms: Option<f64>,
 }
 
+/// Local diagnostic report for a fixed MAST train/validation panel.
 #[derive(Debug, Clone, Serialize)]
 pub struct MastSnnReport {
+    /// Fail-closed local status derived from trace counts.
     pub status: String,
+    /// Full-fidelity acceptance flag; this local lane always leaves it false.
     pub accepted_full_fidelity_ready: bool,
+    /// Explicit scientific and operational limit on interpreting this report.
     pub claim_boundary: String,
+    /// Cache directory inspected for shot archives.
     pub cache_dir: String,
+    /// Rust implementation identifier that produced the report.
     pub rust_runtime_backend: String,
+    /// Requested training-shot identifiers.
     pub train_shots: Vec<i32>,
+    /// Requested validation-shot identifiers.
     pub val_shots: Vec<i32>,
+    /// Configured minimum number of locally available training shots.
     pub min_train_shots: usize,
+    /// Configured minimum number of detected validation shots.
     pub min_validation_shots: usize,
+    /// Number of requested training shots usable from the local cache.
     pub train_available_count: usize,
+    /// Number of validation shots with a usable evaluation outcome.
     pub validation_available_count: usize,
+    /// Number of validation shots with a qualifying alarm.
     pub detected_validation_count: usize,
+    /// Whether the two local count thresholds were met.
     pub local_count_gate_passed: bool,
+    /// Weight-adaptation epoch count used for this run.
     pub epochs: usize,
+    /// Weight-initialization seed used for this run.
     pub seed: u64,
+    /// Mean alarm lead time over detected shots, in milliseconds.
     pub average_lead_time_ms: Option<f64>,
+    /// Per-shot diagnostic outcomes in request order.
     pub shots: Vec<ShotEvaluation>,
 }
 
+/// Alarm-selection parameters used in a local policy sweep.
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct AlarmPolicy {
+    /// Minimum fraction of neurons spiking at an evaluated sample.
     pub spike_score_threshold: f64,
+    /// Positive integrate-and-fire membrane threshold.
     pub membrane_threshold: f64,
+    /// Number of consecutive qualifying samples required for an alarm.
     pub consecutive_samples: usize,
+    /// Number of past samples used for causal channel scaling.
     pub rolling_window_samples: usize,
+    /// Positive floor applied to each rolling channel scale.
     pub scale_floor: f64,
+    /// Minimum allowed alarm-to-disruption lead time in milliseconds.
     pub min_lead_time_ms: f64,
 }
 
@@ -141,43 +192,77 @@ impl Default for AlarmPolicy {
     }
 }
 
+/// Metrics and shot-level outcomes for one candidate alarm policy.
 #[derive(Debug, Clone, Serialize)]
 pub struct PolicySweepRow {
+    /// Zero-based position of the policy in the supplied grid.
     pub policy_index: usize,
+    /// Alarm parameters evaluated in this row.
     pub policy: AlarmPolicy,
+    /// Number of locally available disruptive validation shots.
     pub disruptive_available_count: usize,
+    /// Number of disruptive shots with qualifying alarms.
     pub disruptive_detected_count: usize,
+    /// Number of locally available non-disruptive validation shots.
     pub negative_available_count: usize,
+    /// Number of non-disruptive shots that produced alarms.
     pub false_positive_count: usize,
+    /// Detection fraction over available disruptive shots.
     pub recall: Option<f64>,
+    /// Alarm fraction over available non-disruptive shots.
     pub false_positive_rate: Option<f64>,
+    /// Median disruptive-shot lead time in milliseconds.
     pub median_lead_time_ms: Option<f64>,
+    /// Minimum disruptive-shot lead time in milliseconds.
     pub min_lead_time_ms: Option<f64>,
+    /// Mean disruptive-shot lead time in milliseconds.
     pub average_lead_time_ms: Option<f64>,
+    /// Local ranking score combining recall, false positives, and lead time.
     pub score: f64,
+    /// Per-shot outcomes for the disruptive validation cohort.
     pub disruptive_shots: Vec<ShotEvaluation>,
+    /// Per-shot outcomes for the non-disruptive validation cohort.
     pub negative_shots: Vec<ShotEvaluation>,
 }
 
+/// Fail-closed local report for a MAST alarm-policy sweep.
 #[derive(Debug, Clone, Serialize)]
 pub struct MastSnnSweepReport {
+    /// Local gate status for the best-scoring policy.
     pub status: String,
+    /// Full-fidelity acceptance flag; this local lane always leaves it false.
     pub accepted_full_fidelity_ready: bool,
+    /// Explicit scientific and operational limit on interpreting the sweep.
     pub claim_boundary: String,
+    /// Cache directory inspected for shot archives.
     pub cache_dir: String,
+    /// Rust implementation identifier that produced the sweep.
     pub rust_runtime_backend: String,
+    /// Requested training-shot identifiers.
     pub train_shots: Vec<i32>,
+    /// Requested disruptive validation-shot identifiers.
     pub disruptive_validation_shots: Vec<i32>,
+    /// Requested non-disruptive validation-shot identifiers.
     pub negative_validation_shots: Vec<i32>,
+    /// Number of requested training shots usable from the local cache.
     pub train_available_count: usize,
+    /// Number of locally available disruptive validation shots.
     pub disruptive_available_count: usize,
+    /// Number of locally available non-disruptive validation shots.
     pub negative_available_count: usize,
+    /// Index of the highest-scoring policy, when the grid was evaluated.
     pub best_policy_index: Option<usize>,
+    /// Recall of the highest-scoring policy.
     pub recall: Option<f64>,
+    /// False-positive rate of the highest-scoring policy.
     pub false_positive_rate: Option<f64>,
+    /// Median lead time of the highest-scoring policy, in milliseconds.
     pub median_lead_time_ms: Option<f64>,
+    /// Minimum lead time of the highest-scoring policy, in milliseconds.
     pub min_lead_time_ms: Option<f64>,
+    /// Mean lead time of the highest-scoring policy, in milliseconds.
     pub average_lead_time_ms: Option<f64>,
+    /// Metrics for every supplied policy in input order.
     pub policies: Vec<PolicySweepRow>,
 }
 
@@ -201,24 +286,32 @@ struct IndependentLabelShot {
     disruption_time_s: Option<f64>,
 }
 
+/// Independently labeled disruptive shot and its disruption timestamp.
 #[derive(Debug, Clone, PartialEq)]
 pub struct IndependentDisruptiveShot {
+    /// Positive facility shot identifier.
     pub shot_id: i32,
+    /// Independently sourced disruption time in seconds.
     pub disruption_time_s: f64,
 }
 
+/// Validated disruptive and non-disruptive cohorts from an independent manifest.
 #[derive(Debug, Clone, PartialEq)]
 pub struct IndependentMastLabels {
+    /// Disruptive shots with independently supplied disruption times.
     pub disruptive: Vec<IndependentDisruptiveShot>,
+    /// Independently labeled non-disruptive shot identifiers.
     pub non_disruptive: Vec<i32>,
 }
 
 impl IndependentMastLabels {
+    /// Return the disruptive shot identifiers in manifest order.
     pub fn disruptive_ids(&self) -> Vec<i32> {
         self.disruptive.iter().map(|shot| shot.shot_id).collect()
     }
 }
 
+/// Deterministic population of weighted integrate-and-fire neurons.
 #[derive(Debug, Clone)]
 pub struct HardwareSnn {
     alpha: f64,
@@ -228,10 +321,21 @@ pub struct HardwareSnn {
 }
 
 impl HardwareSnn {
+    /// Construct a detector using the default membrane threshold.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when `weights` is empty.
     pub fn new(weights: Vec<f64>) -> FusionResult<Self> {
         Self::with_threshold(weights, DEFAULT_THRESHOLD)
     }
 
+    /// Construct a detector using an explicit positive membrane threshold.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when `weights` is empty or `threshold`
+    /// is non-finite or not strictly positive.
     pub fn with_threshold(weights: Vec<f64>, threshold: f64) -> FusionResult<Self> {
         if weights.is_empty() {
             return Err(FusionError::ConfigError(
@@ -251,10 +355,12 @@ impl HardwareSnn {
         })
     }
 
+    /// Clear all neuron membrane voltages while retaining weights and policy.
     pub fn reset(&mut self) {
         self.voltage.fill(0.0);
     }
 
+    /// Advance every neuron by one sample and return the spiking fraction.
     pub fn step(&mut self, signal: f64) -> f64 {
         let mut spikes = 0usize;
         for (voltage, weight) in self.voltage.iter_mut().zip(&self.weights) {
@@ -269,6 +375,7 @@ impl HardwareSnn {
     }
 }
 
+/// Generate reproducible base neuron weights in the interval `[4.5, 5.5)`.
 pub fn initialise_base_weights(n_neurons: usize, seed: u64) -> Vec<f64> {
     let mut rng = StdRng::seed_from_u64(seed);
     (0..n_neurons)
@@ -276,6 +383,7 @@ pub fn initialise_base_weights(n_neurons: usize, seed: u64) -> Vec<f64> {
         .collect()
 }
 
+/// Apply the local availability/epoch scaling rule to reproducible base weights.
 pub fn adapt_weights_for_available_count(
     n_neurons: usize,
     seed: u64,
@@ -289,6 +397,16 @@ pub fn adapt_weights_for_available_count(
         .collect()
 }
 
+/// Load and reduce one locally cached `mast_shot_<id>.npz` archive.
+///
+/// Returns `Ok(None)` when the archive is absent or lacks a usable paired time,
+/// plasma-current, flattop, or magnetic trace. The disruption time is inferred
+/// from the post-flattop current drop and is not independent label evidence.
+///
+/// # Errors
+///
+/// Returns an error for filesystem failures, archives larger than 512 MiB,
+/// invalid NPZ encoding, or unreadable required arrays.
 pub fn load_local_npz_shot(cache_dir: &Path, shot_id: i32) -> FusionResult<Option<ShotTrace>> {
     let path = cache_dir.join(format!("mast_shot_{shot_id}.npz"));
     if !path.exists() {
@@ -364,6 +482,10 @@ pub fn load_local_npz_shot(cache_dir: &Path, shot_id: i32) -> FusionResult<Optio
     }))
 }
 
+/// Evaluate one disruptive trace with the fixed legacy alarm policy.
+///
+/// This is a local diagnostic; the returned detection does not establish
+/// independent labeling, physics fidelity, facility readiness, or safety.
 pub fn evaluate_trace(shot_id: i32, trace: &ShotTrace, weights: &[f64]) -> ShotEvaluation {
     let Some(dt_s) = mean_dt(&trace.time_s) else {
         return shot_status(shot_id, ShotStatus::Unavailable, Some(trace.source.clone()));
@@ -417,6 +539,10 @@ pub fn evaluate_trace(shot_id: i32, trace: &ShotTrace, weights: &[f64]) -> ShotE
     shot_status(shot_id, ShotStatus::NoDetection, Some(trace.source.clone()))
 }
 
+/// Evaluate one trace with explicit causal multichannel alarm parameters.
+///
+/// Invalid detector parameters produce an [`ShotStatus::Unavailable`] outcome
+/// instead of a promoted detection. This remains a local diagnostic result.
 pub fn evaluate_trace_with_policy(
     shot_id: i32,
     trace: &ShotTrace,
@@ -490,6 +616,15 @@ pub fn evaluate_trace_with_policy(
     shot_status(shot_id, ShotStatus::NoDetection, Some(trace.source.clone()))
 }
 
+/// Evaluate a cached train/validation panel with the fixed local alarm policy.
+///
+/// The report's count gate is diagnostic only and the full-fidelity flag is
+/// always false, even when its local thresholds pass.
+///
+/// # Errors
+///
+/// Returns an error when the neuron count is zero or when any requested local
+/// archive cannot be inspected or decoded.
 pub fn evaluate_mast_snn_npz_panel(
     cache_dir: &Path,
     train_shots: &[i32],
@@ -559,6 +694,16 @@ pub fn evaluate_mast_snn_npz_panel(
     })
 }
 
+/// Rank alarm policies on caller-designated disruptive and negative panels.
+///
+/// Labels supplied only as shot lists are caller assertions; the resulting
+/// report remains local and cannot satisfy independent physics-validation
+/// gates.
+///
+/// # Errors
+///
+/// Returns an error for an empty policy grid, invalid detector configuration,
+/// or any filesystem/NPZ failure while loading requested traces.
 pub fn sweep_mast_snn_npz_panel(
     cache_dir: &Path,
     train_shots: &[i32],
@@ -600,6 +745,15 @@ pub fn sweep_mast_snn_npz_panel(
     )
 }
 
+/// Rank alarm policies using cohorts from a validated independent manifest.
+///
+/// Manifest custody strengthens label provenance but does not by itself grant
+/// full-fidelity, facility, control-system, or safety acceptance.
+///
+/// # Errors
+///
+/// Returns an error for an empty policy grid, invalid detector configuration,
+/// or any filesystem/NPZ failure while loading requested traces.
 pub fn sweep_mast_snn_npz_panel_with_independent_labels(
     cache_dir: &Path,
     train_shots: &[i32],
@@ -737,6 +891,7 @@ fn sweep_loaded_panel(
     })
 }
 
+/// Build the deterministic 60-row default alarm-policy grid.
 pub fn default_policy_grid() -> Vec<AlarmPolicy> {
     let mut policies = Vec::new();
     for spike_score_threshold in [0.45, 0.55, 0.65, 0.75, 0.85] {
@@ -754,6 +909,16 @@ pub fn default_policy_grid() -> Vec<AlarmPolicy> {
     policies
 }
 
+/// Load and validate an independent MAST disruption-label manifest.
+///
+/// Validation requires the exact v1 schema identifier, named dataset and label
+/// authority, accepted evidence source types, provenance/review fields, unique
+/// positive shot IDs, disruption times for disruptive shots, and both classes.
+///
+/// # Errors
+///
+/// Returns an error for filesystem or JSON failures and for every unsupported,
+/// incomplete, duplicate, or internally inconsistent manifest record.
 pub fn load_independent_label_manifest(path: &Path) -> FusionResult<IndependentMastLabels> {
     let text = std::fs::read_to_string(path)?;
     let manifest: IndependentLabelManifest = serde_json::from_str(&text)?;

@@ -8,6 +8,8 @@
 //!
 //! Stage 9: Neural equilibrium accelerator (PCA + MLP), disruption predictor (Transformer).
 
+#![deny(missing_docs)]
+
 pub mod disruption;
 pub mod mast_snn;
 pub mod neural_equilibrium;

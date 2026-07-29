@@ -20,19 +20,30 @@ const EPS_STD: f64 = 1e-8;
 const MAX_NPZ_BYTES: u64 = 10 * 1024 * 1024;
 
 #[derive(Debug, Clone)]
+/// Parameters and normalization vectors for the neural transport surrogate.
 pub struct NeuralTransportWeights {
-    pub w1: Array2<f64>,           // (10, 64)
-    pub b1: Array1<f64>,           // (64,)
-    pub w2: Array2<f64>,           // (64, 32)
-    pub b2: Array1<f64>,           // (32,)
-    pub w3: Array2<f64>,           // (32, 3)
-    pub b3: Array1<f64>,           // (3,)
-    pub input_mean: Array1<f64>,   // (10,)
-    pub input_std: Array1<f64>,    // (10,)
-    pub output_scale: Array1<f64>, // (3,)
+    /// Input-to-first-hidden weights with shape `(10, 64)`.
+    pub w1: Array2<f64>,
+    /// First hidden-layer bias with 64 elements.
+    pub b1: Array1<f64>,
+    /// First-to-second-hidden weights with shape `(64, 32)`.
+    pub w2: Array2<f64>,
+    /// Second hidden-layer bias with 32 elements.
+    pub b2: Array1<f64>,
+    /// Second-hidden-to-output weights with shape `(32, 3)`.
+    pub w3: Array2<f64>,
+    /// Output-layer bias for `[chi_i, chi_e, d_eff]`.
+    pub b3: Array1<f64>,
+    /// Training-set mean used to normalize the ten input features.
+    pub input_mean: Array1<f64>,
+    /// Training-set standard deviation used to normalize the ten inputs.
+    pub input_std: Array1<f64>,
+    /// Per-channel dimensional scale for the three positive outputs.
+    pub output_scale: Array1<f64>,
 }
 
 #[derive(Debug, Clone)]
+/// Transport predictor backed by optional neural weights and an analytic fallback.
 pub struct NeuralTransportModel {
     weights: Option<NeuralTransportWeights>,
 }
@@ -49,7 +60,13 @@ impl NeuralTransportModel {
         Self { weights: None }
     }
 
-    /// Load neural transport weights from a NumPy `.npz` archive.
+    /// Load and shape-check neural transport weights from a NumPy `.npz` archive.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the archive is absent, exceeds 10 MiB, is not a
+    /// readable NPZ file, omits a required array, or contains an unexpected
+    /// parameter or normalization shape.
     pub fn from_npz(path: &str) -> FusionResult<Self> {
         let metadata = std::fs::metadata(path)?;
         if metadata.len() > MAX_NPZ_BYTES {

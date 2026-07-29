@@ -137,11 +137,17 @@ fn symmetric_eigen_topk(a: &Array2<f64>, k: usize) -> (Vec<f64>, Array2<f64>) {
 
 /// Simple feedforward MLP: input → 64 (tanh) → 32 (tanh) → output.
 pub struct EquilibriumMLP {
+    /// Input-to-first-hidden-layer weights with shape `(input, 64)`.
     pub w1: Array2<f64>,
+    /// First hidden-layer bias with 64 elements.
     pub b1: Array1<f64>,
+    /// First-to-second-hidden-layer weights with shape `(64, 32)`.
     pub w2: Array2<f64>,
+    /// Second hidden-layer bias with 32 elements.
     pub b2: Array1<f64>,
+    /// Second-hidden-to-output weights with shape `(32, output)`.
     pub w3: Array2<f64>,
+    /// Output-layer bias.
     pub b3: Array1<f64>,
 }
 
@@ -188,7 +194,9 @@ impl EquilibriumMLP {
 
 /// Combined PCA + MLP accelerator.
 pub struct NeuralEquilibrium {
+    /// Flux-map basis and reconstruction transform.
     pub pca: PCA,
+    /// Surrogate mapping equilibrium descriptors to PCA coefficients.
     pub mlp: EquilibriumMLP,
 }
 
