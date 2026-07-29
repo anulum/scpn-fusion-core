@@ -135,6 +135,10 @@ def _build_julia_docs() -> int:
 
 
 def _build_cpp_docs() -> int:
+    # Doxygen creates its final ``cpp`` directory, but not a missing parent.
+    # Keep clean checkouts equivalent to developer trees that already contain
+    # another documentation build output.
+    (REPO_ROOT / "docs" / "_build").mkdir(parents=True, exist_ok=True)
     return _run(("doxygen", "docs/Doxyfile")).returncode
 
 

@@ -127,6 +127,24 @@ def test_go_docs_require_coverage_and_render_every_package(
     ]
 
 
+def test_cpp_docs_create_output_parent_in_clean_checkout(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    calls: list[tuple[str, ...]] = []
+
+    def fake_run(command: tuple[str, ...]) -> subprocess.CompletedProcess[str]:
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(native_docs, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(native_docs, "_run", fake_run)
+
+    assert native_docs._build_cpp_docs() == 0
+    assert (tmp_path / "docs" / "_build").is_dir()
+    assert calls == [("doxygen", "docs/Doxyfile")]
+
+
 def test_lean_docs_disable_upstream_equation_derivation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
