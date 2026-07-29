@@ -9,10 +9,23 @@
 
 from __future__ import annotations
 
+from importlib import import_module
 from pathlib import Path
 from typing import Any, Callable, cast
 
-import nbformat as nbf
+
+def _load_nbformat() -> Any:
+    """Load the notebook dependency used by this optional maintenance tool."""
+    try:
+        return import_module("nbformat")
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "Notebook upgrade requires the documentation dependencies; "
+            "install requirements/docs.txt."
+        ) from exc
+
+
+nbf = _load_nbformat()
 
 
 def _replace_once(src: str, old: str, new: str) -> str:
