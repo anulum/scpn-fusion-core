@@ -197,9 +197,7 @@ def test_build_certificate_and_external_path(tmp_path: Path) -> None:
         (lambda payload: payload.update(method=[]), "method"),
         (lambda payload: payload["method"].update(alpha=True), "alpha"),
         (
-            lambda payload: payload["method"].update(
-                residual_canonical_decimal_places=15
-            ),
+            lambda payload: payload["method"].update(residual_canonical_decimal_places=15),
             "residual canonicalization",
         ),
         (lambda payload: payload.update(certificates=[]), "Exactly one"),
