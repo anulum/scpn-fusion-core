@@ -436,6 +436,7 @@ files = [
     "tools/run_aurora_reference_artifact.py",
     "tools/run_dream_reference_artifact.py",
     "tools/run_mypy_strict.py",
+    "tools/run_native_docs.py",
     "tools/run_python_preflight.py",
     "tools/sweep_disruption_threshold.py",
     "tools/train_fno_qlknn_spatial.py",

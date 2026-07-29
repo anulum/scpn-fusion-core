@@ -1,8 +1,8 @@
 {
   "claim_boundary": "Comparison against a really-executed TORAX basic_config run; the reduced 1.5D solver and TORAX differ by design and by the open solver-stability finding below. Metrics are recorded divergence, not equivalence.",
   "divergence_metrics": {
-    "core_te_ratio_fine_over_torax": 0.07051624437296893,
-    "normalised_te_shape_rel_l2_fine": 0.019039379692044476
+    "core_te_ratio_fine_over_torax": 0.06735332920110527,
+    "normalised_te_shape_rel_l2_fine": 0.06671488940081623
   },
   "environment": {
     "platform": null,
@@ -12,19 +12,19 @@
   "our_solver": {
     "coarse_run": {
       "dt_s": 0.5,
-      "final_core_ti_kev": 1.6228933238951386,
+      "final_core_ti_kev": 1.552309369861451,
       "finite": true,
       "limit_cycle_detected": false,
-      "peak_core_ti_kev": 2.0450606154060424,
+      "peak_core_ti_kev": 1.7195220334888095,
       "steps": 400
     },
     "config": "validation/iter_config.json",
     "fine_run": {
       "dt_s": 0.1,
-      "final_core_ti_kev": 1.6325611092161891,
+      "final_core_ti_kev": 1.5593346867478672,
       "finite": true,
       "limit_cycle_detected": false,
-      "peak_core_ti_kev": 1.7119492312716231,
+      "peak_core_ti_kev": 1.6139180334143202,
       "steps": 2000
     },
     "p_aux_mw": 50.0
@@ -58,7 +58,7 @@
       0.97,
       1.03
     ],
-    "steady_state_core_ratio_coarse_over_fine": 0.994078147968567,
+    "steady_state_core_ratio_coarse_over_fine": 0.9954946702936056,
     "steady_state_dt_consistent": true
   },
   "status": "real_torax_reference_acquired_divergence_documented"
