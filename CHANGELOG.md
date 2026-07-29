@@ -17,6 +17,12 @@
 
 ### Validation
 
+- Replace the coupled tearing engine's hard-coded stability index with an
+  explicit Harris-sheet outer-matching model. Focused validation locks the FKR
+  constant-psi exponents and compares numerical Rutherford evolution with the
+  exact finite-width saturation root; no fitted Delta-prime scale is accepted.
+  The same audit cohort now checks the complete cylindrical Mercier-proxy field
+  and the RWM wall-time growth magnitude instead of qualitative signs alone.
 - Rebind the tracked predictive-forward and real-DIII-D evidence to the current
   axis-connected plasma-support implementation. Current reproducible CPU evidence
   records 1.91 % full-domain and 0.070 % shell-pinned DIII-D ψ RMS, 3.244e-06

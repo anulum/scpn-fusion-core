@@ -17,9 +17,25 @@ from scpn_fusion.core.tearing_mode_coupling import (
     SawtoothNTMSeeding,
     TearingModeStabilityMap,
 )
+from scpn_fusion.core.tearing_mode_theory import HarrisSheetTearingModel
 
 
-def test_chirikov_overlap():
+def _coupled_modes() -> CoupledTearingModes:
+    """Return two explicitly stable Harris-sheet modes for coupling tests."""
+    return CoupledTearingModes(
+        (3, 2),
+        (2, 1),
+        0.5,
+        0.8,
+        2.0,
+        6.2,
+        5.3,
+        tearing_model_1=HarrisSheetTearingModel(0.20, 6.0, 2.0),
+        tearing_model_2=HarrisSheetTearingModel(0.45, 2.5, 2.0),
+    )
+
+
+def test_chirikov_overlap() -> None:
     assert ChirikovOverlap.parameter(0.1, 0.1, 0.2) == 0.5
     assert not ChirikovOverlap.is_stochastic(0.5)
 
@@ -27,7 +43,7 @@ def test_chirikov_overlap():
     assert ChirikovOverlap.is_stochastic(1.5)
 
 
-def test_sawtooth_seeding():
+def test_sawtooth_seeding() -> None:
     st = SawtoothNTMSeeding(None)
     amp = st.seed_amplitude(crash_energy_MJ=4.0, r_s=0.5)
     assert np.isclose(amp, 0.1)  # 0.05 * 2
@@ -39,8 +55,8 @@ def test_sawtooth_seeding():
     assert prob_high > 0.0
 
 
-def test_coupled_tearing_modes():
-    c = CoupledTearingModes((3, 2), (2, 1), 0.5, 0.8, 2.0, 6.2, 5.3)
+def test_coupled_tearing_modes() -> None:
+    c = _coupled_modes()
 
     # Evolve without seed -> no disruption, islands stay small
     res_no_seed = c.evolve(1e-6, 1e-6, j_bs=1e5, j_phi=1e6, eta=1e-7, dt=0.01, n_steps=200)
@@ -65,8 +81,8 @@ def test_coupled_tearing_modes():
     assert np.any(res_seed.chirikov_trace > 1.0)
 
 
-def test_disruption_trigger_assessment():
-    c = CoupledTearingModes((3, 2), (2, 1), 0.5, 0.8, 2.0, 6.2, 5.3)
+def test_disruption_trigger_assessment() -> None:
+    c = _coupled_modes()
     ass = DisruptionTriggerAssessment(c)
 
     path = ass.run_scenario(j_bs=1e6, j_phi=1e6, omega_phi=1e4, seed_energy=10.0)
@@ -75,7 +91,7 @@ def test_disruption_trigger_assessment():
         assert path.avoidable
 
 
-def test_stability_map():
+def test_stability_map() -> None:
     smap = TearingModeStabilityMap()
     b_range = np.linspace(1.0, 5.0, 10)
     li_range = np.linspace(0.5, 1.5, 10)
@@ -87,8 +103,8 @@ def test_stability_map():
     assert res[-1, -1] == -1  # High beta, high li -> unstable
 
 
-def test_coupling_coefficient_penalizes_mode_mismatch():
-    c = CoupledTearingModes((3, 2), (2, 1), 0.5, 0.8, 2.0, 6.2, 5.3)
+def test_coupling_coefficient_penalizes_mode_mismatch() -> None:
+    c = _coupled_modes()
 
     same_n = c.coupling_coefficient(3, 2, 2, 2)
     cross_n = c.coupling_coefficient(3, 2, 2, 1)
@@ -98,8 +114,8 @@ def test_coupling_coefficient_penalizes_mode_mismatch():
     assert same_n > cross_n
 
 
-def test_evolve_rejects_invalid_inputs():
-    c = CoupledTearingModes((3, 2), (2, 1), 0.5, 0.8, 2.0, 6.2, 5.3)
+def test_evolve_rejects_invalid_inputs() -> None:
+    c = _coupled_modes()
 
     with pytest.raises(ValueError, match="n_steps"):
         c.evolve(1e-6, 1e-6, j_bs=1e5, j_phi=1e6, eta=1e-7, dt=0.01, n_steps=0)

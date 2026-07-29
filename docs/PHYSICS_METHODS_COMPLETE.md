@@ -794,6 +794,10 @@ $$D_M = \frac{s^2}{4} - \alpha_{\rm MHD} \;\ge\; 0$$
 
 where $s = (r/q)(dq/dr)$ is the magnetic shear and $\alpha_{\rm MHD} = -2\mu_0 R_0 q^2 (dp/dr) / B_0^2$ is the normalised pressure gradient. Freidberg, *Ideal MHD*, Ch. 12 (2014).
 
+This remains an explicitly labelled cylindrical Suydam proxy, not a full
+toroidal Mercier calculation. Its validation checks the complete radial
+$D_M=s^2/4-\alpha_{\rm MHD}$ field and the first unstable radius exactly.
+
 ### 6.2 Ideal ballooning — Connor-Hastie-Taylor
 
 Critical pressure gradient in the first-stability window:
@@ -814,7 +818,29 @@ $$\beta_N = \frac{100\,\beta_t}{I_p[\text{MA}]/(a[\text{m}]\,B_0[\text{T}])} \;<
 
 where $g = 2.8$ (no-wall) or $g = 3.5$ (ideal-wall). Troyon et al., *Plasma Phys. Control. Fusion* 26, 209 (1984).
 
-### 6.5 Neoclassical tearing mode (NTM)
+### 6.5 Classical resistive tearing — FKR/Rutherford
+
+The coupled-island engine now receives an explicit Harris-sheet equilibrium
+contract instead of assigning the heuristic $\Delta'=-2m/r_s$. For
+$B_y=B_0\tanh(x/a_s)$, ideal outer-region matching gives
+
+$$\Delta'_0a_s=2\left[(ka_s)^{-1}-ka_s\right].$$
+
+The linear constant-$\psi$ validation follows the FKR matched-asymptotic law
+
+$$\gamma\tau_A=C_{\rm FKR}S^{-3/5}(ka_s)^{2/5}(\Delta'a_s)^{4/5},$$
+
+with $C_{\rm FKR}=[\Gamma(1/4)/(2\pi\Gamma(3/4))]^{4/5}$. The nonlinear
+validation evolves the Rutherford equation with the declared finite-width
+closure $\Delta'(w)=\Delta'_0-C_ww/a_s^2$ and checks convergence to its exact
+saturation root $w_{\rm sat}=\Delta'_0a_s^2/C_w$. The coefficient $C_w$ is an
+explicit equilibrium input; it is not fitted from the expected answer.
+
+Furth, Killeen & Rosenbluth, *Phys. Fluids* 6, 459 (1963),
+doi:10.1063/1.1706761; Rutherford, *Phys. Fluids* 16, 1903 (1973),
+doi:10.1063/1.1694232.
+
+### 6.6 Neoclassical tearing mode (NTM)
 
 Reduced modified Rutherford equation for island width $w$:
 
@@ -822,21 +848,26 @@ $$\tau_R\,\frac{dw}{dt} = r_s\,\Delta' + r_s\,a_{\rm bs}\,\frac{j_{\rm bs}}{j_{\
 
 The NTM is unstable when bootstrap drive exceeds classical stabilisation ($\Delta' < 0$). La Haye, *Phys. Plasmas* 13, 055501 (2006).
 
-### 6.6 Resistive wall mode (RWM)
+### 6.7 Resistive wall mode (RWM)
 
 Between the no-wall and ideal-wall beta limits, the RWM growth rate scales as:
 
 $$\gamma\,\tau_w \;\sim\; \frac{\beta_N - \beta_N^{\rm no\text{-}wall}}{\beta_N^{\rm wall} - \beta_N}$$
 
 Stable when $\beta_N < \beta_N^{\rm no\text{-}wall}$, or when active feedback suppresses the mode.
+The reduced wall-time proxy is validated against the full ratio above,
+including magnitude both between and above the declared wall limits; its gate
+is not a sign-only assertion.
 
-### 6.7 Peeling-ballooning (ELM boundary)
+### 6.8 Peeling-ballooning (ELM boundary)
 
 Coupled pedestal stability per Snyder et al., *Phys. Plasmas* 9, 2037 (2002) and *Nucl. Fusion* 51, 103016 (2011). The stability boundary is parameterised by normalised edge current $j_{\rm edge}/j_{\rm crit}$ (peeling drive) and normalised $\alpha / \alpha_{\rm crit}$ (ballooning drive). ELM type classification: Type-I (high $\alpha$, low $j$), Type-III (low $\alpha$, high $j$).
 
-**Key files:** `core/stability_mhd.py`, `core/stability_mhd_extended.py`.
+**Key files:** `core/stability_mhd.py`, `core/stability_mhd_extended.py`,
+`core/tearing_mode_theory.py`, `core/tearing_mode_coupling.py`.
 
-**Validation:** `tests/test_mhd_stability.py`, `tests/test_phase1_hardening.py`.
+**Validation:** `tests/test_mhd_stability.py`, `tests/test_phase1_hardening.py`,
+`tests/test_tearing_mode_theory.py`.
 
 ---
 

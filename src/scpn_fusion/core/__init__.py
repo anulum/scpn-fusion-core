@@ -376,6 +376,11 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # Phase 6 — Tearing mode coupling
     "CoupledTearingModes": (".tearing_mode_coupling", "CoupledTearingModes"),
     "ChirikovOverlap": (".tearing_mode_coupling", "ChirikovOverlap"),
+    "HarrisSheetTearingModel": (".tearing_mode_theory", "HarrisSheetTearingModel"),
+    "fkr_constant_psi_growth_rate_per_s": (
+        ".tearing_mode_theory",
+        "fkr_constant_psi_growth_rate_per_s",
+    ),
     # Phase 6 — VMEC-lite (3D fixed-boundary MHD)
     "VMECLiteSolver": (".vmec_lite", "VMECLiteSolver"),
     # Phase 6 — Blob transport (SOL filaments)

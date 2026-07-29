@@ -996,6 +996,10 @@
         "path": "src/scpn_fusion/core/disruption_sequence.py"
       },
       {
+        "name": "HarrisSheetTearingModel",
+        "path": "src/scpn_fusion/core/tearing_mode_theory.py"
+      },
+      {
         "name": "HeatMLShadowSurrogate",
         "path": "src/scpn_fusion/core/heat_ml_shadow_surrogate.py"
       },
@@ -2629,6 +2633,7 @@
       "src/scpn_fusion/core/state_space.py",
       "src/scpn_fusion/core/stellarator_geometry.py",
       "src/scpn_fusion/core/tearing_mode_coupling.py",
+      "src/scpn_fusion/core/tearing_mode_theory.py",
       "src/scpn_fusion/core/tglf_interface.py",
       "src/scpn_fusion/core/tglf_surrogate_bridge.py",
       "src/scpn_fusion/core/tglf_validation_runtime.py",
@@ -2761,10 +2766,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 63,
-    "python_capability_classes": 577,
-    "python_capability_source_modules": 322,
+    "python_capability_classes": 578,
+    "python_capability_source_modules": 323,
     "rust_workspace_crates": 13,
-    "test_files": 599
+    "test_files": 600
   },
   "documentation": {
     "public_pages": [
@@ -3446,6 +3451,7 @@
       "tests/test_task8_free_boundary_supervisory_control.py",
       "tests/test_task9_free_boundary_replay_hil.py",
       "tests/test_tearing_mode_coupling.py",
+      "tests/test_tearing_mode_theory.py",
       "tests/test_temhd_peltier.py",
       "tests/test_temhd_peltier_runtime.py",
       "tests/test_tglf_interface.py",

@@ -16,6 +16,7 @@ import numpy as np
 from numpy.typing import NDArray
 
 from scpn_fusion.core.sawtooth import SawtoothCycler
+from scpn_fusion.core.tearing_mode_theory import HarrisSheetTearingModel
 
 FloatArray = NDArray[np.float64]
 
@@ -67,6 +68,9 @@ class CoupledTearingModes:
         a: float,
         R0: float,
         B0: float,
+        *,
+        tearing_model_1: HarrisSheetTearingModel,
+        tearing_model_2: HarrisSheetTearingModel,
     ):
         self.m1, self.n1 = mode1
         self.m2, self.n2 = mode2
@@ -75,6 +79,8 @@ class CoupledTearingModes:
         self.a = a
         self.R0 = R0
         self.B0 = B0
+        self.tearing_model_1 = tearing_model_1
+        self.tearing_model_2 = tearing_model_2
 
         self.delta_r = abs(r_s1 - r_s2)
 
@@ -105,17 +111,13 @@ class CoupledTearingModes:
         coeff = base * toroidal_factor * float(spectral_penalty)
         return float(max(coeff, 0.0))
 
-    def delta_prime_1(self, w1: float, w2: float) -> float:
-        """Evaluate mode-1 tearing stability index with mode-2 coupling."""
-        # Base stability + nonlinear modification from w2
-        # Typically linearly stable
-        dp0 = -2.0 * self.m1 / max(self.r_s1, 1e-3)
-        return dp0 + 0.5 * w2 / self.a
+    def delta_prime_1(self, w1: float) -> float:
+        """Evaluate the mode-1 finite-width Harris-sheet matching index."""
+        return self.tearing_model_1.delta_prime_per_m(w1)
 
-    def delta_prime_2(self, w1: float, w2: float) -> float:
-        """Evaluate mode-2 tearing stability index with mode-1 coupling."""
-        dp0 = -2.0 * self.m2 / max(self.r_s2, 1e-3)
-        return dp0 + 0.5 * w1 / self.a
+    def delta_prime_2(self, w2: float) -> float:
+        """Evaluate the mode-2 finite-width Harris-sheet matching index."""
+        return self.tearing_model_2.delta_prime_per_m(w2)
 
     def evolve(
         self,
@@ -193,14 +195,14 @@ class CoupledTearingModes:
                 w1 = max(w1, seed_amplitude)
 
             # MRE for w1 (3/2)
-            dp1 = self.delta_prime_1(w1, w2)
+            dp1 = self.delta_prime_1(w1)
             # bs term with w_d=1e-3
             bs_term1 = self.a1 * j_ratio * (self.r_s1 / w1) * (w1**2 / (w1**2 + 1e-6))
             c_term1 = C12 * (w2**2) / (self.r_s1 * self.r_s2)
             dw1_dt = (self.r_s1 / tau_R1) * (self.r_s1 * dp1 + bs_term1 + c_term1)
 
             # MRE for w2 (2/1)
-            dp2 = self.delta_prime_2(w1, w2)
+            dp2 = self.delta_prime_2(w2)
             bs_term2 = self.a1 * j_ratio * (self.r_s2 / w2) * (w2**2 / (w2**2 + 1e-6))
             c_term2 = C21 * (w1**2) / (self.r_s1 * self.r_s2)
             dw2_dt = (self.r_s2 / tau_R2) * (self.r_s2 * dp2 + bs_term2 + c_term2)
@@ -313,8 +315,31 @@ class TearingModeStabilityMap:
         a: float = 2.0,
         R0: float = 6.2,
         B0: float = 5.3,
+        sheet_half_width_1: float = 0.20,
+        sheet_half_width_2: float = 0.45,
+        finite_width_coefficient: float = 2.0,
     ):
-        self.coupled = CoupledTearingModes(mode1, mode2, r_s1, r_s2, a, R0, B0)
+        tearing_model_1 = HarrisSheetTearingModel(
+            sheet_half_width_m=sheet_half_width_1,
+            wave_number_per_m=mode1[0] / r_s1,
+            finite_width_coefficient=finite_width_coefficient,
+        )
+        tearing_model_2 = HarrisSheetTearingModel(
+            sheet_half_width_m=sheet_half_width_2,
+            wave_number_per_m=mode2[0] / r_s2,
+            finite_width_coefficient=finite_width_coefficient,
+        )
+        self.coupled = CoupledTearingModes(
+            mode1,
+            mode2,
+            r_s1,
+            r_s2,
+            a,
+            R0,
+            B0,
+            tearing_model_1=tearing_model_1,
+            tearing_model_2=tearing_model_2,
+        )
 
     def scan_beta_li(self, beta_N_range: FloatArray, li_range: FloatArray) -> FloatArray:
         """Scan disruption risk across beta and internal inductance grids."""
