@@ -100,6 +100,9 @@
 
 ### Fixed
 
+- Return typed configuration errors from the `fusion-physics` ESN prediction
+  API when prediction is requested before training or with the wrong input
+  dimension, instead of panicking on an absent output matrix.
 - Enforce non-test `unwrap()`/`expect()` denial in the production-clean
   `fusion-core` and `fusion-control` crates while retaining invariant
   assertions in their inline test modules.

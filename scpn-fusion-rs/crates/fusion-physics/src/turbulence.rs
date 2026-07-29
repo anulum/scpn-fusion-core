@@ -11,6 +11,7 @@
 //! 2D drift wave turbulence with ESN-based prediction.
 
 use fusion_math::fft::{fft2, ifft2};
+use fusion_types::error::{FusionError, FusionResult};
 use nalgebra::{ComplexField, DMatrix};
 use ndarray::Array2;
 use num_complex::Complex64;
@@ -450,10 +451,33 @@ impl OracleESN {
         self.w_out = Some(w_out);
     }
 
-    /// Predict one step from current state.
-    pub fn predict_step(&mut self, input: &[f64]) -> Vec<f64> {
+    /// Predict one step from the current reservoir state.
+    ///
+    /// # Errors
+    ///
+    /// Returns a configuration error when the network has not been trained or
+    /// when `input` does not match the configured input dimension. Rejected
+    /// calls do not advance the reservoir state.
+    pub fn predict_step(&mut self, input: &[f64]) -> FusionResult<Vec<f64>> {
+        if input.len() != self.input_dim {
+            return Err(FusionError::ConfigError(format!(
+                "ESN input length {} does not match configured dimension {}",
+                input.len(),
+                self.input_dim
+            )));
+        }
+        if self.w_out.is_none() {
+            return Err(FusionError::ConfigError(
+                "ESN must be trained before prediction".to_string(),
+            ));
+        }
+
         self.update_state(input);
-        let w_out = self.w_out.as_ref().expect("ESN not trained");
+        let Some(w_out) = self.w_out.as_ref() else {
+            return Err(FusionError::ConfigError(
+                "ESN output weights became unavailable during prediction".to_string(),
+            ));
+        };
         let out_dim = w_out.nrows();
         let n = self.reservoir_size;
 
@@ -465,21 +489,42 @@ impl OracleESN {
             }
             output[i] = sum;
         }
-        output
+        Ok(output)
     }
 
     /// Multi-step closed-loop prediction.
-    pub fn predict(&mut self, initial: &[f64], steps: usize) -> Vec<Vec<f64>> {
+    ///
+    /// # Errors
+    ///
+    /// Returns the same typed configuration errors as [`Self::predict_step`].
+    /// For horizons above one step, the trained output dimension must equal
+    /// the configured input dimension so predictions can be fed back safely.
+    pub fn predict(&mut self, initial: &[f64], steps: usize) -> FusionResult<Vec<Vec<f64>>> {
+        if steps > 1 {
+            let Some(w_out) = self.w_out.as_ref() else {
+                return Err(FusionError::ConfigError(
+                    "ESN must be trained before prediction".to_string(),
+                ));
+            };
+            if w_out.nrows() != self.input_dim {
+                return Err(FusionError::ConfigError(format!(
+                    "ESN closed-loop output dimension {} does not match input dimension {}",
+                    w_out.nrows(),
+                    self.input_dim
+                )));
+            }
+        }
+
         let mut predictions = Vec::with_capacity(steps);
         let mut current = initial.to_vec();
 
         for _ in 0..steps {
-            let pred = self.predict_step(&current);
+            let pred = self.predict_step(&current)?;
             predictions.push(pred.clone());
             current = pred;
         }
 
-        predictions
+        Ok(predictions)
     }
 }
 
@@ -723,7 +768,9 @@ mod tests {
         esn.train(&inputs, &targets);
 
         // Predict from last training point
-        let predictions = esn.predict(&data[n_train - 1], n_test);
+        let predictions = esn
+            .predict(&data[n_train - 1], n_test)
+            .expect("trained dimension-preserving ESN should predict");
 
         // Compute MSE at first and last prediction step
         let mse_first: f64 = predictions[0]
@@ -800,5 +847,34 @@ mod tests {
         let rhs_norm = rhs.iter().map(|v| v * v).sum::<f64>().sqrt();
 
         assert!(residual_norm / rhs_norm < 1.0e-10);
+    }
+
+    #[test]
+    fn test_esn_rejects_untrained_and_wrong_dimension_without_state_mutation() {
+        let mut esn = OracleESN::with_seed(3, 8, 42);
+        let initial_state = esn.state.clone();
+
+        assert!(matches!(
+            esn.predict_step(&[0.0, 0.0, 0.0]),
+            Err(FusionError::ConfigError(message))
+                if message == "ESN must be trained before prediction"
+        ));
+        assert_eq!(esn.state, initial_state);
+
+        assert!(matches!(
+            esn.predict_step(&[0.0, 0.0]),
+            Err(FusionError::ConfigError(message))
+                if message.contains("does not match configured dimension 3")
+        ));
+        assert_eq!(esn.state, initial_state);
+
+        esn.train(&[vec![0.0, 0.0, 0.0]], &[vec![0.0, 0.0]]);
+        let trained_state = esn.state.clone();
+        assert!(matches!(
+            esn.predict(&[0.0, 0.0, 0.0], 2),
+            Err(FusionError::ConfigError(message))
+                if message.contains("closed-loop output dimension 2")
+        ));
+        assert_eq!(esn.state, trained_state);
     }
 }
