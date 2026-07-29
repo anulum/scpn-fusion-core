@@ -23,9 +23,13 @@ const OMEGA_MIN: f64 = 1.0;
 const OMEGA_MAX: f64 = 1.98;
 
 #[derive(Debug, Clone, Copy)]
+/// Iteration controls for adaptive Chebyshev-accelerated SOR.
 pub struct ChebyshevConfig {
+    /// Initial unit-relaxation sweeps used to estimate spectral radius.
     pub warmup_iters: usize,
+    /// Maximum total number of SOR sweeps.
     pub max_iters: usize,
+    /// Residual threshold required for convergence.
     pub tol: f64,
 }
 
@@ -40,11 +44,17 @@ impl Default for ChebyshevConfig {
 }
 
 #[derive(Debug, Clone)]
+/// Convergence diagnostics returned by [`chebyshev_sor_solve`].
 pub struct SolveResult {
+    /// Whether the final residual met the requested tolerance.
     pub converged: bool,
+    /// Number of SOR sweeps performed.
     pub iterations: usize,
+    /// Final residual norm.
     pub residual: f64,
+    /// Estimated Jacobi spectral radius used by the schedule.
     pub rho_jacobi: f64,
+    /// Relaxation factor used by the final sweep.
     pub final_omega: f64,
 }
 

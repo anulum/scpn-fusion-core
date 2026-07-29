@@ -9,7 +9,9 @@
 /// 2D control point used for boundary curves.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ControlPoint2D {
+    /// First Cartesian coordinate.
     pub x: f64,
+    /// Second Cartesian coordinate.
     pub y: f64,
 }
 

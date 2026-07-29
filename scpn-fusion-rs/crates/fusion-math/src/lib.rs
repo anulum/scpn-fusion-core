@@ -5,6 +5,7 @@
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
 //! Mathematical primitives for SCPN Fusion Core.
+#![deny(missing_docs)]
 
 pub mod amr;
 pub mod chebyshev;

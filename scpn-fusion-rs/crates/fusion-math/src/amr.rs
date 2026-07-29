@@ -11,22 +11,33 @@ use fusion_types::state::Grid2D;
 use ndarray::Array2;
 
 #[derive(Debug, Clone)]
+/// One refined rectangular patch in a two-to-one AMR hierarchy.
 pub struct AmrPatch {
+    /// Refined physical grid covering [`Self::bounds`].
     pub grid: Grid2D,
+    /// Patch-local flux field with shape `(grid.nz, grid.nr)`.
     pub psi: Array2<f64>,
+    /// Refinement level, where the base grid is level zero.
     pub level: usize,
-    pub bounds: (usize, usize, usize, usize), // (iz_lo, iz_hi, ir_lo, ir_hi)
+    /// Inclusive base-grid indices `(iz_lo, iz_hi, ir_lo, ir_hi)`.
+    pub bounds: (usize, usize, usize, usize),
 }
 
 #[derive(Debug, Clone)]
+/// Patch-based adaptive mesh-refinement hierarchy over one base grid.
 pub struct AmrHierarchy {
+    /// Unrefined level-zero grid.
     pub base: Grid2D,
+    /// Active refined patches, ordered from coarser to finer levels.
     pub patches: Vec<AmrPatch>,
+    /// Maximum total hierarchy levels, including the base grid.
     pub max_levels: usize,
+    /// Minimum absolute error-estimator value that triggers refinement.
     pub refinement_threshold: f64,
 }
 
 impl AmrHierarchy {
+    /// Creates an empty hierarchy, clamping `max_levels` to at least one.
     pub fn new(base: Grid2D, max_levels: usize, refinement_threshold: f64) -> Self {
         Self {
             base,
@@ -179,6 +190,7 @@ impl AmrHierarchy {
         }
     }
 
+    /// Removes every refined patch while preserving the base grid and policy.
     pub fn coarsen(&mut self) {
         self.patches.clear();
     }
