@@ -58,7 +58,9 @@ const BOLO_NOISE_FLOOR: f64 = 0.001;
 /// A bolometer chord: start (R,Z), end (R,Z).
 #[derive(Debug, Clone)]
 pub struct BoloChord {
+    /// Ray origin as `(R, Z)` in metres.
     pub start: (f64, f64),
+    /// Ray endpoint as `(R, Z)` in metres.
     pub end: (f64, f64),
 }
 
@@ -66,20 +68,35 @@ pub struct BoloChord {
 pub struct SensorSuite {
     /// Magnetic probe positions: (R, Z) for each probe.
     pub probe_r: Vec<f64>,
+    /// Vertical magnetic-probe coordinates in metres.
     pub probe_z: Vec<f64>,
     /// Bolometer viewing chords.
     pub bolo_chords: Vec<BoloChord>,
     /// Grid parameters for mapping to indices.
     pub r_min: f64,
+    /// Minimum vertical grid coordinate in metres.
     pub z_min: f64,
+    /// Uniform radial grid spacing in metres.
     pub dr: f64,
+    /// Uniform vertical grid spacing in metres.
     pub dz: f64,
+    /// Number of radial grid points.
     pub nr: usize,
+    /// Number of vertical grid points.
     pub nz: usize,
 }
 
 impl SensorSuite {
-    /// Create sensor suite for a given grid.
+    /// Creates the canonical sensor geometry for a uniform `(nz, nr)` grid.
+    ///
+    /// Coordinate bounds are inclusive and are used to derive `dr` and `dz`.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `nr` or `nz` is zero because the spacing calculation
+    /// subtracts one from each unsigned dimension. Callers must also provide
+    /// at least two points per axis and finite increasing bounds for meaningful
+    /// measurement geometry.
     pub fn new(nr: usize, nz: usize, r_min: f64, r_max: f64, z_min: f64, z_max: f64) -> Self {
         let dr = (r_max - r_min) / (nr - 1) as f64;
         let dz = (z_max - z_min) / (nz - 1) as f64;
@@ -136,6 +153,11 @@ impl SensorSuite {
     /// (`scpn_fusion.diagnostics.synthetic_sensors.measure_magnetics`), so the two
     /// agree to a tight tolerance. Sensor noise is an additive simulation concern
     /// layered on top by the callers, not part of the measurement kernel.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `psi` does not contain every `(iz, ir)` index required by the
+    /// suite's declared `(nz, nr)` grid.
     pub fn measure_magnetics(&self, psi: &Array2<f64>) -> Vec<f64> {
         let nr = self.nr as i64;
         let nz = self.nz as i64;
@@ -168,7 +190,15 @@ impl SensorSuite {
         measurements
     }
 
-    /// Measure bolometer line integrals. Returns array of length N_BOLO.
+    /// Measures noisy bolometer line integrals for every configured chord.
+    ///
+    /// The result length is [`SensorSuite::n_chords`]. Each ray uses nearest
+    /// lower-cell sampling and receives independent Gaussian shot noise.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `emission` does not contain every grid index reached by a
+    /// configured chord on the suite's declared `(nz, nr)` grid.
     pub fn measure_bolometer(&self, emission: &Array2<f64>) -> Vec<f64> {
         let mut rng = rand::thread_rng();
 
@@ -203,12 +233,12 @@ impl SensorSuite {
         signals
     }
 
-    /// Number of magnetic probes.
+    /// Returns the number of configured magnetic probes.
     pub fn n_probes(&self) -> usize {
         self.probe_r.len()
     }
 
-    /// Number of bolometer chords.
+    /// Returns the number of configured bolometer chords.
     pub fn n_chords(&self) -> usize {
         self.bolo_chords.len()
     }

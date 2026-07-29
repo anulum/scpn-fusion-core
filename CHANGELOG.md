@@ -4,9 +4,10 @@
 
 ### Added
 
-- Enforce complete public API documentation in the `fusion-gpu` and
-  `fusion-polyglot` crates and document their grid, adapter-selection,
-  data-layout, parser, numerical-operator, and failure contracts.
+- Enforce complete public API documentation in the `fusion-gpu`,
+  `fusion-polyglot`, and `fusion-diagnostics` crates and document their grid,
+  adapter-selection, data-layout, parser, numerical-operator, sensor,
+  tomography, failure, and panic contracts.
 - Close the remaining top-level tool test-linkage gap with offline behavioural
   contracts for optional GPU diagnostics, public-source and QLKNN download
   custody, HDF-to-NPZ conversion, plot generation, compact surrogate math,

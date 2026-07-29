@@ -8,6 +8,9 @@
 //! Synthetic diagnostics modules.
 //!
 //! Stage 8: Magnetic probes, bolometer, soft X-ray tomography.
+#![deny(missing_docs)]
 
+/// Synthetic magnetic-probe and bolometer measurements.
 pub mod sensors;
+/// Tikhonov-regularised soft X-ray tomography.
 pub mod tomography;

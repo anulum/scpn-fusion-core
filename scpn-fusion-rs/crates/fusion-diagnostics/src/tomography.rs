@@ -14,7 +14,7 @@
 use fusion_types::error::{FusionError, FusionResult};
 use ndarray::{Array1, Array2};
 
-/// A bolometer chord: ((start_R, start_Z), (end_R, end_Z)).
+/// A bolometer chord as `((start_R, start_Z), (end_R, end_Z))` in metres.
 pub type Chord = ((f64, f64), (f64, f64));
 
 /// Default reconstruction grid resolution. Python: 20.
@@ -29,7 +29,7 @@ const LAMBDA_REG: f64 = 0.1;
 /// Projected gradient iterations for NNLS.
 const NNLS_ITERS: usize = 1000;
 
-/// Tomographic reconstruction engine.
+/// Tikhonov-regularised non-negative tomographic reconstruction engine.
 pub struct PlasmaTomography {
     /// Reconstruction grid resolution (res × res).
     pub res: usize,
@@ -49,6 +49,11 @@ impl PlasmaTomography {
     /// `chords`: list of (start, end) where each is (R, Z).
     /// `r_range`: (R_min, R_max) of reconstruction domain.
     /// `z_range`: (Z_min, Z_max) of reconstruction domain.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `res < 2`. Callers must also provide finite increasing
+    /// coordinate ranges for a meaningful geometry matrix.
     pub fn new(chords: &[Chord], r_range: (f64, f64), z_range: (f64, f64), res: usize) -> Self {
         Self::with_lambda(chords, r_range, z_range, res, LAMBDA_REG)
     }
@@ -58,6 +63,11 @@ impl PlasmaTomography {
     /// Chord sampling matches the Python reference exactly: `RAY_SAMPLES`
     /// points inclusive of both endpoints (`t = k / (RAY_SAMPLES - 1)`), so
     /// the geometry matrices of the two backends agree row for row.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `res < 2`. Callers must provide finite increasing coordinate
+    /// ranges and a finite non-negative `lambda_reg` for a meaningful inverse.
     pub fn with_lambda(
         chords: &[Chord],
         r_range: (f64, f64),
@@ -104,7 +114,7 @@ impl PlasmaTomography {
         }
     }
 
-    /// Build with default resolution.
+    /// Builds tomography with the canonical 20-by-20 reconstruction grid.
     pub fn with_default_res(chords: &[Chord], r_range: (f64, f64), z_range: (f64, f64)) -> Self {
         Self::new(chords, r_range, z_range, DEFAULT_RES)
     }
@@ -114,7 +124,7 @@ impl PlasmaTomography {
     /// Solves: min ||Ax - b||² + λ||x||² subject to x ≥ 0
     /// using projected gradient descent.
     ///
-    /// Returns flattened reconstruction of length res².
+    /// Returns a row-major flattened reconstruction of length `res²`.
     ///
     /// # Errors
     ///
