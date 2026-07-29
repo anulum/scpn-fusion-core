@@ -5,6 +5,8 @@
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — Constants
+//! Shared SI constants and dimensionless reference values.
+
 /// Vacuum permeability (H/m) - real SI value.
 /// NOTE: The Python code uses vacuum_permeability=1.0 in configs (normalized units).
 /// We support both via config override.

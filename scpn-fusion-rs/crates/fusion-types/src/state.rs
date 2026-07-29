@@ -5,24 +5,37 @@
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — State
+//! Shared grid, plasma, transport, thermodynamic, and solver-result states.
+
 use ndarray::{Array1, Array2};
 
 /// 2D computational grid with precomputed coordinates.
 /// Matches Python: self.R, self.Z, self.RR, self.ZZ, self.dR, self.dZ
 #[derive(Debug, Clone)]
 pub struct Grid2D {
+    /// Number of radial grid points.
     pub nr: usize,
+    /// Number of vertical grid points.
     pub nz: usize,
-    pub r: Array1<f64>,  // R coordinates [nr] - linspace(R_min, R_max, nr)
-    pub z: Array1<f64>,  // Z coordinates [nz] - linspace(Z_min, Z_max, nz)
-    pub dr: f64,         // R spacing
-    pub dz: f64,         // Z spacing
-    pub rr: Array2<f64>, // Meshgrid R [nz, nr] - NOTE: nz rows, nr cols (Python convention)
-    pub zz: Array2<f64>, // Meshgrid Z [nz, nr]
+    /// Uniform radial coordinates with length `nr`.
+    pub r: Array1<f64>,
+    /// Uniform vertical coordinates with length `nz`.
+    pub z: Array1<f64>,
+    /// Radial coordinate spacing.
+    pub dr: f64,
+    /// Vertical coordinate spacing.
+    pub dz: f64,
+    /// Radial meshgrid with row-major shape `(nz, nr)`.
+    pub rr: Array2<f64>,
+    /// Vertical meshgrid with row-major shape `(nz, nr)`.
+    pub zz: Array2<f64>,
 }
 
 impl Grid2D {
-    /// Create grid from config dimensions.
+    /// Creates a uniform rectangular grid from inclusive coordinate bounds.
+    ///
+    /// The meshgrids use NumPy-compatible `(nz, nr)` row-major ordering.
+    ///
     /// Python equivalent:
     ///   self.R = np.linspace(R_min, R_max, NR)
     ///   self.Z = np.linspace(Z_min, Z_max, NZ)
@@ -60,17 +73,26 @@ impl Grid2D {
 /// Matches Python: self.Psi, self.J_phi, self.B_R, self.B_Z
 #[derive(Debug, Clone)]
 pub struct PlasmaState {
-    pub psi: Array2<f64>,            // Magnetic flux [nz, nr]
-    pub j_phi: Array2<f64>,          // Toroidal current density [nz, nr]
-    pub b_r: Option<Array2<f64>>,    // Radial B-field component
-    pub b_z: Option<Array2<f64>>,    // Vertical B-field component
-    pub axis: Option<(f64, f64)>,    // (R, Z) of magnetic axis (O-point)
-    pub x_point: Option<(f64, f64)>, // (R, Z) of X-point
+    /// Poloidal magnetic flux with shape `(nz, nr)`.
+    pub psi: Array2<f64>,
+    /// Toroidal current density with shape `(nz, nr)`.
+    pub j_phi: Array2<f64>,
+    /// Optional radial magnetic-field component with shape `(nz, nr)`.
+    pub b_r: Option<Array2<f64>>,
+    /// Optional vertical magnetic-field component with shape `(nz, nr)`.
+    pub b_z: Option<Array2<f64>>,
+    /// Optional magnetic-axis O-point as `(R, Z)`.
+    pub axis: Option<(f64, f64)>,
+    /// Optional magnetic X-point as `(R, Z)`.
+    pub x_point: Option<(f64, f64)>,
+    /// Flux value at the magnetic axis.
     pub psi_axis: f64,
+    /// Flux value at the plasma boundary.
     pub psi_boundary: f64,
 }
 
 impl PlasmaState {
+    /// Creates a zero-filled `(nz, nr)` state with unset field and point data.
     pub fn new(nz: usize, nr: usize) -> Self {
         PlasmaState {
             psi: Array2::zeros((nz, nr)),
@@ -89,47 +111,74 @@ impl PlasmaState {
 /// Matches Python: TransportSolver.Te, Ti, ne, n_impurity
 #[derive(Debug, Clone)]
 pub struct RadialProfiles {
-    pub rho: Array1<f64>,        // Normalized radius [0, 1], 50 points
-    pub te: Array1<f64>,         // Electron temperature [keV]
-    pub ti: Array1<f64>,         // Ion temperature [keV]
-    pub ne: Array1<f64>,         // Electron density [10^19 m^-3]
-    pub n_impurity: Array1<f64>, // Impurity density
+    /// Normalised radial coordinate, conventionally spanning `[0, 1]`.
+    pub rho: Array1<f64>,
+    /// Electron temperature profile in keV.
+    pub te: Array1<f64>,
+    /// Ion temperature profile in keV.
+    pub ti: Array1<f64>,
+    /// Electron density profile in units of `10¹⁹ m⁻³`.
+    pub ne: Array1<f64>,
+    /// Impurity-density profile in the caller's declared density units.
+    pub n_impurity: Array1<f64>,
 }
 
 /// Thermodynamics result from ignition calculation.
 #[derive(Debug, Clone)]
 pub struct ThermodynamicsResult {
+    /// Total fusion power in megawatts.
     pub p_fusion_mw: f64,
+    /// Alpha-particle heating power in megawatts.
     pub p_alpha_mw: f64,
+    /// Total loss power in megawatts.
     pub p_loss_mw: f64,
+    /// Auxiliary heating power in megawatts.
     pub p_aux_mw: f64,
+    /// Net power balance in megawatts.
     pub net_mw: f64,
+    /// Fusion gain factor `Q`.
     pub q_factor: f64,
+    /// Peak plasma temperature in keV.
     pub t_peak_kev: f64,
+    /// Thermal stored energy in megajoules.
     pub w_thermal_mj: f64,
 }
 
 /// Stability analysis result.
 #[derive(Debug, Clone)]
 pub struct StabilityResult {
+    /// Two eigenvalues of the reduced stability matrix.
     pub eigenvalues: [f64; 2],
+    /// Corresponding column eigenvectors of the reduced stability matrix.
     pub eigenvectors: [[f64; 2]; 2],
+    /// Vertical-field decay index.
     pub decay_index: f64,
+    /// Net radial force in meganewtons.
     pub radial_force_mn: f64,
+    /// Net vertical force in meganewtons.
     pub vertical_force_mn: f64,
+    /// Whether all configured stability criteria passed.
     pub is_stable: bool,
 }
 
 /// Equilibrium solve result.
 #[derive(Debug, Clone)]
 pub struct EquilibriumResult {
+    /// Whether the solver satisfied its convergence gate.
     pub converged: bool,
+    /// Number of iterations performed.
     pub iterations: usize,
+    /// Final reported nonlinear residual.
     pub residual: f64,
+    /// Magnetic-axis coordinates as `(R, Z)`.
     pub axis_position: (f64, f64),
+    /// Magnetic X-point coordinates as `(R, Z)`.
     pub x_point_position: (f64, f64),
+    /// Flux value at the magnetic axis.
     pub psi_axis: f64,
+    /// Flux value at the plasma boundary.
     pub psi_boundary: f64,
+    /// Solver wall-clock duration in milliseconds.
     pub solve_time_ms: f64,
 }
 

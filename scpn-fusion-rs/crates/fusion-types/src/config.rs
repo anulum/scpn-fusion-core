@@ -5,8 +5,11 @@
 // ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
 // SCPN Fusion Core — Config
+//! Governed reactor, grid, physics, coil, and solver configuration types.
+
 use serde::{Deserialize, Serialize};
 
+/// Maximum accepted serialized reactor-configuration size in bytes.
 pub const MAX_CONFIG_BYTES: u64 = 10 * 1024 * 1024;
 
 /// Top-level reactor configuration.
@@ -14,29 +17,43 @@ pub const MAX_CONFIG_BYTES: u64 = 10 * 1024 * 1024;
 /// Must deserialize ALL 6 existing JSON config files without modification.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReactorConfig {
+    /// Human-readable reactor or scenario name.
     pub reactor_name: String,
+    /// Grid resolution as `[nr, nz]`.
     pub grid_resolution: [usize; 2],
+    /// Rectangular R-Z domain bounds.
     pub dimensions: GridDimensions,
+    /// Plasma-current and permeability parameters.
     pub physics: PhysicsParams,
+    /// External poloidal-field coil definitions.
     pub coils: Vec<CoilConfig>,
+    /// Iterative solver controls.
     pub solver: SolverConfig,
 }
 
+/// Inclusive rectangular R-Z domain bounds in metres.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GridDimensions {
+    /// Minimum major radius in metres.
     #[serde(rename = "R_min")]
     pub r_min: f64,
+    /// Maximum major radius in metres.
     #[serde(rename = "R_max")]
     pub r_max: f64,
+    /// Minimum vertical coordinate in metres.
     #[serde(rename = "Z_min")]
     pub z_min: f64,
+    /// Maximum vertical coordinate in metres.
     #[serde(rename = "Z_max")]
     pub z_max: f64,
 }
 
+/// Core physical parameters for equilibrium reconstruction.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PhysicsParams {
+    /// Target total toroidal plasma current in configuration units.
     pub plasma_current_target: f64,
+    /// Vacuum permeability, either SI or the configured normalised value.
     pub vacuum_permeability: f64,
     /// Optional H-mode pedestal profile configuration.
     /// When absent, the solver uses L-mode linear profiles.
@@ -98,20 +115,30 @@ impl Default for PedestalParams {
     }
 }
 
+/// One external poloidal-field coil.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoilConfig {
+    /// Optional human-readable coil name.
     #[serde(default)]
     pub name: String,
+    /// Coil-centre major radius in metres.
     pub r: f64,
+    /// Coil-centre vertical coordinate in metres.
     pub z: f64,
+    /// Coil current in configuration units.
     pub current: f64,
 }
 
+/// Iterative equilibrium-solver controls.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SolverConfig {
+    /// Maximum number of nonlinear solver iterations.
     pub max_iterations: usize,
+    /// Residual threshold required for convergence.
     pub convergence_threshold: f64,
+    /// Outer fixed-point relaxation factor.
     pub relaxation_factor: f64,
+    /// Successive-over-relaxation factor, defaulting to `1.6`.
     #[serde(default = "default_sor_omega")]
     pub sor_omega: f64,
 }
@@ -121,7 +148,14 @@ fn default_sor_omega() -> f64 {
 }
 
 impl ReactorConfig {
-    /// Load from JSON file. Must succeed for all 6 existing configs.
+    /// Loads a reactor configuration from a bounded JSON file.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`crate::error::FusionError::Io`] when metadata or file reading
+    /// fails, [`crate::error::FusionError::ConfigError`] when the file exceeds
+    /// [`MAX_CONFIG_BYTES`], or [`crate::error::FusionError::Json`] when the
+    /// serialized configuration is invalid.
     pub fn from_file(path: &str) -> crate::error::FusionResult<Self> {
         let metadata = std::fs::metadata(path)?;
         if metadata.len() > MAX_CONFIG_BYTES {
@@ -134,7 +168,8 @@ impl ReactorConfig {
         Ok(config)
     }
 
-    /// Create a Grid2D from this config's dimensions and resolution.
+    /// Creates a [`crate::state::Grid2D`] from the configured domain and
+    /// `[nr, nz]` resolution.
     pub fn create_grid(&self) -> crate::state::Grid2D {
         crate::state::Grid2D::new(
             self.grid_resolution[0],
