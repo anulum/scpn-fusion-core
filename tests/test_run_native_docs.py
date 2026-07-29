@@ -37,6 +37,19 @@ def test_main_fails_closed_when_generator_is_missing(
     assert "missing executable doxygen" in capsys.readouterr().err
 
 
+def test_cpp_docs_require_graphviz_dot(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.setattr(
+        "tools.run_native_docs.shutil.which",
+        lambda name: None if name == "dot" else f"/usr/bin/{name}",
+    )
+
+    assert native_docs.main(["--language", "cpp"]) == 127
+    assert "missing executable dot" in capsys.readouterr().err
+
+
 def test_main_can_skip_only_unavailable_generators(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

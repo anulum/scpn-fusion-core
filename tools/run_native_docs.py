@@ -43,6 +43,8 @@ def _unavailable_reason(language: str) -> str | None:
     executable = EXECUTABLES[language]
     if shutil.which(executable) is None:
         return f"missing executable {executable}"
+    if language == "cpp" and shutil.which("dot") is None:
+        return "missing executable dot"
     if language == "python" and importlib.util.find_spec("sphinx_autodoc_typehints") is None:
         return "missing Python module sphinx_autodoc_typehints"
     return None
