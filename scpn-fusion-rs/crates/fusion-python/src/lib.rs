@@ -8,6 +8,7 @@
 //!
 //! Stage 10: Exposes Grad-Shafranov solver, thermodynamics, control,
 //! diagnostics, and ML modules to Python via PyO3 + numpy.
+#![deny(missing_docs)]
 
 use pyo3::prelude::*;
 
