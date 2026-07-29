@@ -55,6 +55,24 @@ def test_ci_rejects_silent_tracked_evidence_drift_after_preflight() -> None:
     assert workflow.index(preflight) < workflow.index(drift_guard)
 
 
+def test_ci_uses_local_paths_for_routine_guarded_evidence() -> None:
+    """Routine CI benchmarks cannot target protected evidence destinations."""
+    workflow = _workflow_text()
+    protected_names = (
+        "artifacts/vertical_control_replay_benchmark",
+        "artifacts/vertical_control_replay_profiles",
+        "artifacts/scpn_end_to_end_latency_ci",
+    )
+    local_names = (
+        "artifacts/_local_vertical_control_replay_benchmark",
+        "artifacts/_local_vertical_control_replay_profiles",
+        "artifacts/_local_scpn_end_to_end_latency_ci",
+    )
+
+    assert all(name not in workflow for name in protected_names)
+    assert all(name in workflow for name in local_names)
+
+
 def test_ci_does_not_rerun_hypothesis_file_after_full_suite() -> None:
     """The three full-suite matrix lanes already include property tests once."""
     workflow = _workflow_text()
