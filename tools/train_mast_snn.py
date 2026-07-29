@@ -137,7 +137,10 @@ def _resample_to_summary_time(trace: NDArray[np.float64], n_time: int) -> NDArra
     if len(flat) == 0:
         return np.zeros(n_time, dtype=np.float64)
     sample_idx = np.linspace(0, len(flat) - 1, n_time).astype(int)
-    return np.nan_to_num(flat[sample_idx], nan=0.0, posinf=0.0, neginf=0.0)
+    return np.asarray(
+        np.nan_to_num(flat[sample_idx], nan=0.0, posinf=0.0, neginf=0.0),
+        dtype=np.float64,
+    )
 
 
 def load_local_npz_shot(cache_dir: Path, shot_id: int) -> ShotTrace | None:
@@ -406,7 +409,7 @@ def main() -> None:
             ingestor=ingestor,
             weights=weights,
         )
-        detected = [row["lead_time_ms"] for row in report if row.get("status") == "detected"]
+        detected = [float(row["lead_time_ms"]) for row in report if row.get("status") == "detected"]
         validation_available_count = sum(1 for row in report if row.get("status") != "unavailable")
         status = classify_full_fidelity_status(
             train_available_count=train_available_count,

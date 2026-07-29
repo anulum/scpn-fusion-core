@@ -117,6 +117,14 @@ def _ignore_missing_import_modules(mypy: dict[str, Any]) -> set[tuple[str, ...]]
     return ignored
 
 
+def _top_level_tool_files(repo_root: Path) -> list[str]:
+    """Return every top-level Python tool as a repository-relative path."""
+    tools_dir = repo_root / "tools"
+    if not tools_dir.is_dir():
+        return []
+    return sorted(path.relative_to(repo_root).as_posix() for path in tools_dir.glob("*.py"))
+
+
 def evaluate(*, pyproject_path: Path, baseline_path: Path) -> dict[str, Any]:
     """Evaluate current MyPy policy against the pinned expansion baseline."""
     baseline = _load_json_object(baseline_path)
@@ -147,6 +155,14 @@ def evaluate(*, pyproject_path: Path, baseline_path: Path) -> dict[str, Any]:
     if missing_paths:
         failures.append("configured typed files do not exist: " + ", ".join(missing_paths))
 
+    top_level_tool_files = _top_level_tool_files(pyproject_path.parent)
+    missing_top_level_tool_files = sorted(set(top_level_tool_files) - file_set)
+    if missing_top_level_tool_files:
+        failures.append(
+            "top-level Python tools missing from strict cohort: "
+            + ", ".join(missing_top_level_tool_files)
+        )
+
     new_ignored = sorted(current_ignored - allowed_ignored)
     if new_ignored:
         formatted = [",".join(row) for row in new_ignored]
@@ -161,6 +177,8 @@ def evaluate(*, pyproject_path: Path, baseline_path: Path) -> dict[str, Any]:
         "min_typed_file_count": min_count,
         "missing_required_typed_files": missing_required,
         "missing_configured_typed_files": missing_paths,
+        "top_level_tool_file_count": len(top_level_tool_files),
+        "missing_top_level_tool_files": missing_top_level_tool_files,
         "allowed_missing_import_overrides": [list(row) for row in sorted(allowed_ignored)],
         "current_missing_import_overrides": [list(row) for row in sorted(current_ignored)],
         "new_missing_import_overrides": [list(row) for row in new_ignored],
@@ -188,6 +206,7 @@ def main(argv: list[str] | None = None) -> int:
     print(
         "MyPy expansion guard: "
         f"typed_files={summary['typed_file_count']} "
+        f"top_level_tools={summary['top_level_tool_file_count']} "
         f"min={summary['min_typed_file_count']} "
         f"failures={len(summary['failures'])}"
     )

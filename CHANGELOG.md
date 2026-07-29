@@ -4,6 +4,12 @@
 
 ### Added
 
+- Enrol every top-level Python utility in the strict MyPy cohort and make the
+  expansion guard fail whenever a current or future `tools/*.py` file is left
+  outside that typed surface. The completed tool pass also removes a stale
+  DIII-D reference fallback that called an incompatible live-profile API and
+  uses the canonical GEQDSK `rbdry`/`zbdry` boundary fields in equilibrium
+  training utilities.
 - Remove the redundant dedicated Hypothesis CI invocation after the Python
   matrix's full-suite commands, preserving one property-test execution per
   supported interpreter while avoiding a measured duplicate minute per run.

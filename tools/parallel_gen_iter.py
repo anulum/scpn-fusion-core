@@ -13,6 +13,8 @@ Boundary X-points are rejected by default because they indicate a clipped or
 failed equilibrium rather than a clean training sample.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import logging
@@ -20,12 +22,15 @@ import multiprocessing as mp
 import time
 from pathlib import Path
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_SHARED_WORKERS = 12
+FloatArray = NDArray[np.float64]
+ChunkResult = tuple[FloatArray, FloatArray, int, int]
 
 
 def default_worker_count(cpu_count: int | None = None) -> int:
@@ -65,7 +70,12 @@ def is_boundary_xpoint(
     )
 
 
-def generate_chunk(n_samples: int, config_path: str, seed: int, allow_boundary_xpoints: bool):
+def generate_chunk(
+    n_samples: int,
+    config_path: str,
+    seed: int,
+    allow_boundary_xpoints: bool,
+) -> ChunkResult:
     """Worker function for parallel generation."""
     fk = FusionKernel(config_path)
     # Ensure ITER nominals
@@ -75,14 +85,15 @@ def generate_chunk(n_samples: int, config_path: str, seed: int, allow_boundary_x
     fk.cfg["target"]["R_axis"] = 6.2
     fk.cfg["target"]["Z_axis"] = 0.0
 
-    X, Y = [], []
+    X: list[list[float]] = []
+    Y: list[FloatArray] = []
     rejected_boundary_xpoints = 0
     failed_solves = 0
     base_currents = [float(c["current"]) for c in fk.cfg["coils"]]
     base_ip = float(fk.cfg["physics"]["plasma_current_target"])
     rng = np.random.default_rng(seed)
 
-    for i in range(n_samples):
+    for _ in range(n_samples):
         # Perturb
         for idx, coil in enumerate(fk.cfg["coils"]):
             coil["current"] = base_currents[idx] * rng.uniform(0.85, 1.15)
@@ -104,28 +115,33 @@ def generate_chunk(n_samples: int, config_path: str, seed: int, allow_boundary_x
                 rejected_boundary_xpoints += 1
                 continue
             features = [
-                ip / 1e6,
+                float(ip / 1e6),
                 5.3,
-                fk.R[ir],
-                fk.Z[iz],
+                float(fk.R[ir]),
+                float(fk.Z[iz]),
                 1.0,
                 1.0,
-                psi_ax,
-                psi_x,
+                float(psi_ax),
+                float(psi_x),
                 1.7,
                 0.33,
                 0.33,
                 3.0,
             ]
             X.append(features)
-            Y.append(fk.Psi.ravel())
+            Y.append(np.asarray(fk.Psi, dtype=np.float64).ravel())
         except Exception:
             failed_solves += 1
             continue
-    return np.array(X), np.array(Y), rejected_boundary_xpoints, failed_solves
+    return (
+        np.asarray(X, dtype=np.float64),
+        np.asarray(Y, dtype=np.float64),
+        rejected_boundary_xpoints,
+        failed_solves,
+    )
 
 
-def main():
+def main() -> None:
     """Generate ITER surrogate data chunks with bounded worker policy."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
@@ -151,7 +167,7 @@ def main():
     samples_per_worker = args.samples // args.workers
     remainder = args.samples % args.workers
 
-    tasks = []
+    tasks: list[tuple[int, str, int, bool]] = []
     for i in range(args.workers):
         n = samples_per_worker + (1 if i < remainder else 0)
         tasks.append((n, args.config, 42 + i, args.allow_boundary_xpoints))

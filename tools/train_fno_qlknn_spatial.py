@@ -28,23 +28,27 @@ import logging
 import sys
 import time
 from pathlib import Path
+from typing import Any, Callable, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATA_DIR = REPO_ROOT / "data" / "fno_qlknn_spatial"
 DEFAULT_OUTPUT = REPO_ROOT / "weights" / "fno_turbulence_jax.npz"
+FloatArray = NDArray[np.float64]
+Params = dict[str, Any]
 
 
-def _load_spatial_split(path: Path) -> tuple[np.ndarray, np.ndarray]:
+def _load_spatial_split(path: Path) -> tuple[FloatArray, FloatArray]:
     """Load a spatial split .npz with secure defaults."""
     with np.load(path, allow_pickle=False) as data:
         if "X" not in data or "Y" not in data:
             raise KeyError(f"{path} missing required NPZ keys: X, Y")
-        x = data["X"]
-        y = data["Y"]
+        x = np.asarray(data["X"], dtype=np.float64)
+        y = np.asarray(data["Y"], dtype=np.float64)
     return x, y
 
 
@@ -73,7 +77,8 @@ def train_fno(
     print(f"JAX backend: {'GPU' if gpu else 'CPU'} ({devices[0]})")
 
     if not gpu:
-        jax.config.update("jax_platform_name", "cpu")
+        config_update = cast(Callable[[str, str], None], jax.config.update)
+        config_update("jax_platform_name", "cpu")
 
     for split in ("train.npz", "val.npz"):
         p = data_dir / split
@@ -100,7 +105,7 @@ def train_fno(
     # Xavier-scale for spectral weights: 1/sqrt(width * modes^2)
     spec_scale = 1.0 / np.sqrt(width * modes * modes)
 
-    def init_params(key):
+    def init_params(key: Any) -> Params:
         keys = random.split(key, 4 + 4 * n_layers)
         ki = 0
         p = {
@@ -126,7 +131,7 @@ def train_fno(
     params = init_params(key)
 
     @jit
-    def fno_forward(params, x):
+    def fno_forward(params: Params, x: Any) -> Any:
         """Li et al. 2021 FNO: lift -> N spectral conv blocks -> project."""
         x = x[..., None]
         h = x @ params["lift_w"] + params["lift_b"]
@@ -147,14 +152,14 @@ def train_fno(
         return h.squeeze(-1)
 
     @jit
-    def loss_fn(params, x_batch, y_batch):
+    def loss_fn(params: Params, x_batch: Any, y_batch: Any) -> Any:
         preds = vmap(lambda xi: fno_forward(params, xi))(x_batch)
         diff_sq = jnp.sum((preds - y_batch) ** 2, axis=(1, 2))
         norm_sq = jnp.sum(y_batch**2, axis=(1, 2))
         return jnp.mean(jnp.sqrt(diff_sq / jnp.maximum(norm_sq, 1e-8)))
 
     @jit
-    def relative_l2_metric(params, x, y):
+    def relative_l2_metric(params: Params, x: Any, y: Any) -> Any:
         preds = vmap(lambda xi: fno_forward(params, xi))(x)
         return jnp.sqrt(jnp.sum((preds - y) ** 2) / jnp.maximum(jnp.sum(y**2), 1e-8))
 
@@ -166,7 +171,7 @@ def train_fno(
     t = 0
 
     best_val = float("inf")
-    best_params = None
+    best_params: dict[str, NDArray[Any]] | None = None
     patience_counter = 0
     PATIENCE = 100
     n_batches = max(1, n_train // batch_size)
@@ -222,6 +227,8 @@ def train_fno(
             break
 
     print(f"\nTraining complete. Best val relative L2: {best_val:.4f}")
+    if best_params is None:
+        raise RuntimeError("training produced no finite validation checkpoint")
 
     # Verification gate — spatial FNO inherits QLKNN oracle noise plus
     # interpolation error, so gate is looser than the point-wise MLP gate.

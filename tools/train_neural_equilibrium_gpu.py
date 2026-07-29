@@ -37,12 +37,25 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, TypedDict
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import numpy as np
 from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
+IntArray = NDArray[np.int64]
+
+
+class MachineMetrics(TypedDict):
+    """Per-machine equilibrium reconstruction metrics."""
+
+    mean_rel_l2: float
+    max_rel_l2: float
+    per_file: dict[str, float]
+
 
 logger = logging.getLogger(__name__)
 
@@ -73,8 +86,8 @@ class AugTrainingResult:
     test_mse: float
     test_max_error: float
     train_time_s: float
-    per_machine: dict
-    hidden_sizes: tuple
+    per_machine: dict[str, MachineMetrics]
+    hidden_sizes: tuple[int, ...]
     n_epochs_run: int
     lr_initial: float
     lr_final: float
@@ -88,11 +101,11 @@ class MinimalPCA:
 
     def __init__(self, n_components: int = 20) -> None:
         self.n_components = n_components
-        self.mean_: NDArray | None = None
-        self.components_: NDArray | None = None
-        self.explained_variance_ratio_: NDArray | None = None
+        self.mean_: FloatArray | None = None
+        self.components_: FloatArray | None = None
+        self.explained_variance_ratio_: FloatArray | None = None
 
-    def fit(self, X: NDArray) -> "MinimalPCA":
+    def fit(self, X: FloatArray) -> "MinimalPCA":
         """Fit PCA components to feature matrix ``X`` and variance ratios."""
         self.mean_ = X.mean(axis=0)
         X_centered = X - self.mean_
@@ -104,15 +117,19 @@ class MinimalPCA:
         self.n_components = k
         return self
 
-    def transform(self, X: NDArray) -> NDArray:
+    def transform(self, X: FloatArray) -> FloatArray:
         """Project normalized samples into the retained PCA basis."""
-        return (X - self.mean_) @ self.components_.T
+        if self.mean_ is None or self.components_ is None:
+            raise RuntimeError("PCA must be fitted before transform")
+        return np.asarray((X - self.mean_) @ self.components_.T, dtype=np.float64)
 
-    def inverse_transform(self, Z: NDArray) -> NDArray:
+    def inverse_transform(self, Z: FloatArray) -> FloatArray:
         """Reconstruct samples from latent PCA coordinates."""
-        return Z @ self.components_ + self.mean_
+        if self.mean_ is None or self.components_ is None:
+            raise RuntimeError("PCA must be fitted before inverse_transform")
+        return np.asarray(Z @ self.components_ + self.mean_, dtype=np.float64)
 
-    def fit_transform(self, X: NDArray) -> NDArray:
+    def fit_transform(self, X: FloatArray) -> FloatArray:
         """Fit PCA and transform samples in one call."""
         self.fit(X)
         return self.transform(X)
@@ -126,15 +143,15 @@ class SimpleMLP:
 
     def __init__(self, layer_sizes: list[int], seed: int = 42) -> None:
         self.rng = np.random.default_rng(seed)
-        self.weights: list[NDArray] = []
-        self.biases: list[NDArray] = []
+        self.weights: list[FloatArray] = []
+        self.biases: list[FloatArray] = []
         for i in range(len(layer_sizes) - 1):
             fan_in = layer_sizes[i]
             scale = np.sqrt(2.0 / fan_in)  # He init
             self.weights.append(self.rng.normal(0, scale, (layer_sizes[i], layer_sizes[i + 1])))
             self.biases.append(np.zeros(layer_sizes[i + 1]))
 
-    def forward(self, x: NDArray) -> NDArray:
+    def forward(self, x: FloatArray) -> FloatArray:
         """Run a forward evaluation through all layers."""
         h = x
         for i, (W, b) in enumerate(zip(self.weights, self.biases)):
@@ -143,7 +160,7 @@ class SimpleMLP:
                 h = np.maximum(0, h)  # ReLU
         return h
 
-    def predict(self, x: NDArray) -> NDArray:
+    def predict(self, x: FloatArray) -> FloatArray:
         """Alias for inference-only forward evaluation."""
         return self.forward(x)
 
@@ -167,7 +184,7 @@ def load_and_normalise(
     geqdsk_paths: dict[str, list[Path]],
     n_perturbations: int,
     rng: np.random.Generator,
-) -> tuple[NDArray, NDArray, list[str]]:
+) -> tuple[FloatArray, FloatArray, list[str]]:
     """Load all GEQDSK files, normalise psi and grid domain.
 
     Returns:
@@ -181,8 +198,8 @@ def load_and_normalise(
     target_rho = np.linspace(0, 1, TARGET_GRID)
     target_zeta = np.linspace(0, 1, TARGET_GRID)
 
-    X_features: list[NDArray] = []
-    Y_psi: list[NDArray] = []
+    X_features: list[FloatArray] = []
+    Y_psi: list[FloatArray] = []
     labels: list[str] = []
 
     for machine, paths in geqdsk_paths.items():
@@ -211,24 +228,20 @@ def load_and_normalise(
             kappa = 1.7
             delta_upper, delta_lower = 0.3, 0.3
             q95 = 3.0
-            if hasattr(eq, "rbbbs") and eq.rbbbs is not None and len(eq.rbbbs) > 3:
-                r_span = eq.rbbbs.max() - eq.rbbbs.min()
-                kappa = (eq.zbbbs.max() - eq.zbbbs.min()) / max(r_span, 0.01)
-            if hasattr(eq, "rbdry") and eq.rbdry is not None and len(eq.rbdry) > 3:
-                r_span = eq.rbdry.max() - eq.rbdry.min()
+            if len(eq.rbdry) > 3 and len(eq.zbdry) == len(eq.rbdry):
+                r_span = float(eq.rbdry.max() - eq.rbdry.min())
                 if r_span > 0.01:
-                    kappa = (eq.zbdry.max() - eq.zbdry.min()) / r_span
-                    r_mid = (eq.rbdry.max() + eq.rbdry.min()) / 2
+                    kappa = float((eq.zbdry.max() - eq.zbdry.min()) / r_span)
                     r_axis = eq.rmaxis
                     # upper triangularity
                     z_top_idx = np.argmax(eq.zbdry)
-                    delta_upper = (r_axis - eq.rbdry[z_top_idx]) / (r_span / 2)
+                    delta_upper = float((r_axis - eq.rbdry[z_top_idx]) / (r_span / 2))
                     # lower triangularity
                     z_bot_idx = np.argmin(eq.zbdry)
-                    delta_lower = (r_axis - eq.rbdry[z_bot_idx]) / (r_span / 2)
-            if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
+                    delta_lower = float((r_axis - eq.rbdry[z_bot_idx]) / (r_span / 2))
+            if len(eq.qpsi) > 0:
                 idx_95 = int(0.95 * len(eq.qpsi))
-                q95 = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
+                q95 = float(eq.qpsi[min(idx_95, len(eq.qpsi) - 1)])
 
             # 12-dim feature vector
             base_features = np.array(
@@ -282,10 +295,12 @@ def stratified_split(
     rng: np.random.Generator,
     train_frac: float = 0.70,
     val_frac: float = 0.15,
-) -> tuple[NDArray, NDArray, NDArray]:
+) -> tuple[IntArray, IntArray, IntArray]:
     """Split indices ensuring each machine appears in train/val/test."""
     machines = sorted(set(labels))
-    train_idx, val_idx, test_idx = [], [], []
+    train_idx: list[int] = []
+    val_idx: list[int] = []
+    test_idx: list[int] = []
 
     for machine in machines:
         machine_indices = np.array([i for i, l in enumerate(labels) if l == machine])
@@ -307,7 +322,7 @@ def stratified_split(
 # ── GS residual loss ──────────────────────────────────────────────────
 
 
-def gs_residual_loss(psi_flat: NDArray, nh: int, nw: int) -> float:
+def gs_residual_loss(psi_flat: FloatArray, nh: int, nw: int) -> float:
     """Compute a mean squared Laplacian residual as a Grad–Shafranov smoothness prior."""
     psi = psi_flat.reshape(nh, nw)
     lap = np.zeros_like(psi)
@@ -321,15 +336,15 @@ def gs_residual_loss(psi_flat: NDArray, nh: int, nw: int) -> float:
 
 
 def train(
-    X: NDArray,
-    Y_compressed: NDArray,
-    Y_raw: NDArray,
+    X: FloatArray,
+    Y_compressed: FloatArray,
+    Y_raw: FloatArray,
     pca: MinimalPCA,
-    train_idx: NDArray,
-    val_idx: NDArray,
-    test_idx: NDArray,
+    train_idx: IntArray,
+    val_idx: IntArray,
+    test_idx: IntArray,
     seed: int,
-) -> tuple[SimpleMLP, AugTrainingResult, NDArray, NDArray]:
+) -> tuple[SimpleMLP, AugTrainingResult, FloatArray, FloatArray]:
     """Train the MLP on compressed PCA coefficients and decode test-space metrics.
 
     Returns
@@ -350,8 +365,8 @@ def train(
 
     best_val_loss = float("inf")
     best_train_loss = float("inf")
-    best_weights = None
-    best_biases = None
+    best_weights: list[FloatArray] | None = None
+    best_biases: list[FloatArray] | None = None
     patience_counter = 0
     rng = np.random.default_rng(seed + 1)
     t0 = time.perf_counter()
@@ -443,7 +458,7 @@ def train(
     train_time = time.perf_counter() - t0
 
     # Restore best weights
-    if best_weights is not None:
+    if best_weights is not None and best_biases is not None:
         mlp.weights = best_weights
         mlp.biases = best_biases
 
@@ -455,6 +470,8 @@ def train(
     test_mse = float(np.mean((psi_pred - Y_test_raw) ** 2))
     test_max = float(np.max(np.abs(psi_pred - Y_test_raw)))
 
+    if pca.explained_variance_ratio_ is None:
+        raise RuntimeError("PCA fit completed without explained variance")
     explained = float(np.sum(pca.explained_variance_ratio_))
 
     input_mean = X.mean(axis=0)
@@ -487,9 +504,9 @@ def validate_per_machine(
     geqdsk_paths: dict[str, list[Path]],
     mlp: SimpleMLP,
     pca: MinimalPCA,
-    input_mean: NDArray,
-    input_std: NDArray,
-) -> dict[str, dict]:
+    input_mean: FloatArray,
+    input_std: FloatArray,
+) -> dict[str, MachineMetrics]:
     """Validate reconstruction quality on each machine from training artifacts.
 
     Returns
@@ -502,10 +519,10 @@ def validate_per_machine(
 
     target_rho = np.linspace(0, 1, TARGET_GRID)
     target_zeta = np.linspace(0, 1, TARGET_GRID)
-    results = {}
+    results: dict[str, MachineMetrics] = {}
 
     for machine, paths in geqdsk_paths.items():
-        per_file_l2 = []
+        per_file_l2: list[tuple[str, float]] = []
         for path in paths:
             eq = read_geqdsk(path)
 
@@ -525,13 +542,13 @@ def validate_per_machine(
 
             # Build features
             kappa, delta_upper, delta_lower, q95 = 1.7, 0.3, 0.3, 3.0
-            if hasattr(eq, "rbdry") and eq.rbdry is not None and len(eq.rbdry) > 3:
-                r_span = eq.rbdry.max() - eq.rbdry.min()
+            if len(eq.rbdry) > 3 and len(eq.zbdry) == len(eq.rbdry):
+                r_span = float(eq.rbdry.max() - eq.rbdry.min())
                 if r_span > 0.01:
-                    kappa = (eq.zbdry.max() - eq.zbdry.min()) / r_span
-            if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
+                    kappa = float((eq.zbdry.max() - eq.zbdry.min()) / r_span)
+            if len(eq.qpsi) > 0:
                 idx_95 = int(0.95 * len(eq.qpsi))
-                q95 = eq.qpsi[min(idx_95, len(eq.qpsi) - 1)]
+                q95 = float(eq.qpsi[min(idx_95, len(eq.qpsi) - 1)])
 
             features = np.array(
                 [
@@ -554,10 +571,9 @@ def validate_per_machine(
             coeffs = mlp.predict(x_norm[np.newaxis, :])
             psi_pred_norm = pca.inverse_transform(coeffs)[0].reshape(TARGET_GRID, TARGET_GRID)
 
-            rel_l2 = float(
-                np.linalg.norm(psi_pred_norm - psi_ref_normalised)
-                / max(np.linalg.norm(psi_ref_normalised), 1e-12)
-            )
+            error_norm = float(np.linalg.norm(psi_pred_norm - psi_ref_normalised))
+            reference_norm = float(np.linalg.norm(psi_ref_normalised))
+            rel_l2 = error_norm / max(reference_norm, 1e-12)
             per_file_l2.append((path.name, rel_l2))
 
         mean_l2 = np.mean([x[1] for x in per_file_l2])
@@ -581,15 +597,17 @@ def save_weights(
     path: Path,
     mlp: SimpleMLP,
     pca: MinimalPCA,
-    input_mean: NDArray,
-    input_std: NDArray,
+    input_mean: FloatArray,
+    input_std: FloatArray,
     result: AugTrainingResult,
 ) -> None:
     """Persist model artifacts and companion metrics JSON to ``path``.
 
     Artifacts include PCA tensors, network weights/biases and scalar metadata.
     """
-    payload = {
+    if pca.mean_ is None or pca.components_ is None or pca.explained_variance_ratio_ is None:
+        raise RuntimeError("PCA fit completed without serializable state")
+    payload: dict[str, NDArray[Any]] = {
         "n_components": np.array([pca.n_components]),
         "grid_nh": np.array([TARGET_GRID]),
         "grid_nw": np.array([TARGET_GRID]),
@@ -634,7 +652,7 @@ def save_weights(
         "grid_normalized": True,
         "per_machine": result.per_machine,
     }
-    with open(metrics_path, "w") as f:
+    with open(metrics_path, "w", encoding="utf-8") as f:
         json.dump(metrics, f, indent=2)
     print(f"  Metrics: {metrics_path}")
 
@@ -644,8 +662,8 @@ def persist_training_artifacts(
     *,
     mlp: SimpleMLP,
     pca: MinimalPCA,
-    input_mean: NDArray,
-    input_std: NDArray,
+    input_mean: FloatArray,
+    input_std: FloatArray,
     result: AugTrainingResult,
     criteria_met: bool,
 ) -> Path:
@@ -709,13 +727,13 @@ def main() -> int:
 
     # Checksum input files
     print("\nRecording input checksums...")
-    checksums = {}
+    checksums: dict[str, str] = {}
     for machine, paths in files_by_machine.items():
         for p in paths:
             h = hashlib.sha256(p.read_bytes()).hexdigest()
             checksums[str(p.relative_to(REPO_ROOT))] = h
     checksum_path = Path(args.save_path).parent / "input_checksums.json"
-    with open(checksum_path, "w") as f:
+    with open(checksum_path, "w", encoding="utf-8") as f:
         json.dump(checksums, f, indent=2)
     print(f"  Saved {len(checksums)} checksums to {checksum_path}")
 
@@ -735,6 +753,8 @@ def main() -> int:
     print("\nFitting PCA...")
     pca = MinimalPCA(n_components=N_PCA_COMPONENTS)
     Y_compressed = pca.fit_transform(Y)
+    if pca.explained_variance_ratio_ is None:
+        raise RuntimeError("PCA fit completed without explained variance")
     explained = float(np.sum(pca.explained_variance_ratio_))
     print(f"  {Y.shape[1]} → {pca.n_components} components, {explained * 100:.2f}% variance")
 

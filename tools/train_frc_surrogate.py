@@ -19,11 +19,13 @@ import argparse
 import logging
 import time
 from pathlib import Path
+from typing import cast
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import jit, random, value_and_grad, vmap
+from numpy.typing import NDArray
 
 from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equilibrium
 from scpn_fusion.core.neural_equilibrium import MinimalPCA
@@ -37,15 +39,23 @@ LEARNING_RATE = 1e-3
 GRAD_CLIP = 1.0
 EPOCHS = 100
 PCA_COMPONENTS_TARGET = 10
+FloatArray = NDArray[np.float64]
+Layer = dict[str, jax.Array]
+Params = list[Layer]
 
 
 # ── Model Definition ─────────────────────────────────────────────────
 
 
-def init_mlp_params(key, input_dim, hidden_sizes, output_dim):
+def init_mlp_params(
+    key: jax.Array,
+    input_dim: int,
+    hidden_sizes: list[int],
+    output_dim: int,
+) -> Params:
     """Initialise MLP parameters with He-style scaling for hidden layers."""
     dims = [input_dim] + hidden_sizes + [output_dim]
-    params = []
+    params: Params = []
     for i in range(len(dims) - 1):
         key, subkey = random.split(key)
         fan_in, fan_out = dims[i], dims[i + 1]
@@ -56,7 +66,7 @@ def init_mlp_params(key, input_dim, hidden_sizes, output_dim):
     return params
 
 
-def model_forward(params, x):
+def model_forward(params: Params, x: jax.Array) -> jax.Array:
     """Evaluate the FRC surrogate MLP for one normalised feature vector."""
     h = x
     for i, p in enumerate(params):
@@ -66,14 +76,22 @@ def model_forward(params, x):
     return h
 
 
-def mse_loss(params, x_batch, y_batch):
+def mse_loss(params: Params, x_batch: jax.Array, y_batch: jax.Array) -> jax.Array:
     """Return mean-squared latent-profile loss for a batch."""
     preds = vmap(lambda x: model_forward(params, x))(x_batch)
     return jnp.mean((preds - y_batch) ** 2)
 
 
 @jit
-def update_step(params, m, v, x_batch, y_batch, lr, t):
+def update_step(
+    params: Params,
+    m: Params,
+    v: Params,
+    x_batch: jax.Array,
+    y_batch: jax.Array,
+    lr: float,
+    t: int,
+) -> tuple[Params, Params, Params, jax.Array]:
     """Apply one clipped Adam update to the surrogate parameters."""
     b1, b2, eps = 0.9, 0.999, 1e-8
     loss, grads = value_and_grad(mse_loss)(params, x_batch, y_batch)
@@ -85,17 +103,26 @@ def update_step(params, m, v, x_batch, y_batch, lr, t):
     new_params = jax.tree_util.tree_map(
         lambda p, mh, vh: p - lr * mh / (jnp.sqrt(vh) + eps), params, m_hat, v_hat
     )
-    return new_params, m, v, loss
+    return (
+        cast(Params, new_params),
+        m,
+        v,
+        cast(jax.Array, loss),
+    )
 
 
 # ── Data Generation ──────────────────────────────────────────────────
 
 
-def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
+def generate_frc_data(
+    n_samples: int,
+    grid_size: int,
+    seed: int = 42,
+) -> tuple[FloatArray, FloatArray]:
     """Generate finite no-rotation FRC profiles for MLP surrogate training."""
     logger.info("Generating %d FRC samples...", n_samples)
-    X = []
-    Y = []
+    X: list[list[float]] = []
+    Y: list[FloatArray] = []
 
     rng = np.random.default_rng(seed)
 
@@ -132,16 +159,16 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
             # Predict magnetic field B_z profile
             Y.append(state.B_z)
             valid_count += 1
-        except Exception as e:
+        except Exception:
             continue
 
-    return np.array(X), np.array(Y)
+    return np.asarray(X, dtype=np.float64), np.asarray(Y, dtype=np.float64)
 
 
 # ── Training Entry Point ─────────────────────────────────────────────
 
 
-def main():
+def main() -> None:
     """Train and save the JAX MLP no-rotation FRC surrogate."""
     parser = argparse.ArgumentParser(description="Train FRC surrogate")
     parser.add_argument("--samples", type=int, default=500, help="Number of samples to generate")
@@ -166,6 +193,8 @@ def main():
     n_comp = min(n_valid - 1, PCA_COMPONENTS_TARGET)
     pca = MinimalPCA(n_components=n_comp)
     Y_latent = pca.fit_transform(Y_raw)
+    if pca.mean_ is None or pca.components_ is None or pca.explained_variance_ratio_ is None:
+        raise RuntimeError("PCA fit completed without learned components")
     explained_var = float(np.sum(pca.explained_variance_ratio_))
     logger.info("PCA: %d components explain %.2f%% variance", n_comp, explained_var * 100)
 
@@ -176,8 +205,8 @@ def main():
 
     key = random.PRNGKey(args.seed)
     params = init_mlp_params(key, X_norm.shape[1], HIDDEN_SIZES, n_comp)
-    m = jax.tree_util.tree_map(jnp.zeros_like, params)
-    v = jax.tree_util.tree_map(jnp.zeros_like, params)
+    m = cast(Params, jax.tree_util.tree_map(jnp.zeros_like, params))
+    v = cast(Params, jax.tree_util.tree_map(jnp.zeros_like, params))
 
     X_jax = jnp.asarray(X_norm)
     Y_jax = jnp.asarray(Y_latent)

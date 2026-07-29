@@ -19,16 +19,20 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import jit, random, value_and_grad, vmap
+from numpy.typing import NDArray
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
 
 logger = logging.getLogger(__name__)
+FloatArray = NDArray[np.float64]
+Layer = dict[str, jax.Array]
+Params = list[Layer]
 
 
 def default_iter_dataset_paths(data_dir: str | Path = "data") -> tuple[Path, Path]:
@@ -37,19 +41,19 @@ def default_iter_dataset_paths(data_dir: str | Path = "data") -> tuple[Path, Pat
     return root / "iter_X.npy", root / "iter_Y.npy"
 
 
-def load_iter_dataset(data_path: str | Path) -> tuple[np.ndarray, np.ndarray]:
+def load_iter_dataset(data_path: str | Path) -> tuple[FloatArray, FloatArray]:
     """Load ITER surrogate arrays from an NPZ file or a directory of NPY files."""
     path = Path(data_path).expanduser()
     if path.is_dir():
         x_path, y_path = default_iter_dataset_paths(path)
         return (
-            np.load(x_path, allow_pickle=False),
-            np.load(y_path, mmap_mode="r", allow_pickle=False),
+            cast(FloatArray, np.load(x_path, allow_pickle=False)),
+            cast(FloatArray, np.load(y_path, mmap_mode="r", allow_pickle=False)),
         )
 
     if path.suffix == ".npz":
         data = np.load(path, mmap_mode="r", allow_pickle=False)
-        return data["X"], data["Y"]
+        return cast(FloatArray, data["X"]), cast(FloatArray, data["Y"])
 
     raise ValueError(
         "--data must point to an .npz file or a directory containing iter_X.npy and iter_Y.npy"
@@ -57,8 +61,8 @@ def load_iter_dataset(data_path: str | Path) -> tuple[np.ndarray, np.ndarray]:
 
 
 def inspect_iter_dataset(
-    X: np.ndarray,
-    Y: np.ndarray,
+    X: FloatArray,
+    Y: FloatArray,
     *,
     min_full_fidelity_samples: int = 50_000,
     expected_features: int = 12,
@@ -97,11 +101,11 @@ class FastNumPyPCA:
 
     def __init__(self, n_components: int = 20):
         self.n_components = n_components
-        self.mean_ = None
-        self.components_ = None
-        self.explained_variance_ratio_ = None
+        self.mean_: FloatArray | None = None
+        self.components_: FloatArray | None = None
+        self.explained_variance_ratio_: FloatArray | None = None
 
-    def fit_transform(self, X: np.ndarray):
+    def fit_transform(self, X: FloatArray) -> FloatArray:
         """Fit PCA components and return projected samples."""
         logger.info("Fitting PCA using NumPy (Gram Matrix Method)...")
         # X is (N, D) = (10000, 16384)
@@ -136,7 +140,7 @@ class FastNumPyPCA:
         Z = top_vecs * np.sqrt(np.maximum(top_vals, 0.0))
 
         logger.info("  PCA complete.")
-        return Z
+        return np.asarray(Z, dtype=np.float64)
 
 
 # ── MLP Hyperparameters ──────────────────────────────────────────────
@@ -151,10 +155,15 @@ PCA_COMPONENTS_TARGET = 20
 # ── Model Definition ─────────────────────────────────────────────────
 
 
-def init_mlp_params(key, input_dim, hidden_sizes, output_dim):
+def init_mlp_params(
+    key: jax.Array,
+    input_dim: int,
+    hidden_sizes: list[int],
+    output_dim: int,
+) -> Params:
     """Initialise MLP weights with He initialisation."""
     dims = [input_dim] + hidden_sizes + [output_dim]
-    params = []
+    params: Params = []
     for i in range(len(dims) - 1):
         key, subkey = random.split(key)
         fan_in, fan_out = dims[i], dims[i + 1]
@@ -165,7 +174,7 @@ def init_mlp_params(key, input_dim, hidden_sizes, output_dim):
     return params
 
 
-def model_forward(params, x):
+def model_forward(params: Params, x: jax.Array) -> jax.Array:
     """Forward pass with ReLU activation."""
     h = x
     for i, p in enumerate(params):
@@ -175,14 +184,22 @@ def model_forward(params, x):
     return h
 
 
-def mse_loss(params, x_batch, y_batch):
+def mse_loss(params: Params, x_batch: jax.Array, y_batch: jax.Array) -> jax.Array:
     """MSE loss for batch."""
     preds = vmap(lambda x: model_forward(params, x))(x_batch)
     return jnp.mean((preds - y_batch) ** 2)
 
 
 @jit
-def update_step(params, m, v, x_batch, y_batch, lr, t):
+def update_step(
+    params: Params,
+    m: Params,
+    v: Params,
+    x_batch: jax.Array,
+    y_batch: jax.Array,
+    lr: float,
+    t: int,
+) -> tuple[Params, Params, Params, jax.Array]:
     """Adam update step with gradient clipping."""
     b1, b2, eps = 0.9, 0.999, 1e-8
     loss, grads = value_and_grad(mse_loss)(params, x_batch, y_batch)
@@ -199,13 +216,17 @@ def update_step(params, m, v, x_batch, y_batch, lr, t):
     new_params = jax.tree_util.tree_map(
         lambda p, mh, vh: p - lr * mh / (jnp.sqrt(vh) + eps), params, m_hat, v_hat
     )
-    return new_params, m, v, loss
+    return cast(Params, new_params), m, v, cast(jax.Array, loss)
 
 
 # ── Data Generation ──────────────────────────────────────────────────
 
 
-def generate_iter_data(n_samples: int, config_path: str | Path, seed: int = 42):
+def generate_iter_data(
+    n_samples: int,
+    config_path: str | Path,
+    seed: int = 42,
+) -> tuple[FloatArray, FloatArray]:
     """Generate training data using FusionKernel by perturbing ITER state."""
     logger.info("Generating %d ITER samples using FusionKernel...", n_samples)
     fk = FusionKernel(config_path)
@@ -217,8 +238,8 @@ def generate_iter_data(n_samples: int, config_path: str | Path, seed: int = 42):
     fk.cfg["target"]["R_axis"] = 6.2
     fk.cfg["target"]["Z_axis"] = 0.0
 
-    X = []
-    Y = []
+    X: list[list[float]] = []
+    Y: list[FloatArray] = []
 
     base_currents = [float(c["current"]) for c in fk.cfg["coils"]]
     base_ip = float(fk.cfg["physics"]["plasma_current_target"])
@@ -245,14 +266,14 @@ def generate_iter_data(n_samples: int, config_path: str | Path, seed: int = 42):
 
             # 12-feature vector (B.1 compatible)
             features = [
-                ip / 1e6,
+                float(ip / 1e6),
                 5.3,  # B_t
-                fk.R[ir],  # R_axis
-                fk.Z[iz],  # Z_axis
+                float(fk.R[ir]),  # R_axis
+                float(fk.Z[iz]),  # Z_axis
                 1.0,  # pprime_scale
                 1.0,  # ffprime_scale
-                psi_ax,
-                psi_x,
+                float(psi_ax),
+                float(psi_x),
                 1.7,  # kappa
                 0.33,  # delta_up
                 0.33,  # delta_low
@@ -260,18 +281,18 @@ def generate_iter_data(n_samples: int, config_path: str | Path, seed: int = 42):
             ]
 
             X.append(features)
-            Y.append(fk.Psi.ravel())
+            Y.append(np.asarray(fk.Psi, dtype=np.float64).ravel())
         except Exception as e:
             logger.warning("Sample %d failed: %s", i, e)
             continue
 
-    return np.array(X), np.array(Y)
+    return np.asarray(X, dtype=np.float64), np.asarray(Y, dtype=np.float64)
 
 
 # ── Training Entry Point ─────────────────────────────────────────────
 
 
-def main():
+def main() -> None:
     """Train or evaluate the ITER equilibrium surrogate workflow."""
     parser = argparse.ArgumentParser(description="Train ITER surrogate")
     parser.add_argument("--config", help="Path to ITER config JSON (required if generating data)")
@@ -323,6 +344,8 @@ def main():
     n_comp = min(n_valid - 1, PCA_COMPONENTS_TARGET)
     pca = FastNumPyPCA(n_components=n_comp)
     Y_latent = pca.fit_transform(Y_raw)
+    if pca.mean_ is None or pca.components_ is None or pca.explained_variance_ratio_ is None:
+        raise RuntimeError("PCA fit completed without learned components")
     explained_var = float(np.sum(pca.explained_variance_ratio_))
     logger.info("PCA: %d components explain %.2f%% variance", n_comp, explained_var * 100)
 
@@ -342,8 +365,8 @@ def main():
     key = random.PRNGKey(args.seed)
     params = init_mlp_params(key, X_norm.shape[1], HIDDEN_SIZES, n_comp)
 
-    m = jax.tree_util.tree_map(jnp.zeros_like, params)
-    v = jax.tree_util.tree_map(jnp.zeros_like, params)
+    m = cast(Params, jax.tree_util.tree_map(jnp.zeros_like, params))
+    v = cast(Params, jax.tree_util.tree_map(jnp.zeros_like, params))
 
     X_jax = jnp.asarray(X_norm)
     Y_jax = jnp.asarray(Y_norm)

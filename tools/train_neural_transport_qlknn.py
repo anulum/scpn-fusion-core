@@ -38,8 +38,10 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import Any, Callable, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +64,12 @@ _BT_REF = 5.3  # T, ITER toroidal field
 _R_REF = 6.2  # m, ITER major radius
 _MI_KG = 3.344e-27  # kg, deuterium ion mass (CODATA 2018)
 _E_CHARGE = 1.602e-19  # C, elementary charge (CODATA 2018)
+FloatArray = NDArray[np.float64]
+ArrayDict = dict[str, NDArray[Any]]
+JaxParams = dict[str, Any]
 
 
-def _load_npz_required(path: Path, *, required_keys: tuple[str, ...]) -> dict[str, np.ndarray]:
+def _load_npz_required(path: Path, *, required_keys: tuple[str, ...]) -> ArrayDict:
     """Load a .npz file with secure defaults and key validation."""
     with np.load(path, allow_pickle=False) as data:
         missing = [key for key in required_keys if key not in data]
@@ -77,7 +82,10 @@ def _load_npz_required(path: Path, *, required_keys: tuple[str, ...]) -> dict[st
     return out
 
 
-def _add_derived_features(X: np.ndarray, include_log_chi_gb: bool = False) -> np.ndarray:
+def _add_derived_features(
+    X: FloatArray,
+    include_log_chi_gb: bool = False,
+) -> FloatArray:
     """Append threshold-excess features to the base input array.
 
     Base columns (10D legacy): [rho, te, ti, ne, ate, ati, an, q, smag, beta_e]
@@ -94,7 +102,7 @@ def _add_derived_features(X: np.ndarray, include_log_chi_gb: bool = False) -> np
     tem_excess = np.maximum(0.0, grad_te - _CRIT_TEM)
 
     if not include_log_chi_gb:
-        return np.column_stack([X, itg_excess, tem_excess])
+        return np.asarray(np.column_stack([X, itg_excess, tem_excess]), dtype=np.float64)
 
     te_kev = X[:, 1]
     te_j = te_kev * 1e3 * _E_CHARGE
@@ -103,17 +111,21 @@ def _add_derived_features(X: np.ndarray, include_log_chi_gb: bool = False) -> np
     chi_gb = rho_s**2 * cs / _R_REF
     log_chi_gb = np.log(np.maximum(chi_gb, 1e-10))
 
-    return np.column_stack([X, itg_excess, tem_excess, log_chi_gb])
+    return np.asarray(
+        np.column_stack([X, itg_excess, tem_excess, log_chi_gb]),
+        dtype=np.float64,
+    )
 
 
-def _compute_stiff_baseline(X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _compute_stiff_baseline(X: FloatArray) -> FloatArray:
     """Stiff-transport baseline: flux ∝ max(0, gradient - threshold).
 
-    Returns (Y_base, coefficients) where:
+    Returns ``Y_base`` where:
       Y_base[:, 0] = C_e * max(0, Ate - 5.0)  (chi_e)
       Y_base[:, 1] = C_i * max(0, Ati - 4.0)  (chi_i)
       Y_base[:, 2] = C_d * max(0, An  - 2.0)  (D_e)
-    Coefficients are fit from training data (least-squares on nonzero samples).
+    Coefficients are fitted separately from training data by
+    :func:`_fit_stiff_coefficients`.
     """
     ate = X[:, 4]
     ati = X[:, 5]
@@ -121,10 +133,13 @@ def _compute_stiff_baseline(X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     itg_excess = np.maximum(0.0, ati - _CRIT_ITG)
     tem_excess = np.maximum(0.0, ate - _CRIT_TEM)
     an_excess = np.maximum(0.0, an - 2.0)
-    return np.column_stack([tem_excess, itg_excess, an_excess])
+    return np.asarray(
+        np.column_stack([tem_excess, itg_excess, an_excess]),
+        dtype=np.float64,
+    )
 
 
-def _fit_stiff_coefficients(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
+def _fit_stiff_coefficients(X: FloatArray, Y: FloatArray) -> FloatArray:
     """Fit stiffness coefficients C = [C_e, C_i, C_d] by least-squares."""
     base = _compute_stiff_baseline(X)
     coeffs = np.ones(OUTPUT_DIM)
@@ -138,7 +153,7 @@ def _fit_stiff_coefficients(X: np.ndarray, Y: np.ndarray) -> np.ndarray:
 # ── JAX Training Backend ────────────────────────────────────────────
 
 
-def _chi_gb_np(te_kev: np.ndarray) -> np.ndarray:
+def _chi_gb_np(te_kev: FloatArray) -> FloatArray:
     """Gyro-Bohm diffusivity chi_gb = rho_s^2 * c_s / R [m^2/s].
 
     Exact formula matching the pipeline in qlknn10d_to_npz.py.
@@ -146,11 +161,14 @@ def _chi_gb_np(te_kev: np.ndarray) -> np.ndarray:
     te_j = te_kev * 1e3 * _E_CHARGE
     cs = np.sqrt(te_j / _MI_KG)
     rho_s = np.sqrt(_MI_KG * te_j) / (_E_CHARGE * _BT_REF)
-    return rho_s**2 * cs / _R_REF
+    return np.asarray(rho_s**2 * cs / _R_REF, dtype=np.float64)
 
 
 def _save_best_checkpoint(
-    checkpoint_path: Path, params: dict[str, np.ndarray], best_val_rel: float, epoch: int
+    checkpoint_path: Path,
+    params: ArrayDict,
+    best_val_rel: float,
+    epoch: int,
 ) -> None:
     """Atomically persist the best parameters so a later crash cannot lose them.
 
@@ -179,10 +197,10 @@ def _save_best_checkpoint(
 
 
 def _train_jax(
-    X_train: np.ndarray,
-    Y_train: np.ndarray,
-    X_val: np.ndarray,
-    Y_val: np.ndarray,
+    X_train: FloatArray,
+    Y_train: FloatArray,
+    X_val: FloatArray,
+    Y_val: FloatArray,
     hidden_dims: list[int],
     epochs: int,
     lr: float,
@@ -191,16 +209,16 @@ def _train_jax(
     seed: int,
     wd: float = 1e-5,
     log_transform: bool = False,
-    Y_val_linear: np.ndarray | None = None,
+    Y_val_linear: FloatArray | None = None,
     gb_scale: bool = False,
     gated: bool = False,
     hybrid_log: bool = False,
     align_metric: bool = False,
-    X_train_raw: np.ndarray | None = None,
+    X_train_raw: FloatArray | None = None,
     residual: bool = False,
-    stiff_coeffs: np.ndarray | None = None,
+    stiff_coeffs: FloatArray | None = None,
     checkpoint_path: Path | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Train using JAX with Adam and cosine annealing.
 
     When ``checkpoint_path`` is given, the best parameters are persisted to disk
@@ -217,9 +235,12 @@ def _train_jax(
     platform = "GPU" if gpu else "CPU"
     print(f"JAX backend: {platform} ({devices[0]})")
 
+    config_update = cast(Callable[[str, object], None], jax.config.update)
     if not gpu:
-        jax.config.update("jax_platform_name", "cpu")
-    jax.config.update("jax_enable_x64", True)
+        config_update("jax_platform_name", "cpu")
+    config_update("jax_enable_x64", True)
+    if residual and stiff_coeffs is None:
+        raise ValueError("stiff_coeffs are required for residual training")
 
     n_layers = len(hidden_dims)
     # Gated mode: last layer outputs 6 (3 flux + 3 gate logits)
@@ -229,7 +250,7 @@ def _train_jax(
 
     # Initialize parameters (He init)
     key = random.PRNGKey(seed)
-    params = {}
+    params: JaxParams = {}
     for i in range(n_layers + 1):
         key, k = random.split(key)
         fan_in = dims[i]
@@ -285,7 +306,7 @@ def _train_jax(
     adam_v = {k: jnp.zeros_like(v) for k, v in params.items() if k.startswith(("w", "b"))}
 
     @jit
-    def _backbone(params, x):
+    def _backbone(params: JaxParams, x: Any) -> Any:
         """Shared backbone: input norm + hidden layers -> raw output."""
         h = (x - params["input_mean"]) / jnp.maximum(params["input_std"], 1e-8)
         for i in range(n_layers):
@@ -293,7 +314,7 @@ def _train_jax(
         return h @ params[f"w{n_layers + 1}"] + params[f"b{n_layers + 1}"]
 
     @jit
-    def forward(params, x):
+    def forward(params: JaxParams, x: Any) -> Any:
         """MLP forward pass. Outputs transport fluxes (3 values)."""
         raw = _backbone(params, x)
         if gated:
@@ -310,7 +331,12 @@ def _train_jax(
     if gated:
 
         @jit
-        def loss_fn(params, x_batch, y_batch, w_batch):
+        def loss_fn(
+            params: JaxParams,
+            x_batch: Any,
+            y_batch: Any,
+            w_batch: Any,
+        ) -> Any:
             """Masked gated loss: BCE for gate (all samples) + MSE for flux (nonzero only).
 
             Key insight: the flux head is trained ONLY on nonzero-flux samples,
@@ -342,7 +368,12 @@ def _train_jax(
     elif hybrid_log:
 
         @jit
-        def loss_fn(params, x_batch, y_batch, w_batch):
+        def loss_fn(
+            params: JaxParams,
+            x_batch: Any,
+            y_batch: Any,
+            w_batch: Any,
+        ) -> Any:
             """Hybrid log-MSE: equal weight on raw and log(1+x) space.
 
             Raw MSE captures large-flux magnitude; log-space MSE captures
@@ -357,7 +388,12 @@ def _train_jax(
     else:
 
         @jit
-        def loss_fn(params, x_batch, y_batch, w_batch):
+        def loss_fn(
+            params: JaxParams,
+            x_batch: Any,
+            y_batch: Any,
+            w_batch: Any,
+        ) -> Any:
             """Standard MSE loss."""
             preds = forward(params, x_batch)
             per_sample_mse = jnp.mean((preds - y_batch) ** 2, axis=1)
@@ -375,19 +411,21 @@ def _train_jax(
     _jax_R = jnp.float64(_R_REF)
 
     @jit
-    def _chi_gb_jax(te_kev):
+    def _chi_gb_jax(te_kev: Any) -> Any:
         """chi_gb in JAX, matching _chi_gb_np exactly."""
         te_j = te_kev * 1e3 * _jax_E
         cs = jnp.sqrt(te_j / _jax_M)
         rho_s = jnp.sqrt(_jax_M * te_j) / (_jax_E * _jax_B)
         return rho_s**2 * cs / _jax_R
 
-    _stiff_coeffs_jax = jnp.array(stiff_coeffs) if stiff_coeffs is not None else None
+    _stiff_coeffs_jax = (
+        jnp.array(stiff_coeffs) if stiff_coeffs is not None else jnp.ones(OUTPUT_DIM)
+    )
     _crit_itg_j = jnp.float64(_CRIT_ITG)
     _crit_tem_j = jnp.float64(_CRIT_TEM)
 
     @jit
-    def _stiff_baseline_jax(x):
+    def _stiff_baseline_jax(x: Any) -> Any:
         """Stiff-transport baseline in JAX (for residual mode eval)."""
         ate = x[..., 4]
         ati = x[..., 5]
@@ -403,7 +441,11 @@ def _train_jax(
         return base * _stiff_coeffs_jax
 
     @jit
-    def _rel_l2_sums(params, x, y):
+    def _rel_l2_sums(
+        params: JaxParams,
+        x: Any,
+        y: Any,
+    ) -> tuple[Any, Any]:
         """Return (numerator, denominator) sums of the relative-L2 metric.
 
         Splitting out the sums lets the final full-validation metric be
@@ -434,7 +476,7 @@ def _train_jax(
         return jnp.sum((preds_lin - y_lin) ** 2), jnp.sum(y_lin**2)
 
     @jit
-    def relative_l2(params, x, y):
+    def relative_l2(params: JaxParams, x: Any, y: Any) -> Any:
         """Compute relative L2 in linear space regardless of training transform."""
         num, den = _rel_l2_sums(params, x, y)
         return jnp.sqrt(num / jnp.maximum(den, 1e-8))
@@ -449,8 +491,8 @@ def _train_jax(
 
     if align_metric and gb_scale:
         _chi_gb_train = _chi_gb_np(np.array(X_train[:, 1]))
-        _sw = _chi_gb_train**2
-        _sw /= np.mean(_sw)
+        _sw = np.asarray(_chi_gb_train**2, dtype=np.float64)
+        _sw = _sw / np.mean(_sw)
         _sample_weights_jax = jnp.array(_sw)
         print(
             f"  Align-metric: sample weights by chi_gb^2 "
@@ -460,10 +502,10 @@ def _train_jax(
         _sample_weights_jax = jnp.ones(len(Y_train))
 
     best_val_rel = float("inf")
-    best_params = None
+    best_params: ArrayDict | None = None
     no_improve = 0
-    train_losses = []
-    val_losses = []
+    train_losses: list[float] = []
+    val_losses: list[float] = []
     t_start = time.monotonic()
     t = 0  # Adam step counter
 
@@ -546,6 +588,8 @@ def _train_jax(
     # *after* training converged but *before* the weights were saved. The metric
     # is exact under batching: sqrt(sum(num)/sum(den)) over batches == full-set,
     # and per-output sums accumulate the same way.
+    if best_params is None:
+        raise RuntimeError("training completed without a validation checkpoint")
     final_params_jax = {k: jnp.array(v) for k, v in best_params.items()}
     train_rel_l2 = float(
         relative_l2(final_params_jax, X_t[: min(100000, len(X_t))], Y_t[: min(100000, len(Y_t))])
@@ -617,11 +661,11 @@ def _train_jax(
 
 
 def verify_and_save(
-    result: dict,
-    X_test: np.ndarray,
-    Y_test: np.ndarray,
+    result: dict[str, Any],
+    X_test: FloatArray,
+    Y_test: FloatArray,
     output_path: Path,
-    Y_test_linear: np.ndarray | None = None,
+    Y_test_linear: FloatArray | None = None,
 ) -> bool:
     """Verify training results meet quality gates before saving."""
     params = result["params"]
@@ -640,7 +684,7 @@ def verify_and_save(
     import jax
     import jax.numpy as jnp
 
-    def jax_forward(params, x):
+    def jax_forward(params: JaxParams, x: Any) -> Any:
         h = (x - params["input_mean"]) / jnp.maximum(params["input_std"], 1e-8)
         n_layers_local = (len([k for k in params if k.startswith("w")])) - 1
         for i in range(n_layers_local):
@@ -659,6 +703,8 @@ def verify_and_save(
     preds_test_raw = np.array(jax_forward(params_jax, X_test_jax))
 
     if is_residual:
+        if not isinstance(stiff_coeffs, np.ndarray):
+            raise ValueError("residual verification requires stiff_coeffs")
         base_test = _compute_stiff_baseline(X_test) * stiff_coeffs
         preds_test = np.maximum(0.0, base_test + preds_test_raw)
         Y_test_lin = base_test + Y_test
@@ -722,7 +768,7 @@ def verify_and_save(
         return False
 
     # ── Save weights in NeuralTransportModel format ──────────────────
-    save_dict = {
+    save_dict: dict[str, Any] = {
         "input_mean": params["input_mean"],
         "input_std": params["input_std"],
         "output_scale": params["output_scale"],

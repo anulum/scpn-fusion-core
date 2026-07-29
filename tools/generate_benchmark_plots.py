@@ -23,17 +23,22 @@ Usage::
 from __future__ import annotations
 
 import argparse
+from importlib import import_module
 import json
 import sys
 from pathlib import Path
+from typing import Any, Callable, Sequence, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 # Matplotlib with non-interactive backend
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -50,12 +55,14 @@ ACCENT_COLORS = ["#00ccff", "#ff6644", "#44ff88", "#ffaa22"]
 
 FIG_W, FIG_H = 12.8, 6.4  # 1280x640 at 100 DPI
 DPI = 150
+FloatArray = NDArray[np.float64]
+CampaignData = dict[str, dict[str, float]]
 
 
-def _apply_dark_theme(fig, ax_or_axes):
+def _apply_dark_theme(fig: Figure, ax_or_axes: Axes | Sequence[Axes]) -> None:
     """Apply dark theme to figure and axes."""
     fig.patch.set_facecolor(DARK_BG)
-    axes = ax_or_axes if hasattr(ax_or_axes, "__iter__") else [ax_or_axes]
+    axes = [ax_or_axes] if isinstance(ax_or_axes, Axes) else ax_or_axes
     for ax in axes:
         ax.set_facecolor(DARK_BG)
         ax.tick_params(colors=DARK_FG, which="both")
@@ -67,23 +74,42 @@ def _apply_dark_theme(fig, ax_or_axes):
         ax.grid(True, color=GRID_COLOR, alpha=0.5, linestyle="--", linewidth=0.5)
 
 
-def _load_or_run_campaign(quick: bool) -> dict:
+def _load_or_run_campaign(quick: bool) -> CampaignData:
     """Load campaign results from JSON or run a quick campaign."""
     json_path = REPO_ROOT / "validation" / "reports" / "stress_test_campaign.json"
     if json_path.exists():
-        data = json.loads(json_path.read_text())
-        if isinstance(data, dict) and any(
-            "p50_latency_us" in v for v in data.values() if isinstance(v, dict)
-        ):
-            return data
+        data: Any = json.loads(json_path.read_text(encoding="utf-8"))
+        loaded: CampaignData = {}
+        if isinstance(data, dict):
+            for name, metrics in data.items():
+                if not isinstance(name, str) or not isinstance(metrics, dict):
+                    continue
+                latency_keys = (
+                    "p50_latency_us",
+                    "p95_latency_us",
+                    "p99_latency_us",
+                )
+                if all(
+                    isinstance(metrics.get(key), (int, float))
+                    and not isinstance(metrics.get(key), bool)
+                    for key in latency_keys
+                ):
+                    loaded[name] = {key: float(metrics[key]) for key in latency_keys}
+                    for key in ("mean_reward", "disruption_rate"):
+                        value = metrics.get(key)
+                        if isinstance(value, (int, float)) and not isinstance(value, bool):
+                            loaded[name][key] = float(value)
+        if loaded:
+            return loaded
 
     # Run a quick campaign to get data
     sys.path.insert(0, str(REPO_ROOT / "validation"))
-    from stress_test_campaign import run_campaign
+    campaign_module = import_module("stress_test_campaign")
+    run_campaign = cast(Callable[..., dict[str, Any]], campaign_module.run_campaign)
 
     n_episodes = 5 if quick else 20
     results = run_campaign(n_episodes=n_episodes, surrogate=True)
-    out: dict = {}
+    out: CampaignData = {}
     for name, m in results.items():
         out[name] = {
             "p50_latency_us": m.p50_latency_us,
@@ -94,11 +120,11 @@ def _load_or_run_campaign(quick: bool) -> dict:
         }
     # Persist for future runs
     json_path.parent.mkdir(parents=True, exist_ok=True)
-    json_path.write_text(json.dumps(out, indent=2))
+    json_path.write_text(json.dumps(out, indent=2), encoding="utf-8")
     return out
 
 
-def plot_controller_latency(data: dict, output: Path) -> None:
+def plot_controller_latency(data: CampaignData, output: Path) -> None:
     """Plot 1: Controller latency P50/P95/P99 bar chart."""
     controllers = list(data.keys())
     n = len(controllers)
@@ -186,7 +212,7 @@ def plot_fno_suppression(output: Path) -> None:
     ax1.set_ylabel("Y Grid", fontsize=11)
     cbar = fig.colorbar(im, ax=ax1, fraction=0.046, pad=0.04)
     cbar.ax.yaxis.set_tick_params(color=DARK_FG)
-    cbar.outline.set_edgecolor(GRID_COLOR)
+    plt.setp(cbar.outline, edgecolor=GRID_COLOR)
     plt.setp(cbar.ax.yaxis.get_ticklabels(), color=DARK_FG)
 
     # Right: energy timeseries
@@ -229,7 +255,7 @@ def _plot_fno_synthetic(output: Path) -> None:
     ax1.set_ylabel("Y Grid", fontsize=11)
     cbar = fig.colorbar(im, ax=ax1, fraction=0.046, pad=0.04)
     cbar.ax.yaxis.set_tick_params(color=DARK_FG)
-    cbar.outline.set_edgecolor(GRID_COLOR)
+    plt.setp(cbar.outline, edgecolor=GRID_COLOR)
     plt.setp(cbar.ax.yaxis.get_ticklabels(), color=DARK_FG)
 
     ax2.plot(energy, color=ACCENT_COLORS[0], linewidth=2, label="Turbulence Energy")
@@ -249,9 +275,8 @@ def plot_snn_trajectory(output: Path, quick: bool = False) -> None:
     """Plot 3: SNN controller trajectory tracking."""
     try:
         sys.path.insert(0, str(REPO_ROOT / "validation"))
-        from stress_test_campaign import _run_snn_episode, _snn_available
-
-        if not _snn_available:
+        campaign_module = import_module("stress_test_campaign")
+        if not bool(getattr(campaign_module, "_snn_available", False)):
             raise ImportError("Nengo not available")
     except (ImportError, NameError):
         print("  [snn] SNN controller not available, generating synthetic plot")
@@ -259,7 +284,7 @@ def plot_snn_trajectory(output: Path, quick: bool = False) -> None:
         return
 
     # Run a single episode and collect trajectory
-    from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
+    from scpn_fusion.core.neural_equilibrium_kernel import NeuralEquilibriumKernel
     from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
     from scpn_fusion.control.nengo_snn_wrapper import NengoSNNController, NengoSNNConfig
 
@@ -268,25 +293,30 @@ def plot_snn_trajectory(output: Path, quick: bool = False) -> None:
     shot_duration = 10 if quick else 30
     steps = int(shot_duration / dt)
 
-    ctrl = IsoFluxController(
-        config_path, verbose=False, kernel_factory=NeuralEquilibriumKernel, control_dt_s=dt
-    )
     snn = NengoSNNController(NengoSNNConfig(n_neurons=200, n_channels=2))
 
-    r_history = []
+    r_history: list[float] = []
     target_r = 6.0  # ITER major radius target
 
-    def snn_step_with_record(pid: object, err: float) -> float:
-        # pid_step signature is (pid_dict, error_float) — ignore pid dict
-        error_vec = np.array([err, 0.0])
-        out = snn.step(error_vec)
-        r_history.append(target_r + err)
-        return float(out[0])
+    class RecordingSNNController(IsoFluxController):
+        """Iso-flux runner whose PID hook records and delegates to the SNN."""
 
-    ctrl.pid_step = snn_step_with_record
+        def pid_step(self, pid: dict[str, float], error: float) -> float:
+            del pid
+            error_vec = np.array([error, 0.0])
+            out = snn.step(error_vec)
+            r_history.append(target_r + error)
+            return float(out[0])
+
+    ctrl = RecordingSNNController(
+        str(config_path),
+        verbose=False,
+        kernel_factory=NeuralEquilibriumKernel,
+        control_dt_s=dt,
+    )
     ctrl.run_shot(shot_duration=steps, save_plot=False)
 
-    _plot_snn_data(output, np.array(r_history), target_r, dt)
+    _plot_snn_data(output, np.asarray(r_history, dtype=np.float64), target_r, dt)
 
 
 def _plot_snn_synthetic(output: Path) -> None:
@@ -308,7 +338,12 @@ def _plot_snn_synthetic(output: Path) -> None:
     _plot_snn_data(output, position, target_r, dt)
 
 
-def _plot_snn_data(output: Path, r_history: np.ndarray, target_r: float, dt: float) -> None:
+def _plot_snn_data(
+    output: Path,
+    r_history: FloatArray,
+    target_r: float,
+    dt: float,
+) -> None:
     """Render the SNN trajectory plot from position data."""
     t = np.arange(len(r_history)) * dt
     error = r_history - target_r

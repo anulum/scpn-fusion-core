@@ -10,8 +10,11 @@ Training utility for the Neural Transport Surrogate (MLP).
 Fits a 10->64->32->3 MLP to QLKNN-10D data or a high-fidelity synthetic baseline.
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
+from typing import Callable, cast
 
 import numpy as np
 import jax
@@ -19,7 +22,8 @@ import jax.numpy as jnp
 from jax import random, grad, jit, vmap
 
 # Force CPU for training utility to avoid GPU memory fragmentation in CI/CLI
-jax.config.update("jax_platform_name", "cpu")
+config_update = cast(Callable[[str, str], None], jax.config.update)
+config_update("jax_platform_name", "cpu")
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +33,10 @@ INPUT_DIM = 10
 HIDDEN1 = 64
 HIDDEN2 = 32
 OUTPUT_DIM = 3
+Params = dict[str, jax.Array]
 
 
-def init_params(key):
+def init_params(key: jax.Array) -> Params:
     """Initialise randomly seeded MLP parameters and normalization buffers."""
     k1, k2, k3 = random.split(key, 3)
     # Smaller initial weights to prevent early explosion
@@ -49,7 +54,7 @@ def init_params(key):
 
 
 @jit
-def forward(params, x):
+def forward(params: Params, x: jax.Array) -> jax.Array:
     """Forward pass for the 10→64→32→3 transport MLP.
 
     Parameters
@@ -74,25 +79,31 @@ def forward(params, x):
     return out * params["output_scale"]
 
 
-def loss_fn(params, x, y):
+def loss_fn(params: Params, x: jax.Array, y: jax.Array) -> jax.Array:
     """Mean-squared-error loss over a minibatch."""
     preds = vmap(lambda x_val: forward(params, x_val))(x)
     return jnp.mean((preds - y) ** 2)
 
 
 @jit
-def update(params, x, y, lr=1e-4):
+def update(
+    params: Params,
+    x: jax.Array,
+    y: jax.Array,
+    lr: float = 1e-4,
+) -> Params:
     """Compute one clipped-gradient update step and return new parameters."""
     grads = grad(loss_fn)(params, x, y)
     # Simple gradient clipping
     grads = jax.tree_util.tree_map(lambda g: jnp.clip(g, -1.0, 1.0), grads)
-    return jax.tree_util.tree_map(lambda p, g: p - lr * g, params, grads)
+    updated = jax.tree_util.tree_map(lambda p, g: p - lr * g, params, grads)
+    return cast(Params, updated)
 
 
 # ── Data Generation ──────────────────────────────────────────────────
 
 
-def generate_synthetic_data(n_samples=5000):
+def generate_synthetic_data(n_samples: int = 5000) -> tuple[jax.Array, jax.Array]:
     """Generate synthetic transport training data from a bounded toy law.
 
     Parameters
@@ -143,7 +154,10 @@ def generate_synthetic_data(n_samples=5000):
 # ── Main ─────────────────────────────────────────────────────────────
 
 
-def train_qlknn(output_path="weights/neural_transport_qlknn.npz", n_samples=10000):
+def train_qlknn(
+    output_path: str = "weights/neural_transport_qlknn.npz",
+    n_samples: int = 10000,
+) -> None:
     """Train the QLKNN-10D surrogate and persist a complete weights file.
 
     Parameters

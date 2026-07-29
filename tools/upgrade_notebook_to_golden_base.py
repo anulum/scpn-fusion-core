@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, Callable, cast
 
 import nbformat as nbf
 
@@ -36,7 +37,8 @@ def main() -> None:
     if src is None:
         raise FileNotFoundError("Missing source notebook for Golden Base upgrade.")
 
-    nb = nbf.read(src, as_version=4)
+    read_notebook = cast(Callable[..., Any], nbf.read)
+    nb = read_notebook(src, as_version=4)
 
     # --- markdown cells ---
     nb.cells[0].source = """# Neuro-Symbolic Control Demo (Golden Base v2)
@@ -615,7 +617,8 @@ print("GOLDEN_BASE_METRICS_JSON_END")
         if "id" in cell:
             del cell["id"]
 
-    nbf.write(nb, dst)
+    write_notebook = cast(Callable[[Any, Path], None], nbf.write)
+    write_notebook(nb, dst)
     print(f"Wrote Golden Base v2 notebook: {dst}")
 
 

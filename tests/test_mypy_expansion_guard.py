@@ -67,6 +67,35 @@ ignore_missing_imports = true
     assert summary["typed_file_count"] == 2
 
 
+def test_guard_requires_every_top_level_python_tool(tmp_path: Path) -> None:
+    tools_dir = tmp_path / "tools"
+    tools_dir.mkdir()
+    enrolled = tools_dir / "enrolled.py"
+    missing = tools_dir / "missing.py"
+    enrolled.write_text("", encoding="utf-8")
+    missing.write_text("", encoding="utf-8")
+    pyproject = tmp_path / "pyproject.toml"
+    baseline = tmp_path / "baseline.json"
+    enrolled_relative = "tools/enrolled.py"
+    _write_baseline(baseline, required=[enrolled_relative])
+    _write(
+        pyproject,
+        f"""
+[tool.mypy]
+strict = true
+ignore_missing_imports = false
+files = ["{enrolled_relative}"]
+""",
+    )
+
+    summary = guard.evaluate(pyproject_path=pyproject, baseline_path=baseline)
+
+    assert summary["overall_pass"] is False
+    assert summary["top_level_tool_file_count"] == 2
+    assert summary["missing_top_level_tool_files"] == ["tools/missing.py"]
+    assert "top-level Python tools missing" in " ".join(summary["failures"])
+
+
 def test_guard_fails_when_required_typed_file_is_removed(tmp_path: Path) -> None:
     typed = tmp_path / "typed.py"
     typed.write_text("", encoding="utf-8")
@@ -154,6 +183,12 @@ def test_override_and_baseline_validation_errors(tmp_path: Path) -> None:
     assert guard._ignore_missing_import_modules(
         {"overrides": [{"ignore_missing_imports": True, "module": "numpy"}]}
     ) == {("numpy",)}
+    assert (
+        guard._ignore_missing_import_modules(
+            {"overrides": [{"ignore_missing_imports": False, "module": "typed_dependency"}]}
+        )
+        == set()
+    )
     assert guard._display_path(tmp_path / "outside.py").endswith("outside.py")
 
 

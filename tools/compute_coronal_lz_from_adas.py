@@ -70,7 +70,7 @@ def parse_adf11(path: Path) -> tuple[FloatArray, FloatArray, dict[int, FloatArra
     log_ne = np.asarray(grid[:n_density], dtype=np.float64)
     log_te = np.asarray(grid[n_density : n_density + n_temperature], dtype=np.float64)
 
-    blocks: dict[int, np.ndarray] = {}
+    blocks: dict[int, FloatArray] = {}
     expected = n_density * n_temperature
     for start in range(index, len(lines)):
         match = _Z1.search(lines[start])

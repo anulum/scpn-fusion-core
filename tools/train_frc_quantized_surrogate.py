@@ -19,15 +19,20 @@ import argparse
 import logging
 import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equilibrium
 
 logger = logging.getLogger(__name__)
 
+FloatArray = NDArray[np.float64]
+SignedArray = NDArray[np.signedinteger[Any]]
 
-def _finite_vector(name: str, values: np.ndarray, expected_size: int) -> np.ndarray:
+
+def _finite_vector(name: str, values: FloatArray, expected_size: int) -> FloatArray:
     arr = np.asarray(values, dtype=np.float64)
     if arr.shape != (expected_size,):
         raise ValueError(f"{name} must have shape ({expected_size},).")
@@ -36,7 +41,7 @@ def _finite_vector(name: str, values: np.ndarray, expected_size: int) -> np.ndar
     return arr
 
 
-def _quantized_dtype(bits: int) -> type[np.signedinteger]:
+def _quantized_dtype(bits: int) -> type[np.signedinteger[Any]]:
     if bits == 8:
         return np.int8
     if bits == 16:
@@ -45,11 +50,11 @@ def _quantized_dtype(bits: int) -> type[np.signedinteger]:
 
 
 def compute_quantized_jacobian(
-    nominal_features: np.ndarray,
+    nominal_features: FloatArray,
     grid_size: int,
     eps: float = 1e-4,
     bits: int = 16,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]:
+) -> tuple[FloatArray, FloatArray, SignedArray, SignedArray, float, float]:
     """Compute and quantise the local no-rotation FRC Jacobian surrogate."""
     if grid_size <= 1:
         raise ValueError("grid_size must be greater than 1.")

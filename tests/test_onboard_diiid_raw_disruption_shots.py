@@ -209,6 +209,29 @@ def test_load_download_shot_data_preserves_nested_import_failure(
         onboard_mod._load_download_shot_data()
 
 
+def test_download_reference_fallback_never_starts_live_profile_fetch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    downloader = __import__("tools.download_diiid_data", fromlist=["_try_reference_data"])
+    from scpn_fusion.io import tokamak_archive
+
+    calls: list[dict[str, Any]] = []
+
+    def fake_fetch_profiles(**kwargs: Any) -> list[Any]:
+        calls.append(kwargs)
+        return []
+
+    monkeypatch.setattr(
+        tokamak_archive,
+        "fetch_mdsplus_profiles",
+        fake_fetch_profiles,
+    )
+
+    assert downloader._try_reference_data("DIII-D", 163303, ["Ip"], tmp_path) is None
+    assert calls == []
+
+
 def test_path_json_and_scenario_helpers(tmp_path: Path) -> None:
     """Resolve paths and reject malformed JSON or empty scenario names."""
     assert onboard_mod._resolve("relative.json") == onboard_mod.REPO_ROOT / "relative.json"

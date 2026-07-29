@@ -115,3 +115,19 @@ def test_train_fno_loader_rejects_missing_required_keys(tmp_path: Path) -> None:
 
     with pytest.raises(KeyError, match="missing required NPZ keys"):
         module._load_spatial_split(npz_path)
+
+
+def test_stiff_baseline_returns_three_column_array() -> None:
+    module = _load_tool_module(
+        "train_neural_transport_qlknn_baseline",
+        "tools/train_neural_transport_qlknn.py",
+    )
+    features = np.zeros((2, 10), dtype=np.float64)
+    features[0, 4:7] = [7.0, 6.0, 5.0]
+
+    baseline = module._compute_stiff_baseline(features)
+
+    assert isinstance(baseline, np.ndarray)
+    assert baseline.shape == (2, 3)
+    np.testing.assert_allclose(baseline[0], [2.0, 2.0, 3.0])
+    np.testing.assert_allclose(baseline[1], 0.0)

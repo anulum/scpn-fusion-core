@@ -197,7 +197,8 @@ def _try_reference_data(
     """Try to load signals from pre-existing reference data NPZ files.
 
     Searches the cache_dir for any NPZ file containing the shot number.
-    Falls back to tokamak_archive.fetch_mdsplus_profiles() if available.
+    Only local reference-data caches are inspected; this fallback never starts
+    a second network acquisition path.
     """
     # 1. Search for any pre-existing NPZ containing this shot number
     for npz_file in cache_dir.glob("*.npz"):
@@ -213,26 +214,6 @@ def _try_reference_data(
                     return loaded
             except Exception as exc:  # noqa: BLE001
                 logger.debug("Failed to load %s: %s", npz_file, exc)
-
-    # 2. Try tokamak_archive.fetch_mdsplus_profiles() as an alternative
-    try:
-        from scpn_fusion.io.tokamak_archive import fetch_mdsplus_profiles
-
-        profiles = fetch_mdsplus_profiles(machine=machine, shot=shot)
-        if profiles:
-            result: Dict[str, SignalResult] = {}
-            for sig_name in signals:
-                if sig_name in profiles:
-                    prof = profiles[sig_name]
-                    result[sig_name] = SignalResult(
-                        name=sig_name,
-                        data=np.asarray(prof.get("data", []), dtype=np.float64),
-                        time=np.asarray(prof.get("time", []), dtype=np.float64),
-                    )
-            if result:
-                return result
-    except (ImportError, Exception) as exc:  # noqa: BLE001
-        logger.debug("tokamak_archive reference lookup failed: %s", exc)
 
     return None
 
@@ -376,7 +357,7 @@ def download_shot_data(
     # 2. Try MDSplus
     mdsplus_available = False
     try:
-        import MDSplus  # type: ignore[import-untyped]
+        import MDSplus
 
         mdsplus_available = True
     except ImportError:

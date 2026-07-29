@@ -19,11 +19,13 @@ import argparse
 import logging
 import time
 from pathlib import Path
+from typing import NoReturn, cast
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import jit, random, value_and_grad, vmap
+from numpy.typing import NDArray
 
 from scpn_fusion.core.frc_rigid_rotor import RigidRotorFRCInputs, solve_frc_equilibrium
 
@@ -35,23 +37,33 @@ TAU_RC = 0.02
 TAU_REF = 0.002
 DT = 0.001
 STEPS = 10  # Number of spiking timesteps per control cycle
+FloatArray = NDArray[np.float64]
+Params = dict[str, jax.Array]
 
 # ── SNN Primitives (Surrogate Gradient) ──────────────────────────────
 
 
 @jit
-def spike_function(v):
+def spike_function(v: jax.Array) -> jax.Array:
     """Return the hard spike indicator used in the surrogate-gradient path."""
     return (v >= 1.0).astype(jnp.float32)
 
 
 @jit
-def surrogate_spike(v):
+def surrogate_spike(v: jax.Array) -> jax.Array:
     """Fast Sigmoid surrogate for backprop through spikes."""
     return jax.nn.sigmoid(10.0 * (v - 1.0))
 
 
-def lif_step(v, z, x, weights, bias, tau_rc, dt):
+def lif_step(
+    v: jax.Array,
+    z: jax.Array,
+    x: jax.Array,
+    weights: jax.Array,
+    bias: jax.Array,
+    tau_rc: float,
+    dt: float,
+) -> tuple[jax.Array, jax.Array]:
     """Single-step LIF dynamics with surrogate gradients."""
     # current J = W*x + b
     j = jnp.dot(weights, x) + bias
@@ -68,13 +80,16 @@ def lif_step(v, z, x, weights, bias, tau_rc, dt):
 # ── Model Training ───────────────────────────────────────────────────
 
 
-def model_forward_snn(params, x):
+def model_forward_snn(params: Params, x: jax.Array) -> jax.Array:
     """Unroll SNN for N steps."""
     v = jnp.zeros(N_NEURONS)
     z = jnp.zeros(N_NEURONS)
 
     # Simple 1-layer SNN encoding
-    def body_fun(carry, _):
+    def body_fun(
+        carry: tuple[jax.Array, jax.Array],
+        _: None,
+    ) -> tuple[tuple[jax.Array, jax.Array], jax.Array]:
         v, z = carry
         v, z = lif_step(v, z, x, params["W"], params["b"], TAU_RC, DT)
         return (v, z), z
@@ -88,14 +103,20 @@ def model_forward_snn(params, x):
 # ── Data Generation ──────────────────────────────────────────────────
 
 
-def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
+def generate_frc_data(
+    n_samples: int,
+    grid_size: int,
+    seed: int = 42,
+) -> tuple[FloatArray, FloatArray]:
     """Generate no-rotation FRC training samples for the software SNN surrogate."""
     logger.info("Generating %d FRC samples for SNN training...", n_samples)
-    X, Y = [], []
+    X: list[list[float]] = []
+    Y: list[FloatArray] = []
     rng = np.random.default_rng(seed)
     rho_grid = np.linspace(0.0, 0.5, grid_size)
 
     for _ in range(n_samples):
+        delta = float(rng.uniform(0.01, 0.05))
         inputs = RigidRotorFRCInputs(
             n0=rng.uniform(1e20, 5e20),
             T_i_eV=rng.uniform(5000, 15000),
@@ -103,7 +124,7 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
             theta_dot=0.0,
             R_s=rng.uniform(0.15, 0.3),
             B_ext=rng.uniform(2.0, 8.0),
-            delta=rng.uniform(0.01, 0.05),
+            delta=delta,
         )
         try:
             state = solve_frc_equilibrium(inputs, rho_grid, solver="rust")
@@ -116,16 +137,16 @@ def generate_frc_data(n_samples: int, grid_size: int, seed: int = 42):
                     inputs.T_e_eV / 1000,
                     inputs.R_s,
                     inputs.B_ext,
-                    inputs.delta,
+                    delta,
                 ]
             )
             Y.append(state.B_z)
         except Exception:
             continue
-    return np.array(X), np.array(Y)
+    return np.asarray(X, dtype=np.float64), np.asarray(Y, dtype=np.float64)
 
 
-def main():
+def main() -> None:
     """Train the experimental no-rotation FRC software SNN surrogate."""
     parser = argparse.ArgumentParser(description="Train experimental FRC SNN surrogate")
     parser.add_argument("--samples", type=int, default=200)
@@ -150,6 +171,8 @@ def main():
     n_comp = 10
     pca = MinimalPCA(n_components=n_comp)
     Y_latent = pca.fit_transform(Y_raw)
+    if pca.mean_ is None or pca.components_ is None:
+        raise RuntimeError("PCA fit completed without learned components")
 
     # Train SNN params
     key = random.PRNGKey(42)
@@ -166,14 +189,20 @@ def main():
     Y_jax = jnp.asarray(Y_latent)
 
     @jit
-    def loss_fn(p, x, y):
+    def loss_fn(p: Params, x: jax.Array, y: jax.Array) -> jax.Array:
         preds = vmap(lambda xi: model_forward_snn(p, xi))(x)
         return jnp.mean((preds - y) ** 2)
 
     @jit
-    def update(p, x, y, lr=1e-2):
+    def update(
+        p: Params,
+        x: jax.Array,
+        y: jax.Array,
+        lr: float = 1e-2,
+    ) -> tuple[Params, jax.Array]:
         loss, grads = value_and_grad(loss_fn)(p, x, y)
-        return jax.tree_util.tree_map(lambda p_i, g_i: p_i - lr * g_i, p, grads), loss
+        updated = jax.tree_util.tree_map(lambda p_i, g_i: p_i - lr * g_i, p, grads)
+        return cast(Params, updated), cast(jax.Array, loss)
 
     logger.info("Training software SNN surrogate...")
     for i in range(50):
@@ -199,7 +228,7 @@ def main():
     logger.info("SNN surrogate saved for software experiments.")
 
 
-def export_to_verilog(params, out_path):
+def export_to_verilog(params: Params, out_path: str) -> NoReturn:
     """Fail closed until real RTL generation is implemented."""
     raise NotImplementedError("FRC SNN Verilog export is not implemented")
 

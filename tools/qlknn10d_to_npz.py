@@ -22,13 +22,18 @@ Output contract (for NeuralTransportModel):
 from __future__ import annotations
 
 import argparse
+from importlib import import_module
 import logging
-import time
 from pathlib import Path
+from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
+
+FloatArray = NDArray[np.float64]
+IntArray = NDArray[np.int32]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT_DIR = REPO_ROOT / "data" / "qlknn10d"
@@ -49,11 +54,11 @@ MI_KG = 3.344e-27  # kg, deuterium ion mass (CODATA 2018)
 E_CHARGE = 1.602e-19  # C, elementary charge (CODATA 2018)
 
 
-def _gyrobohm_chi(te_kev: np.ndarray) -> np.ndarray:
+def _gyrobohm_chi(te_kev: FloatArray) -> FloatArray:
     te_j = te_kev * 1e3 * E_CHARGE
     cs = np.sqrt(te_j / MI_KG)
     rho_s = np.sqrt(MI_KG * te_j) / (E_CHARGE * BT_REF)
-    return rho_s**2 * cs / R_REF
+    return np.asarray(rho_s**2 * cs / R_REF, dtype=np.float64)
 
 
 def _detect_format(input_dir: Path) -> tuple[str, list[Path]]:
@@ -68,9 +73,9 @@ def _detect_format(input_dir: Path) -> tuple[str, list[Path]]:
 
 def _load_chunk_hdf5(
     path: Path, start: int, count: int
-) -> tuple[np.ndarray, np.ndarray, list[str]]:
-    import h5py
-    import pandas as pd
+) -> tuple[FloatArray, FloatArray, list[str]]:
+    h5py: Any = import_module("h5py")
+    pd: Any = import_module("pandas")
 
     with h5py.File(path, "r") as f:
         if "input" in f and "output" in f:
@@ -95,19 +100,23 @@ def _load_chunk_hdf5(
                         if out_key in f_loc:
                             fluxes[:, i] = f_loc[out_key][start : start + len(df_in)]
             return inputs, fluxes, list(df_in.columns)
-    return np.zeros((0, len(QLKNN_INPUT_COLS))), np.zeros((0, 3)), []
+    return (
+        np.zeros((0, len(QLKNN_INPUT_COLS)), dtype=np.float64),
+        np.zeros((0, 3), dtype=np.float64),
+        [],
+    )
 
 
 def _get_total_rows_hdf5(path: Path) -> int:
-    import h5py
+    h5py: Any = import_module("h5py")
 
     with h5py.File(path, "r") as f:
         if "input" in f and "block0_values" in f["input"]:
-            return f["input"]["block0_values"].shape[0]
+            return int(f["input"]["block0_values"].shape[0])
     return 0
 
 
-def _classify_regime(ati: np.ndarray, ate: np.ndarray) -> np.ndarray:
+def _classify_regime(ati: FloatArray, ate: FloatArray) -> IntArray:
     regime = np.zeros(len(ati), dtype=np.int32)
     regime[ati > 4.0] = 1
     regime[(ate > 5.0) & (ati <= 4.0)] = 2
@@ -140,13 +149,14 @@ def process(
         None. Writes NPZ artifacts to ``output_dir``.
     """
     rng = np.random.default_rng(seed)
-    fmt, files = _detect_format(input_dir)
+    _, files = _detect_format(input_dir)
     total_rows = sum(_get_total_rows_hdf5(f) for f in files)
     subsample_rate = min(1.0, max_samples / max(total_rows, 1))
 
     CHUNK_SIZE = 500_000
-    all_inputs, all_fluxes, loaded = [], [], 0
-    t0 = time.monotonic()
+    all_inputs: list[FloatArray] = []
+    all_fluxes: list[FloatArray] = []
+    loaded = 0
 
     for fpath in files:
         n_rows = _get_total_rows_hdf5(fpath)
@@ -226,29 +236,33 @@ def process(
 
     n_train, n_val = int(N * 0.9), int(N * 0.05)
     output_dir.mkdir(parents=True, exist_ok=True)
-    _meta = {"gb_normalized": np.array(1 if gb_normalized else 0)}
+    normalization_flag = np.array(1 if gb_normalized else 0, dtype=np.int64)
     np.savez(
-        output_dir / "train.npz", X=X[:n_train], Y=Y[:n_train], regimes=regimes[:n_train], **_meta
+        output_dir / "train.npz",
+        X=X[:n_train],
+        Y=Y[:n_train],
+        regimes=regimes[:n_train],
+        gb_normalized=normalization_flag,
     )
     np.savez(
         output_dir / "val.npz",
         X=X[n_train : n_train + n_val],
         Y=Y[n_train : n_train + n_val],
         regimes=regimes[n_train : n_train + n_val],
-        **_meta,
+        gb_normalized=normalization_flag,
     )
     np.savez(
         output_dir / "test.npz",
         X=X[n_train + n_val :],
         Y=Y[n_train + n_val :],
         regimes=regimes[n_train + n_val :],
-        **_meta,
+        gb_normalized=normalization_flag,
     )
     mode_str = "GB-normalized" if gb_normalized else "physical (m^2/s)"
     print(f"\nDone. Saved {N} samples ({mode_str}).")
 
 
-def main():
+def main() -> None:
     """CLI entrypoint for converting QLKNN-10D data to training NPZ.
 
     Returns:

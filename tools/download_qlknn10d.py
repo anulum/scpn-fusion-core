@@ -38,6 +38,7 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -70,11 +71,12 @@ def _sha256(path: Path) -> str:
 
 
 def _human_size(n: int) -> str:
+    size = float(n)
     for unit in ("B", "KB", "MB", "GB"):
-        if n < 1024:
-            return f"{n:.1f} {unit}"
-        n /= 1024
-    return f"{n:.1f} TB"
+        if size < 1024:
+            return f"{size:.1f} {unit}"
+        size /= 1024
+    return f"{size:.1f} TB"
 
 
 def _download_with_progress(url: str, dest: Path, expected_size: int = 0) -> None:
@@ -131,13 +133,13 @@ def _download_with_progress(url: str, dest: Path, expected_size: int = 0) -> Non
             raise
 
 
-def fetch_zenodo_files() -> list[dict]:
+def fetch_zenodo_files() -> list[dict[str, Any]]:
     """Query the Zenodo API for the file listing of this record."""
     print(f"Querying Zenodo record {ZENODO_RECORD_ID}...")
     with urllib.request.urlopen(ZENODO_API_URL) as resp:
         meta = json.loads(resp.read().decode())
 
-    files = []
+    files: list[dict[str, Any]] = []
     for f in meta.get("files", []):
         files.append(
             {

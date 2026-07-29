@@ -118,12 +118,13 @@ def main() -> int:
         test_eq = read_geqdsk(gfiles[0])
         kappa = 1.7
         q95 = 3.0
-        if hasattr(test_eq, "rbbbs") and test_eq.rbbbs is not None and len(test_eq.rbbbs) > 3:
-            r_span = test_eq.rbbbs.max() - test_eq.rbbbs.min()
-            kappa = (test_eq.zbbbs.max() - test_eq.zbbbs.min()) / max(r_span, 0.01)
-        if hasattr(test_eq, "qpsi") and test_eq.qpsi is not None and len(test_eq.qpsi) > 0:
+        if len(test_eq.rbdry) > 3 and len(test_eq.zbdry) == len(test_eq.rbdry):
+            r_span = float(test_eq.rbdry.max() - test_eq.rbdry.min())
+            z_span = float(test_eq.zbdry.max() - test_eq.zbdry.min())
+            kappa = z_span / max(r_span, 0.01)
+        if len(test_eq.qpsi) > 0:
             idx_95 = int(0.95 * len(test_eq.qpsi))
-            q95 = test_eq.qpsi[min(idx_95, len(test_eq.qpsi) - 1)]
+            q95 = float(test_eq.qpsi[min(idx_95, len(test_eq.qpsi) - 1)])
         features = np.array(
             [
                 test_eq.current / 1e6,
@@ -142,7 +143,9 @@ def main() -> int:
         )
         psi_pred = accel_val.predict(features)
         ref_psi = test_eq.psirz[: psi_pred.shape[0], : psi_pred.shape[1]]
-        rel_l2 = float(np.linalg.norm(psi_pred - ref_psi) / max(np.linalg.norm(ref_psi), 1e-12))
+        error_norm = float(np.linalg.norm(psi_pred - ref_psi))
+        reference_norm = float(np.linalg.norm(ref_psi))
+        rel_l2 = error_norm / max(reference_norm, 1e-12)
         print(f"  [{machine_dir.name}] {gfiles[0].name}: rel_L2 = {rel_l2:.4f}")
 
     bench = accel_val.benchmark(features)

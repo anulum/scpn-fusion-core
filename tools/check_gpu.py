@@ -45,7 +45,7 @@ def main() -> None:
     try:
         import jaxlib
 
-        print(f"jaxlib version: {jaxlib.__version__}")
+        print(f"jaxlib version: {getattr(jaxlib, '__version__', 'unknown')}")
     except ImportError:
         pass
 

@@ -10,16 +10,19 @@
 from __future__ import annotations
 
 import argparse
+from importlib import import_module
 import json
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
+tomllib: ModuleType | None
 try:  # Python 3.11+
-    import tomllib  # type: ignore[attr-defined]
+    tomllib = import_module("tomllib")
 except ModuleNotFoundError:  # pragma: no cover - exercised on 3.9/3.10 CI lanes
-    tomllib = None  # type: ignore[assignment]
+    tomllib = None
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

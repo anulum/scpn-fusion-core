@@ -31,12 +31,25 @@ import logging
 import sys
 import time
 from pathlib import Path
+from typing import Any, TypedDict
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import numpy as np
 from numpy.typing import NDArray
+
+FloatArray = NDArray[np.float64]
+IntArray = NDArray[np.int64]
+
+
+class MachineMetrics(TypedDict):
+    """Per-machine equilibrium reconstruction metrics."""
+
+    mean_rel_l2: float
+    max_rel_l2: float
+    per_file: dict[str, float]
+
 
 TARGET_GRID = 129
 HIDDEN = (512, 256, 128, 64)
@@ -56,11 +69,11 @@ class MinimalPCA:
     def __init__(self, k: int = 20) -> None:
         """Initialize PCA helper with target component count ``k``."""
         self.k = k
-        self.mean_: NDArray | None = None
-        self.V: NDArray | None = None
-        self.evr: NDArray | None = None
+        self.mean_: FloatArray | None = None
+        self.V: FloatArray | None = None
+        self.evr: FloatArray | None = None
 
-    def fit(self, X: NDArray) -> "MinimalPCA":
+    def fit(self, X: FloatArray) -> "MinimalPCA":
         """Fit principal components from centered data matrix ``X``.
 
         Parameters
@@ -82,15 +95,19 @@ class MinimalPCA:
         self.k = k
         return self
 
-    def transform(self, X: NDArray) -> NDArray:
+    def transform(self, X: FloatArray) -> FloatArray:
         """Project centered samples into the learned PCA subspace."""
-        return (X - self.mean_) @ self.V.T
+        if self.mean_ is None or self.V is None:
+            raise RuntimeError("PCA must be fitted before transform")
+        return np.asarray((X - self.mean_) @ self.V.T, dtype=np.float64)
 
-    def inverse_transform(self, Z: NDArray) -> NDArray:
+    def inverse_transform(self, Z: FloatArray) -> FloatArray:
         """Reconstruct samples from PCA coefficients in latent space."""
-        return Z @ self.V + self.mean_
+        if self.mean_ is None or self.V is None:
+            raise RuntimeError("PCA must be fitted before inverse_transform")
+        return np.asarray(Z @ self.V + self.mean_, dtype=np.float64)
 
-    def fit_transform(self, X: NDArray) -> NDArray:
+    def fit_transform(self, X: FloatArray) -> FloatArray:
         """Fit PCA and immediately project ``X``.
 
         This is a convenience method equivalent to ``fit(X).transform(X)``.
@@ -104,13 +121,13 @@ class MLP:
 
     def __init__(self, sizes: list[int], seed: int = 42) -> None:
         rng = np.random.default_rng(seed)
-        self.W: list[NDArray] = []
-        self.b: list[NDArray] = []
+        self.W: list[FloatArray] = []
+        self.b: list[FloatArray] = []
         for i in range(len(sizes) - 1):
             self.W.append(rng.normal(0, np.sqrt(2.0 / sizes[i]), (sizes[i], sizes[i + 1])))
             self.b.append(np.zeros(sizes[i + 1]))
 
-    def forward(self, x: NDArray) -> NDArray:
+    def forward(self, x: FloatArray) -> FloatArray:
         """Run a forward pass through fully connected ReLU layers.
 
         Parameters
@@ -135,7 +152,7 @@ def load_data(
     ref_dir: Path,
     n_pert: int,
     rng: np.random.Generator,
-) -> tuple[NDArray, NDArray, list[str], NDArray]:
+) -> tuple[FloatArray, FloatArray, list[str], FloatArray]:
     """Load reference equilibria, interpolate to fixed grids, and augment samples.
 
     Parameters
@@ -160,8 +177,8 @@ def load_data(
     t_rho = np.linspace(0, 1, TARGET_GRID)
     t_zeta = np.linspace(0, 1, TARGET_GRID)
 
-    X_list: list[NDArray] = []
-    Y_list: list[NDArray] = []
+    X_list: list[FloatArray] = []
+    Y_list: list[FloatArray] = []
     labels: list[str] = []
     weights: list[float] = []
 
@@ -191,11 +208,11 @@ def load_data(
             if hasattr(eq, "rbdry") and eq.rbdry is not None and len(eq.rbdry) > 3:
                 rs = eq.rbdry.max() - eq.rbdry.min()
                 if rs > 0.01:
-                    kap = (eq.zbdry.max() - eq.zbdry.min()) / rs
-                    du = (eq.rmaxis - eq.rbdry[np.argmax(eq.zbdry)]) / (rs / 2)
-                    dl = (eq.rmaxis - eq.rbdry[np.argmin(eq.zbdry)]) / (rs / 2)
-            if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
-                q95 = eq.qpsi[min(int(0.95 * len(eq.qpsi)), len(eq.qpsi) - 1)]
+                    kap = float((eq.zbdry.max() - eq.zbdry.min()) / rs)
+                    du = float((eq.rmaxis - eq.rbdry[np.argmax(eq.zbdry)]) / (rs / 2))
+                    dl = float((eq.rmaxis - eq.rbdry[np.argmin(eq.zbdry)]) / (rs / 2))
+            if len(eq.qpsi) > 0:
+                q95 = float(eq.qpsi[min(int(0.95 * len(eq.qpsi)), len(eq.qpsi) - 1)])
 
             base = np.array(
                 [
@@ -244,7 +261,7 @@ def load_data(
 def stratified_split(
     labels: list[str],
     rng: np.random.Generator,
-) -> tuple[NDArray, NDArray, NDArray]:
+) -> tuple[IntArray, IntArray, IntArray]:
     """Split sample indices per machine with stratified 70/15/15 proportions.
 
     Parameters
@@ -260,7 +277,9 @@ def stratified_split(
         Train, validation, and test index arrays.
     """
     machines = sorted(set(labels))
-    tri, vai, tei = [], [], []
+    tri: list[int] = []
+    vai: list[int] = []
+    tei: list[int] = []
     for m in machines:
         idx = np.array([i for i, l in enumerate(labels) if l == m])
         rng.shuffle(idx)
@@ -277,9 +296,9 @@ def validate_per_machine(
     ref_dir: Path,
     mlp: MLP,
     pca: MinimalPCA,
-    imean: NDArray,
-    istd: NDArray,
-) -> dict[str, dict]:
+    imean: FloatArray,
+    istd: FloatArray,
+) -> dict[str, MachineMetrics]:
     """Run per-machine validation for the trained network and PCA reconstructions.
 
     Parameters
@@ -303,7 +322,7 @@ def validate_per_machine(
 
     t_rho = np.linspace(0, 1, TARGET_GRID)
     t_zeta = np.linspace(0, 1, TARGET_GRID)
-    results: dict[str, dict] = {}
+    results: dict[str, MachineMetrics] = {}
 
     for d in sorted(ref_dir.iterdir()):
         if not d.is_dir():
@@ -311,7 +330,7 @@ def validate_per_machine(
         fs = sorted(d.glob("*.geqdsk")) + sorted(d.glob("*.eqdsk"))
         if not fs:
             continue
-        file_res = []
+        file_res: list[tuple[str, float]] = []
         for f in fs:
             eq = read_geqdsk(f)
             r_n = (eq.r - eq.r[0]) / max(eq.r[-1] - eq.r[0], 1e-12)
@@ -327,11 +346,11 @@ def validate_per_machine(
             if hasattr(eq, "rbdry") and eq.rbdry is not None and len(eq.rbdry) > 3:
                 rs = eq.rbdry.max() - eq.rbdry.min()
                 if rs > 0.01:
-                    kap = (eq.zbdry.max() - eq.zbdry.min()) / rs
-                    du2 = (eq.rmaxis - eq.rbdry[np.argmax(eq.zbdry)]) / (rs / 2)
-                    dl2 = (eq.rmaxis - eq.rbdry[np.argmin(eq.zbdry)]) / (rs / 2)
-            if hasattr(eq, "qpsi") and eq.qpsi is not None and len(eq.qpsi) > 0:
-                q95 = eq.qpsi[min(int(0.95 * len(eq.qpsi)), len(eq.qpsi) - 1)]
+                    kap = float((eq.zbdry.max() - eq.zbdry.min()) / rs)
+                    du2 = float((eq.rmaxis - eq.rbdry[np.argmax(eq.zbdry)]) / (rs / 2))
+                    dl2 = float((eq.rmaxis - eq.rbdry[np.argmin(eq.zbdry)]) / (rs / 2))
+            if len(eq.qpsi) > 0:
+                q95 = float(eq.qpsi[min(int(0.95 * len(eq.qpsi)), len(eq.qpsi) - 1)])
 
             feat = np.array(
                 [
@@ -352,7 +371,9 @@ def validate_per_machine(
             xn = (feat - imean) / istd
             coeff = mlp.forward(xn[np.newaxis, :])
             pred = pca.inverse_transform(coeff)[0].reshape(TARGET_GRID, TARGET_GRID)
-            rl2 = float(np.linalg.norm(pred - psi_ref) / max(np.linalg.norm(psi_ref), 1e-12))
+            error_norm = float(np.linalg.norm(pred - psi_ref))
+            reference_norm = float(np.linalg.norm(psi_ref))
+            rl2 = error_norm / max(reference_norm, 1e-12)
             file_res.append((f.name, rl2))
 
         ml2 = float(np.mean([x[1] for x in file_res]))
@@ -393,6 +414,8 @@ def main() -> int:
 
     pca = MinimalPCA(N_PCA)
     Yc = pca.fit_transform(Y)
+    if pca.evr is None:
+        raise RuntimeError("PCA fit completed without explained variance")
     print(f"PCA: {pca.k} components, {sum(pca.evr) * 100:.1f}% variance")
 
     tri, vai, tei = stratified_split(labels, rng)
@@ -408,8 +431,8 @@ def main() -> int:
     vel = [np.zeros_like(w) for w in mlp.W]
     vel_b = [np.zeros_like(b) for b in mlp.b]
     best_vl = float("inf")
-    best_W: list[NDArray] | None = None
-    best_b: list[NDArray] | None = None
+    best_W: list[FloatArray] | None = None
+    best_b: list[FloatArray] | None = None
     patience_ctr = 0
     rng2 = np.random.default_rng(43)
     t0 = time.perf_counter()
@@ -474,7 +497,7 @@ def main() -> int:
 
     train_time = time.perf_counter() - t0
     epochs_run = ep + 1
-    if best_W is not None:
+    if best_W is not None and best_b is not None:
         mlp.W = best_W
         mlp.b = best_b
 
@@ -495,7 +518,9 @@ def main() -> int:
             all_pass = False
 
     save_path = REPO_ROOT / "weights" / "neural_equilibrium_augmented_v3.npz"
-    payload: dict[str, NDArray] = {
+    if pca.mean_ is None or pca.V is None or pca.evr is None:
+        raise RuntimeError("PCA fit completed without serializable state")
+    payload: dict[str, NDArray[Any]] = {
         "n_components": np.array([pca.k]),
         "grid_nh": np.array([TARGET_GRID]),
         "grid_nw": np.array([TARGET_GRID]),
@@ -525,7 +550,7 @@ def main() -> int:
         "per_machine": per_machine,
         "acceptance": "PASS" if all_pass else "FAIL",
     }
-    with open(save_path.with_suffix(".metrics.json"), "w") as f:
+    with open(save_path.with_suffix(".metrics.json"), "w", encoding="utf-8") as f:
         json.dump(metrics_out, f, indent=2)
 
     print(f"\nWeights: {save_path}")

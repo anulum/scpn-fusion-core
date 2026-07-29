@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+from importlib import import_module
 import json
 import os
 import subprocess
@@ -24,10 +25,33 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, cast
 
 
 DEFAULT_ENDPOINT_URL = "https://s3.echo.stfc.ac.uk"
+
+
+class _S3FileSystem(Protocol):
+    def ls(self, path: str) -> list[str]:
+        """List remote object names."""
+
+    def find(self, path: str) -> list[str]:
+        """List remote objects recursively."""
+
+
+class _S3FSModule(Protocol):
+    def S3FileSystem(
+        self,
+        *,
+        anon: bool,
+        client_kwargs: dict[str, str],
+    ) -> _S3FileSystem:
+        """Construct an S3 filesystem client."""
+
+
+def _load_s3fs() -> _S3FSModule:
+    """Load the optional untyped s3fs dependency behind a typed boundary."""
+    return cast(_S3FSModule, import_module("s3fs"))
 
 
 def utc_now() -> str:
@@ -49,8 +73,7 @@ def load_catalog(endpoint_url: str) -> list[int]:
     root = repo_root()
     sys.path.insert(0, str(root / "external"))
 
-    import s3fs  # type: ignore
-
+    s3fs = _load_s3fs()
     fs = s3fs.S3FileSystem(anon=True, client_kwargs={"endpoint_url": endpoint_url})
     files = fs.ls("mast/level2/shots/")
     return sorted(
@@ -65,8 +88,7 @@ def evict_shot_cache(shot_id: int, cache_dir: Path, endpoint_url: str) -> dict[s
     root = repo_root()
     sys.path.insert(0, str(root / "external"))
 
-    import s3fs  # type: ignore
-
+    s3fs = _load_s3fs()
     remote_root = f"mast/level2/shots/{shot_id}.zarr"
     fs = s3fs.S3FileSystem(anon=True, client_kwargs={"endpoint_url": endpoint_url})
     removed: list[str] = []
