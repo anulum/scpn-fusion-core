@@ -3,7 +3,7 @@
     "max_element_equivalence_span_rel": 3.5273281109442046e-15,
     "note": "each compared element's single solve converged (k < n_iter); a -1% coil perturbation warm case does NOT converge at 33\u00b2 within 300 iterations (residual plateau near the softmax X-point extraction) while +1% converges in 11 \u2014 comparisons are made only where the single solve converges, and the batched API inherits exactly the single solver's convergence envelope."
   },
-  "generated_utc": "2026-07-28T07:16:06+00:00",
+  "generated_utc": "2026-08-20T10:27:46+00:00",
   "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_batched_forward.py",
@@ -22,7 +22,7 @@
     ],
     "logic_sources_sha256": "2029396983a97abaad2144f293a8aca1abd588dcf77ec4fe2df99aeb4812a495",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "dfd91e0233bf9b75542a904fde79c30a7dc2548ad534c844bdd21e186416b8e8"
+    "pinned_requirements_sha256": "bd71deb22e7ab465fb79cbb554e2bcc58488034ede8836469576efc4bce9a2a9"
   },
   "root_cause_note": "the previously measured 'batch cliff' (~10 s/solve effective at 129\u00b2 on a GTX 1060, batch-size-independent total) was per-call re-jitting of jax.vmap \u2014 a full recompile of the batched while-loop graph on EVERY wrapper call; component probes measured the vmapped physics (coupled RHS, MG V-cycle, Anderson step) at ~7x LOWER per-element cost than single solves. The lru_cache runner factory removes the recompile; measured warm cost on the same card: 13.5 ms/solve (B=16) and 17.5 ms/solve (B=64) at 129\u00b2 FP64 vs 34 ms single.",
   "settings": {
@@ -35,28 +35,28 @@
       {
         "batch_size": 4,
         "cache_hits_gained_after_first_call": 3,
-        "compile_plus_first_call_ms": 8077.979764999327,
+        "compile_plus_first_call_ms": 8271.142887999304,
         "element_equivalence_span_rel": 3.5273281109442046e-15,
-        "warm_median_ms": 21.42761099821655,
+        "warm_median_ms": 23.630592000699835,
         "warm_ms": [
-          19.97568099977798,
-          28.845464999903925,
-          21.42761099821655
+          23.630592000699835,
+          23.476837000998785,
+          23.714715000096476
         ],
-        "warm_per_solve_ms": 5.356902749554138
+        "warm_per_solve_ms": 5.907648000174959
       },
       {
         "batch_size": 16,
         "cache_hits_gained_after_first_call": 4,
-        "compile_plus_first_call_ms": 7458.429198999511,
+        "compile_plus_first_call_ms": 6708.436676000929,
         "element_equivalence_span_rel": 2.510979333214519e-15,
-        "warm_median_ms": 79.50655999957235,
+        "warm_median_ms": 68.65469100011978,
         "warm_ms": [
-          75.5036980008299,
-          79.83636600329191,
-          79.50655999957235
+          71.0988200007705,
+          68.65469100011978,
+          68.15007600016543
         ],
-        "warm_per_solve_ms": 4.969159999973272
+        "warm_per_solve_ms": 4.290918187507486
       }
     ],
     "device": "cpu (cpu)",
