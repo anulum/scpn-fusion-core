@@ -14,11 +14,11 @@
     "packages": {
       "matplotlib": "3.10.8",
       "numpy": "1.26.4",
-      "python": "3.12.13",
+      "python": "3.11.15",
       "torch": null
     },
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "dfd91e0233bf9b75542a904fde79c30a7dc2548ad534c844bdd21e186416b8e8"
+    "pinned_requirements_sha256": "bd71deb22e7ab465fb79cbb554e2bcc58488034ede8836469576efc4bce9a2a9"
   },
   "roc": [
     {
