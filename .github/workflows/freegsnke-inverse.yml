@@ -1,0 +1,86 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — pinned FreeGSNKE inverse comparison gate
+name: FreeGSNKE Inverse Comparison
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/freegsnke-inverse.yml"
+      - "requirements/ci-freegsnke.in"
+      - "requirements/ci-freegsnke.txt"
+      - "src/scpn_fusion/core/jax_free_boundary_gs.py"
+      - "tests/test_benchmark_freegsnke_inverse.py"
+      - "validation/benchmark_freegsnke_inverse.py"
+  push:
+    paths:
+      - ".github/workflows/freegsnke-inverse.yml"
+      - "requirements/ci-freegsnke.in"
+      - "requirements/ci-freegsnke.txt"
+      - "src/scpn_fusion/core/jax_free_boundary_gs.py"
+      - "tests/test_benchmark_freegsnke_inverse.py"
+      - "validation/benchmark_freegsnke_inverse.py"
+
+concurrency:
+  group: freegsnke-inverse-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FREEGSNKE_SOURCE_URL: https://github.com/FusionComputingLab/freegsnke.git
+  FREEGSNKE_SOURCE_COMMIT: 00b79a08fbb6e642ac5ed2e440383cc5962e0358
+  JAX_ENABLE_X64: "true"
+
+jobs:
+  inverse-comparison:
+    name: Pinned MAST-U inverse comparison
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install hash-locked comparison environment
+        run: |
+          pip install --require-hashes -r requirements/ci-freegsnke.txt
+          pip install --no-deps -e .
+
+      - name: Provision pinned FreeGSNKE sources and public MAST-U data
+        run: |
+          source_path="data/external/full_fidelity_public_sources/repos/freegsnke"
+          mkdir -p "$(dirname "$source_path")"
+          git init "$source_path"
+          git -C "$source_path" remote add origin "$FREEGSNKE_SOURCE_URL"
+          git -C "$source_path" fetch --depth 1 origin "$FREEGSNKE_SOURCE_COMMIT"
+          git -C "$source_path" checkout --detach FETCH_HEAD
+          test "$(git -C "$source_path" rev-parse HEAD)" = "$FREEGSNKE_SOURCE_COMMIT"
+
+      - name: Exercise the real benchmark surface
+        run: pytest -q tests/test_benchmark_freegsnke_inverse.py
+
+      - name: Generate and enforce fresh comparison evidence
+        run: |
+          python validation/benchmark_freegsnke_inverse.py \
+            --strict \
+            --output artifacts/freegsnke_inverse_comparison.json \
+            --markdown artifacts/freegsnke_inverse_comparison.md
+
+      - name: Upload comparison evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: freegsnke-inverse-comparison
+          if-no-files-found: error
+          path: |
+            artifacts/freegsnke_inverse_comparison.json
+            artifacts/freegsnke_inverse_comparison.md

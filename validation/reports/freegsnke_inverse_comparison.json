@@ -1,0 +1,376 @@
+{
+  "benchmark_id": "F-1c-freegsnke-mastu-diverted-inverse",
+  "blockers": [
+    "FreeGSNKE ConstrainPaxisIp to SCPN sampled pprime/FFprime normalisation and gauge translation is not yet frozen; full total-psi cross-solver parity remains unadmitted"
+  ],
+  "case_contract": {
+    "grid_shape_r_z": [
+      65,
+      129
+    ],
+    "ip_target_a": 600000.0,
+    "profile": {
+      "alpha_m": 1.8,
+      "alpha_n": 1.2,
+      "fvac": 0.5,
+      "paxis_pa": 8000.0
+    },
+    "solver": {
+      "l2_reg": [
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-06
+      ],
+      "target_relative_psit_update": 0.001,
+      "target_relative_tolerance": 1e-06
+    }
+  },
+  "checks": {
+    "active_current_regression": true,
+    "current_limits": true,
+    "passive_currents_zero": true,
+    "scpn_coil_gradient": true,
+    "scpn_freegsnke_vacuum_parity_inside_limiter": true,
+    "topology_regression": true,
+    "total_psi_regression": true
+  },
+  "claim_boundary": {
+    "control_admission": false,
+    "facility_validation": false,
+    "pcs_deployment": false,
+    "safety_admission": false,
+    "total_psi_cross_solver_parity": false
+  },
+  "comparison_scope": {
+    "admitted": [
+      "pinned FreeGSNKE inverse solve against upstream current/psi baselines",
+      "pinned diverted topology and active-current limit regression",
+      "same-current same-filament SCPN/FreeGSNKE vacuum psi parity inside limiter",
+      "SCPN circuit-current autodiff gradient against central finite differences"
+    ],
+    "not_admitted": [
+      "full plasma-source or total-psi SCPN/FreeGSNKE parity",
+      "facility, PCS, safety, or control validation",
+      "latency or real-time readiness"
+    ]
+  },
+  "digests": {
+    "active_circuit_currents_sha256": "39551c04049620929d7653e5043a6a01bcf7345103a026293cfe7666d13f9826",
+    "active_filament_currents_sha256": "4494b34f0e7c6a4127f881dc483404bd9359804f063548ebd6017614033c1c1c",
+    "active_filament_incidence_sha256": "fb0caf05dfa11d3ba5a506e78bf48447fe42ee2448377f1d85015d1a12512b38",
+    "active_filament_r_sha256": "fba2119b75a9bc6e237788c29c239f883b484b7c99e0e97a6388c3bc6200623c",
+    "active_filament_z_sha256": "a3818e77cb929c099abf251b43d7953aafec7d30ca6ebd8e08a7fd82034c285a",
+    "freegsnke_total_psi_sha256": "e079e57104894ed8074dffc315fc5ba55889dbb93623564deb218db4eec0bdc9",
+    "freegsnke_vacuum_psi_sha256": "cb4b32d66cbee158a1e5f76e84da35f459e0b396e2bc32a32f4c1539522c7345",
+    "scpn_vacuum_psi_sha256": "36799f0fcc8986f5b25bff2ed9ad8a537569f8929301248be8c3f9cbfaaf412e"
+  },
+  "gradient_audit": {
+    "all_finite": true,
+    "autodiff_sha256": "a951c52ad08e49ebf78fe64c051a7528e70364e7356277b69a8410b18651c764",
+    "finite_difference_sha256": "33cb419d43c2a866b6c82b2c3e5e2b23f9c3cd509842972346793830fe8c5d58",
+    "finite_difference_step_a": 1.0,
+    "max_abs_error": 2.882029603032757e-19,
+    "objective": "mean(square(vacuum_psi_wb)) on fixed 9x9 interior diagnostic grid",
+    "passed": true,
+    "relative_l2_error": 4.601713923453472e-13,
+    "threshold_relative_l2_error_max": 1e-07
+  },
+  "inverse_regression": {
+    "active_current_max_abs_error_a": 0.0015267855763454463,
+    "active_current_threshold_a": 0.005,
+    "passive_current_max_abs_a": 0.0,
+    "passive_current_threshold_a": 1e-12,
+    "solver_relative_change": 7.772552759510894e-07,
+    "total_psi_atol_wb": 0.0004718885735869852,
+    "total_psi_max_abs_error_wb": 6.314191915504641e-08,
+    "total_psi_rmse_wb": 9.58182263162863e-09,
+    "total_psi_span_wb": 0.15729619119566174
+  },
+  "machine_contract": {
+    "active_circuit_count": 12,
+    "active_filament_count": 876,
+    "circuits": [
+      {
+        "circuit": "Solenoid",
+        "current_a": 5000.0,
+        "filament_count": 324,
+        "signed_turns": 324.0
+      },
+      {
+        "circuit": "PX",
+        "current_a": 3696.8090944766755,
+        "filament_count": 84,
+        "signed_turns": 84.0
+      },
+      {
+        "circuit": "D1",
+        "current_a": 6941.236553652974,
+        "filament_count": 70,
+        "signed_turns": 70.0
+      },
+      {
+        "circuit": "D2",
+        "current_a": 4390.861230885664,
+        "filament_count": 46,
+        "signed_turns": 46.0
+      },
+      {
+        "circuit": "D3",
+        "current_a": 2924.355186006588,
+        "filament_count": 46,
+        "signed_turns": 46.0
+      },
+      {
+        "circuit": "Dp",
+        "current_a": -2488.1988314333917,
+        "filament_count": 48,
+        "signed_turns": 48.0
+      },
+      {
+        "circuit": "D5",
+        "current_a": 249.19273211994647,
+        "filament_count": 54,
+        "signed_turns": 54.0
+      },
+      {
+        "circuit": "D6",
+        "current_a": -314.9949422096607,
+        "filament_count": 46,
+        "signed_turns": 46.0
+      },
+      {
+        "circuit": "D7",
+        "current_a": 511.07691868766733,
+        "filament_count": 46,
+        "signed_turns": 46.0
+      },
+      {
+        "circuit": "P4",
+        "current_a": -3564.379440164539,
+        "filament_count": 46,
+        "signed_turns": 46.0
+      },
+      {
+        "circuit": "P5",
+        "current_a": -3954.2343617676433,
+        "filament_count": 46,
+        "signed_turns": 46.0
+      },
+      {
+        "circuit": "P6",
+        "current_a": 6.879250645592557e-06,
+        "filament_count": 20,
+        "signed_turns": 0.0
+      }
+    ],
+    "current_limits": {
+      "passed": true,
+      "rows": [
+        {
+          "circuit": "Solenoid",
+          "current_a": 5000.0,
+          "lower_a": null,
+          "passed": true,
+          "upper_a": null
+        },
+        {
+          "circuit": "PX",
+          "current_a": 3696.8090944766755,
+          "lower_a": -5000.0,
+          "passed": true,
+          "upper_a": 5000.0
+        },
+        {
+          "circuit": "D1",
+          "current_a": 6941.236553652974,
+          "lower_a": -9000.0,
+          "passed": true,
+          "upper_a": 9000.0
+        },
+        {
+          "circuit": "D2",
+          "current_a": 4390.861230885664,
+          "lower_a": -9000.0,
+          "passed": true,
+          "upper_a": 9000.0
+        },
+        {
+          "circuit": "D3",
+          "current_a": 2924.355186006588,
+          "lower_a": -7000.0,
+          "passed": true,
+          "upper_a": 7000.0
+        },
+        {
+          "circuit": "Dp",
+          "current_a": -2488.1988314333917,
+          "lower_a": -7000.0,
+          "passed": true,
+          "upper_a": 7000.0
+        },
+        {
+          "circuit": "D5",
+          "current_a": 249.19273211994647,
+          "lower_a": -5000.0,
+          "passed": true,
+          "upper_a": 5000.0
+        },
+        {
+          "circuit": "D6",
+          "current_a": -314.9949422096607,
+          "lower_a": -4000.0,
+          "passed": true,
+          "upper_a": 4000.0
+        },
+        {
+          "circuit": "D7",
+          "current_a": 511.07691868766733,
+          "lower_a": -5000.0,
+          "passed": true,
+          "upper_a": 5000.0
+        },
+        {
+          "circuit": "P4",
+          "current_a": -3564.379440164539,
+          "lower_a": -10000.0,
+          "passed": true,
+          "upper_a": 0.0
+        },
+        {
+          "circuit": "P5",
+          "current_a": -3954.2343617676433,
+          "lower_a": -10000.0,
+          "passed": true,
+          "upper_a": 0.0
+        },
+        {
+          "circuit": "P6",
+          "current_a": 6.879250645592557e-06,
+          "lower_a": null,
+          "passed": true,
+          "upper_a": null
+        }
+      ]
+    },
+    "limiter_comparison_point_count": 3051,
+    "passive_circuit_count": 138
+  },
+  "payload_sha256": "1df12993cf2022815633e4de19cbcae10ec980837ab233b65d7aeb7212ebbc23",
+  "provenance": {
+    "artifacts": {
+      "active_coils": {
+        "path": "machine_configs/MAST-U/MAST-U_like_active_coils.pickle",
+        "sha256": "205601d38fe734866fcc14399c07f7c126f2a7af49f4b0172ca364ad9d3048d7"
+      },
+      "current_baseline": {
+        "path": "freegsnke/tests/baselines/test_inverse_control_currents.npy",
+        "sha256": "aac2fd8bd435e9042d0b29a15e4a6b8302410db7a80c00912f0924ad216f668f"
+      },
+      "limiter": {
+        "path": "machine_configs/MAST-U/MAST-U_like_limiter.pickle",
+        "sha256": "a27a01a2d335ec9c9572db9645a62466a3ecf9ec7fc3d82eb11b243c2b955701"
+      },
+      "passive_coils": {
+        "path": "machine_configs/MAST-U/MAST-U_like_passive_coils.pickle",
+        "sha256": "7f0f3f133d19a0fa78bc30639a6016a67fd369e23330d421c5bdca9c9e12af3d"
+      },
+      "psi_baseline": {
+        "path": "freegsnke/tests/baselines/test_inverse_psi.npy",
+        "sha256": "7a8411dc7afba9c53d508c2415da5314ba3e3d7f9c9e1b76967cd72f5ec950fb"
+      },
+      "upstream_test": {
+        "path": "freegsnke/tests/test_inverse_static_solver.py",
+        "sha256": "1e4c26cd342c3d6dcf08e835fb69b49a1c6669a73f2cde37bfcebb29923e0cd2"
+      },
+      "wall": {
+        "path": "machine_configs/MAST-U/MAST-U_like_wall.pickle",
+        "sha256": "46a29b7831b43621f7839d9fcbb79b870f1731024b7378f4d043ba83cf52fcd7"
+      }
+    },
+    "dependency_note": "FreeGSNKE 3.0.1 declares freegs4e~=0.13, which admits incompatible 0.14.0; this benchmark pins the upstream-compatible 0.13.1 runtime",
+    "local_artifacts": {
+      "benchmark_generator": {
+        "path": "validation/benchmark_freegsnke_inverse.py",
+        "sha256": "4be0ba16f932e6cab3f080bd89f64fb7dce5ff35d649ac245e534d531592dbb8"
+      },
+      "dependency_input": {
+        "path": "requirements/ci-freegsnke.in",
+        "sha256": "a1289e36c96f3a0334aa84fdde5d3cb8a4ebe4f0696e8802fba5d2c8e4c96472"
+      },
+      "dependency_lock": {
+        "path": "requirements/ci-freegsnke.txt",
+        "sha256": "3c07eeb3cec0cd5fbff39a1d910eb8a91f8ed14be177259bf3f9ef8d137529da"
+      },
+      "remote_workflow": {
+        "path": ".github/workflows/freegsnke-inverse.yml",
+        "sha256": "bcdd556fe91c8f4e67cec2578e29755d0111457f851bd3671777c88d81495e0a"
+      }
+    },
+    "source_commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+    "source_url": "https://github.com/FusionComputingLab/freegsnke",
+    "versions": {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "freegs4e": "0.13.1",
+      "freegsnke": "3.0.1",
+      "jax": "0.7.1",
+      "jaxlib": "0.7.1",
+      "numpy": "1.26.4",
+      "scipy": "1.15.3"
+    }
+  },
+  "schema_version": "scpn-fusion.freegsnke-inverse-comparison.v1",
+  "status": "pass",
+  "thresholds_predeclared": {
+    "active_current_max_abs_error_a": 0.005,
+    "gradient_relative_l2_error_max": 1e-07,
+    "passive_current_max_abs_a": 1e-12,
+    "topology_position_error_m_max": 0.0005,
+    "total_psi_span_atol_fraction": 0.003,
+    "vacuum_limiter_max_abs_error_wb": 1e-10
+  },
+  "topology": {
+    "axis_count": 1,
+    "axis_error_m": 6.419779051720514e-08,
+    "axis_m": [
+      0.9510529991832987,
+      -6.344279850446687e-08
+    ],
+    "expected_axis_m": [
+      0.951053009,
+      0.0
+    ],
+    "expected_xpoints_m": [
+      [
+        0.59848009,
+        -1.09716935
+      ],
+      [
+        0.59848008,
+        1.09716927
+      ]
+    ],
+    "passed": true,
+    "primary_xpoint_errors_m": [
+      1.659486840778632e-08,
+      1.3473610475641923e-08
+    ],
+    "threshold_position_error_m_max": 0.0005,
+    "xpoint_candidate_count": 10
+  },
+  "vacuum_bridge": {
+    "domain": "FreeGSNKE mask_inside_limiter",
+    "freegsnke_orientation": "R,Z",
+    "max_abs_error_wb": 1.1102230246251565e-16,
+    "rmse_wb": 2.8071586152750957e-17,
+    "scpn_orientation_before_transpose": "Z,R",
+    "threshold_max_abs_error_wb": 1e-10
+  }
+}
