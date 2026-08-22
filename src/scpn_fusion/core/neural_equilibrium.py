@@ -270,7 +270,27 @@ class NeuralEquilibriumAccelerator:
         self.is_trained = False
         self._input_mean: FloatArray | None = None
         self._input_std: FloatArray | None = None
+        self._latent_mean: FloatArray | None = None
+        self._latent_std: FloatArray | None = None
         self._psi_normalized: bool = False
+
+    def _denormalize_latent(self, coefficients: FloatArray) -> FloatArray:
+        """Restore PCA coefficients when an artifact stores latent normalization."""
+        if self._latent_mean is None and self._latent_std is None:
+            return coefficients
+        if self._latent_mean is None or self._latent_std is None:
+            raise RuntimeError("Latent normalization requires both mean and standard deviation.")
+        if self._latent_mean.shape != (self.cfg.n_components,) or self._latent_std.shape != (
+            self.cfg.n_components,
+        ):
+            raise RuntimeError(
+                "Latent normalization width does not match neural-equilibrium config."
+            )
+        if not np.all(np.isfinite(self._latent_mean)) or not np.all(np.isfinite(self._latent_std)):
+            raise RuntimeError("Latent normalization statistics must be finite.")
+        if np.any(self._latent_std <= 0.0):
+            raise RuntimeError("Latent normalization standard deviations must be positive.")
+        return coefficients * self._latent_std + self._latent_mean
 
     # ── GS residual loss ───────────────────────────────────────────
 
@@ -295,7 +315,7 @@ class NeuralEquilibriumAccelerator:
         if self.mlp is None:
             raise RuntimeError("MLP weights are unavailable.")
         x_norm = (X_test - self._input_mean) / self._input_std
-        coeffs = self.mlp.predict(x_norm)
+        coeffs = self._denormalize_latent(self.mlp.predict(x_norm))
         psi_pred = self.pca.inverse_transform(coeffs)
 
         mse = float(np.mean((psi_pred - Y_test_raw) ** 2))
@@ -671,7 +691,7 @@ class NeuralEquilibriumAccelerator:
                 "neural-equilibrium config."
             )
         x_norm = (features - self._input_mean) / self._input_std
-        coeffs = self.mlp.predict(x_norm)
+        coeffs = self._denormalize_latent(self.mlp.predict(x_norm))
         psi_flat = self.pca.inverse_transform(coeffs)
 
         # Denormalise if model was trained on normalised psi.
@@ -716,6 +736,13 @@ class NeuralEquilibriumAccelerator:
             "input_std": self._input_std,
             "n_layers": np.array([len(self.mlp.weights)]),
         }
+        if self._latent_mean is not None or self._latent_std is not None:
+            if self._latent_mean is None or self._latent_std is None:
+                raise RuntimeError(
+                    "Latent normalization requires both mean and standard deviation."
+                )
+            payload["latent_mean"] = self._latent_mean
+            payload["latent_std"] = self._latent_std
         for i, (w, b) in enumerate(zip(self.mlp.weights, self.mlp.biases)):
             payload[f"w{i}"] = w
             payload[f"b{i}"] = b
@@ -741,6 +768,8 @@ class NeuralEquilibriumAccelerator:
 
             self._input_mean = np.array(data["input_mean"])
             self._input_std = np.array(data["input_std"])
+            self._latent_mean = np.array(data["latent_mean"]) if "latent_mean" in data else None
+            self._latent_std = np.array(data["latent_std"]) if "latent_std" in data else None
 
             n_layers = int(data["n_layers"][0])
             weights = [np.array(data[f"w{i}"]) for i in range(n_layers)]

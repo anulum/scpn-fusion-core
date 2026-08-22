@@ -680,10 +680,22 @@ def run_training(
     accelerator = NeuralEquilibriumAccelerator()
     accelerator.load_weights(out_path)
     runtime_prediction = accelerator.predict(np.asarray(x_mean, dtype=np.float64))
+    reference_latent_normalized = np.asarray(
+        model_forward(params, jnp.zeros(x_mean.shape[0], dtype=jnp.float64))
+    )
+    reference_prediction = pca.inverse_transform(
+        (reference_latent_normalized * z_std + z_mean)[np.newaxis, :]
+    ).reshape(grid_width, grid_width)
     if runtime_prediction.shape != (grid_width, grid_width) or not np.all(
         np.isfinite(runtime_prediction)
     ):
         raise RuntimeError("Candidate failed its production runtime load/predict check.")
+    runtime_parity_max_abs = float(np.max(np.abs(runtime_prediction - reference_prediction)))
+    if runtime_parity_max_abs > 1e-8:
+        raise RuntimeError(
+            "Candidate production runtime does not preserve latent normalization "
+            f"(max abs error {runtime_parity_max_abs:.3e})."
+        )
     elapsed = time.perf_counter() - started
     report.update(
         {
@@ -706,6 +718,7 @@ def run_training(
                 "promotion_status": "candidate_not_promoted",
                 "runtime_load_predict_finite": True,
                 "runtime_prediction_shape": list(runtime_prediction.shape),
+                "runtime_training_path_parity_max_abs": runtime_parity_max_abs,
             },
         }
     )

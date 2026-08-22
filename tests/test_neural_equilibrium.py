@@ -190,11 +190,20 @@ class TestAcceleratorUnit:
         accel.pca.fit(Y)
 
         accel.mlp = SimpleMLP([4, 16, 8, 3], seed=42)
+        accel._latent_mean = np.array([10.0, -4.0, 2.0])
+        accel._latent_std = np.array([3.0, 0.5, 7.0])
         accel.is_trained = True
 
         # Predict before save
         test_feat = rng.standard_normal(4)
         pred_before = accel.predict(test_feat).copy()
+        normalized_coefficients = accel.mlp.predict(
+            ((test_feat - accel._input_mean) / accel._input_std)[np.newaxis, :]
+        )
+        expected = accel.pca.inverse_transform(
+            normalized_coefficients * accel._latent_std + accel._latent_mean
+        ).reshape(10, 10)
+        np.testing.assert_allclose(pred_before, expected, atol=1e-12)
 
         # Save and load
         path = tmp_path / "test_weights.npz"
@@ -205,6 +214,8 @@ class TestAcceleratorUnit:
 
         pred_after = accel2.predict(test_feat)
         np.testing.assert_allclose(pred_after, pred_before, atol=1e-12)
+        np.testing.assert_array_equal(accel2._latent_mean, accel._latent_mean)
+        np.testing.assert_array_equal(accel2._latent_std, accel._latent_std)
 
     def test_batch_predict_shape(self):
         """Batch prediction should return (batch, nh, nw)."""
@@ -349,7 +360,8 @@ class TestSPARCTraining:
     """Integration tests that train on real SPARC GEQDSK files."""
 
     @pytest.fixture(scope="class")
-    def trained_model(self, tmp_path_factory):
+    @staticmethod
+    def trained_model(tmp_path_factory: pytest.TempPathFactory):
         """Train once and share across tests in this class."""
         tmp = tmp_path_factory.mktemp("neq")
         files = sorted(SPARC_DIR.glob("*.geqdsk")) + sorted(SPARC_DIR.glob("*.eqdsk"))
