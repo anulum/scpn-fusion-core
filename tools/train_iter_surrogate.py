@@ -5,8 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — ITER Surrogate Training Tool
-"""
-Retrains the neural equilibrium surrogate for ITER 6.2 m scenarios.
+"""Retrain the neural equilibrium surrogate for ITER 6.2 m scenarios.
 
 Generates data by perturbing coil currents in FusionKernel,
 performs PCA on resulting Psi fields, and trains a JAX MLP.
@@ -15,10 +14,13 @@ performs PCA on resulting Psi fields, and trains a JAX MLP.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
+import os
 import time
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any, cast
 
 import jax
@@ -28,11 +30,13 @@ from jax import jit, random, value_and_grad, vmap
 from numpy.typing import NDArray
 
 from scpn_fusion.core.fusion_kernel import FusionKernel
+from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumAccelerator
 
 logger = logging.getLogger(__name__)
 FloatArray = NDArray[np.float64]
 Layer = dict[str, jax.Array]
 Params = list[Layer]
+CHECKPOINT_VERSION = 1
 
 
 def default_iter_dataset_paths(data_dir: str | Path = "data") -> tuple[Path, Path]:
@@ -92,14 +96,61 @@ def inspect_iter_dataset(
 
 def write_iter_dataset_report(path: Path, report: dict[str, Any]) -> None:
     """Write an ITER dataset evidence report."""
+    _atomic_write_text(path, json.dumps(report, indent=2, sort_keys=True) + "\n")
+
+
+def sha256_file(path: Path) -> str:
+    """Return the SHA-256 digest of a dataset or checkpoint file."""
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(8 * 1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    """Replace a text artifact only after its complete payload reaches disk."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    with NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+        delete=False,
+    ) as handle:
+        temporary = Path(handle.name)
+        handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+    temporary.replace(path)
+
+
+def _atomic_savez(path: Path, payload: dict[str, Any]) -> None:
+    """Replace an NPZ artifact atomically after a complete temporary write."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with NamedTemporaryFile(
+        mode="wb",
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".npz",
+        delete=False,
+    ) as handle:
+        temporary = Path(handle.name)
+    try:
+        np.savez(temporary, **payload)
+        with temporary.open("rb") as handle:
+            os.fsync(handle.fileno())
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 class FastNumPyPCA:
     """Memory-aware NumPy PCA using the sample Gram matrix."""
 
     def __init__(self, n_components: int = 20):
+        """Configure the number of retained principal components."""
         self.n_components = n_components
         self.mean_: FloatArray | None = None
         self.components_: FloatArray | None = None
@@ -141,6 +192,18 @@ class FastNumPyPCA:
 
         logger.info("  PCA complete.")
         return np.asarray(Z, dtype=np.float64)
+
+    def transform(self, X: FloatArray) -> FloatArray:
+        """Project samples into the fitted PCA basis."""
+        if self.mean_ is None or self.components_ is None:
+            raise RuntimeError("PCA must be fitted before transform")
+        return np.asarray((X - self.mean_) @ self.components_.T, dtype=np.float64)
+
+    def inverse_transform(self, Z: FloatArray) -> FloatArray:
+        """Reconstruct field samples from PCA coordinates."""
+        if self.mean_ is None or self.components_ is None:
+            raise RuntimeError("PCA must be fitted before inverse_transform")
+        return np.asarray(Z @ self.components_ + self.mean_, dtype=np.float64)
 
 
 # ── MLP Hyperparameters ──────────────────────────────────────────────
@@ -292,103 +355,314 @@ def generate_iter_data(
 # ── Training Entry Point ─────────────────────────────────────────────
 
 
-def main() -> None:
-    """Train or evaluate the ITER equilibrium surrogate workflow."""
-    parser = argparse.ArgumentParser(description="Train ITER surrogate")
-    parser.add_argument("--config", help="Path to ITER config JSON (required if generating data)")
-    parser.add_argument("--data", help="Path to existing .npz dataset")
-    parser.add_argument("--samples", type=int, default=1000, help="Number of samples to generate")
-    parser.add_argument("--epochs", type=int, default=EPOCHS, help="Training epochs")
-    parser.add_argument("--out", default="weights/neural_equilibrium_iter_v1.npz", help="Save path")
-    parser.add_argument(
-        "--report",
-        default="validation/reports/iter_surrogate_training_report.json",
-        help="Dataset evidence report path",
+def deterministic_split(
+    n_samples: int,
+    *,
+    validation_fraction: float,
+    seed: int,
+) -> tuple[NDArray[np.int64], NDArray[np.int64]]:
+    """Return deterministic disjoint training and validation indices."""
+    if n_samples < 3:
+        raise ValueError("At least three samples are required for a held-out split.")
+    if not 0.0 < validation_fraction < 1.0:
+        raise ValueError("validation_fraction must lie strictly between zero and one.")
+    n_validation = max(1, int(round(n_samples * validation_fraction)))
+    if n_validation >= n_samples:
+        raise ValueError("validation_fraction leaves no training samples.")
+    indices = np.random.default_rng(seed).permutation(n_samples)
+    return (
+        np.sort(indices[n_validation:]).astype(np.int64),
+        np.sort(indices[:n_validation]).astype(np.int64),
     )
-    parser.add_argument("--min-full-fidelity-samples", type=int, default=50_000)
-    parser.add_argument("--strict-full-fidelity", action="store_true")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed")
-    args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    t_start = time.perf_counter()
+def _checkpoint_identity(
+    *,
+    x_sha256: str,
+    y_sha256: str,
+    seed: int,
+    validation_fraction: float,
+) -> dict[str, Any]:
+    """Build immutable fields that bind recovery state to one dataset and split."""
+    return {
+        "checkpoint_version": np.array([CHECKPOINT_VERSION], dtype=np.int64),
+        "x_sha256": np.array([x_sha256]),
+        "y_sha256": np.array([y_sha256]),
+        "seed": np.array([seed], dtype=np.int64),
+        "validation_fraction": np.array([validation_fraction], dtype=np.float64),
+        "hidden_sizes": np.asarray(HIDDEN_SIZES, dtype=np.int64),
+        "learning_rate": np.array([LEARNING_RATE], dtype=np.float64),
+        "gradient_clip": np.array([GRAD_CLIP], dtype=np.float64),
+    }
 
-    # 1. Load or generate data
-    if args.data:
-        logger.info("Loading existing dataset from %s...", args.data)
-        X_raw, Y_raw = load_iter_dataset(args.data)
-        logger.info("  Loaded X shape: %s, Y shape (mmap): %s", X_raw.shape, Y_raw.shape)
-    else:
-        if not args.config:
-            logger.error("--config is required when generating data.")
-            return
-        X_raw, Y_raw = generate_iter_data(args.samples, args.config, args.seed)
 
+def _validate_checkpoint_identity(checkpoint: Any, identity: dict[str, Any]) -> None:
+    """Reject recovery state created for different data or split settings."""
+    for name, value in identity.items():
+        if name not in checkpoint or not np.array_equal(checkpoint[name], value):
+            raise ValueError(f"Checkpoint identity mismatch for {name}.")
+
+
+def _save_optimizer_checkpoint(
+    path: Path,
+    *,
+    params: Params,
+    first_moment: Params,
+    second_moment: Params,
+    completed_epochs: int,
+    final_loss: float,
+    identity: dict[str, Any],
+) -> None:
+    """Persist model and Adam state required for an exact epoch-boundary resume."""
+    payload = dict(identity)
+    payload["completed_epochs"] = np.array([completed_epochs], dtype=np.int64)
+    payload["final_loss"] = np.array([final_loss], dtype=np.float64)
+    payload["n_layers"] = np.array([len(params)], dtype=np.int64)
+    for index, (parameter, moment_1, moment_2) in enumerate(
+        zip(params, first_moment, second_moment, strict=True)
+    ):
+        for name in ("W", "b"):
+            payload[f"param_{index}_{name}"] = np.asarray(parameter[name])
+            payload[f"m_{index}_{name}"] = np.asarray(moment_1[name])
+            payload[f"v_{index}_{name}"] = np.asarray(moment_2[name])
+    _atomic_savez(path, payload)
+
+
+def _load_optimizer_checkpoint(
+    path: Path,
+    *,
+    identity: dict[str, Any],
+) -> tuple[Params, Params, Params, int, float]:
+    """Load an optimizer checkpoint after verifying its immutable identity."""
+    with np.load(path, allow_pickle=False) as checkpoint:
+        _validate_checkpoint_identity(checkpoint, identity)
+        n_layers = int(checkpoint["n_layers"][0])
+        completed_epochs = int(checkpoint["completed_epochs"][0])
+        final_loss = float(checkpoint["final_loss"][0])
+        params: Params = []
+        first_moment: Params = []
+        second_moment: Params = []
+        for index in range(n_layers):
+            params.append(
+                {name: jnp.asarray(checkpoint[f"param_{index}_{name}"]) for name in ("W", "b")}
+            )
+            first_moment.append(
+                {name: jnp.asarray(checkpoint[f"m_{index}_{name}"]) for name in ("W", "b")}
+            )
+            second_moment.append(
+                {name: jnp.asarray(checkpoint[f"v_{index}_{name}"]) for name in ("W", "b")}
+            )
+    return params, first_moment, second_moment, completed_epochs, final_loss
+
+
+def _held_out_metrics(
+    *,
+    pca: FastNumPyPCA,
+    params: Params,
+    x_validation: FloatArray,
+    y_validation: FloatArray,
+    x_mean: FloatArray,
+    x_std: FloatArray,
+    z_mean: FloatArray,
+    z_std: FloatArray,
+    chunk_size: int = 128,
+) -> dict[str, float]:
+    """Evaluate latent and reconstructed-field errors on unseen samples in chunks."""
+    squared_field_error = 0.0
+    field_elements = 0
+    relative_l2: list[float] = []
+    squared_latent_error = 0.0
+    latent_elements = 0
+    for start in range(0, len(x_validation), chunk_size):
+        stop = min(start + chunk_size, len(x_validation))
+        x_chunk = np.asarray((x_validation[start:stop] - x_mean) / x_std, dtype=np.float64)
+        y_chunk = np.asarray(y_validation[start:stop], dtype=np.float64)
+        z_true = pca.transform(y_chunk)
+        z_pred_norm = np.asarray(vmap(lambda x: model_forward(params, x))(jnp.asarray(x_chunk)))
+        z_pred = z_pred_norm * z_std + z_mean
+        latent_delta = z_pred - z_true
+        squared_latent_error += float(np.sum(latent_delta**2))
+        latent_elements += latent_delta.size
+        delta = pca.inverse_transform(z_pred) - y_chunk
+        squared_field_error += float(np.sum(delta**2))
+        field_elements += delta.size
+        numerator = np.linalg.norm(delta, axis=1)
+        denominator = np.maximum(np.linalg.norm(y_chunk, axis=1), 1e-15)
+        relative_l2.extend(np.asarray(numerator / denominator, dtype=np.float64).tolist())
+    return {
+        "latent_rmse": float(np.sqrt(squared_latent_error / max(latent_elements, 1))),
+        "field_rmse": float(np.sqrt(squared_field_error / max(field_elements, 1))),
+        "mean_relative_l2": float(np.mean(relative_l2)),
+        "p95_relative_l2": float(np.percentile(relative_l2, 95.0)),
+        "max_relative_l2": float(np.max(relative_l2)),
+    }
+
+
+def run_training(
+    *,
+    data_path: Path,
+    out_path: Path,
+    report_path: Path,
+    checkpoint_dir: Path,
+    epochs: int,
+    seed: int,
+    validation_fraction: float = 0.2,
+    checkpoint_every: int = 10,
+    min_full_fidelity_samples: int = 50_000,
+    strict_full_fidelity: bool = False,
+    resume: bool = False,
+) -> dict[str, Any]:
+    """Train a recoverable ITER surrogate candidate from an existing dataset."""
+    if epochs < 1 or checkpoint_every < 1:
+        raise ValueError("epochs and checkpoint_every must be positive.")
+    if not data_path.is_dir():
+        raise ValueError(
+            "Recoverable training requires a directory with iter_X.npy and iter_Y.npy."
+        )
+    x_path, y_path = default_iter_dataset_paths(data_path)
+    x_sha256 = sha256_file(x_path)
+    y_sha256 = sha256_file(y_path)
+    X_raw, Y_raw = load_iter_dataset(data_path)
     dataset_report = inspect_iter_dataset(
-        X_raw,
-        Y_raw,
-        min_full_fidelity_samples=args.min_full_fidelity_samples,
+        X_raw, Y_raw, min_full_fidelity_samples=min_full_fidelity_samples
     )
-    write_iter_dataset_report(Path(args.report), dataset_report)
-    logger.info("ITER dataset status: %s", dataset_report["status"])
-    if args.strict_full_fidelity and dataset_report["status"] != "full_fidelity_iter_dataset_ready":
+    if strict_full_fidelity and dataset_report["status"] != "full_fidelity_iter_dataset_ready":
         raise SystemExit(f"strict full-fidelity gate failed: {dataset_report['status']}")
-
-    n_valid = len(X_raw)
-    if n_valid < 2:
-        logger.error("Insufficient samples generated. Aborting.")
-        return
-
-    # 2. PCA reduction
-    n_comp = min(n_valid - 1, PCA_COMPONENTS_TARGET)
-    pca = FastNumPyPCA(n_components=n_comp)
-    Y_latent = pca.fit_transform(Y_raw)
+    train_indices, validation_indices = deterministic_split(
+        len(X_raw), validation_fraction=validation_fraction, seed=seed
+    )
+    identity = _checkpoint_identity(
+        x_sha256=x_sha256, y_sha256=y_sha256, seed=seed, validation_fraction=validation_fraction
+    )
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    pca_path = checkpoint_dir / "pca_checkpoint.npz"
+    optimizer_path = checkpoint_dir / "optimizer_checkpoint.npz"
+    if resume and optimizer_path.exists() and not pca_path.exists():
+        raise ValueError("Optimizer checkpoint exists without its PCA checkpoint.")
+    report: dict[str, Any] = {
+        **dataset_report,
+        "claim_class": "high_resolution_synthetic_solver_surrogate_candidate",
+        "facility_validated": False,
+        "status": "running",
+        "dataset": {
+            "x_path": str(x_path),
+            "y_path": str(y_path),
+            "x_sha256": x_sha256,
+            "y_sha256": y_sha256,
+            "original_generation_provenance": "unknown_preexisting_local_arrays",
+        },
+        "split": {
+            "seed": seed,
+            "validation_fraction": validation_fraction,
+            "training_samples": int(train_indices.size),
+            "validation_samples": int(validation_indices.size),
+        },
+        "recovery": {
+            "checkpoint_version": CHECKPOINT_VERSION,
+            "pca_checkpoint": str(pca_path),
+            "optimizer_checkpoint": str(optimizer_path),
+            "checkpoint_every_epochs": checkpoint_every,
+            "resume_requested": resume,
+        },
+    }
+    write_iter_dataset_report(report_path, report)
+    started = time.perf_counter()
+    pca = FastNumPyPCA()
+    if resume and pca_path.exists():
+        with np.load(pca_path, allow_pickle=False) as checkpoint:
+            _validate_checkpoint_identity(checkpoint, identity)
+            if not np.array_equal(checkpoint["train_indices"], train_indices) or not np.array_equal(
+                checkpoint["validation_indices"], validation_indices
+            ):
+                raise ValueError("PCA checkpoint split mismatch.")
+            pca.mean_ = np.asarray(checkpoint["pca_mean"], dtype=np.float64)
+            pca.components_ = np.asarray(checkpoint["pca_components"], dtype=np.float64)
+            pca.explained_variance_ratio_ = np.asarray(checkpoint["pca_evr"], dtype=np.float64)
+            pca.n_components = int(pca.components_.shape[0])
+            y_train_latent = np.asarray(checkpoint["y_train_latent"], dtype=np.float64)
+        logger.info("Resumed completed PCA from %s", pca_path)
+    else:
+        pca = FastNumPyPCA(n_components=min(train_indices.size - 1, PCA_COMPONENTS_TARGET))
+        y_train_latent = pca.fit_transform(np.asarray(Y_raw[train_indices], dtype=np.float64))
+        if pca.mean_ is None or pca.components_ is None or pca.explained_variance_ratio_ is None:
+            raise RuntimeError("PCA fit completed without learned components")
+        _atomic_savez(
+            pca_path,
+            {
+                **identity,
+                "train_indices": train_indices,
+                "validation_indices": validation_indices,
+                "pca_mean": pca.mean_,
+                "pca_components": pca.components_,
+                "pca_evr": pca.explained_variance_ratio_,
+                "y_train_latent": y_train_latent,
+            },
+        )
+        logger.info("Saved recoverable PCA state to %s", pca_path)
+    x_train = np.asarray(X_raw[train_indices], dtype=np.float64)
+    x_mean = x_train.mean(axis=0)
+    x_raw_std = x_train.std(axis=0)
+    x_std = np.where(x_raw_std < 1e-10, 1.0, x_raw_std)
+    x_train_norm = np.asarray((x_train - x_mean) / x_std, dtype=np.float64)
+    z_mean = y_train_latent.mean(axis=0)
+    z_raw_std = y_train_latent.std(axis=0)
+    z_std = np.where(z_raw_std < 1e-10, 1.0, z_raw_std)
+    y_train_norm = np.asarray((y_train_latent - z_mean) / z_std, dtype=np.float64)
+    if resume and optimizer_path.exists():
+        params, first_moment, second_moment, completed_epochs, final_loss = (
+            _load_optimizer_checkpoint(optimizer_path, identity=identity)
+        )
+        if completed_epochs > epochs:
+            raise ValueError("Optimizer checkpoint is newer than the requested epoch target.")
+    else:
+        params = init_mlp_params(
+            random.PRNGKey(seed), x_train_norm.shape[1], HIDDEN_SIZES, pca.n_components
+        )
+        first_moment = cast(Params, jax.tree_util.tree_map(jnp.zeros_like, params))
+        second_moment = cast(Params, jax.tree_util.tree_map(jnp.zeros_like, params))
+        completed_epochs = 0
+        final_loss = float("nan")
+    x_jax = jnp.asarray(x_train_norm)
+    y_jax = jnp.asarray(y_train_norm)
+    for epoch in range(completed_epochs, epochs):
+        step = epoch + 1
+        params, first_moment, second_moment, loss = update_step(
+            params, first_moment, second_moment, x_jax, y_jax, LEARNING_RATE, step
+        )
+        final_loss = float(loss)
+        completed_epochs = step
+        if completed_epochs % checkpoint_every == 0 or completed_epochs == epochs:
+            _save_optimizer_checkpoint(
+                optimizer_path,
+                params=params,
+                first_moment=first_moment,
+                second_moment=second_moment,
+                completed_epochs=completed_epochs,
+                final_loss=final_loss,
+                identity=identity,
+            )
+            logger.info("Epoch %d: loss=%.6f; checkpoint saved", completed_epochs, final_loss)
     if pca.mean_ is None or pca.components_ is None or pca.explained_variance_ratio_ is None:
-        raise RuntimeError("PCA fit completed without learned components")
-    explained_var = float(np.sum(pca.explained_variance_ratio_))
-    logger.info("PCA: %d components explain %.2f%% variance", n_comp, explained_var * 100)
-
-    # 3. Normalise inputs
-    x_mean = X_raw.mean(axis=0)
-    x_std = X_raw.std(axis=0)
-    x_std = np.where(x_std < 1e-10, 1.0, x_std)
-    X_norm = (X_raw - x_mean) / x_std
-
-    # 4. Train MLP
-    # Normalise Latent Variables for training stability
-    z_mean = Y_latent.mean(axis=0)
-    z_std = Y_latent.std(axis=0)
-    z_std = np.where(z_std < 1e-10, 1.0, z_std)
-    Y_norm = (Y_latent - z_mean) / z_std
-
-    key = random.PRNGKey(args.seed)
-    params = init_mlp_params(key, X_norm.shape[1], HIDDEN_SIZES, n_comp)
-
-    m = cast(Params, jax.tree_util.tree_map(jnp.zeros_like, params))
-    v = cast(Params, jax.tree_util.tree_map(jnp.zeros_like, params))
-
-    X_jax = jnp.asarray(X_norm)
-    Y_jax = jnp.asarray(Y_norm)
-
-    logger.info("Starting JAX training loop...")
-    t_step = 1
-    for epoch in range(args.epochs):
-        params, m, v, loss = update_step(params, m, v, X_jax, Y_jax, LEARNING_RATE, t_step)
-        epoch_loss = float(loss)
-        t_step += 1
-
-        if epoch % 10 == 0 or epoch == args.epochs - 1:
-            logger.info("Epoch %d: Loss=%.6f", epoch, epoch_loss)
-
-    # 5. Save weights
-    out_path = Path(args.out)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    payload = {
-        "n_components": np.array([n_comp]),
-        "grid_nh": np.array([int(np.sqrt(Y_raw.shape[1]))]),
-        "grid_nw": np.array([int(np.sqrt(Y_raw.shape[1]))]),
+        raise RuntimeError("PCA state unavailable before final artifact save")
+    if not np.isfinite(final_loss):
+        raise RuntimeError("Training completed without a finite loss.")
+    metrics = _held_out_metrics(
+        pca=pca,
+        params=params,
+        x_validation=np.asarray(X_raw[validation_indices], dtype=np.float64),
+        y_validation=np.asarray(Y_raw[validation_indices], dtype=np.float64),
+        x_mean=np.asarray(x_mean, dtype=np.float64),
+        x_std=np.asarray(x_std, dtype=np.float64),
+        z_mean=np.asarray(z_mean, dtype=np.float64),
+        z_std=np.asarray(z_std, dtype=np.float64),
+    )
+    grid_width = int(np.sqrt(Y_raw.shape[1]))
+    if grid_width * grid_width != Y_raw.shape[1]:
+        raise ValueError("ITER field width must describe a square grid.")
+    payload: dict[str, Any] = {
+        "n_components": np.array([pca.n_components]),
+        "grid_nh": np.array([grid_width]),
+        "grid_nw": np.array([grid_width]),
         "n_input_features": np.array([X_raw.shape[1]]),
         "pca_mean": pca.mean_,
         "pca_components": pca.components_,
@@ -399,14 +673,76 @@ def main() -> None:
         "latent_std": z_std,
         "n_layers": np.array([len(params)]),
     }
-    for i, p in enumerate(params):
-        payload[f"w{i}"] = np.asarray(p["W"])
-        payload[f"b{i}"] = np.asarray(p["b"])
+    for index, parameter in enumerate(params):
+        payload[f"w{index}"] = np.asarray(parameter["W"])
+        payload[f"b{index}"] = np.asarray(parameter["b"])
+    _atomic_savez(out_path, payload)
+    accelerator = NeuralEquilibriumAccelerator()
+    accelerator.load_weights(out_path)
+    runtime_prediction = accelerator.predict(np.asarray(x_mean, dtype=np.float64))
+    if runtime_prediction.shape != (grid_width, grid_width) or not np.all(
+        np.isfinite(runtime_prediction)
+    ):
+        raise RuntimeError("Candidate failed its production runtime load/predict check.")
+    elapsed = time.perf_counter() - started
+    report.update(
+        {
+            "status": "completed_candidate_below_full_fidelity_claim_threshold"
+            if dataset_report["status"] != "full_fidelity_iter_dataset_ready"
+            else "completed_candidate_meeting_configured_sample_threshold",
+            "training": {
+                "backend": jax.default_backend(),
+                "devices": [str(device) for device in jax.devices()],
+                "epochs": epochs,
+                "final_training_loss": final_loss,
+                "pca_components": pca.n_components,
+                "pca_explained_variance_sum": float(np.sum(pca.explained_variance_ratio_)),
+                "elapsed_seconds": elapsed,
+            },
+            "held_out_validation": metrics,
+            "artifact": {
+                "path": str(out_path),
+                "sha256": sha256_file(out_path),
+                "promotion_status": "candidate_not_promoted",
+                "runtime_load_predict_finite": True,
+                "runtime_prediction_shape": list(runtime_prediction.shape),
+            },
+        }
+    )
+    write_iter_dataset_report(report_path, report)
+    logger.info("Retraining complete in %.2f s. Candidate saved to %s", elapsed, out_path)
+    return report
 
-    np.savez(out_path, **payload)
 
-    t_total = time.perf_counter() - t_start
-    logger.info("Retraining complete in %.2f s. Saved to %s", t_total, out_path)
+def main() -> None:
+    """Train or evaluate the ITER equilibrium surrogate workflow."""
+    parser = argparse.ArgumentParser(description="Train ITER surrogate")
+    parser.add_argument("--data", required=True, help="Directory with iter_X.npy and iter_Y.npy")
+    parser.add_argument("--epochs", type=int, default=EPOCHS, help="Training epochs")
+    parser.add_argument("--out", required=True, help="Candidate NPZ output path")
+    parser.add_argument("--report", required=True, help="Training evidence report path")
+    parser.add_argument("--checkpoint-dir", required=True, help="Recovery checkpoint directory")
+    parser.add_argument("--checkpoint-every", type=int, default=10)
+    parser.add_argument("--validation-fraction", type=float, default=0.2)
+    parser.add_argument("--min-full-fidelity-samples", type=int, default=50_000)
+    parser.add_argument("--strict-full-fidelity", action="store_true")
+    parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    run_training(
+        data_path=Path(args.data),
+        out_path=Path(args.out),
+        report_path=Path(args.report),
+        checkpoint_dir=Path(args.checkpoint_dir),
+        epochs=args.epochs,
+        seed=args.seed,
+        validation_fraction=args.validation_fraction,
+        checkpoint_every=args.checkpoint_every,
+        min_full_fidelity_samples=args.min_full_fidelity_samples,
+        strict_full_fidelity=args.strict_full_fidelity,
+        resume=args.resume,
+    )
 
 
 if __name__ == "__main__":
