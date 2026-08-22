@@ -336,12 +336,8 @@ fn enforce_boundary(psi: &mut [Vec<f64>]) {
     }
     let nz = psi.len();
     let nr = psi[0].len();
-    for value in &mut psi[0] {
-        *value = 0.0;
-    }
-    for value in &mut psi[nz - 1] {
-        *value = 0.0;
-    }
+    psi[0].fill(0.0);
+    psi[nz - 1].fill(0.0);
     for row in psi {
         row[0] = 0.0;
         row[nr - 1] = 0.0;

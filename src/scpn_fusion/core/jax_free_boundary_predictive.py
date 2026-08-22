@@ -363,9 +363,7 @@ def predictive_gs_residual(
         if decompose_coil_field
         else psi_coil.reshape(-1)[wall_idx] + plasma_wall_flux
     )
-    res_flat = res.reshape(-1).at[wall_idx].set(
-        solved_field.reshape(-1)[wall_idx] - wall_target
-    )
+    res_flat = res.reshape(-1).at[wall_idx].set(solved_field.reshape(-1)[wall_idx] - wall_target)
     return res_flat.reshape(shape)
 
 
@@ -499,12 +497,7 @@ def _coupled_rhs(
     )
     plasma_wall_flux = response_matrix @ (j_phi.reshape(-1)[source_idx] * dA)
     wall_flux = plasma_wall_flux if decompose_coil_field else coil_wall + plasma_wall_flux
-    return (
-        (-(mu0 * R_grid[jnp.newaxis, :] * j_phi))
-        .reshape(-1)
-        .at[wall_idx]
-        .set(wall_flux)
-    )
+    return (-(mu0 * R_grid[jnp.newaxis, :] * j_phi)).reshape(-1).at[wall_idx].set(wall_flux)
 
 
 def solve_predictive_equilibrium(

@@ -43,6 +43,8 @@ permissions:
 env:
   FREEGSNKE_SOURCE_URL: https://github.com/FusionComputingLab/freegsnke.git
   FREEGSNKE_SOURCE_COMMIT: 00b79a08fbb6e642ac5ed2e440383cc5962e0358
+  FREEGSNKE_WHEEL_URL: https://files.pythonhosted.org/packages/e4/e8/94d2c77d2a7834ec0393504d35e053ff6a99bec99405b66d4828ec18c167/freegsnke-3.0.1-py3-none-any.whl
+  FREEGSNKE_WHEEL_SHA256: a1294263715af079127ad4482004c06e8ed531136e8818174f5487a3b39c3cb7
   JAX_ENABLE_X64: "true"
 
 jobs:
@@ -61,6 +63,8 @@ jobs:
       - name: Install hash-locked comparison environment
         run: |
           pip install --require-hashes -r requirements/ci-freegsnke.txt
+          pip install --no-deps \
+            "freegsnke @ ${FREEGSNKE_WHEEL_URL}#sha256=${FREEGSNKE_WHEEL_SHA256}"
           pip install --no-deps -e .
 
       - name: Provision pinned FreeGSNKE sources and public MAST-U data

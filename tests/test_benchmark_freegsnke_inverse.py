@@ -38,9 +38,10 @@ def test_live_inverse_comparison_passes_every_predeclared_gate(
 
     unsigned = dict(live_report)
     unsigned["payload_sha256"] = ""
-    assert live_report["payload_sha256"] == hashlib.sha256(
-        benchmark._canonical_json(unsigned)
-    ).hexdigest()
+    assert (
+        live_report["payload_sha256"]
+        == hashlib.sha256(benchmark._canonical_json(unsigned)).hexdigest()
+    )
 
 
 def test_live_case_exercises_the_same_machine_and_gradient_surfaces(
@@ -76,10 +77,7 @@ def test_live_profile_bridge_freezes_normalisation_gauge_and_cocos(
     assert bridge["convention"]["solver_cocos"] == 3
     assert bridge["convention"]["psi_span_wb_per_radian"] < 0.0
     assert bridge["normalised_flux_audit"]["max_abs_error"] <= benchmark.PSIN_MAX_ABS_ERROR
-    assert (
-        bridge["gauge_audit"]["relative_l2_error"]
-        <= benchmark.GAUGE_SOURCE_RELATIVE_L2_MAX
-    )
+    assert bridge["gauge_audit"]["relative_l2_error"] <= benchmark.GAUGE_SOURCE_RELATIVE_L2_MAX
     assert bridge["scale_audit"]["adapter"] == "identity"
     scale_errors = bridge["scale_audit"]["candidate_relative_l2_errors"]
     assert scale_errors["identity"] < scale_errors["scaled_by_2pi"]
@@ -88,8 +86,7 @@ def test_live_profile_bridge_freezes_normalisation_gauge_and_cocos(
     assert source["support_point_count"] > 1000
     assert source["relative_l2_error"] <= benchmark.PROFILE_SOURCE_RELATIVE_L2_MAX
     assert (
-        source["total_current_relative_error"]
-        <= benchmark.PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX
+        source["total_current_relative_error"] <= benchmark.PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX
     )
 
 
@@ -102,9 +99,7 @@ def test_claim_boundary_remains_fail_closed(live_report: dict[str, Any]) -> None
     assert claims["safety_admission"] is False
     assert live_report["blockers"]
     assert "shot-disjoint" in live_report["blockers"][0]
-    assert "shot-disjoint" in " ".join(
-        live_report["comparison_scope"]["not_admitted"]
-    )
+    assert "shot-disjoint" in " ".join(live_report["comparison_scope"]["not_admitted"])
 
 
 def test_live_total_psi_comparison_uses_real_solver_and_gradients(
@@ -122,13 +117,9 @@ def test_live_total_psi_comparison_uses_real_solver_and_gradients(
     production = comparison["production_smooth"]
     thresholds = comparison["thresholds_predeclared"]
     assert production["converged"] is True
+    assert production["psi_n_rmse_inside_limiter"] <= thresholds["psi_n_rmse_inside_limiter_max"]
     assert (
-        production["psi_n_rmse_inside_limiter"]
-        <= thresholds["psi_n_rmse_inside_limiter_max"]
-    )
-    assert (
-        production["support_current_relative_l2"]
-        <= thresholds["support_current_relative_l2_max"]
+        production["support_current_relative_l2"] <= thresholds["support_current_relative_l2_max"]
     )
     assert (
         production["relative_nonlinear_residual_rms"]

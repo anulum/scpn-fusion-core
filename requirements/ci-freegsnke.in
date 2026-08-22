@@ -1,8 +1,19 @@
 # Dedicated hash-locked FreeGSNKE inverse-parity dependencies.
 # Regenerate: uv pip compile requirements/ci-freegsnke.in --generate-hashes --python-platform linux --python-version 3.12 -o requirements/ci-freegsnke.txt
-freegsnke[freegs4e]==3.0.1
-# FreeGSNKE 3.0.1 declares ~=0.13, which also admits the incompatible
-# FreeGS4E 0.14.0 release.  Pin the last 0.13 line exercised by its baseline.
+# FreeGSNKE 3.0.1 unnecessarily requires the vulnerable Jupyter notebook
+# server even though the headless inverse gate never imports it.  The workflow
+# installs the hash-pinned FreeGSNKE wheel with --no-deps; keep its exercised
+# numerical runtime explicit here and omit the unused notebook server.
+numpy==1.26.4
+scipy==1.15.3
+matplotlib>=3.10.3,<3.11
+h5py==3.13.0
+scikit-image==0.25.2
+cvxpy==1.7.5
+# No secure DeepDiff 7.x exists.  The inverse gate exercises 8.6.2 directly.
+deepdiff==8.6.2
+# FreeGSNKE 3.0.1 declares ~=0.12, which also admits the incompatible
+# FreeGS4E 0.14.0 release.  Pin the exercised 0.13 line.
 freegs4e==0.13.1
 jax[cpu]==0.7.1
 pytest==9.1.1
@@ -11,3 +22,5 @@ pytest==9.1.1
 click>=8.1,<9
 pydantic>=2.0,<3
 requests>=2.31,<3
+# The total-psi bridge imports the public IMAS/OMAS convention constant.
+omas>=0.70

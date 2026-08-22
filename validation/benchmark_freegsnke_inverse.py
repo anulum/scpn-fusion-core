@@ -34,9 +34,11 @@ import argparse
 import hashlib
 import importlib.metadata
 import json
+
 # Only an exact pinned and digest-bound public upstream file is loaded.
 import pickle  # nosec B403
 import shutil
+
 # Fixed git argv, no shell, bounded timeout.
 import subprocess  # nosec B404
 from collections.abc import Callable
@@ -154,9 +156,7 @@ def _file_sha256(path: Path) -> str:
 
 def _array_sha256(value: object) -> str:
     array = np.asarray(value, dtype="<f8", order="C")
-    descriptor = _canonical_json(
-        {"dtype": "<f8", "shape": [int(size) for size in array.shape]}
-    )
+    descriptor = _canonical_json({"dtype": "<f8", "shape": [int(size) for size in array.shape]})
     return hashlib.sha256(descriptor + b"\0" + array.tobytes(order="C")).hexdigest()
 
 
@@ -410,9 +410,7 @@ def _topology_metrics(eq: Any) -> dict[str, Any]:
     axis_count = len(opt)
     xpoint_count = len(xpt)
     axis = np.asarray(opt[0][:2], dtype=np.float64) if axis_count == 1 else None
-    axis_error = (
-        float(np.linalg.norm(axis - EXPECTED_AXIS_M)) if axis is not None else float("inf")
-    )
+    axis_error = float(np.linalg.norm(axis - EXPECTED_AXIS_M)) if axis is not None else float("inf")
     xpoint_errors = []
     if xpoint_count:
         candidates = np.asarray(xpt[:, :2], dtype=np.float64)
@@ -558,13 +556,9 @@ def _profile_source_bridge(eq: Any, profiles: Any) -> dict[str, Any]:
             axis == float(eq.psi_axis) and boundary == float(eq.psi_bndry)
         ),
         "gauge_invariant_source": gauge_relative_l2 <= GAUGE_SOURCE_RELATIVE_L2_MAX,
-        "identity_cocos_scale_selected": (
-            DEFAULT_SOLVER_COCOS == 3 and best_scale == "identity"
-        ),
+        "identity_cocos_scale_selected": (DEFAULT_SOLVER_COCOS == 3 and best_scale == "identity"),
         "normalised_flux_orientation": psin_max_abs_error <= PSIN_MAX_ABS_ERROR,
-        "sampled_profile_source_parity": (
-            source_relative_l2 <= PROFILE_SOURCE_RELATIVE_L2_MAX
-        ),
+        "sampled_profile_source_parity": (source_relative_l2 <= PROFILE_SOURCE_RELATIVE_L2_MAX),
         "total_current_preserved": (
             current_relative_error <= PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX
         ),
@@ -840,9 +834,7 @@ def _total_psi_comparison(
         ),
     )
     frozen = np.asarray(frozen_jax, dtype=np.float64)
-    frozen_psi_n = (frozen - reference_axis_flux) / (
-        reference_boundary_flux - reference_axis_flux
-    )
+    frozen_psi_n = (frozen - reference_axis_flux) / (reference_boundary_flux - reference_axis_flux)
     frozen_psi_n_rmse = float(
         np.sqrt(np.mean(np.square(frozen_psi_n[limiter_mask] - reference_psi_n[limiter_mask])))
     )
@@ -962,10 +954,8 @@ def _total_psi_comparison(
             and frozen_psi_n_rmse <= TOTAL_PSI_PSI_N_RMSE_MAX
         ),
         "production_smooth_converged": bool(smooth_iterations and smooth_iterations[-1][1]),
-        "production_smooth_current": current_relative_error
-        <= TOTAL_PSI_CURRENT_RELATIVE_ERROR_MAX,
-        "production_smooth_residual": relative_residual_rms
-        <= TOTAL_PSI_RELATIVE_RESIDUAL_RMS_MAX,
+        "production_smooth_current": current_relative_error <= TOTAL_PSI_CURRENT_RELATIVE_ERROR_MAX,
+        "production_smooth_residual": relative_residual_rms <= TOTAL_PSI_RELATIVE_RESIDUAL_RMS_MAX,
         "production_smooth_shape": psi_n_rmse <= TOTAL_PSI_PSI_N_RMSE_MAX,
         "production_smooth_support": support_current_relative_l2
         <= TOTAL_PSI_SUPPORT_CURRENT_RELATIVE_L2_MAX,
@@ -1013,20 +1003,12 @@ def _total_psi_comparison(
             "xpoint_position_errors_m": xpoint_position_errors,
         },
         "thresholds_predeclared": {
-            "circuit_gradient_relative_error_max": (
-                TOTAL_PSI_COIL_GRADIENT_RELATIVE_ERROR_MAX
-            ),
+            "circuit_gradient_relative_error_max": (TOTAL_PSI_COIL_GRADIENT_RELATIVE_ERROR_MAX),
             "plasma_current_relative_error_max": TOTAL_PSI_CURRENT_RELATIVE_ERROR_MAX,
-            "profile_gradient_relative_error_max": (
-                TOTAL_PSI_PROFILE_GRADIENT_RELATIVE_ERROR_MAX
-            ),
+            "profile_gradient_relative_error_max": (TOTAL_PSI_PROFILE_GRADIENT_RELATIVE_ERROR_MAX),
             "psi_n_rmse_inside_limiter_max": TOTAL_PSI_PSI_N_RMSE_MAX,
-            "relative_nonlinear_residual_rms_max": (
-                TOTAL_PSI_RELATIVE_RESIDUAL_RMS_MAX
-            ),
-            "support_current_relative_l2_max": (
-                TOTAL_PSI_SUPPORT_CURRENT_RELATIVE_L2_MAX
-            ),
+            "relative_nonlinear_residual_rms_max": (TOTAL_PSI_RELATIVE_RESIDUAL_RMS_MAX),
+            "support_current_relative_l2_max": (TOTAL_PSI_SUPPORT_CURRENT_RELATIVE_L2_MAX),
             "topology_position_error_m_max": TOTAL_PSI_TOPOLOGY_POSITION_ERROR_M_MAX,
         },
     }
@@ -1042,8 +1024,8 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
     currents = np.asarray(eq.tokamak.getCurrentsVec(), dtype=np.float64)
     active_currents = currents[:12]
     passive_currents = currents[12:]
-    reference_currents = np.load(paths["current_baseline"]).astype(np.float64)
-    reference_psi = np.load(paths["psi_baseline"]).astype(np.float64)
+    reference_currents = np.load(paths["current_baseline"], allow_pickle=False).astype(np.float64)
+    reference_psi = np.load(paths["psi_baseline"], allow_pickle=False).astype(np.float64)
     solved_psi = np.asarray(eq.psi(), dtype=np.float64)
 
     current_max_abs_error = float(np.max(np.abs(active_currents - reference_currents)))
@@ -1054,9 +1036,7 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
     psi_rmse = float(np.sqrt(np.mean(np.square(psi_difference))))
     passive_max_abs = float(np.max(np.abs(passive_currents))) if passive_currents.size else 0.0
 
-    coil_r, coil_z, filament_i, incidence, circuits = _active_filaments(
-        source, active_currents
-    )
+    coil_r, coil_z, filament_i, incidence, circuits = _active_filaments(source, active_currents)
     scpn_vacuum = np.asarray(
         vacuum_field_si(
             jnp.asarray(eq.R[:, 0]),
@@ -1233,9 +1213,7 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
             "profile_gauge_relative_l2_error_max": GAUGE_SOURCE_RELATIVE_L2_MAX,
             "profile_psin_max_abs_error": PSIN_MAX_ABS_ERROR,
             "profile_source_relative_l2_error_max": PROFILE_SOURCE_RELATIVE_L2_MAX,
-            "profile_total_current_relative_error_max": (
-                PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX
-            ),
+            "profile_total_current_relative_error_max": (PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX),
             "passive_current_max_abs_a": PASSIVE_CURRENT_ATOL_A,
             "topology_position_error_m_max": TOPOLOGY_ATOL_M,
             "total_psi_span_atol_fraction": PSI_SPAN_ATOL_FRACTION,

@@ -12,8 +12,8 @@
 | Capability documentation pages | 63 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 603 |
+| Python test files | 604 |
 | Public documentation pages | 63 |
-| GitHub Actions workflows | 14 |
+| GitHub Actions workflows | 15 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.

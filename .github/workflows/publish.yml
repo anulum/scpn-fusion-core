@@ -45,12 +45,15 @@ jobs:
         with:
           python-version: "3.12"
       - name: Release readiness gate
+        env:
+          RELEASE_EVENT_NAME: ${{ github.event_name }}
+          RELEASE_INPUT_REF: ${{ inputs.ref }}
         run: |
           expected=""
-          if [ "${{ github.event_name }}" = "push" ] && [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+          if [ "${RELEASE_EVENT_NAME}" = "push" ] && [ "${GITHUB_REF_TYPE}" = "tag" ]; then
             expected="${GITHUB_REF_NAME}"
-          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.ref }}" ] && [[ "${{ inputs.ref }}" == v* ]]; then
-            expected="${{ inputs.ref }}"
+          elif [ "${RELEASE_EVENT_NAME}" = "workflow_dispatch" ] && [ -n "${RELEASE_INPUT_REF}" ] && [[ "${RELEASE_INPUT_REF}" == v* ]]; then
+            expected="${RELEASE_INPUT_REF}"
           fi
 
           if [ -n "${expected}" ]; then
