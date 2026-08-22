@@ -31,6 +31,7 @@ def test_live_inverse_comparison_passes_every_predeclared_gate(
 ) -> None:
     assert live_report["schema_version"] == benchmark.SCHEMA_VERSION
     assert live_report["benchmark_id"] == benchmark.BENCHMARK_ID
+    assert live_report["milestones"] == ["F-1c", "F-1d"]
     assert live_report["status"] == "pass"
     assert live_report["checks"]
     assert all(live_report["checks"].values())
@@ -64,12 +65,40 @@ def test_live_case_exercises_the_same_machine_and_gradient_surfaces(
     assert gradient["relative_l2_error"] <= benchmark.GRADIENT_RELATIVE_ERROR_MAX
 
 
+def test_live_profile_bridge_freezes_normalisation_gauge_and_cocos(
+    live_report: dict[str, Any],
+) -> None:
+    """The converged upstream profile crosses the real SCPN sampled source surface."""
+    bridge = live_report["profile_source_bridge"]
+    assert bridge["passed"] is True
+    assert bridge["checks"]
+    assert all(bridge["checks"].values())
+    assert bridge["convention"]["solver_cocos"] == 3
+    assert bridge["convention"]["psi_span_wb_per_radian"] < 0.0
+    assert bridge["normalised_flux_audit"]["max_abs_error"] <= benchmark.PSIN_MAX_ABS_ERROR
+    assert (
+        bridge["gauge_audit"]["relative_l2_error"]
+        <= benchmark.GAUGE_SOURCE_RELATIVE_L2_MAX
+    )
+    assert bridge["scale_audit"]["adapter"] == "identity"
+    scale_errors = bridge["scale_audit"]["candidate_relative_l2_errors"]
+    assert scale_errors["identity"] < scale_errors["scaled_by_2pi"]
+    assert scale_errors["identity"] < scale_errors["scaled_by_inv_2pi"]
+    source = bridge["source_parity"]
+    assert source["support_point_count"] > 1000
+    assert source["relative_l2_error"] <= benchmark.PROFILE_SOURCE_RELATIVE_L2_MAX
+    assert (
+        source["total_current_relative_error"]
+        <= benchmark.PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX
+    )
+
+
 def test_claim_boundary_remains_fail_closed(live_report: dict[str, Any]) -> None:
     assert live_report["claim_boundary"]
     assert not any(live_report["claim_boundary"].values())
     assert live_report["blockers"]
     assert "total-psi cross-solver parity" in live_report["blockers"][0]
-    assert "full plasma-source or total-psi" in " ".join(
+    assert "self-consistent total-psi" in " ".join(
         live_report["comparison_scope"]["not_admitted"]
     )
 
@@ -78,6 +107,8 @@ def test_markdown_preserves_result_and_claim_boundary(live_report: dict[str, Any
     rendered = benchmark.render_markdown(live_report)
     assert "Status: **PASS**" in rendered
     assert "vacuum-psi max error inside limiter" in rendered
+    assert "Sampled pprime/FFprime source relative L2 error" in rendered
+    assert "Selected COCOS-3 source adapter | identity" in rendered
     assert "full total-psi cross-solver parity" in rendered
     assert live_report["payload_sha256"] in rendered
 

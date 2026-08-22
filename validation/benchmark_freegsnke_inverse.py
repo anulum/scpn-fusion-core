@@ -6,7 +6,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — pinned FreeGSNKE inverse-equilibrium comparison
-"""Run a pinned MAST-U-like FreeGSNKE inverse solve and audit the SCPN coil bridge.
+"""Run a pinned MAST-U-like FreeGSNKE inverse solve and audit the SCPN bridge.
 
 This is a bounded comparison, not a facility-validation claim.  It executes the
 upstream FreeGSNKE 3.0.1 diverted inverse problem, verifies its currents, total
@@ -17,10 +17,11 @@ vacuum-flux comparison is evaluated inside the limiter, away from the deliberate
 filament self-field regularisation.  A JAX gradient of a fixed vacuum-flux
 objective is checked independently by central finite differences.
 
-The full plasma-source translation from FreeGSNKE ``ConstrainPaxisIp`` to SCPN
-sampled ``pprime``/``FFprime`` is intentionally not claimed here.  That needs a
-separately frozen normalisation/gauge contract before total-psi cross-solver
-parity can be admitted.
+The converged FreeGSNKE ``ConstrainPaxisIp`` profile is also sampled on SCPN's
+public ``pprime``/``FFprime`` surface.  The comparison freezes normalised-flux
+orientation, exact FreeGSNKE LCFS support, gauge invariance, and the shared
+COCOS-3 flux-per-radian convention.  It admits the profile-source translation,
+but not a separately executed self-consistent SCPN total-flux solve.
 """
 
 from __future__ import annotations
@@ -49,14 +50,20 @@ from numpy.typing import NDArray
 from freegsnke import GSstaticsolver, build_machine, equilibrium_update
 from freegsnke.inverse import Inverse_optimizer
 from freegsnke.jtor_update import ConstrainPaxisIp
-from scpn_fusion.core.jax_free_boundary_gs import vacuum_field_si
+from scpn_fusion.core.imas_equilibrium_io import DEFAULT_SOLVER_COCOS
+from scpn_fusion.core.jax_free_boundary_gs import (
+    MU0_SI,
+    general_gs_source,
+    normalised_flux_unclipped,
+    vacuum_field_si,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = ROOT / "data/external/full_fidelity_public_sources/repos/freegsnke"
 REPORT_PATH = ROOT / "validation/reports/freegsnke_inverse_comparison.json"
 MARKDOWN_PATH = ROOT / "validation/reports/freegsnke_inverse_comparison.md"
 
-SCHEMA_VERSION = "scpn-fusion.freegsnke-inverse-comparison.v1"
+SCHEMA_VERSION = "scpn-fusion.freegsnke-inverse-comparison.v2"
 BENCHMARK_ID = "F-1c-freegsnke-mastu-diverted-inverse"
 UPSTREAM_COMMIT = "00b79a08fbb6e642ac5ed2e440383cc5962e0358"
 UPSTREAM_VERSION = "3.0.1"
@@ -75,6 +82,12 @@ PASSIVE_CURRENT_ATOL_A = 1.0e-12
 VACUUM_LIMITER_MAX_ABS_WB = 1.0e-10
 GRADIENT_RELATIVE_ERROR_MAX = 1.0e-7
 FINITE_DIFFERENCE_STEP_A = 1.0
+PROFILE_SAMPLE_COUNT = 8193
+PROFILE_SOURCE_RELATIVE_L2_MAX = 1.0e-7
+PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX = 1.0e-7
+PSIN_MAX_ABS_ERROR = 1.0e-14
+GAUGE_SOURCE_RELATIVE_L2_MAX = 1.0e-12
+GAUGE_OFFSET_WB_PER_RADIAN = 17.25
 
 EXPECTED_AXIS_M = np.array([0.951053009, 0.0], dtype=np.float64)
 EXPECTED_XPOINTS_M = np.array(
@@ -238,7 +251,10 @@ def build_inverse_case(source: Path) -> tuple[Any, Any, Any, list[list[float | N
     return eq, profiles, constrain, coil_limits
 
 
-def solve_inverse_case(source: Path) -> tuple[Any, Any, list[list[float | None]]]:
+def solve_inverse_case_with_profiles(
+    source: Path,
+) -> tuple[Any, Any, Any, list[list[float | None]]]:
+    """Solve the frozen case and retain the converged FreeGSNKE profile object."""
     eq, profiles, constrain, coil_limits = build_inverse_case(source)
     solver = GSstaticsolver.NKGSsolver(eq=eq)
     solver.solve(
@@ -250,6 +266,12 @@ def solve_inverse_case(source: Path) -> tuple[Any, Any, list[list[float | None]]
         verbose=False,
         l2_reg=np.array([1.0e-12] * 10 + [1.0e-6], dtype=np.float64),
     )
+    return eq, profiles, solver, coil_limits
+
+
+def solve_inverse_case(source: Path) -> tuple[Any, Any, list[list[float | None]]]:
+    """Solve the frozen case while preserving the original F-1c return contract."""
+    eq, _, solver, coil_limits = solve_inverse_case_with_profiles(source)
     return eq, solver, coil_limits
 
 
@@ -418,12 +440,178 @@ def _current_limits(
     return {"passed": passed, "rows": rows}
 
 
+def _relative_l2(candidate: FloatArray, reference: FloatArray) -> float:
+    """Return a finite relative L2 error against a non-zero reference."""
+    denominator = float(np.linalg.norm(reference))
+    if denominator <= np.finfo(np.float64).tiny:
+        raise ValueError("relative L2 reference must be non-zero")
+    return float(np.linalg.norm(candidate - reference) / denominator)
+
+
+def _profile_source_bridge(eq: Any, profiles: Any) -> dict[str, Any]:
+    """Freeze the converged FreeGSNKE profile on SCPN's sampled source surface."""
+    if not hasattr(profiles, "inputs") or len(profiles.inputs) != 3:
+        raise ValueError("converged FreeGSNKE profile does not expose axis, boundary, and mask")
+
+    psi_rz = np.asarray(eq.psi(), dtype=np.float64)
+    r_grid = np.asarray(eq.R[:, 0], dtype=np.float64)
+    axis = float(profiles.inputs[0])
+    boundary = float(profiles.inputs[1])
+    support_rz = np.asarray(profiles.inputs[2], dtype=bool)
+    reference_jtor = np.asarray(profiles.jtor, dtype=np.float64)
+    if psi_rz.shape != support_rz.shape or psi_rz.shape != reference_jtor.shape:
+        raise ValueError("FreeGSNKE profile bridge arrays have inconsistent shapes")
+    if not np.any(support_rz) or not np.all(r_grid > 0.0):
+        raise ValueError("FreeGSNKE profile bridge requires non-empty support and positive R")
+
+    knots = np.linspace(0.0, 1.0, PROFILE_SAMPLE_COUNT, dtype=np.float64)
+    pprime = np.asarray(profiles.pprime(knots), dtype=np.float64)
+    ffprime = np.asarray(profiles.ffprime(knots), dtype=np.float64)
+    psi_zr = psi_rz.T
+
+    def translated_jtor(
+        psi: FloatArray,
+        psi_axis: float,
+        psi_boundary: float,
+    ) -> FloatArray:
+        rhs_zr = np.asarray(
+            general_gs_source(
+                jnp.asarray(psi.T),
+                jnp.asarray(r_grid),
+                jnp.asarray(psi_axis),
+                jnp.asarray(psi_boundary),
+                jnp.asarray(knots),
+                jnp.asarray(pprime),
+                jnp.asarray(ffprime),
+                axis_connected=False,
+            ),
+            dtype=np.float64,
+        )
+        raw_jtor_rz = -rhs_zr.T / (float(MU0_SI) * np.asarray(eq.R, dtype=np.float64))
+        return np.where(support_rz, raw_jtor_rz, 0.0)
+
+    scpn_jtor = translated_jtor(psi_rz, axis, boundary)
+    gauge_jtor = translated_jtor(
+        psi_rz + GAUGE_OFFSET_WB_PER_RADIAN,
+        axis + GAUGE_OFFSET_WB_PER_RADIAN,
+        boundary + GAUGE_OFFSET_WB_PER_RADIAN,
+    )
+    direct_psin = (psi_rz - axis) / (boundary - axis)
+    scpn_psin = np.asarray(
+        normalised_flux_unclipped(
+            jnp.asarray(psi_zr),
+            jnp.asarray(axis),
+            jnp.asarray(boundary),
+        ),
+        dtype=np.float64,
+    ).T
+
+    source_relative_l2 = _relative_l2(scpn_jtor, reference_jtor)
+    gauge_relative_l2 = _relative_l2(gauge_jtor, scpn_jtor)
+    psin_max_abs_error = float(np.max(np.abs(scpn_psin - direct_psin)))
+    d_area = float((eq.R_1D[1] - eq.R_1D[0]) * (eq.Z_1D[1] - eq.Z_1D[0]))
+    reference_current = float(np.sum(reference_jtor) * d_area)
+    scpn_current = float(np.sum(scpn_jtor) * d_area)
+    current_relative_error = abs(scpn_current - reference_current) / abs(reference_current)
+
+    scale_candidates = {
+        "identity": 1.0,
+        "scaled_by_2pi": 2.0 * np.pi,
+        "scaled_by_inv_2pi": 1.0 / (2.0 * np.pi),
+        "scaled_by_minus_1": -1.0,
+        "scaled_by_minus_2pi": -2.0 * np.pi,
+    }
+    scale_errors = {
+        name: _relative_l2(scale * scpn_jtor, reference_jtor)
+        for name, scale in scale_candidates.items()
+    }
+    best_scale = min(scale_errors, key=scale_errors.__getitem__)
+
+    checks = {
+        "anchor_values_match_equilibrium": (
+            axis == float(eq.psi_axis) and boundary == float(eq.psi_bndry)
+        ),
+        "gauge_invariant_source": gauge_relative_l2 <= GAUGE_SOURCE_RELATIVE_L2_MAX,
+        "identity_cocos_scale_selected": (
+            DEFAULT_SOLVER_COCOS == 3 and best_scale == "identity"
+        ),
+        "normalised_flux_orientation": psin_max_abs_error <= PSIN_MAX_ABS_ERROR,
+        "sampled_profile_source_parity": (
+            source_relative_l2 <= PROFILE_SOURCE_RELATIVE_L2_MAX
+        ),
+        "total_current_preserved": (
+            current_relative_error <= PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX
+        ),
+    }
+    return {
+        "checks": checks,
+        "convention": {
+            "freegsnke_grid_orientation": "R,Z",
+            "profile_derivative_variable": "psi = poloidal flux per radian, Phi_p/(2*pi)",
+            "psi_axis_wb_per_radian": axis,
+            "psi_boundary_wb_per_radian": boundary,
+            "psi_span_wb_per_radian": boundary - axis,
+            "scpn_grid_orientation": "Z,R",
+            "solver_cocos": DEFAULT_SOLVER_COCOS,
+            "source_equation": "J_phi = R*pprime + FFprime/(mu0*R)",
+            "support": "exact converged FreeGSNKE limiter_core_mask",
+        },
+        "digests": {
+            "ffprime_samples_sha256": _array_sha256(ffprime),
+            "freegsnke_jtor_sha256": _array_sha256(reference_jtor),
+            "pprime_samples_sha256": _array_sha256(pprime),
+            "psin_knots_sha256": _array_sha256(knots),
+            "scpn_translated_jtor_sha256": _array_sha256(scpn_jtor),
+            "support_mask_sha256": hashlib.sha256(
+                np.asarray(support_rz, dtype=np.uint8, order="C").tobytes(order="C")
+            ).hexdigest(),
+        },
+        "gauge_audit": {
+            "offset_wb_per_radian": GAUGE_OFFSET_WB_PER_RADIAN,
+            "relative_l2_error": gauge_relative_l2,
+            "threshold_relative_l2_error_max": GAUGE_SOURCE_RELATIVE_L2_MAX,
+        },
+        "normalised_flux_audit": {
+            "definition": "(psi - psi_axis)/(psi_boundary - psi_axis)",
+            "max_abs_error": psin_max_abs_error,
+            "threshold_max_abs_error": PSIN_MAX_ABS_ERROR,
+        },
+        "profile_sampling": {
+            "ffprime_max": float(np.max(ffprime)),
+            "ffprime_min": float(np.min(ffprime)),
+            "interpolation": "linear on monotonic psi_N knots",
+            "knot_count": PROFILE_SAMPLE_COUNT,
+            "pprime_max": float(np.max(pprime)),
+            "pprime_min": float(np.min(pprime)),
+        },
+        "scale_audit": {
+            "adapter": best_scale,
+            "candidate_relative_l2_errors": scale_errors,
+        },
+        "source_parity": {
+            "freegsnke_total_current_a": reference_current,
+            "max_abs_current_density_error_a_per_m2": float(
+                np.max(np.abs(scpn_jtor - reference_jtor))
+            ),
+            "relative_l2_error": source_relative_l2,
+            "scpn_total_current_a": scpn_current,
+            "support_point_count": int(np.count_nonzero(support_rz)),
+            "threshold_relative_l2_error_max": PROFILE_SOURCE_RELATIVE_L2_MAX,
+            "total_current_relative_error": current_relative_error,
+            "total_current_threshold_relative_error_max": (
+                PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX
+            ),
+        },
+        "passed": all(checks.values()),
+    }
+
+
 def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
     """Execute the frozen inverse case and return its fail-closed comparison report."""
     source = source.resolve()
     versions = validate_source(source)
     paths = _case_paths(source)
-    eq, solver, coil_limits = solve_inverse_case(source)
+    eq, profiles, solver, coil_limits = solve_inverse_case_with_profiles(source)
 
     currents = np.asarray(eq.tokamak.getCurrentsVec(), dtype=np.float64)
     active_currents = currents[:12]
@@ -465,6 +653,7 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
     circuit_names = [str(name) for name in list(eq.tokamak.coils_dict)[:12]]
     limits = _current_limits(circuit_names, active_currents, coil_limits)
     gradient = _gradient_audit(coil_r, coil_z, incidence, active_currents)
+    profile_bridge = _profile_source_bridge(eq, profiles)
 
     checks = {
         "active_current_regression": current_max_abs_error <= CURRENT_ATOL_A,
@@ -474,6 +663,7 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
         "scpn_freegsnke_vacuum_parity_inside_limiter": (
             vacuum_max_abs <= VACUUM_LIMITER_MAX_ABS_WB
         ),
+        "scpn_freegsnke_profile_source_bridge": bool(profile_bridge["passed"]),
         "topology_regression": bool(topology["passed"]),
         "total_psi_regression": psi_max_abs_error <= psi_atol,
     }
@@ -490,9 +680,9 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
         "benchmark_id": BENCHMARK_ID,
         "blockers": [
             (
-                "FreeGSNKE ConstrainPaxisIp to SCPN sampled pprime/FFprime "
-                "normalisation and gauge translation is not yet frozen; full total-psi "
-                "cross-solver parity remains unadmitted"
+                "The sampled profile-source convention is frozen, but a self-consistent "
+                "SCPN solve from the translated pprime/FFprime and exact topology support "
+                "has not yet demonstrated full total-psi cross-solver parity"
             )
         ],
         "case_contract": {
@@ -518,9 +708,13 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
                 "pinned diverted topology and active-current limit regression",
                 "same-current same-filament SCPN/FreeGSNKE vacuum psi parity inside limiter",
                 "SCPN circuit-current autodiff gradient against central finite differences",
+                (
+                    "FreeGSNKE ConstrainPaxisIp to SCPN sampled pprime/FFprime source parity "
+                    "with exact LCFS support, gauge invariance, and identity COCOS-3 scale"
+                ),
             ],
             "not_admitted": [
-                "full plasma-source or total-psi SCPN/FreeGSNKE parity",
+                "self-consistent total-psi SCPN/FreeGSNKE parity",
                 "facility, PCS, safety, or control validation",
                 "latency or real-time readiness",
             ],
@@ -555,7 +749,9 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
             "limiter_comparison_point_count": int(np.count_nonzero(limiter_mask)),
             "passive_circuit_count": int(passive_currents.size),
         },
+        "milestones": ["F-1c", "F-1d"],
         "payload_sha256": "",
+        "profile_source_bridge": profile_bridge,
         "provenance": {
             "artifacts": artifacts,
             "dependency_note": (
@@ -589,6 +785,12 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
         "thresholds_predeclared": {
             "active_current_max_abs_error_a": CURRENT_ATOL_A,
             "gradient_relative_l2_error_max": GRADIENT_RELATIVE_ERROR_MAX,
+            "profile_gauge_relative_l2_error_max": GAUGE_SOURCE_RELATIVE_L2_MAX,
+            "profile_psin_max_abs_error": PSIN_MAX_ABS_ERROR,
+            "profile_source_relative_l2_error_max": PROFILE_SOURCE_RELATIVE_L2_MAX,
+            "profile_total_current_relative_error_max": (
+                PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX
+            ),
             "passive_current_max_abs_a": PASSIVE_CURRENT_ATOL_A,
             "topology_position_error_m_max": TOPOLOGY_ATOL_M,
             "total_psi_span_atol_fraction": PSI_SPAN_ATOL_FRACTION,
@@ -612,6 +814,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     inverse = cast(dict[str, Any], report["inverse_regression"])
     vacuum = cast(dict[str, Any], report["vacuum_bridge"])
     gradient = cast(dict[str, Any], report["gradient_audit"])
+    profile = cast(dict[str, Any], report["profile_source_bridge"])
+    profile_source = cast(dict[str, Any], profile["source_parity"])
+    profile_gauge = cast(dict[str, Any], profile["gauge_audit"])
+    profile_scale = cast(dict[str, Any], profile["scale_audit"])
     topology = cast(dict[str, Any], report["topology"])
     checks = cast(dict[str, bool], report["checks"])
     lines = [
@@ -631,6 +837,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"| Worst primary X-point error | {max(topology['primary_xpoint_errors_m']):.6g} m |",
         f"| SCPN vs FreeGSNKE vacuum-psi max error inside limiter | {vacuum['max_abs_error_wb']:.6g} Wb |",
         f"| SCPN current-gradient relative L2 error | {gradient['relative_l2_error']:.6g} |",
+        f"| Sampled pprime/FFprime source relative L2 error | {profile_source['relative_l2_error']:.6g} |",
+        f"| Gauge-shifted source relative L2 error | {profile_gauge['relative_l2_error']:.6g} |",
+        f"| Selected COCOS-3 source adapter | {profile_scale['adapter']} |",
         "",
         "## Gates",
         "",
@@ -642,8 +851,10 @@ def render_markdown(report: dict[str, Any]) -> str:
             "## Claim boundary",
             "",
             (
-                "The full FreeGSNKE profile-source normalisation/gauge translation into SCPN "
-                "sampled `pprime`/`FFprime` is not frozen, so full total-psi cross-solver parity "
+                "The FreeGSNKE profile-source translation into SCPN sampled `pprime`/`FFprime` "
+                "is frozen for this case, including exact LCFS support, gauge invariance, and "
+                "identity COCOS-3 flux-per-radian scaling. A self-consistent SCPN solve has not "
+                "yet demonstrated full total-psi cross-solver parity, so that broader claim "
                 "remains explicitly unadmitted."
             ),
             "",

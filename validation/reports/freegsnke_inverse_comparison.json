@@ -1,7 +1,7 @@
 {
   "benchmark_id": "F-1c-freegsnke-mastu-diverted-inverse",
   "blockers": [
-    "FreeGSNKE ConstrainPaxisIp to SCPN sampled pprime/FFprime normalisation and gauge translation is not yet frozen; full total-psi cross-solver parity remains unadmitted"
+    "The sampled profile-source convention is frozen, but a self-consistent SCPN solve from the translated pprime/FFprime and exact topology support has not yet demonstrated full total-psi cross-solver parity"
   ],
   "case_contract": {
     "grid_shape_r_z": [
@@ -38,6 +38,7 @@
     "current_limits": true,
     "passive_currents_zero": true,
     "scpn_coil_gradient": true,
+    "scpn_freegsnke_profile_source_bridge": true,
     "scpn_freegsnke_vacuum_parity_inside_limiter": true,
     "topology_regression": true,
     "total_psi_regression": true
@@ -54,10 +55,11 @@
       "pinned FreeGSNKE inverse solve against upstream current/psi baselines",
       "pinned diverted topology and active-current limit regression",
       "same-current same-filament SCPN/FreeGSNKE vacuum psi parity inside limiter",
-      "SCPN circuit-current autodiff gradient against central finite differences"
+      "SCPN circuit-current autodiff gradient against central finite differences",
+      "FreeGSNKE ConstrainPaxisIp to SCPN sampled pprime/FFprime source parity with exact LCFS support, gauge invariance, and identity COCOS-3 scale"
     ],
     "not_admitted": [
-      "full plasma-source or total-psi SCPN/FreeGSNKE parity",
+      "self-consistent total-psi SCPN/FreeGSNKE parity",
       "facility, PCS, safety, or control validation",
       "latency or real-time readiness"
     ]
@@ -263,7 +265,79 @@
     "limiter_comparison_point_count": 3051,
     "passive_circuit_count": 138
   },
-  "payload_sha256": "1df12993cf2022815633e4de19cbcae10ec980837ab233b65d7aeb7212ebbc23",
+  "milestones": [
+    "F-1c",
+    "F-1d"
+  ],
+  "payload_sha256": "6edbb7163ed442fbabedb1b81ca7608a8f66d10c9e89bd3f9bb9088029625e2d",
+  "profile_source_bridge": {
+    "checks": {
+      "anchor_values_match_equilibrium": true,
+      "gauge_invariant_source": true,
+      "identity_cocos_scale_selected": true,
+      "normalised_flux_orientation": true,
+      "sampled_profile_source_parity": true,
+      "total_current_preserved": true
+    },
+    "convention": {
+      "freegsnke_grid_orientation": "R,Z",
+      "profile_derivative_variable": "psi = poloidal flux per radian, Phi_p/(2*pi)",
+      "psi_axis_wb_per_radian": 0.09187208126077186,
+      "psi_boundary_wb_per_radian": 0.028676936036798748,
+      "psi_span_wb_per_radian": -0.06319514522397311,
+      "scpn_grid_orientation": "Z,R",
+      "solver_cocos": 3,
+      "source_equation": "J_phi = R*pprime + FFprime/(mu0*R)",
+      "support": "exact converged FreeGSNKE limiter_core_mask"
+    },
+    "digests": {
+      "ffprime_samples_sha256": "b6e246f3895ecbab1e256cdbb08c3026452a3aa778f9d8456b2985c8c3dc790d",
+      "freegsnke_jtor_sha256": "d9be1cfedfd9f797be94247e510874841242f6170ec6ee7618f82ed28c730cd6",
+      "pprime_samples_sha256": "d47409335ebae5228338b333847b56dedfd8e5b9870f89fb6836af2a4bf1fa4c",
+      "psin_knots_sha256": "793ca6f76b17b90c9c997cc97fde9cafbbccfb4d4f56f1fd2c1bc4a950d14535",
+      "scpn_translated_jtor_sha256": "1fd2df04acea3065125245c5fce6033b08275a4f07010cbe327cda366ba625a0",
+      "support_mask_sha256": "9c1c89240c02b847bd07bded8c83c423808e9ce11527d70e9990c9c1640bc4fd"
+    },
+    "gauge_audit": {
+      "offset_wb_per_radian": 17.25,
+      "relative_l2_error": 3.684915273255902e-14,
+      "threshold_relative_l2_error_max": 1e-12
+    },
+    "normalised_flux_audit": {
+      "definition": "(psi - psi_axis)/(psi_boundary - psi_axis)",
+      "max_abs_error": 0.0,
+      "threshold_max_abs_error": 1e-14
+    },
+    "passed": true,
+    "profile_sampling": {
+      "ffprime_max": 0.5706717219234155,
+      "ffprime_min": 0.0,
+      "interpolation": "linear on monotonic psi_N knots",
+      "knot_count": 8193,
+      "pprime_max": 208748.1075026412,
+      "pprime_min": 0.0
+    },
+    "scale_audit": {
+      "adapter": "identity",
+      "candidate_relative_l2_errors": {
+        "identity": 3.4873792664137304e-08,
+        "scaled_by_2pi": 5.283185289425543,
+        "scaled_by_inv_2pi": 0.8408450573578199,
+        "scaled_by_minus_1": 1.9999999971743556,
+        "scaled_by_minus_2pi": 7.283185289425541
+      }
+    },
+    "source_parity": {
+      "freegsnke_total_current_a": 600000.0,
+      "max_abs_current_density_error_a_per_m2": 0.21621922002108818,
+      "relative_l2_error": 3.4873792664137304e-08,
+      "scpn_total_current_a": 600000.0029457931,
+      "support_point_count": 1623,
+      "threshold_relative_l2_error_max": 1e-07,
+      "total_current_relative_error": 4.909655156855782e-09,
+      "total_current_threshold_relative_error_max": 1e-07
+    }
+  },
   "provenance": {
     "artifacts": {
       "active_coils": {
@@ -299,7 +373,7 @@
     "local_artifacts": {
       "benchmark_generator": {
         "path": "validation/benchmark_freegsnke_inverse.py",
-        "sha256": "4be0ba16f932e6cab3f080bd89f64fb7dce5ff35d649ac245e534d531592dbb8"
+        "sha256": "1045757c04eda0fac26a4622deff40c85719f5b27fe611e1b76a4c2c9e727855"
       },
       "dependency_input": {
         "path": "requirements/ci-freegsnke.in",
@@ -326,12 +400,16 @@
       "scipy": "1.15.3"
     }
   },
-  "schema_version": "scpn-fusion.freegsnke-inverse-comparison.v1",
+  "schema_version": "scpn-fusion.freegsnke-inverse-comparison.v2",
   "status": "pass",
   "thresholds_predeclared": {
     "active_current_max_abs_error_a": 0.005,
     "gradient_relative_l2_error_max": 1e-07,
     "passive_current_max_abs_a": 1e-12,
+    "profile_gauge_relative_l2_error_max": 1e-12,
+    "profile_psin_max_abs_error": 1e-14,
+    "profile_source_relative_l2_error_max": 1e-07,
+    "profile_total_current_relative_error_max": 1e-07,
     "topology_position_error_m_max": 0.0005,
     "total_psi_span_atol_fraction": 0.003,
     "vacuum_limiter_max_abs_error_wb": 1e-10

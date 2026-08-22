@@ -14,6 +14,9 @@ This is bounded research evidence. It is not facility, PCS, safety, or control a
 | Worst primary X-point error | 1.65949e-08 m |
 | SCPN vs FreeGSNKE vacuum-psi max error inside limiter | 1.11022e-16 Wb |
 | SCPN current-gradient relative L2 error | 4.60171e-13 |
+| Sampled pprime/FFprime source relative L2 error | 3.48738e-08 |
+| Gauge-shifted source relative L2 error | 3.68492e-14 |
+| Selected COCOS-3 source adapter | identity |
 
 ## Gates
 
@@ -22,11 +25,12 @@ This is bounded research evidence. It is not facility, PCS, safety, or control a
 - PASS — `passive_currents_zero`
 - PASS — `scpn_coil_gradient`
 - PASS — `scpn_freegsnke_vacuum_parity_inside_limiter`
+- PASS — `scpn_freegsnke_profile_source_bridge`
 - PASS — `topology_regression`
 - PASS — `total_psi_regression`
 
 ## Claim boundary
 
-The full FreeGSNKE profile-source normalisation/gauge translation into SCPN sampled `pprime`/`FFprime` is not frozen, so full total-psi cross-solver parity remains explicitly unadmitted.
+The FreeGSNKE profile-source translation into SCPN sampled `pprime`/`FFprime` is frozen for this case, including exact LCFS support, gauge invariance, and identity COCOS-3 flux-per-radian scaling. A self-consistent SCPN solve has not yet demonstrated full total-psi cross-solver parity, so that broader claim remains explicitly unadmitted.
 
-Payload SHA-256: `1df12993cf2022815633e4de19cbcae10ec980837ab233b65d7aeb7212ebbc23`
+Payload SHA-256: `6edbb7163ed442fbabedb1b81ca7608a8f66d10c9e89bd3f9bb9088029625e2d`
