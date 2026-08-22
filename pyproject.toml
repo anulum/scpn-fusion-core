@@ -452,6 +452,8 @@ files = [
     "tools/train_frc_surrogate.py",
     "tools/train_iter_surrogate.py",
     "tests/test_iter_surrogate_tool.py",
+    "tools/verify_iter_synthetic_dataset.py",
+    "tests/test_iter_synthetic_dataset_verifier.py",
     "tools/train_mast_snn.py",
     "tools/train_neural_eq_v3.py",
     "tools/train_neural_equilibrium_augmented.py",

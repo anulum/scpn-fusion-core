@@ -1,0 +1,109 @@
+{
+  "schema_version": "scpn-fusion.iter-synthetic-dataset.v1",
+  "dataset_id": "iter-synthetic-equilibrium-v1-10000",
+  "release_tag": "iter-synthetic-dataset-v1",
+  "claim_class": "synthetic_iter_like_equilibrium_surrogate_baseline",
+  "facility_validated": false,
+  "experimental_shot_data": false,
+  "license": "AGPL-3.0-or-later; commercial license available",
+  "source": {
+    "repository": "https://github.com/anulum/scpn-fusion-core",
+    "source_commit": "13af94b0b968fc25bc1527dd19c0ae7fbbcf31e6",
+    "generator": "tools/parallel_gen_iter.py",
+    "generator_sha256": "0a5d16a972ebeeedf62f6b09b237b0f84b80ec62e142afeb32176bae280706b6",
+    "solver": "src/scpn_fusion/core/fusion_kernel.py",
+    "solver_sha256": "51ce4ece660d2a139aaf7936809c527e68a123e2cedd56285977b469c9619a17",
+    "config": "validation/iter_config.json",
+    "config_sha256": "b608764c65051aa37a45289359300f59fb1640e5d7f56b0e24501e730e56a645",
+    "source_material": "SCPN Fusion Core FusionKernel-generated synthetic equilibria; no ITER Organisation or experimental shot data",
+    "container_history": "The historical generator emitted X and Y in NPZ form. The preserved arrays were exported losslessly as separate NPY files; the original conversion command was not retained."
+  },
+  "generation": {
+    "requested_samples": 10000,
+    "valid_samples": 10000,
+    "workers": 12,
+    "worker_seeds": [42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],
+    "worker_chunk_offsets": [0, 834, 1668, 2502, 3336, 4169, 5002, 5835, 6668, 7501, 8334, 9167],
+    "coil_count": 7,
+    "coil_current_multiplier_range": [0.85, 1.15],
+    "plasma_current_base_config_value": 15.0,
+    "plasma_current_multiplier_range": [0.8, 1.2],
+    "plasma_current_feature_divisor": 1000000.0,
+    "boundary_xpoint_filter": false,
+    "historical_invocation": "python tools/parallel_gen_iter.py --config iter_config.json --samples 10000 --workers 12 --out data/iter_2d_high_fidelity.npz"
+  },
+  "machine_descriptor": {
+    "name": "ITER-Like-Demo",
+    "grid_shape": [128, 128],
+    "r_range_m": [2.0, 10.0],
+    "z_range_m": [-4.0, 4.0],
+    "b_t": 5.3,
+    "target_r_axis_m": 6.2,
+    "target_z_axis_m": 0.0,
+    "kappa": 1.7,
+    "delta_up": 0.33,
+    "delta_low": 0.33,
+    "q95": 3.0,
+    "coil_geometry_and_nominal_currents": "validation/iter_config.json at source_commit"
+  },
+  "features": [
+    {"index": 0, "name": "plasma_current_encoded", "status": "sampled", "unique_values": 10000, "min": 1.200012246570037e-05, "max": 1.7999819141587807e-05},
+    {"index": 1, "name": "b_t", "status": "constant", "unique_values": 1, "value": 5.3},
+    {"index": 2, "name": "r_axis_m", "status": "post_solve", "unique_values": 36, "min": 4.645669291338582, "max": 7.7952755905511815},
+    {"index": 3, "name": "z_axis_m", "status": "post_solve", "unique_values": 21, "min": -2.236220472440945, "max": -0.7244094488188977},
+    {"index": 4, "name": "pprime_scale", "status": "constant", "unique_values": 1, "value": 1.0},
+    {"index": 5, "name": "ffprime_scale", "status": "constant", "unique_values": 1, "value": 1.0},
+    {"index": 6, "name": "psi_axis", "status": "post_solve", "unique_values": 10000, "min": 1132.816153271554, "max": 7474.701665102946},
+    {"index": 7, "name": "psi_x", "status": "post_solve", "unique_values": 10000, "min": 0.8599140476636192, "max": 2560.714734347579},
+    {"index": 8, "name": "kappa", "status": "constant", "unique_values": 1, "value": 1.7},
+    {"index": 9, "name": "delta_up", "status": "constant", "unique_values": 1, "value": 0.33},
+    {"index": 10, "name": "delta_low", "status": "constant", "unique_values": 1, "value": 0.33},
+    {"index": 11, "name": "q95", "status": "constant", "unique_values": 1, "value": 3.0}
+  ],
+  "arrays": {
+    "X": {
+      "release_asset": "iter_X.npy",
+      "download_url": "https://github.com/anulum/scpn-fusion-core/releases/download/iter-synthetic-dataset-v1/iter_X.npy",
+      "shape": [10000, 12],
+      "dtype": "float64",
+      "size_bytes": 960128,
+      "sha256": "f951218e24b4ce53bcaaf511cf694b97e686ee374e6b10c3a90668f88deade9b",
+      "all_finite": true
+    },
+    "Y": {
+      "release_asset": "iter_Y.npy",
+      "download_url": "https://github.com/anulum/scpn-fusion-core/releases/download/iter-synthetic-dataset-v1/iter_Y.npy",
+      "shape": [10000, 16384],
+      "field_shape": [128, 128],
+      "dtype": "float64",
+      "size_bytes": 1310720128,
+      "sha256": "dc64767f1fee76888c4b2feba90f255e6255d06f6d5c228673ec33cd4f19123d",
+      "all_finite": true,
+      "min": -6275.584090091821,
+      "max": 7474.701665102946
+    }
+  },
+  "provenance_verification": {
+    "all_plasma_current_features_match_worker_rng_exactly": true,
+    "plasma_current_rows_verified": 10000,
+    "historical_snapshot_chunk_heads_reproduced_bitwise": true,
+    "chunk_heads_verified": 12,
+    "chunk_head_max_field_abs_difference": 0.0,
+    "verification_command": "python tools/verify_iter_synthetic_dataset.py --data data --manifest data/iter_synthetic_v1_manifest.json --full-field-scan"
+  },
+  "training_split": {
+    "algorithm": "numpy.random.default_rng(42).permutation(10000)",
+    "validation_fraction": 0.2,
+    "training_samples": 8000,
+    "validation_samples": 2000,
+    "split_indices_are_stored_in": "pca_checkpoint.npz release asset"
+  },
+  "claim_limits": [
+    "The sampled coil currents affect Y but are absent from X.",
+    "R_axis, Z_axis, psi_axis, and psi_x are post-solve features and therefore leak solved-state information into the surrogate input.",
+    "Seven of twelve input columns are constant in this cohort.",
+    "The historical generator did not reject boundary-clamped X-points.",
+    "The cohort validates interpolation within one synthetic generator distribution; it is not shot-disjoint experimental validation.",
+    "The dataset does not establish ITER, MAST, EFIT, OMFIT, IDA, safety, or control-grade accuracy."
+  ]
+}

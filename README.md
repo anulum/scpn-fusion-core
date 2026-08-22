@@ -163,11 +163,11 @@ checksums, thresholds, grid or scaling evidence, and native comparisons.
 | Public API exports | 2 |
 | Python capability source modules | 323 |
 | Python capability classes | 578 |
-| Capability documentation pages | 63 |
+| Capability documentation pages | 64 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 606 |
-| Public documentation pages | 63 |
+| Python test files | 607 |
+| Public documentation pages | 64 |
 | GitHub Actions workflows | 15 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
@@ -218,6 +218,7 @@ before plant deployment.
 | Understand applications and market value | [`docs/APPLICATIONS_AND_MARKET.md`](docs/APPLICATIONS_AND_MARKET.md) |
 | Read the current release and checksums | [`CHANGELOG.md`](CHANGELOG.md), [v4.0.0 release](https://github.com/anulum/scpn-fusion-core/releases/tag/v4.0.0) |
 | Reproduce benchmark claims | [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`RESULTS.md`](RESULTS.md) |
+| Download and reproduce the ITER-like synthetic baseline | [`docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md`](docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md) |
 | Track full-fidelity blockers | [`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md) |
 | Refresh checksummed full-reproduction evidence | [`validation/reports/full_reproduction_evidence.md`](validation/reports/full_reproduction_evidence.md) |
 | Choose a tutorial or notebook | [`docs/notebooks/README.md`](docs/notebooks/README.md), [`docs/sphinx/quickstart.rst`](docs/sphinx/quickstart.rst) |
@@ -277,6 +278,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | Rust vacuum field solve | **140 us** (33x33) / **489 us** (65x65) | `cargo bench -p fusion-core --bench vacuum_bench` |
 | QLKNN-10D transport surrogate | test rel_L2 = **0.094** | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence surrogate | val rel_L2 = **0.055** | `weights/fno_turbulence_jax.metrics.json` |
+| ITER-like synthetic equilibrium baseline v2 | held-out mean / p95 rel_L2 = **3.05% / 6.90%**; synthetic-only, not facility validated | `validation/reports/iter_surrogate_v2_selection.json` |
 | Disruption rate (1,000-shot sim campaign) | **0%** (Rust-PID) | `validation/stress_test_campaign.py` |
 | ITPA H-mode confinement | 53 shots / 24 machines | `validation/reference_data/itpa/` |
 | SPARC GEQDSK validation | 8 public EFIT equilibria; operator-source gate passes; row-level debug traces expose profile-source/free-boundary blockers | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py` |

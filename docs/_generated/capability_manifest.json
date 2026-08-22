@@ -13,6 +13,7 @@
       "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
       "docs/FUTURE_APPLICATIONS.md",
       "docs/IEC_61508_ROADMAP.md",
+      "docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
       "docs/ONBOARDING.md",
@@ -2761,15 +2762,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 63,
+    "capability_documentation_pages": 64,
     "github_workflows": 15,
     "optional_extras": 13,
     "public_api_exports": 2,
-    "public_documentation_pages": 63,
+    "public_documentation_pages": 64,
     "python_capability_classes": 578,
     "python_capability_source_modules": 323,
     "rust_workspace_crates": 13,
-    "test_files": 606
+    "test_files": 607
   },
   "documentation": {
     "public_pages": [
@@ -2784,6 +2785,7 @@
       "docs/DOE_ARPA_E_CONVERGENCE_PITCH.md",
       "docs/FUTURE_APPLICATIONS.md",
       "docs/IEC_61508_ROADMAP.md",
+      "docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
       "docs/ONBOARDING.md",
@@ -3244,6 +3246,7 @@
       "tests/test_integrated_transport_solver_runtime_utils.py",
       "tests/test_ipb98y2_benchmark.py",
       "tests/test_iter_surrogate_tool.py",
+      "tests/test_iter_synthetic_dataset_verifier.py",
       "tests/test_jacobi_sor_stencil_parity.py",
       "tests/test_jax_chebyshev_psi.py",
       "tests/test_jax_continuation_history.py",

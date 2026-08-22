@@ -1,0 +1,58 @@
+{
+  "schema_version": "scpn-fusion.iter-surrogate-selection.v1",
+  "model_id": "neural-equilibrium-iter-synthetic-v2",
+  "artifact": "weights/neural_equilibrium_iter_synthetic_v2.npz",
+  "artifact_sha256": "6d48a7f877ca19187edc7a5ae7c858d1c754e82411f906017a926399453dbfd6",
+  "promotion_status": "published_synthetic_baseline_not_default",
+  "claim_class": "high_resolution_synthetic_solver_surrogate_candidate",
+  "facility_validated": false,
+  "selected_epoch": 10000,
+  "selection_reason": "Epoch 20000 improved mean relative L2 by only 0.87 percent while worsening p95 and maximum relative L2; epoch 10000 is the tail-robust selection.",
+  "dataset": {
+    "manifest": "data/iter_synthetic_v1_manifest.json",
+    "samples": 10000,
+    "training_samples": 8000,
+    "validation_samples": 2000,
+    "seed": 42,
+    "x_sha256": "f951218e24b4ce53bcaaf511cf694b97e686ee374e6b10c3a90668f88deade9b",
+    "y_sha256": "dc64767f1fee76888c4b2feba90f255e6255d06f6d5c228673ec33cd4f19123d"
+  },
+  "selected_held_out_validation": {
+    "field_rmse": 52.531884254181435,
+    "mean_relative_l2": 0.030502459143903708,
+    "p95_relative_l2": 0.0689957378544348,
+    "max_relative_l2": 0.16143578925113838
+  },
+  "milestones": {
+    "epoch_1000_mean_relative_l2": 0.06278097187632552,
+    "epoch_5000_mean_relative_l2": 0.03533023608286891,
+    "epoch_10000_mean_relative_l2": 0.030502459143903708,
+    "epoch_20000_mean_relative_l2": 0.03023647931888729,
+    "epoch_20000_p95_relative_l2": 0.07006990728651069,
+    "epoch_20000_max_relative_l2": 0.17267418595754522
+  },
+  "standard_v1_same_indices_comparison": {
+    "mean_relative_l2": 0.048945760649206846,
+    "p95_relative_l2": 0.12012360351777539,
+    "max_relative_l2": 0.22863563031903217,
+    "caveat": "The v1 artifact has no recorded split and may have trained on these indices; this comparison is descriptive, not a clean model-selection test."
+  },
+  "runtime_contract": {
+    "backend": "gpu",
+    "device": "cuda:0",
+    "runtime_training_path_parity_max_abs": 9.094947017729282e-13,
+    "runtime_prediction_shape": [128, 128],
+    "runtime_prediction_finite": true
+  },
+  "recovery_assets": {
+    "pca_checkpoint_sha256": "5620a8ec06aca703a7f8475f13f704767bcb4b30b22159602ebb04cd7675e1a9",
+    "optimizer_checkpoint_epoch": 20000,
+    "optimizer_checkpoint_sha256": "766e115284da48e74ef82bd0491b973c7540b7c1ddc14b91d6f2efd3ef716f2b"
+  },
+  "claim_limits": [
+    "This model predicts synthetic FusionKernel Psi fields inside one generator distribution.",
+    "It is not a general machine-conditioned equilibrium model because individual coil currents and machine geometry are not model inputs.",
+    "It is not an experimental shot predictor and has no MAST, ITER, EFIT, OMFIT, or facility-held-out validation.",
+    "The selected weights remain a published baseline and do not replace the default v1 runtime artifact."
+  ]
+}
