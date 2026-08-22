@@ -93,9 +93,7 @@ def test_verify_dataset_checks_hash_shape_rng_and_finiteness(tmp_path: Path) -> 
     manifest_path = tmp_path / "manifest.json"
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
-    result = verify_dataset(
-        data_dir=tmp_path, manifest_path=manifest_path, full_field_scan=True
-    )
+    result = verify_dataset(data_dir=tmp_path, manifest_path=manifest_path, full_field_scan=True)
 
     assert result["status"] == "passed"
     assert result["rng_rows_verified"] == 5
@@ -104,9 +102,7 @@ def test_verify_dataset_checks_hash_shape_rng_and_finiteness(tmp_path: Path) -> 
 
 def test_published_v2_weights_match_selection_report_and_runtime() -> None:
     report = json.loads(
-        (REPO / "validation/reports/iter_surrogate_v2_selection.json").read_text(
-            encoding="utf-8"
-        )
+        (REPO / "validation/reports/iter_surrogate_v2_selection.json").read_text(encoding="utf-8")
     )
     weights_path = REPO / report["artifact"]
 

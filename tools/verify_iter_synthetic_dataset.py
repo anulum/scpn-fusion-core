@@ -59,9 +59,7 @@ def _array_contract(array: NDArray[np.generic], spec: dict[str, Any]) -> list[st
     return failures
 
 
-def verify_dataset(
-    *, data_dir: Path, manifest_path: Path, full_field_scan: bool
-) -> dict[str, Any]:
+def verify_dataset(*, data_dir: Path, manifest_path: Path, full_field_scan: bool) -> dict[str, Any]:
     """Return a machine-readable verification result."""
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     generation = manifest["generation"]
