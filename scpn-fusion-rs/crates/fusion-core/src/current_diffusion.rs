@@ -259,13 +259,9 @@ mod tests {
     fn hall_drive_integrates_linearly_without_damping() {
         let mut input = base_input(12, 4);
         for row in &mut input.e_theta_v_m {
-            for value in row {
-                *value = 15.0;
-            }
+            row.fill(15.0);
         }
-        for value in &mut input.r_null_m {
-            *value = 0.2;
-        }
+        input.r_null_m.fill(0.2);
         let trajectory = solve_flux_evolution_nonadiabatic(&input).unwrap();
         let expected = 0.2 + 4.0 * input.dt_s * 0.2 * 15.0;
         assert!((trajectory.psi[4][0] - expected).abs() < 1.0e-15);
@@ -281,9 +277,7 @@ mod tests {
     fn damping_matches_constant_tau_exponential() {
         let mut input = base_input(10, 8);
         for row in &mut input.tau_psi_s {
-            for value in row {
-                *value = 4.0e-7;
-            }
+            row.fill(4.0e-7);
         }
         let trajectory = solve_flux_evolution_nonadiabatic(&input).unwrap();
         let expected = 0.2 * (-(8.0 * input.dt_s) / 4.0e-7).exp();
