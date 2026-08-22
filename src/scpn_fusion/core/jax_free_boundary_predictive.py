@@ -68,7 +68,7 @@ from typing import Callable, cast
 
 import jax
 import jax.numpy as jnp
-from jax.scipy.sparse.linalg import bicgstab
+from jax.scipy.sparse.linalg import bicgstab, gmres
 
 from scpn_fusion.core.jax_free_boundary_gs import (
     MU0_SI,
@@ -89,6 +89,10 @@ _bicgstab = cast(
     Callable[..., tuple[jnp.ndarray, jnp.ndarray]],
     bicgstab,
 )
+_gmres = cast(
+    Callable[..., tuple[jnp.ndarray, jnp.ndarray]],
+    gmres,
+)
 
 # Anderson / continuation defaults used by the fail-closed public same-case benchmark.
 DEFAULT_N_ITER = 180
@@ -101,13 +105,15 @@ DEFAULT_CUTOFF_WIDTH = 0.03
 DEFAULT_TOL = 1.0e-9
 _BICGSTAB_TOL = 1.0e-11
 _BICGSTAB_MAXITER = 700
-# The adjoint (∂F/∂ψ)ᵀ system mixes interior rows (Δ*, ~1/h²) and wall rows (~1); uncorrected it
-# is badly scaled and its iteration count grows ~1/h², so a fixed cap is silently hit at finer
-# grids and the gradient under-converges (a ~(h_coarse/h_fine)² error — ~4× at 65² if capped at
-# 800). The Jacobi preconditioner in `_solve_diff_bwd` normalises that diagonal, making the
-# BiCGSTAB convergence roughly grid-insensitive; this cap then only bounds pathological cases.
-# Validated: preconditioned, 65² reaches a ~3e-5 warm-FD match within this cap.
-_ADJOINT_MAXITER = 2000
+# The adjoint mixes interior rows (Δ*, ~1/h²) and identity wall rows.  The backward solve uses
+# right-preconditioned GMRES on `A.T @ D^-1 y = psi_bar`, so its stopping criterion measures the
+# physical residual; `lambda = D^-1 y` then recovers the original adjoint variable.  A left
+# preconditioner is forbidden here because it can report convergence with an O(1) physical
+# residual and silently bias coil gradients.
+_ADJOINT_MAXITER = 100
+_ADJOINT_RESTART = 100
+_ADJOINT_TOL = 1.0e-9
+_ADJOINT_RESIDUAL_FACTOR = 10.0
 
 
 @dataclass(frozen=True)
@@ -254,6 +260,7 @@ def _plasma_current(
     dA: jnp.ndarray,
     cutoff_width: float,
     mu0: float,
+    fixed_support_weights: jnp.ndarray | None = None,
 ) -> jnp.ndarray:
     """Calculate the smooth, Ip-normalised toroidal current density.
 
@@ -270,11 +277,15 @@ def _plasma_current(
     ffprime = jnp.interp(psi_n, psin_knots, ffprime_vals)
     r_safe = jnp.maximum(R_grid[jnp.newaxis, :], 1e-6)
     j_raw = r_safe * pprime + ffprime / (mu0 * r_safe)
-    support = soft_axis_connected_support(psi, psi_n_raw, cutoff_width)
+    support = (
+        soft_axis_connected_support(psi, psi_n_raw, cutoff_width)
+        if fixed_support_weights is None
+        else fixed_support_weights
+    )
     j_masked = j_raw * support
     ip_now = jnp.sum(j_masked) * dA
     scale = ip_target / jnp.where(jnp.abs(ip_now) < 1.0, 1.0, ip_now)
-    return cast(jnp.ndarray, j_masked * scale)
+    return j_masked * scale
 
 
 def predictive_gs_residual(
@@ -293,23 +304,38 @@ def predictive_gs_residual(
     source_idx: jnp.ndarray,
     cutoff_width: float = DEFAULT_CUTOFF_WIDTH,
     mu0: float = MU0_SI,
+    *,
+    fixed_psi_axis: jnp.ndarray | None = None,
+    fixed_psi_boundary: jnp.ndarray | None = None,
+    fixed_support_weights: jnp.ndarray | None = None,
+    decompose_coil_field: bool = False,
 ) -> jnp.ndarray:
     """Coupled predictive GS residual ``F(ψ)`` whose root is the free-boundary equilibrium.
 
-    Interior: ``Δ*ψ − S(ψ)`` with ``S = −μ₀ R Jφ`` and ``Jφ`` the Ip-normalised current.
-    Wall rows: ``ψ − (ψ_coil + M @ (Jφ·dA))`` — the von Hagenow self-consistent Dirichlet
-    condition, coils **plus** plasma self-field. The axis / separatrix use the smooth O-/X-point
-    finders, so ``F`` is a pure differentiable function of ``ψ`` (and ``θ = (I_coil, p', FF')``);
-    ``F(ψ*, θ) = 0`` at the equilibrium and defines the implicit-diff adjoint.
+    The default retains the historical total-field formulation. With
+    ``decompose_coil_field=True``, the interior is ``Δ*(ψ − ψ_coil) − S(ψ)`` and wall rows are
+    ``(ψ − ψ_coil) − M @ (Jφ·dA)``. This exact superposition is required when coil filaments lie
+    inside the rectangular grid, where their vacuum field is not harmonic throughout the domain.
+    Fixed anchors/support form an explicit external-reconstruction control; omitted values use
+    the differentiable smooth O-/X-point and axis-connected-support path.
     """
     shape = (Z_grid.shape[0], R_grid.shape[0])
     d_r = R_grid[1] - R_grid[0]
     d_z = Z_grid[1] - Z_grid[0]
     dA = d_r * d_z
 
+    if (fixed_psi_axis is None) != (fixed_psi_boundary is None):
+        raise ValueError("fixed_psi_axis and fixed_psi_boundary must be supplied together")
+    if fixed_support_weights is not None and fixed_support_weights.shape != psi.shape:
+        raise ValueError("fixed_support_weights must match the equilibrium grid")
+
     psi_coil = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, coil_I, mu0)
-    axis = smooth_axis_flux(psi)
-    bndry = smooth_xpoint_flux(psi, R_grid, Z_grid)
+    axis = smooth_axis_flux(psi) if fixed_psi_axis is None else fixed_psi_axis
+    bndry = (
+        smooth_xpoint_flux(psi, R_grid, Z_grid)
+        if fixed_psi_boundary is None
+        else fixed_psi_boundary
+    )
     j_phi = _plasma_current(
         psi,
         R_grid,
@@ -322,17 +348,24 @@ def predictive_gs_residual(
         dA,
         cutoff_width,
         mu0,
+        fixed_support_weights,
     )
 
     # Interior source is −μ₀ R Jφ with the SAME Ip-normalised current the solve uses (not the
     # raw general_gs_source), so F = 0 exactly at the coupled fixed point.
     source = -(mu0 * R_grid[jnp.newaxis, :] * j_phi)
-    res = _laplacian_star(psi, R_grid, d_r, d_z) - source
+    solved_field = psi - psi_coil if decompose_coil_field else psi
+    res = _laplacian_star(solved_field, R_grid, d_r, d_z) - source
 
-    wall_flux = psi_coil.reshape(-1)[wall_idx] + response_matrix @ (
-        j_phi.reshape(-1)[source_idx] * dA
+    plasma_wall_flux = response_matrix @ (j_phi.reshape(-1)[source_idx] * dA)
+    wall_target = (
+        plasma_wall_flux
+        if decompose_coil_field
+        else psi_coil.reshape(-1)[wall_idx] + plasma_wall_flux
     )
-    res_flat = res.reshape(-1).at[wall_idx].set(psi.reshape(-1)[wall_idx] - wall_flux)
+    res_flat = res.reshape(-1).at[wall_idx].set(
+        solved_field.reshape(-1)[wall_idx] - wall_target
+    )
     return res_flat.reshape(shape)
 
 
@@ -359,6 +392,10 @@ def _coupled_step(
     cutoff_width: float,
     mu0: float,
     precond: Callable[[jnp.ndarray], jnp.ndarray] | None = None,
+    fixed_psi_axis: jnp.ndarray | None = None,
+    fixed_psi_boundary: jnp.ndarray | None = None,
+    fixed_support_weights: jnp.ndarray | None = None,
+    psi_coil: jnp.ndarray | None = None,
 ) -> jnp.ndarray:
     """Advance one coupled Picard step ``G(ψ)``.
 
@@ -384,15 +421,25 @@ def _coupled_step(
         separatrix_refinement,
         cutoff_width,
         mu0,
+        fixed_psi_axis,
+        fixed_psi_boundary,
+        fixed_support_weights,
+        psi_coil is not None,
     )
 
     def operator(pf: jnp.ndarray) -> jnp.ndarray:
         return _gs_operator_flat(pf, shape, R_grid, d_r, d_z)
 
+    linear_init = psi_flat if psi_coil is None else psi_flat - psi_coil.reshape(-1)
     sol, _info = _bicgstab(
-        operator, rhs, x0=psi_flat, tol=_BICGSTAB_TOL, maxiter=_BICGSTAB_MAXITER, M=precond
+        operator,
+        rhs,
+        x0=linear_init,
+        tol=_BICGSTAB_TOL,
+        maxiter=_BICGSTAB_MAXITER,
+        M=precond,
     )
-    return sol
+    return sol if psi_coil is None else sol + psi_coil.reshape(-1)
 
 
 def _coupled_rhs(
@@ -412,6 +459,10 @@ def _coupled_rhs(
     separatrix_refinement: jnp.ndarray,
     cutoff_width: float,
     mu0: float,
+    fixed_psi_axis: jnp.ndarray | None = None,
+    fixed_psi_boundary: jnp.ndarray | None = None,
+    fixed_support_weights: jnp.ndarray | None = None,
+    decompose_coil_field: bool = False,
 ) -> jnp.ndarray:
     """Construct the linear Grad-Shafranov right-hand side.
 
@@ -421,12 +472,16 @@ def _coupled_rhs(
     so the coupled-step physics lives here exactly once.
     """
     psi = psi_flat.reshape(shape)
-    axis = smooth_axis_flux(psi)
-    bndry = smooth_xpoint_flux(
-        psi,
-        R_grid,
-        Z_grid,
-        refinement=separatrix_refinement,
+    axis = smooth_axis_flux(psi) if fixed_psi_axis is None else fixed_psi_axis
+    bndry = (
+        smooth_xpoint_flux(
+            psi,
+            R_grid,
+            Z_grid,
+            refinement=separatrix_refinement,
+        )
+        if fixed_psi_boundary is None
+        else fixed_psi_boundary
     )
     j_phi = _plasma_current(
         psi,
@@ -440,9 +495,16 @@ def _coupled_rhs(
         dA,
         cutoff_width,
         mu0,
+        fixed_support_weights,
     )
-    wall_flux = coil_wall + response_matrix @ (j_phi.reshape(-1)[source_idx] * dA)
-    return (-(mu0 * R_grid[jnp.newaxis, :] * j_phi)).reshape(-1).at[wall_idx].set(wall_flux)
+    plasma_wall_flux = response_matrix @ (j_phi.reshape(-1)[source_idx] * dA)
+    wall_flux = plasma_wall_flux if decompose_coil_field else coil_wall + plasma_wall_flux
+    return (
+        (-(mu0 * R_grid[jnp.newaxis, :] * j_phi))
+        .reshape(-1)
+        .at[wall_idx]
+        .set(wall_flux)
+    )
 
 
 def solve_predictive_equilibrium(
@@ -469,6 +531,10 @@ def solve_predictive_equilibrium(
     *,
     use_mg_preconditioner: bool = False,
     iteration_observer: PredictiveIterationObserver | None = None,
+    fixed_psi_axis: jnp.ndarray | None = None,
+    fixed_psi_boundary: jnp.ndarray | None = None,
+    fixed_support_weights: jnp.ndarray | None = None,
+    decompose_coil_field: bool = False,
 ) -> jnp.ndarray:
     """Solve the predictive free-boundary equilibrium from coils + profiles + Ip.
 
@@ -502,11 +568,22 @@ def solve_predictive_equilibrium(
         of every eager continuation/Anderson iteration. This diagnostic surface is deliberately
         absent from :func:`solve_predictive_equilibrium_diff` and the compiled forward solver;
         omitting it preserves the normal solve path.
+    fixed_psi_axis, fixed_psi_boundary, fixed_support_weights : optional external-reconstruction
+        topology contract. Both anchors must be supplied together and the support must match the
+        grid. Omit all three for the production smooth-topology path.
+    decompose_coil_field : solve the plasma self-field and add the known coil field everywhere.
+        Required when any filament lies inside the rectangular computational domain; the default
+        preserves the historical wall-harmonic contract for backward compatibility.
     """
     shape = (Z_grid.shape[0], R_grid.shape[0])
     d_r = R_grid[1] - R_grid[0]
     d_z = Z_grid[1] - Z_grid[0]
     dA = d_r * d_z
+    if (fixed_psi_axis is None) != (fixed_psi_boundary is None):
+        raise ValueError("fixed_psi_axis and fixed_psi_boundary must be supplied together")
+    if fixed_support_weights is not None and fixed_support_weights.shape != shape:
+        raise ValueError("fixed_support_weights must match the equilibrium grid")
+
     psi_coil = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, coil_I, mu0)
     coil_wall = psi_coil.reshape(-1)[wall_idx]
     precond: Callable[[jnp.ndarray], jnp.ndarray] | None = None
@@ -538,6 +615,10 @@ def solve_predictive_equilibrium(
             cutoff_width,
             mu0,
             precond,
+            fixed_psi_axis,
+            fixed_psi_boundary,
+            fixed_support_weights,
+            psi_coil if decompose_coil_field else None,
         )
 
     x = (psi_coil if psi_init is None else psi_init).reshape(-1)
@@ -621,7 +702,7 @@ def solve_predictive_equilibrium(
 # ── Implicit-differentiation adjoint (∂ψ*/∂θ for the IDA loop) ─────
 
 
-@partial(jax.custom_vjp, nondiff_argnums=tuple(range(3, 20)))
+@partial(jax.custom_vjp, nondiff_argnums=tuple(range(3, 20)) + (23,))
 def solve_predictive_equilibrium_diff(
     coil_I: jnp.ndarray,
     pprime_vals: jnp.ndarray,
@@ -643,6 +724,10 @@ def solve_predictive_equilibrium_diff(
     cutoff_width: float = DEFAULT_CUTOFF_WIDTH,
     tol: float = DEFAULT_TOL,
     mu0: float = MU0_SI,
+    fixed_psi_axis: jnp.ndarray | None = None,
+    fixed_psi_boundary: jnp.ndarray | None = None,
+    fixed_support_weights: jnp.ndarray | None = None,
+    decompose_coil_field: bool = False,
 ) -> jnp.ndarray:
     """Differentiable predictive free-boundary solve — ``ψ*`` with an exact implicit-diff adjoint.
 
@@ -652,8 +737,9 @@ def solve_predictive_equilibrium_diff(
     adjoint solve ``(∂F/∂ψ)ᵀ λ = ψ̄`` then ``θ̄ = −(∂F/∂θ)ᵀ λ``. The gradient cost is independent
     of the Anderson iteration count — the property the DIII-D IDA MAP/MCMC loop needs — and the
     adjoint is exact only insofar as the forward has converged (``F(ψ*) ≈ 0``) and the axis /
-    separatrix finders are smooth (they are). ``ip_target`` and all solver settings are treated
-    as constants (non-differentiated).
+    separatrix finders are smooth (they are). Fixed topology inputs, ``ip_target``, and solver
+    settings are treated as constants; gradients are returned only for coil currents and the two
+    sampled profiles.
     """
     return solve_predictive_equilibrium(
         coil_I,
@@ -676,6 +762,10 @@ def solve_predictive_equilibrium_diff(
         cutoff_width,
         tol,
         mu0,
+        fixed_psi_axis=fixed_psi_axis,
+        fixed_psi_boundary=fixed_psi_boundary,
+        fixed_support_weights=fixed_support_weights,
+        decompose_coil_field=decompose_coil_field,
     )
 
 
@@ -700,7 +790,11 @@ def _solve_diff_fwd(
     cutoff_width: float,
     tol: float,
     mu0: float,
-) -> tuple[jnp.ndarray, tuple[jnp.ndarray, ...]]:
+    fixed_psi_axis: jnp.ndarray | None,
+    fixed_psi_boundary: jnp.ndarray | None,
+    fixed_support_weights: jnp.ndarray | None,
+    decompose_coil_field: bool,
+) -> tuple[jnp.ndarray, tuple[jnp.ndarray | None, ...]]:
     psi = solve_predictive_equilibrium(
         coil_I,
         pprime_vals,
@@ -722,8 +816,20 @@ def _solve_diff_fwd(
         cutoff_width,
         tol,
         mu0,
+        fixed_psi_axis=fixed_psi_axis,
+        fixed_psi_boundary=fixed_psi_boundary,
+        fixed_support_weights=fixed_support_weights,
+        decompose_coil_field=decompose_coil_field,
     )
-    return psi, (psi, coil_I, pprime_vals, ffprime_vals)
+    return psi, (
+        psi,
+        coil_I,
+        pprime_vals,
+        ffprime_vals,
+        fixed_psi_axis,
+        fixed_psi_boundary,
+        fixed_support_weights,
+    )
 
 
 def _solve_diff_bwd(
@@ -744,11 +850,22 @@ def _solve_diff_bwd(
     cutoff_width: float,
     tol: float,
     mu0: float,
-    residuals: tuple[jnp.ndarray, ...],
+    decompose_coil_field: bool,
+    residuals: tuple[jnp.ndarray | None, ...],
     psi_bar: jnp.ndarray,
-) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+) -> tuple[jnp.ndarray | None, ...]:
     """Implicit-diff VJP: adjoint solve ``(∂F/∂ψ)ᵀ λ = ψ̄`` then ``θ̄ = −(∂F/∂θ)ᵀ λ``."""
-    psi, coil_I, pprime_vals, ffprime_vals = residuals
+    (
+        psi,
+        coil_I,
+        pprime_vals,
+        ffprime_vals,
+        fixed_psi_axis,
+        fixed_psi_boundary,
+        fixed_support_weights,
+    ) = residuals
+    if psi is None or coil_I is None or pprime_vals is None or ffprime_vals is None:
+        raise ValueError("custom VJP residuals lost a differentiated solver input")
     shape = psi.shape
 
     def residual_in_psi(p: jnp.ndarray) -> jnp.ndarray:
@@ -768,6 +885,10 @@ def _solve_diff_bwd(
             source_idx,
             cutoff_width,
             mu0,
+            fixed_psi_axis=fixed_psi_axis,
+            fixed_psi_boundary=fixed_psi_boundary,
+            fixed_support_weights=fixed_support_weights,
+            decompose_coil_field=decompose_coil_field,
         )
 
     _, vjp_psi = jax.vjp(residual_in_psi, psi)
@@ -775,7 +896,7 @@ def _solve_diff_bwd(
     def adjoint_operator(lam_flat: jnp.ndarray) -> jnp.ndarray:
         return cast(jnp.ndarray, vjp_psi(lam_flat.reshape(shape))[0].reshape(-1))
 
-    # Diagonal (Jacobi) preconditioner: F's interior rows scale as the Δ* centre coefficient
+    # Diagonal right preconditioner: F's interior rows scale as the Δ* centre coefficient
     # (~1/h²) and its wall rows as 1 — a badly-scaled system whose conditioning worsens ~1/h² at
     # finer grids (uncorrected, BiCGSTAB needs thousands of iterations and silently caps out).
     # Normalising by that known diagonal makes the iteration count grid-insensitive.
@@ -783,15 +904,34 @@ def _solve_diff_bwd(
     d_z = Z_grid[1] - Z_grid[0]
     precond_diag = jnp.full(psi.size, 2.0 / d_r**2 + 2.0 / d_z**2).at[wall_idx].set(1.0)
 
-    def preconditioner(x_flat: jnp.ndarray) -> jnp.ndarray:
-        return x_flat / precond_diag
+    def right_preconditioned_operator(y_flat: jnp.ndarray) -> jnp.ndarray:
+        return adjoint_operator(y_flat / precond_diag)
 
-    lam_flat, _info = _bicgstab(
-        adjoint_operator,
+    # Right preconditioning preserves the physical residual used by GMRES's stopping
+    # criterion.  The historical left-preconditioned BiCGSTAB could report completion while
+    # ||A^T lambda - psi_bar|| / ||psi_bar|| remained O(1), silently biasing coil gradients
+    # on grids whose coil filaments lie inside the rectangular computational domain.
+    y_flat, _info = _gmres(
+        right_preconditioned_operator,
         psi_bar.reshape(-1),
-        tol=_BICGSTAB_TOL,
+        tol=_ADJOINT_TOL,
+        atol=0.0,
+        restart=_ADJOINT_RESTART,
         maxiter=_ADJOINT_MAXITER,
-        M=preconditioner,
+        solve_method="incremental",
+    )
+    lam_flat = y_flat / precond_diag
+    adjoint_residual = adjoint_operator(lam_flat) - psi_bar.reshape(-1)
+    relative_adjoint_residual = jnp.linalg.norm(adjoint_residual) / jnp.maximum(
+        jnp.linalg.norm(psi_bar),
+        jnp.asarray(1.0e-30, dtype=psi_bar.dtype),
+    )
+    # A failed adjoint must poison the downstream gradient rather than silently return a
+    # plausible biased value.  Real-surface finite/FD gates then fail closed on non-finite output.
+    lam_flat = jnp.where(
+        relative_adjoint_residual <= _ADJOINT_RESIDUAL_FACTOR * _ADJOINT_TOL,
+        lam_flat,
+        jnp.full_like(lam_flat, jnp.nan),
     )
     lam = lam_flat.reshape(shape)
 
@@ -812,11 +952,15 @@ def _solve_diff_bwd(
             source_idx,
             cutoff_width,
             mu0,
+            fixed_psi_axis=fixed_psi_axis,
+            fixed_psi_boundary=fixed_psi_boundary,
+            fixed_support_weights=fixed_support_weights,
+            decompose_coil_field=decompose_coil_field,
         )
 
     _, vjp_theta = jax.vjp(residual_in_theta, coil_I, pprime_vals, ffprime_vals)
     g_ci, g_pp, g_ff = vjp_theta(lam)
-    return (-g_ci, -g_pp, -g_ff)
+    return (-g_ci, -g_pp, -g_ff, None, None, None)
 
 
 solve_predictive_equilibrium_diff.defvjp(_solve_diff_fwd, _solve_diff_bwd)

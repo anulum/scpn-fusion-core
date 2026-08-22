@@ -14,6 +14,10 @@ on:
       - "requirements/ci-freegsnke.in"
       - "requirements/ci-freegsnke.txt"
       - "src/scpn_fusion/core/jax_free_boundary_gs.py"
+      - "src/scpn_fusion/core/jax_free_boundary_predictive.py"
+      - "src/scpn_fusion/core/jax_o_point.py"
+      - "src/scpn_fusion/core/jax_plasma_support.py"
+      - "src/scpn_fusion/core/jax_x_point.py"
       - "tests/test_benchmark_freegsnke_inverse.py"
       - "validation/benchmark_freegsnke_inverse.py"
   push:
@@ -22,6 +26,10 @@ on:
       - "requirements/ci-freegsnke.in"
       - "requirements/ci-freegsnke.txt"
       - "src/scpn_fusion/core/jax_free_boundary_gs.py"
+      - "src/scpn_fusion/core/jax_free_boundary_predictive.py"
+      - "src/scpn_fusion/core/jax_o_point.py"
+      - "src/scpn_fusion/core/jax_plasma_support.py"
+      - "src/scpn_fusion/core/jax_x_point.py"
       - "tests/test_benchmark_freegsnke_inverse.py"
       - "validation/benchmark_freegsnke_inverse.py"
 

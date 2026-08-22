@@ -31,7 +31,7 @@ def test_live_inverse_comparison_passes_every_predeclared_gate(
 ) -> None:
     assert live_report["schema_version"] == benchmark.SCHEMA_VERSION
     assert live_report["benchmark_id"] == benchmark.BENCHMARK_ID
-    assert live_report["milestones"] == ["F-1c", "F-1d"]
+    assert live_report["milestones"] == ["F-1c", "F-1d", "F-1e"]
     assert live_report["status"] == "pass"
     assert live_report["checks"]
     assert all(live_report["checks"].values())
@@ -94,13 +94,51 @@ def test_live_profile_bridge_freezes_normalisation_gauge_and_cocos(
 
 
 def test_claim_boundary_remains_fail_closed(live_report: dict[str, Any]) -> None:
-    assert live_report["claim_boundary"]
-    assert not any(live_report["claim_boundary"].values())
+    claims = live_report["claim_boundary"]
+    assert claims["same_case_total_psi_cross_solver_parity"] is True
+    assert claims["control_admission"] is False
+    assert claims["facility_validation"] is False
+    assert claims["pcs_deployment"] is False
+    assert claims["safety_admission"] is False
     assert live_report["blockers"]
-    assert "total-psi cross-solver parity" in live_report["blockers"][0]
-    assert "self-consistent total-psi" in " ".join(
+    assert "shot-disjoint" in live_report["blockers"][0]
+    assert "shot-disjoint" in " ".join(
         live_report["comparison_scope"]["not_admitted"]
     )
+
+
+def test_live_total_psi_comparison_uses_real_solver_and_gradients(
+    live_report: dict[str, Any],
+) -> None:
+    comparison = live_report["total_psi_comparison"]
+    assert comparison["passed"] is True
+    assert comparison["checks"]
+    assert all(comparison["checks"].values())
+
+    domain = comparison["coil_domain_contract"]
+    assert domain["decompose_coil_field"] is True
+    assert domain["filaments_inside_rectangular_domain"] == domain["filament_count"]
+
+    production = comparison["production_smooth"]
+    thresholds = comparison["thresholds_predeclared"]
+    assert production["converged"] is True
+    assert (
+        production["psi_n_rmse_inside_limiter"]
+        <= thresholds["psi_n_rmse_inside_limiter_max"]
+    )
+    assert (
+        production["support_current_relative_l2"]
+        <= thresholds["support_current_relative_l2_max"]
+    )
+    assert (
+        production["relative_nonlinear_residual_rms"]
+        <= thresholds["relative_nonlinear_residual_rms_max"]
+    )
+
+    frozen = comparison["frozen_topology_control"]
+    assert frozen["converged"] is True
+    assert frozen["psi_n_rmse_inside_limiter"] <= production["psi_n_rmse_inside_limiter"]
+    assert all(row["passed"] for row in comparison["gradient_audit"]["rows"])
 
 
 def test_markdown_preserves_result_and_claim_boundary(live_report: dict[str, Any]) -> None:
@@ -109,7 +147,8 @@ def test_markdown_preserves_result_and_claim_boundary(live_report: dict[str, Any
     assert "vacuum-psi max error inside limiter" in rendered
     assert "Sampled pprime/FFprime source relative L2 error" in rendered
     assert "Selected COCOS-3 source adapter | identity" in rendered
-    assert "full total-psi cross-solver parity" in rendered
+    assert "Production smooth total-psi psi_N RMSE" in rendered
+    assert "Shot-disjoint" in rendered
     assert live_report["payload_sha256"] in rendered
 
 

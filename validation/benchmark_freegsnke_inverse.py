@@ -20,8 +20,12 @@ objective is checked independently by central finite differences.
 The converged FreeGSNKE ``ConstrainPaxisIp`` profile is also sampled on SCPN's
 public ``pprime``/``FFprime`` surface.  The comparison freezes normalised-flux
 orientation, exact FreeGSNKE LCFS support, gauge invariance, and the shared
-COCOS-3 flux-per-radian convention.  It admits the profile-source translation,
-but not a separately executed self-consistent SCPN total-flux solve.
+COCOS-3 flux-per-radian convention.  Finally it executes SCPN's self-consistent
+predictive solver twice: its production smooth-topology path and an explicit
+frozen-topology control.  Both use the physically required decomposition
+``psi_total = psi_coil + psi_plasma`` because the public machine has active
+filaments inside the rectangular computational domain.  Shape, topology,
+residual, current-support, and implicit-gradient gates remain fail closed.
 """
 
 from __future__ import annotations
@@ -59,14 +63,23 @@ from scpn_fusion.core.jax_free_boundary_gs import (
     normalised_flux_unclipped,
     vacuum_field_si,
 )
+from scpn_fusion.core.jax_free_boundary_predictive import (
+    _plasma_current,
+    build_response_matrix,
+    predictive_gs_residual,
+    solve_predictive_equilibrium,
+    solve_predictive_equilibrium_diff,
+)
+from scpn_fusion.core.jax_o_point import smooth_axis_flux
+from scpn_fusion.core.jax_x_point import smooth_xpoint_flux
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE = ROOT / "data/external/full_fidelity_public_sources/repos/freegsnke"
 REPORT_PATH = ROOT / "validation/reports/freegsnke_inverse_comparison.json"
 MARKDOWN_PATH = ROOT / "validation/reports/freegsnke_inverse_comparison.md"
 
-SCHEMA_VERSION = "scpn-fusion.freegsnke-inverse-comparison.v2"
-BENCHMARK_ID = "F-1c-freegsnke-mastu-diverted-inverse"
+SCHEMA_VERSION = "scpn-fusion.freegsnke-inverse-comparison.v3"
+BENCHMARK_ID = "F-1c-e-freegsnke-mastu-diverted-inverse"
 UPSTREAM_COMMIT = "00b79a08fbb6e642ac5ed2e440383cc5962e0358"
 UPSTREAM_VERSION = "3.0.1"
 FREEGS4E_VERSION = "0.13.1"
@@ -90,6 +103,14 @@ PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX = 1.0e-7
 PSIN_MAX_ABS_ERROR = 1.0e-14
 GAUGE_SOURCE_RELATIVE_L2_MAX = 1.0e-12
 GAUGE_OFFSET_WB_PER_RADIAN = 17.25
+TOTAL_PSI_PSI_N_RMSE_MAX = 5.0e-2
+TOTAL_PSI_TOPOLOGY_POSITION_ERROR_M_MAX = 3.5e-2
+TOTAL_PSI_RELATIVE_RESIDUAL_RMS_MAX = 5.0e-2
+TOTAL_PSI_CURRENT_RELATIVE_ERROR_MAX = 1.0e-6
+TOTAL_PSI_SUPPORT_CURRENT_RELATIVE_L2_MAX = 1.0e-1
+TOTAL_PSI_COIL_GRADIENT_RELATIVE_ERROR_MAX = 5.0e-2
+TOTAL_PSI_PROFILE_GRADIENT_RELATIVE_ERROR_MAX = 1.0e-2
+TOTAL_PSI_FD_RELATIVE_STEP = 1.0e-4
 
 EXPECTED_AXIS_M = np.array([0.951053009, 0.0], dtype=np.float64)
 EXPECTED_XPOINTS_M = np.array(
@@ -101,7 +122,7 @@ CLAIM_BOUNDARY = {
     "facility_validation": False,
     "pcs_deployment": False,
     "safety_admission": False,
-    "total_psi_cross_solver_parity": False,
+    "same_case_total_psi_cross_solver_parity": True,
 }
 
 FloatArray = NDArray[np.float64]
@@ -611,6 +632,406 @@ def _profile_source_bridge(eq: Any, profiles: Any) -> dict[str, Any]:
     }
 
 
+def _finite_difference_gradient_row(
+    name: str,
+    autodiff: float,
+    plus: float,
+    minus: float,
+    denominator: float,
+    threshold: float,
+) -> dict[str, Any]:
+    """Return one scale-aware central finite-difference audit row."""
+    finite_difference = (plus - minus) / denominator
+    scale = max(abs(autodiff), abs(finite_difference), 1.0e-14)
+    relative_error = abs(autodiff - finite_difference) / scale
+    finite = bool(np.isfinite(autodiff) and np.isfinite(finite_difference))
+    return {
+        "autodiff": autodiff,
+        "finite_difference": finite_difference,
+        "name": name,
+        "passed": finite and relative_error <= threshold,
+        "relative_error": relative_error,
+        "threshold_relative_error_max": threshold,
+    }
+
+
+def _total_psi_comparison(
+    eq: Any,
+    profiles: Any,
+    active_currents: FloatArray,
+    coil_r: FloatArray,
+    coil_z: FloatArray,
+    incidence: FloatArray,
+) -> dict[str, Any]:
+    """Run F-1e production-smooth and frozen-topology total-flux comparisons."""
+    r_grid = np.asarray(eq.R[:, 0], dtype=np.float64)
+    z_grid = np.asarray(eq.Z[0, :], dtype=np.float64)
+    reference_psi = np.asarray(eq.psi(), dtype=np.float64).T
+    limiter_mask = np.asarray(eq.mask_inside_limiter, dtype=bool).T
+    exact_support = np.asarray(profiles.inputs[2], dtype=np.float64).T
+    reference_jtor = np.asarray(profiles.jtor, dtype=np.float64).T
+    reference_axis_flux = float(profiles.inputs[0])
+    reference_boundary_flux = float(profiles.inputs[1])
+    knots = np.linspace(0.0, 1.0, PROFILE_SAMPLE_COUNT, dtype=np.float64)
+    pprime = np.asarray(profiles.pprime(knots), dtype=np.float64)
+    ffprime = np.asarray(profiles.ffprime(knots), dtype=np.float64)
+    filament_currents = incidence @ active_currents
+
+    r_jax = jnp.asarray(r_grid)
+    z_jax = jnp.asarray(z_grid)
+    coil_r_jax = jnp.asarray(coil_r)
+    coil_z_jax = jnp.asarray(coil_z)
+    incidence_jax = jnp.asarray(incidence)
+    currents_jax = jnp.asarray(active_currents)
+    knots_jax = jnp.asarray(knots)
+    pprime_jax = jnp.asarray(pprime)
+    ffprime_jax = jnp.asarray(ffprime)
+    reference_jax = jnp.asarray(reference_psi)
+    exact_support_jax = jnp.asarray(exact_support)
+    response_matrix, wall_idx, source_idx = build_response_matrix(r_jax, z_jax)
+
+    smooth_iterations: list[tuple[int, bool]] = []
+    candidate_jax = solve_predictive_equilibrium(
+        jnp.asarray(filament_currents),
+        pprime_jax,
+        ffprime_jax,
+        r_jax,
+        z_jax,
+        coil_r_jax,
+        coil_z_jax,
+        knots_jax,
+        600000.0,
+        response_matrix,
+        wall_idx,
+        source_idx,
+        psi_init=reference_jax,
+        n_iter=100,
+        ip_ramp=1,
+        tol=1.0e-9,
+        decompose_coil_field=True,
+        iteration_observer=lambda snapshot: smooth_iterations.append(
+            (snapshot.iteration_index, snapshot.converged)
+        ),
+    )
+    candidate = np.asarray(candidate_jax, dtype=np.float64)
+    candidate_axis_flux = float(smooth_axis_flux(candidate_jax))
+    candidate_boundary_flux = float(smooth_xpoint_flux(candidate_jax, r_jax, z_jax))
+    reference_psi_n = (reference_psi - reference_axis_flux) / (
+        reference_boundary_flux - reference_axis_flux
+    )
+    candidate_psi_n = (candidate - candidate_axis_flux) / (
+        candidate_boundary_flux - candidate_axis_flux
+    )
+    psi_n_rmse = float(
+        np.sqrt(np.mean(np.square(candidate_psi_n[limiter_mask] - reference_psi_n[limiter_mask])))
+    )
+
+    d_area = float((r_grid[1] - r_grid[0]) * (z_grid[1] - z_grid[0]))
+    candidate_jtor = np.asarray(
+        _plasma_current(
+            candidate_jax,
+            r_jax,
+            jnp.asarray(candidate_axis_flux),
+            jnp.asarray(candidate_boundary_flux),
+            knots_jax,
+            pprime_jax,
+            ffprime_jax,
+            jnp.asarray(600000.0),
+            jnp.asarray(d_area),
+            0.03,
+            MU0_SI,
+        ),
+        dtype=np.float64,
+    )
+    candidate_current = float(np.sum(candidate_jtor) * d_area)
+    current_relative_error = abs(candidate_current - 600000.0) / 600000.0
+    support_current_relative_l2 = _relative_l2(candidate_jtor, reference_jtor)
+    residual = np.asarray(
+        predictive_gs_residual(
+            candidate_jax,
+            jnp.asarray(filament_currents),
+            pprime_jax,
+            ffprime_jax,
+            r_jax,
+            z_jax,
+            coil_r_jax,
+            coil_z_jax,
+            knots_jax,
+            jnp.asarray(600000.0),
+            response_matrix,
+            wall_idx,
+            source_idx,
+            decompose_coil_field=True,
+        ),
+        dtype=np.float64,
+    )
+    source = -(float(MU0_SI) * r_grid[np.newaxis, :] * candidate_jtor)
+    interior = np.s_[1:-1, 1:-1]
+    residual_rms = float(np.sqrt(np.mean(np.square(residual[interior]))))
+    source_rms = float(np.sqrt(np.mean(np.square(source[interior]))))
+    relative_residual_rms = residual_rms / max(
+        source_rms,
+        float(np.finfo(np.float64).tiny),
+    )
+
+    reference_opt, _reference_xpt = find_critical(
+        eq.R,
+        eq.Z,
+        np.asarray(eq.psi(), dtype=np.float64),
+        np.asarray(eq.mask_inside_limiter, dtype=bool),
+        None,
+    )
+    candidate_opt, candidate_xpt = find_critical(
+        eq.R,
+        eq.Z,
+        candidate.T,
+        np.asarray(eq.mask_inside_limiter, dtype=bool),
+        None,
+    )
+    reference_axis_position = np.asarray(reference_opt[0][:2], dtype=np.float64)
+    candidate_axis_positions = np.asarray(candidate_opt[:, :2], dtype=np.float64)
+    axis_position_error = (
+        float(np.min(np.linalg.norm(candidate_axis_positions - reference_axis_position, axis=1)))
+        if candidate_axis_positions.size
+        else None
+    )
+    reference_xpoint_positions = EXPECTED_XPOINTS_M
+    candidate_xpoint_positions = np.asarray(candidate_xpt[:, :2], dtype=np.float64)
+    xpoint_position_errors = (
+        [
+            float(np.min(np.linalg.norm(candidate_xpoint_positions - expected, axis=1)))
+            for expected in reference_xpoint_positions
+        ]
+        if candidate_xpoint_positions.size
+        else []
+    )
+    topology_passed = bool(
+        axis_position_error is not None
+        and axis_position_error <= TOTAL_PSI_TOPOLOGY_POSITION_ERROR_M_MAX
+        and len(xpoint_position_errors) == len(reference_xpoint_positions)
+        and max(xpoint_position_errors, default=float("inf"))
+        <= TOTAL_PSI_TOPOLOGY_POSITION_ERROR_M_MAX
+    )
+
+    frozen_iterations: list[tuple[int, bool]] = []
+    frozen_jax = solve_predictive_equilibrium(
+        jnp.asarray(filament_currents),
+        pprime_jax,
+        ffprime_jax,
+        r_jax,
+        z_jax,
+        coil_r_jax,
+        coil_z_jax,
+        knots_jax,
+        600000.0,
+        response_matrix,
+        wall_idx,
+        source_idx,
+        psi_init=reference_jax,
+        n_iter=100,
+        ip_ramp=1,
+        tol=1.0e-9,
+        fixed_psi_axis=jnp.asarray(reference_axis_flux),
+        fixed_psi_boundary=jnp.asarray(reference_boundary_flux),
+        fixed_support_weights=exact_support_jax,
+        decompose_coil_field=True,
+        iteration_observer=lambda snapshot: frozen_iterations.append(
+            (snapshot.iteration_index, snapshot.converged)
+        ),
+    )
+    frozen = np.asarray(frozen_jax, dtype=np.float64)
+    frozen_psi_n = (frozen - reference_axis_flux) / (
+        reference_boundary_flux - reference_axis_flux
+    )
+    frozen_psi_n_rmse = float(
+        np.sqrt(np.mean(np.square(frozen_psi_n[limiter_mask] - reference_psi_n[limiter_mask])))
+    )
+
+    weights = exact_support_jax / jnp.sum(exact_support_jax)
+
+    def objective(
+        circuit_values: jnp.ndarray,
+        pprime_scale: jnp.ndarray,
+        ffprime_scale: jnp.ndarray,
+    ) -> jnp.ndarray:
+        psi = solve_predictive_equilibrium_diff(
+            incidence_jax @ circuit_values,
+            pprime_jax * pprime_scale,
+            ffprime_jax * ffprime_scale,
+            r_jax,
+            z_jax,
+            coil_r_jax,
+            coil_z_jax,
+            knots_jax,
+            600000.0,
+            response_matrix,
+            wall_idx,
+            source_idx,
+            jax.lax.stop_gradient(candidate_jax),
+            20,
+            8,
+            0.5,
+            1,
+            0.03,
+            1.0e-9,
+            MU0_SI,
+            None,
+            None,
+            None,
+            True,
+        )
+        return jnp.sum(psi * weights)
+
+    circuit_gradient, pprime_gradient, ffprime_gradient = jax.grad(
+        objective,
+        argnums=(0, 1, 2),
+    )(currents_jax, jnp.asarray(1.0), jnp.asarray(1.0))
+    circuit_index = int(np.argmax(np.abs(active_currents)))
+    circuit_step = max(abs(float(active_currents[circuit_index])) * TOTAL_PSI_FD_RELATIVE_STEP, 1.0)
+
+    def finite_difference_objective(
+        circuit_values: FloatArray,
+        pprime_scale: float,
+        ffprime_scale: float,
+    ) -> float:
+        psi = solve_predictive_equilibrium(
+            incidence_jax @ jnp.asarray(circuit_values),
+            pprime_jax * pprime_scale,
+            ffprime_jax * ffprime_scale,
+            r_jax,
+            z_jax,
+            coil_r_jax,
+            coil_z_jax,
+            knots_jax,
+            600000.0,
+            response_matrix,
+            wall_idx,
+            source_idx,
+            psi_init=candidate_jax,
+            n_iter=30,
+            ip_ramp=1,
+            tol=1.0e-10,
+            decompose_coil_field=True,
+        )
+        return float(jnp.sum(psi * weights))
+
+    plus_currents = active_currents.copy()
+    minus_currents = active_currents.copy()
+    plus_currents[circuit_index] += circuit_step
+    minus_currents[circuit_index] -= circuit_step
+    scale_step = TOTAL_PSI_FD_RELATIVE_STEP
+    gradient_rows = [
+        _finite_difference_gradient_row(
+            "circuit_current_a",
+            float(circuit_gradient[circuit_index]),
+            finite_difference_objective(plus_currents, 1.0, 1.0),
+            finite_difference_objective(minus_currents, 1.0, 1.0),
+            2.0 * circuit_step,
+            TOTAL_PSI_COIL_GRADIENT_RELATIVE_ERROR_MAX,
+        ),
+        _finite_difference_gradient_row(
+            "pprime_scale",
+            float(pprime_gradient),
+            finite_difference_objective(active_currents, 1.0 + scale_step, 1.0),
+            finite_difference_objective(active_currents, 1.0 - scale_step, 1.0),
+            2.0 * scale_step,
+            TOTAL_PSI_PROFILE_GRADIENT_RELATIVE_ERROR_MAX,
+        ),
+        _finite_difference_gradient_row(
+            "ffprime_scale",
+            float(ffprime_gradient),
+            finite_difference_objective(active_currents, 1.0, 1.0 + scale_step),
+            finite_difference_objective(active_currents, 1.0, 1.0 - scale_step),
+            2.0 * scale_step,
+            TOTAL_PSI_PROFILE_GRADIENT_RELATIVE_ERROR_MAX,
+        ),
+    ]
+
+    filaments_inside = (
+        (coil_r >= r_grid[0])
+        & (coil_r <= r_grid[-1])
+        & (coil_z >= z_grid[0])
+        & (coil_z <= z_grid[-1])
+    )
+    checks = {
+        "coil_domain_decomposition_exercised": bool(np.any(filaments_inside)),
+        "finite_difference_gradients": bool(all(row["passed"] for row in gradient_rows)),
+        "frozen_topology_control": bool(
+            frozen_iterations
+            and frozen_iterations[-1][1]
+            and frozen_psi_n_rmse <= TOTAL_PSI_PSI_N_RMSE_MAX
+        ),
+        "production_smooth_converged": bool(smooth_iterations and smooth_iterations[-1][1]),
+        "production_smooth_current": current_relative_error
+        <= TOTAL_PSI_CURRENT_RELATIVE_ERROR_MAX,
+        "production_smooth_residual": relative_residual_rms
+        <= TOTAL_PSI_RELATIVE_RESIDUAL_RMS_MAX,
+        "production_smooth_shape": psi_n_rmse <= TOTAL_PSI_PSI_N_RMSE_MAX,
+        "production_smooth_support": support_current_relative_l2
+        <= TOTAL_PSI_SUPPORT_CURRENT_RELATIVE_L2_MAX,
+        "production_smooth_topology": topology_passed,
+    }
+    return {
+        "checks": checks,
+        "coil_domain_contract": {
+            "decompose_coil_field": True,
+            "filament_count": int(coil_r.size),
+            "filaments_inside_rectangular_domain": int(np.count_nonzero(filaments_inside)),
+            "formulation": "psi_total = psi_coil + psi_plasma",
+        },
+        "digests": {
+            "frozen_candidate_psi_sha256": _array_sha256(frozen),
+            "production_candidate_jtor_sha256": _array_sha256(candidate_jtor),
+            "production_candidate_psi_sha256": _array_sha256(candidate),
+            "reference_psi_sha256": _array_sha256(reference_psi),
+        },
+        "frozen_topology_control": {
+            "converged": bool(frozen_iterations and frozen_iterations[-1][1]),
+            "iteration_count": len(frozen_iterations),
+            "psi_n_rmse_inside_limiter": frozen_psi_n_rmse,
+            "support": "exact FreeGSNKE limiter_core_mask",
+        },
+        "gradient_audit": {
+            "circuit_index": circuit_index,
+            "circuit_step_a": circuit_step,
+            "objective": "exact-support mean total psi",
+            "rows": gradient_rows,
+        },
+        "passed": all(checks.values()),
+        "production_smooth": {
+            "axis_flux_wb_per_radian": candidate_axis_flux,
+            "axis_position_error_m": axis_position_error,
+            "boundary_flux_wb_per_radian": candidate_boundary_flux,
+            "converged": bool(smooth_iterations and smooth_iterations[-1][1]),
+            "iteration_count": len(smooth_iterations),
+            "max_abs_total_psi_error_wb": float(np.max(np.abs(candidate - reference_psi))),
+            "plasma_current_a": candidate_current,
+            "plasma_current_relative_error": current_relative_error,
+            "psi_n_rmse_inside_limiter": psi_n_rmse,
+            "relative_nonlinear_residual_rms": relative_residual_rms,
+            "support_current_relative_l2": support_current_relative_l2,
+            "xpoint_position_errors_m": xpoint_position_errors,
+        },
+        "thresholds_predeclared": {
+            "circuit_gradient_relative_error_max": (
+                TOTAL_PSI_COIL_GRADIENT_RELATIVE_ERROR_MAX
+            ),
+            "plasma_current_relative_error_max": TOTAL_PSI_CURRENT_RELATIVE_ERROR_MAX,
+            "profile_gradient_relative_error_max": (
+                TOTAL_PSI_PROFILE_GRADIENT_RELATIVE_ERROR_MAX
+            ),
+            "psi_n_rmse_inside_limiter_max": TOTAL_PSI_PSI_N_RMSE_MAX,
+            "relative_nonlinear_residual_rms_max": (
+                TOTAL_PSI_RELATIVE_RESIDUAL_RMS_MAX
+            ),
+            "support_current_relative_l2_max": (
+                TOTAL_PSI_SUPPORT_CURRENT_RELATIVE_L2_MAX
+            ),
+            "topology_position_error_m_max": TOTAL_PSI_TOPOLOGY_POSITION_ERROR_M_MAX,
+        },
+    }
+
+
 def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
     """Execute the frozen inverse case and return its fail-closed comparison report."""
     source = source.resolve()
@@ -659,6 +1080,14 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
     limits = _current_limits(circuit_names, active_currents, coil_limits)
     gradient = _gradient_audit(coil_r, coil_z, incidence, active_currents)
     profile_bridge = _profile_source_bridge(eq, profiles)
+    total_psi = _total_psi_comparison(
+        eq,
+        profiles,
+        active_currents,
+        coil_r,
+        coil_z,
+        incidence,
+    )
 
     checks = {
         "active_current_regression": current_max_abs_error <= CURRENT_ATOL_A,
@@ -669,6 +1098,7 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
             vacuum_max_abs <= VACUUM_LIMITER_MAX_ABS_WB
         ),
         "scpn_freegsnke_profile_source_bridge": bool(profile_bridge["passed"]),
+        "scpn_freegsnke_total_psi_same_case": bool(total_psi["passed"]),
         "topology_regression": bool(topology["passed"]),
         "total_psi_regression": psi_max_abs_error <= psi_atol,
     }
@@ -685,9 +1115,8 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
         "benchmark_id": BENCHMARK_ID,
         "blockers": [
             (
-                "The sampled profile-source convention is frozen, but a self-consistent "
-                "SCPN solve from the translated pprime/FFprime and exact topology support "
-                "has not yet demonstrated full total-psi cross-solver parity"
+                "Broader shot-disjoint validation still requires collaborator reconstruction "
+                "data; this result is bounded to one pinned public MAST-U-like case"
             )
         ],
         "case_contract": {
@@ -717,9 +1146,14 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
                     "FreeGSNKE ConstrainPaxisIp to SCPN sampled pprime/FFprime source parity "
                     "with exact LCFS support, gauge invariance, and identity COCOS-3 scale"
                 ),
+                (
+                    "self-consistent SCPN production-smooth total-psi parity on the same "
+                    "pinned case, with explicit coil/plasma field decomposition"
+                ),
+                "fixed-topology total-psi control and implicit-gradient finite differences",
             ],
             "not_admitted": [
-                "self-consistent total-psi SCPN/FreeGSNKE parity",
+                "shot-disjoint or facility-wide total-psi parity",
                 "facility, PCS, safety, or control validation",
                 "latency or real-time readiness",
             ],
@@ -754,7 +1188,7 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
             "limiter_comparison_point_count": int(np.count_nonzero(limiter_mask)),
             "passive_circuit_count": int(passive_currents.size),
         },
-        "milestones": ["F-1c", "F-1d"],
+        "milestones": ["F-1c", "F-1d", "F-1e"],
         "payload_sha256": "",
         "profile_source_bridge": profile_bridge,
         "provenance": {
@@ -767,6 +1201,12 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
                 "benchmark_generator": {
                     "path": "validation/benchmark_freegsnke_inverse.py",
                     "sha256": _file_sha256(Path(__file__)),
+                },
+                "predictive_solver": {
+                    "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+                    "sha256": _file_sha256(
+                        ROOT / "src/scpn_fusion/core/jax_free_boundary_predictive.py"
+                    ),
                 },
                 "dependency_input": {
                     "path": "requirements/ci-freegsnke.in",
@@ -802,6 +1242,7 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
             "vacuum_limiter_max_abs_error_wb": VACUUM_LIMITER_MAX_ABS_WB,
         },
         "topology": topology,
+        "total_psi_comparison": total_psi,
         "vacuum_bridge": {
             "domain": "FreeGSNKE mask_inside_limiter",
             "freegsnke_orientation": "R,Z",
@@ -824,6 +1265,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     profile_gauge = cast(dict[str, Any], profile["gauge_audit"])
     profile_scale = cast(dict[str, Any], profile["scale_audit"])
     topology = cast(dict[str, Any], report["topology"])
+    total_psi = cast(dict[str, Any], report["total_psi_comparison"])
+    production = cast(dict[str, Any], total_psi["production_smooth"])
+    frozen = cast(dict[str, Any], total_psi["frozen_topology_control"])
+    total_gradient = cast(dict[str, Any], total_psi["gradient_audit"])
     checks = cast(dict[str, bool], report["checks"])
     lines = [
         "# FreeGSNKE inverse-equilibrium comparison",
@@ -845,6 +1290,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"| Sampled pprime/FFprime source relative L2 error | {profile_source['relative_l2_error']:.6g} |",
         f"| Gauge-shifted source relative L2 error | {profile_gauge['relative_l2_error']:.6g} |",
         f"| Selected COCOS-3 source adapter | {profile_scale['adapter']} |",
+        f"| Production smooth total-psi psi_N RMSE | {production['psi_n_rmse_inside_limiter']:.6g} |",
+        f"| Production smooth current-source relative L2 | {production['support_current_relative_l2']:.6g} |",
+        f"| Production smooth nonlinear residual | {production['relative_nonlinear_residual_rms']:.6g} |",
+        f"| Frozen-topology total-psi psi_N RMSE | {frozen['psi_n_rmse_inside_limiter']:.6g} |",
+        f"| Worst total-psi gradient relative error | {max(row['relative_error'] for row in total_gradient['rows']):.6g} |",
         "",
         "## Gates",
         "",
@@ -856,11 +1306,11 @@ def render_markdown(report: dict[str, Any]) -> str:
             "## Claim boundary",
             "",
             (
-                "The FreeGSNKE profile-source translation into SCPN sampled `pprime`/`FFprime` "
-                "is frozen for this case, including exact LCFS support, gauge invariance, and "
-                "identity COCOS-3 flux-per-radian scaling. A self-consistent SCPN solve has not "
-                "yet demonstrated full total-psi cross-solver parity, so that broader claim "
-                "remains explicitly unadmitted."
+                "The profile-source translation and self-consistent SCPN production-smooth "
+                "total-psi solve are admitted for this one pinned case, including explicit "
+                "coil/plasma field decomposition, topology, residual, current-support, and "
+                "implicit-gradient gates. Shot-disjoint, facility, PCS, safety, control, "
+                "latency, and real-time claims remain explicitly unadmitted."
             ),
             "",
             f"Payload SHA-256: `{report['payload_sha256']}`",
