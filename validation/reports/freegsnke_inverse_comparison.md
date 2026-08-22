@@ -33,4 +33,4 @@ This is bounded research evidence. It is not facility, PCS, safety, or control a
 
 The FreeGSNKE profile-source translation into SCPN sampled `pprime`/`FFprime` is frozen for this case, including exact LCFS support, gauge invariance, and identity COCOS-3 flux-per-radian scaling. A self-consistent SCPN solve has not yet demonstrated full total-psi cross-solver parity, so that broader claim remains explicitly unadmitted.
 
-Payload SHA-256: `6edbb7163ed442fbabedb1b81ca7608a8f66d10c9e89bd3f9bb9088029625e2d`
+Payload SHA-256: `a39d6522a2ce9362c94ff80455753be155c8c4828af5fa5fe90671e77fdd0667`

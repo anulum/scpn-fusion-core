@@ -24,6 +24,12 @@
       "scipy.*"
     ],
     [
+      "freegsnke",
+      "freegsnke.*",
+      "freegs4e",
+      "freegs4e.*"
+    ],
+    [
       "streamlit",
       "streamlit.*"
     ],
@@ -82,6 +88,8 @@
     "src/scpn_fusion/control/scenario_scheduler.py",
     "src/scpn_fusion/control/shape_controller.py",
     "src/scpn_fusion/core/mhd_sawtooth.py",
-    "src/scpn_fusion/core/divertor_thermal_sim.py"
+    "src/scpn_fusion/core/divertor_thermal_sim.py",
+    "validation/benchmark_freegsnke_inverse.py",
+    "tests/test_benchmark_freegsnke_inverse.py"
   ]
 }

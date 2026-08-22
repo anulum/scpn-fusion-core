@@ -264,6 +264,8 @@ files = [
     "tests/test_scpn_end_to_end_latency.py",
     "validation/benchmark_free_boundary_strict_parity.py",
     "tests/test_benchmark_free_boundary_strict_parity.py",
+    "validation/benchmark_freegsnke_inverse.py",
+    "tests/test_benchmark_freegsnke_inverse.py",
     "validation/ida_fixed_reference_source_contract.py",
     "tests/test_ida_fixed_reference_source_contract.py",
     "validation/diagnose_ida_fixed_reference_source.py",
@@ -897,6 +899,13 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["scipy", "scipy.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# FreeGSNKE and FreeGS4E are pinned comparison dependencies without PEP 561
+# markers or public stubs. Keep the untyped boundary limited to those packages;
+# the enrolled benchmark and its SCPN-facing calculations remain strict.
+module = ["freegsnke", "freegsnke.*", "freegs4e", "freegs4e.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

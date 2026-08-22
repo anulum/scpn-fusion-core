@@ -35,12 +35,14 @@ import pickle  # nosec B403
 import shutil
 # Fixed git argv, no shell, bounded timeout.
 import subprocess  # nosec B404
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
 import jax
 
-jax.config.update("jax_enable_x64", True)
+_jax_config_update = cast(Callable[[str, bool], None], jax.config.update)
+_jax_config_update("jax_enable_x64", True)
 
 import jax.numpy as jnp
 import numpy as np
@@ -357,8 +359,11 @@ def _gradient_audit(
         finite_difference[index] = (plus - minus) / (2.0 * FINITE_DIFFERENCE_STEP_A)
 
     difference = autodiff - finite_difference
-    denominator = max(float(np.linalg.norm(finite_difference)), np.finfo(float).tiny)
-    relative_error = float(np.linalg.norm(difference) / denominator)
+    denominator = max(
+        float(np.linalg.norm(finite_difference)),
+        float(np.finfo(np.float64).tiny),
+    )
+    relative_error = float(np.linalg.norm(difference)) / denominator
     all_finite = bool(np.all(np.isfinite(autodiff)) and np.all(np.isfinite(finite_difference)))
     return {
         "all_finite": all_finite,
