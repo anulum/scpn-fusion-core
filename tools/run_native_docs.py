@@ -150,11 +150,14 @@ def _build_lean_docs() -> int:
     # Lean standard library and may emit upstream heartbeat warnings unrelated
     # to this project's API surface.
     env["DISABLE_EQUATIONS"] = "1"
-    return _run(
-        ("lake", "build", *LEAN_DOC_TARGETS),
-        cwd=REPO_ROOT / "scpn-fusion-lean" / "docbuild",
-        env=env,
-    ).returncode
+    docbuild = REPO_ROOT / "scpn-fusion-lean" / "docbuild"
+    # doc-gen4 targets share back-reference JSON files and cannot safely write
+    # them concurrently in one Lake invocation.
+    for target in LEAN_DOC_TARGETS:
+        result = _run(("lake", "build", target), cwd=docbuild, env=env)
+        if result.returncode != 0:
+            return result.returncode
+    return 0
 
 
 BUILDERS = {

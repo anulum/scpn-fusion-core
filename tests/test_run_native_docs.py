@@ -158,7 +158,7 @@ def test_cpp_docs_create_output_parent_in_clean_checkout(
     assert calls == [("doxygen", "docs/Doxyfile")]
 
 
-def test_lean_docs_disable_upstream_equation_derivation(
+def test_lean_docs_build_targets_sequentially_without_equation_derivation(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[tuple[list[str], Path, dict[str, str] | None]] = []
@@ -179,8 +179,37 @@ def test_lean_docs_disable_upstream_equation_derivation(
     monkeypatch.setattr("tools.run_native_docs.subprocess.run", fake_run)
 
     assert native_docs._build_lean_docs() == 0
-    command, cwd, env = calls[0]
-    assert command == ["lake", "build", *native_docs.LEAN_DOC_TARGETS]
-    assert cwd == native_docs.REPO_ROOT / "scpn-fusion-lean" / "docbuild"
-    assert env is not None
-    assert env["DISABLE_EQUATIONS"] == "1"
+    assert [command for command, _cwd, _env in calls] == [
+        ["lake", "build", target] for target in native_docs.LEAN_DOC_TARGETS
+    ]
+    for _command, cwd, env in calls:
+        assert cwd == native_docs.REPO_ROOT / "scpn-fusion-lean" / "docbuild"
+        assert env is not None
+        assert env["DISABLE_EQUATIONS"] == "1"
+
+
+def test_lean_docs_stop_after_the_first_failed_target(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[list[str]] = []
+
+    def fake_run(
+        command: list[str],
+        *,
+        cwd: Path,
+        env: dict[str, str] | None,
+        check: bool,
+        text: bool,
+        capture_output: bool,
+    ) -> subprocess.CompletedProcess[str]:
+        del cwd, env, check, text, capture_output
+        calls.append(command)
+        return subprocess.CompletedProcess(command, 23 if len(calls) == 2 else 0, "", "")
+
+    monkeypatch.setattr("tools.run_native_docs.subprocess.run", fake_run)
+
+    assert native_docs._build_lean_docs() == 23
+    assert calls == [
+        ["lake", "build", native_docs.LEAN_DOC_TARGETS[0]],
+        ["lake", "build", native_docs.LEAN_DOC_TARGETS[1]],
+    ]
