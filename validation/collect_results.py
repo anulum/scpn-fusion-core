@@ -24,7 +24,7 @@ import time
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, ParamSpec, cast
 
 import numpy as np
 
@@ -35,6 +35,8 @@ RESULTS_PATH = REPO_ROOT / "RESULTS.md"
 ARTIFACTS = REPO_ROOT / "artifacts"
 WEIGHTS = REPO_ROOT / "weights"
 VERSION_FILE = REPO_ROOT / "src" / "scpn_fusion" / "VERSION"
+ResultMap = dict[str, Any]
+P = ParamSpec("P")
 
 
 # ── Utility ──────────────────────────────────────────────────────────
@@ -58,7 +60,12 @@ def _hw_header() -> str:
     return "\n".join(lines)
 
 
-def _safe_run(label: str, fn, *args, **kwargs) -> dict[str, Any] | None:
+def _safe_run(
+    label: str,
+    fn: Callable[P, ResultMap | None],
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> ResultMap | None:
     print(f"  [{label}] running...", end=" ", flush=True)
     t0 = time.perf_counter()
     try:
@@ -73,14 +80,17 @@ def _safe_run(label: str, fn, *args, **kwargs) -> dict[str, Any] | None:
         return None
 
 
-def _load_artifact(path: Path) -> dict[str, Any] | None:
+def _load_artifact(path: Path) -> ResultMap | None:
     if not path.exists():
         return None
     with open(path, encoding="utf-8") as f:
-        return json.load(f)
+        payload: object = json.load(f)
+    if not isinstance(payload, dict) or not all(isinstance(key, str) for key in payload):
+        raise ValueError(f"Benchmark artifact root must be a JSON object with string keys: {path}")
+    return cast(ResultMap, payload)
 
 
-def _fmt(val: Any, fmt: str = ".4f") -> str:
+def _fmt(val: object, fmt: str = ".4f") -> str:
     if val is None:
         return "—"
     if isinstance(val, (bool, np.bool_)):
@@ -95,7 +105,7 @@ def _fmt(val: Any, fmt: str = ".4f") -> str:
 # ── Live benchmark runners (compute on the fly) ─────────────────────
 
 
-def run_hil(quick: bool) -> dict[str, Any] | None:
+def run_hil(quick: bool) -> ResultMap | None:
     """Run the HIL control-loop benchmark and return latency metrics."""
     from scpn_fusion.control.hil_harness import run_hil_benchmark
 
@@ -112,7 +122,7 @@ def run_hil(quick: bool) -> dict[str, Any] | None:
     }
 
 
-def run_disruption(quick: bool) -> dict[str, Any] | None:
+def run_disruption(quick: bool) -> ResultMap | None:
     """Run the disruption ensemble benchmark and return prevention and current metrics."""
     from scpn_fusion.control.halo_re_physics import run_disruption_ensemble
 
@@ -129,20 +139,23 @@ def run_disruption(quick: bool) -> dict[str, Any] | None:
     }
 
 
-def run_q10() -> dict[str, Any] | None:
+def run_q10() -> ResultMap | None:
     """Compute a Q=10 operating point and return key ignition-performance metrics."""
     from scpn_fusion.core.fusion_ignition_sim import DynamicBurnModel
 
-    r = DynamicBurnModel.find_q10_operating_point(
-        R0=6.2,
-        a=2.0,
-        B_t=5.3,
-        I_p=15.0,
-        kappa=1.7,
+    result = cast(
+        ResultMap,
+        DynamicBurnModel.find_q10_operating_point(
+            R0=6.2,
+            a=2.0,
+            B_t=5.3,
+            I_p=15.0,
+            kappa=1.7,
+        ),
     )
-    best = r["best"]
+    best = cast(ResultMap, result["best"])
     return {
-        "q10_achieved": r["q10_achieved"],
+        "q10_achieved": result["q10_achieved"],
         "best_Q": best["Q_peak"],
         "P_aux_mw": best["P_aux_MW"],
         "P_fus_mw": best["P_fus_final_MW"],
@@ -151,21 +164,22 @@ def run_q10() -> dict[str, Any] | None:
     }
 
 
-def run_tbr() -> dict[str, Any] | None:
+def run_tbr() -> ResultMap | None:
     """Run the neutronics blanket solver and return grouped TBR components."""
     from scpn_fusion.nuclear.blanket_neutronics import MultiGroupBlanket
 
     blanket = MultiGroupBlanket(thickness_cm=80.0, li6_enrichment=0.9)
-    r = blanket.solve_transport()
+    result = cast(ResultMap, blanket.solve_transport())
+    by_group = cast(ResultMap, result["tbr_by_group"])
     return {
-        "tbr_total": r["tbr"],
-        "tbr_fast": r["tbr_by_group"]["fast"],
-        "tbr_epi": r["tbr_by_group"]["epithermal"],
-        "tbr_therm": r["tbr_by_group"]["thermal"],
+        "tbr_total": result["tbr"],
+        "tbr_fast": by_group["fast"],
+        "tbr_epi": by_group["epithermal"],
+        "tbr_therm": by_group["thermal"],
     }
 
 
-def run_ecrh() -> dict[str, Any] | None:
+def run_ecrh() -> ResultMap | None:
     """Evaluate ECRH deposition for a baseline scenario and return absorption metrics."""
     from scpn_fusion.core.rf_heating import ECRHHeatingSystem
 
@@ -178,7 +192,7 @@ def run_ecrh() -> dict[str, Any] | None:
     }
 
 
-def run_force_balance_3d() -> dict[str, Any] | None:
+def run_force_balance_3d() -> ResultMap | None:
     """Run the 3D force-balance solver and return convergence diagnostics."""
     from scpn_fusion.core.equilibrium_3d import (
         VMECStyleEquilibrium3D,
@@ -209,7 +223,7 @@ def run_force_balance_3d() -> dict[str, Any] | None:
     }
 
 
-def run_surrogates() -> dict[str, Any] | None:
+def run_surrogates() -> ResultMap | None:
     """Evaluate pretrained neural surrogates and return RMSE/L2 benchmark metrics."""
     from scpn_fusion.core.pretrained_surrogates import (
         evaluate_pretrained_mlp,
@@ -238,7 +252,7 @@ def run_surrogates() -> dict[str, Any] | None:
     return results
 
 
-def run_neural_eq() -> dict[str, Any] | None:
+def run_neural_eq() -> ResultMap | None:
     """Run neural-equilibrium inference and benchmark latency on a canonical feature vector."""
     from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumAccelerator
 
@@ -268,7 +282,7 @@ def run_neural_eq() -> dict[str, Any] | None:
 # ── Artifact-based benchmark loaders (read pre-computed JSON) ────────
 
 
-def load_qlknn_metrics() -> dict[str, Any] | None:
+def load_qlknn_metrics() -> ResultMap | None:
     """Load primary and optional backup QLKNN transport training/evaluation artifacts."""
     primary = _load_artifact(WEIGHTS / "neural_transport_qlknn.metrics.json")
     if primary is None:
@@ -280,32 +294,32 @@ def load_qlknn_metrics() -> dict[str, Any] | None:
     return result
 
 
-def load_real_shot_validation() -> dict[str, Any] | None:
+def load_real_shot_validation() -> ResultMap | None:
     """Load real-shot validation artifacts from the canonical JSON output."""
     return _load_artifact(ARTIFACTS / "real_shot_validation.json")
 
 
-def load_confinement_itpa() -> dict[str, Any] | None:
+def load_confinement_itpa() -> ResultMap | None:
     """Load confinement scaling results from the precomputed ITPA dashboard artifact."""
     return _load_artifact(ARTIFACTS / "rmse_dashboard_ci.json")
 
 
-def load_disturbance_rejection() -> dict[str, Any] | None:
+def load_disturbance_rejection() -> ResultMap | None:
     """Load disturbance rejection benchmark table from stored artifact JSON."""
     return _load_artifact(ARTIFACTS / "disturbance_rejection_benchmark.json")
 
 
-def load_freegs_benchmark() -> dict[str, Any] | None:
+def load_freegs_benchmark() -> ResultMap | None:
     """Load the FreeGS comparison artifact used for equilibrium benchmark reporting."""
     return _load_artifact(ARTIFACTS / "freegs_benchmark.json")
 
 
-def load_disruption_transfer_generalization() -> dict[str, Any] | None:
+def load_disruption_transfer_generalization() -> ResultMap | None:
     """Load transfer-generalization disturbance-rejection artifact."""
     return _load_artifact(ARTIFACTS / "disruption_transfer_generalization.json")
 
 
-def load_disruption_threshold() -> dict[str, Any] | None:
+def load_disruption_threshold() -> ResultMap | None:
     """Load disruption threshold sweep artifact for controller-lane summary."""
     return _load_artifact(ARTIFACTS / "disruption_threshold_sweep.json")
 
@@ -313,14 +327,14 @@ def load_disruption_threshold() -> dict[str, Any] | None:
 # ── Controller campaign (backward-compat API for test_stress_campaign) ──
 
 
-def run_controller_campaign(quick: bool = False) -> dict[str, Any] | None:
+def run_controller_campaign(quick: bool = False) -> ResultMap | None:
     """Run the stress controller campaign and return a compact results summary."""
     from validation.stress_test_campaign import run_campaign, generate_summary_table
 
     n = 5 if quick else 20
     results = run_campaign(n_episodes=n)
     table = generate_summary_table(results)
-    controllers: dict[str, dict] = {}
+    controllers: dict[str, ResultMap] = {}
     for name, m in results.items():
         controllers[name] = {
             "n_episodes": m.n_episodes,
@@ -342,26 +356,26 @@ def run_controller_campaign(quick: bool = False) -> dict[str, Any] | None:
 
 def generate_results_md(
     hw: str,
-    hil: dict | None = None,
-    disruption: dict | None = None,
-    q10: dict | None = None,
-    tbr: dict | None = None,
-    ecrh: dict | None = None,
-    fb3d: dict | None = None,
-    surrogates: dict | None = None,
-    neural_eq: dict | None = None,
-    qlknn: dict | None = None,
-    real_shots: dict | None = None,
-    confinement: dict | None = None,
-    disturbance: dict | None = None,
-    freegs: dict | None = None,
-    transfer_generalization: dict | None = None,
-    threshold_sweep: dict | None = None,
+    hil: ResultMap | None = None,
+    disruption: ResultMap | None = None,
+    q10: ResultMap | None = None,
+    tbr: ResultMap | None = None,
+    ecrh: ResultMap | None = None,
+    fb3d: ResultMap | None = None,
+    surrogates: ResultMap | None = None,
+    neural_eq: ResultMap | None = None,
+    qlknn: ResultMap | None = None,
+    real_shots: ResultMap | None = None,
+    confinement: ResultMap | None = None,
+    disturbance: ResultMap | None = None,
+    freegs: ResultMap | None = None,
+    transfer_generalization: ResultMap | None = None,
+    threshold_sweep: ResultMap | None = None,
     elapsed_s: float = 0.0,
     include_legacy_fno: bool = False,
     *,
-    results: dict | None = None,
-    campaign: dict | None = None,
+    results: ResultMap | None = None,
+    campaign: ResultMap | None = None,
 ) -> str:
     """Build the benchmark RESULTS.md document from computed and artifact-backed lanes."""
     if results is not None:
@@ -740,7 +754,12 @@ def generate_results_md(
     sections.append("| Lane | Status | Key metric |")
     sections.append("|------|--------|------------|")
 
-    def _lane(name: str, data, pass_key: str | None, metric_str: str):
+    def _lane(
+        name: str,
+        data: ResultMap | None,
+        pass_key: str | None,
+        metric_str: str,
+    ) -> None:
         if data is None:
             sections.append(f"| {name} | — | not available |")
             return

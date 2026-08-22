@@ -19,11 +19,14 @@ from scpn_fusion.core.eped_pedestal import EpedPedestalModel
 class TransportSolverInitializationMixin(TransportSolverState):
     """Initialize mutable profiles, contracts, and backend configuration."""
 
-    def _initialize_transport_solver_state(self, *, multi_ion: bool) -> None:
+    def _initialize_transport_solver_state(self, *, multi_ion: bool, nr: int) -> None:
         import scpn_fusion.core.integrated_transport_solver as solver_mod
 
+        if isinstance(nr, bool) or not isinstance(nr, int) or nr < 3:
+            raise ValueError("nr must be an integer >= 3.")
+
         self.external_profile_mode = True
-        self.nr = 50
+        self.nr = nr
         self.rho = np.linspace(0, 1, self.nr, dtype=np.float64)
         self.drho = 1.0 / (self.nr - 1)
 

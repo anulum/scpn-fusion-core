@@ -513,11 +513,27 @@ class TransportSolver(
     (Pütterich et al. 2010), and per-cell Bremsstrahlung.
     """
 
-    def __init__(self, config_path: str | Path, *, multi_ion: bool = False) -> None:
-        """Build a transport solver with deterministic defaults and requested mode."""
+    def __init__(
+        self,
+        config_path: str | Path,
+        *,
+        multi_ion: bool = False,
+        nr: int = 50,
+    ) -> None:
+        """Build a transport solver with the requested species mode and radial grid.
+
+        Parameters
+        ----------
+        config_path : str or pathlib.Path
+            Fusion-kernel JSON configuration.
+        multi_ion : bool, optional
+            Evolve separate deuterium, tritium, and helium densities.
+        nr : int, optional
+            Number of radial transport cells. Must be at least three.
+        """
         fusion_kernel_init = cast(Callable[[Any, str | Path], None], FusionKernel.__init__)
         fusion_kernel_init(self, config_path)
-        self._initialize_transport_solver_state(multi_ion=multi_ion)
+        self._initialize_transport_solver_state(multi_ion=multi_ion, nr=nr)
 
     # Model/configuration methods are provided by TransportSolverModelMixin.
 

@@ -493,8 +493,62 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
         The calculation is intentionally separate from assignment so the runtime
         can evaluate the nonlinear closure on a predicted thermal state without
         accepting that trial state or applying inter-step coefficient relaxation.
+        The ``fixed_coefficients`` backend preserves explicitly assigned profiles
+        for deterministic operator verification and fails closed on invalid data.
         """
         solver_mod = _solver_module()
+        transport_backend = str(getattr(self, "transport_backend", "reduced_multichannel"))
+        if transport_backend.strip().lower() == "fixed_coefficients":
+            chi_e = np.asarray(self.chi_e, dtype=np.float64)
+            chi_i = np.asarray(self.chi_i, dtype=np.float64)
+            d_n = np.asarray(self.D_n, dtype=np.float64)
+            for name, profile, strictly_positive in (
+                ("chi_e", chi_e, True),
+                ("chi_i", chi_i, True),
+                ("D_n", d_n, False),
+            ):
+                if profile.shape != self.rho.shape or not np.all(np.isfinite(profile)):
+                    raise ValueError(
+                        f"fixed_coefficients {name} must be finite and match the rho grid."
+                    )
+                if (strictly_positive and np.any(profile <= 0.0)) or (
+                    not strictly_positive and np.any(profile < 0.0)
+                ):
+                    bound = "> 0" if strictly_positive else ">= 0"
+                    raise ValueError(f"fixed_coefficients {name} must be {bound}.")
+            self._last_transport_closure_contract = {
+                "used": True,
+                "model": "fixed_coefficients",
+                "requested_backend": transport_backend,
+                "fallback_used": False,
+                "base_source": "caller_fixed",
+                "q_profile_source": "not_applicable",
+                "dominant_channel": "not_applicable",
+                "channel_counts": {"ITG": 0, "TEM": 0, "ETG": 0, "stable": 0},
+                "channel_energy": {"ITG": 0.0, "TEM": 0.0, "ETG": 0.0},
+                "gradient_clip_counts": {"grad_te": 0, "grad_ti": 0, "grad_ne": 0},
+                "profile_contract": {
+                    "n_points": int(self.rho.size),
+                    "rho_min": float(self.rho[0]),
+                    "rho_max": float(self.rho[-1]),
+                },
+                "chi_e_mean": float(np.mean(chi_e)),
+                "chi_i_mean": float(np.mean(chi_i)),
+                "d_n_mean": float(np.mean(d_n)),
+                "weights_loaded": False,
+                "weights_path": None,
+                "weights_checksum": None,
+                "classification_mode": "fixed_coefficients",
+                "ood_fraction_3sigma": 0.0,
+                "ood_fraction_5sigma": 0.0,
+                "ood_point_count": 0,
+                "max_abs_z": 0.0,
+                "tglf_sample_count": 0,
+                "tglf_sample_indices": [],
+                "error": None,
+            }
+            return chi_e.copy(), chi_i.copy(), d_n.copy()
+
         q_profile, s_hat_profile, r_major, a_minor, b_toroidal, q_profile_source = (
             self._resolve_transport_closure_inputs()
         )
@@ -521,7 +575,6 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
             chi_gb_reference = None
             chi_base_source = "constant_fallback"
 
-        transport_backend = str(getattr(self, "transport_backend", "reduced_multichannel"))
         chi_turb_e, chi_turb_i, d_turb = self._compute_transport_backend_closure(
             transport_backend=transport_backend,
             chi_base=chi_base,

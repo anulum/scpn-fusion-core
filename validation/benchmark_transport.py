@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import TypedDict
 
 import numpy as np
 
@@ -24,21 +26,57 @@ from scpn_fusion.core.neural_transport import NeuralTransportModel, TransportInp
 from scpn_fusion.core.scaling_laws import ipb98y2_with_uncertainty
 
 
-def run_pure_diffusion_benchmark(nr: int = 200) -> dict:
+PureDiffusionResult = TypedDict(
+    "PureDiffusionResult",
+    {
+        "max_relative_error": float,
+        "core_actual": float,
+        "core_analytic": float,
+        "pass": bool,
+    },
+)
+ThresholdResult = TypedDict(
+    "ThresholdResult",
+    {"chi_sub": float, "chi_super": float, "pass": bool},
+)
+IterScalingResult = TypedDict(
+    "IterScalingResult",
+    {"tau_predicted": float, "uncertainty_sigma": float, "pass": bool},
+)
+
+
+class TransportBenchmarkReport(TypedDict):
+    """Complete transport validation report."""
+
+    pure_diffusion: PureDiffusionResult
+    threshold: ThresholdResult
+    iter_scaling: IterScalingResult
+
+
+def run_pure_diffusion_benchmark(nr: int = 200) -> PureDiffusionResult:
     """Benchmark 1: Pure diffusion against analytic steady state."""
     # Dummy config: R0=2.0, a=1.0
-    cfg = {
+    cfg: dict[str, object] = {
         "reactor_name": "Analytic-Transport",
         "grid_resolution": [33, 33],
         "dimensions": {"R_min": 1.0, "R_max": 3.0, "Z_min": -1.5, "Z_max": 1.5},
-        "physics": {"plasma_current_target": 1.0, "vacuum_permeability": 1.0},
+        "physics": {
+            "plasma_current_target": 1.0,
+            "vacuum_permeability": 1.0,
+            "transport_backend": "fixed_coefficients",
+        },
         "coils": [],
-        "solver": {"max_iterations": 1, "convergence_threshold": 1.0, "max_iterations_outer": 1},
+        "solver": {
+            "max_iterations": 1,
+            "convergence_threshold": 1.0,
+            "max_iterations_outer": 1,
+            "relaxation_factor": 0.1,
+        },
     }
-    cfg_path = Path("tmp_bench_cfg.json")
-    cfg_path.write_text(json.dumps(cfg))
+    with TemporaryDirectory(prefix="scpn-transport-benchmark-") as tmp_dir:
+        cfg_path = Path(tmp_dir) / "transport_config.json"
+        cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
 
-    try:
         # Use higher resolution to minimize discretization error
         solver = TransportSolver(cfg_path, nr=nr)
 
@@ -76,28 +114,26 @@ def run_pure_diffusion_benchmark(nr: int = 200) -> dict:
         T_analytic = 0.1 + (S_T_discrete * 1.0**2 / (4.0 * chi_const)) * (1.0 - rho**2)
 
         err = np.abs(solver.Ti - T_analytic)
-        max_err_rel = np.max(err[1:-1]) / np.max(T_analytic)
+        max_err_rel = float(np.max(err[1:-1]) / np.max(T_analytic))
 
         return {
-            "max_relative_error": float(max_err_rel),
+            "max_relative_error": max_err_rel,
             "core_actual": float(solver.Ti[0]),
             "core_analytic": float(T_analytic[0]),
-            "pass": bool(max_err_rel < 0.05),  # Keep threshold reasonable for now
+            "pass": max_err_rel < 0.05,
         }
-    finally:
-        if cfg_path.exists():
-            cfg_path.unlink()
 
 
-def run_threshold_benchmark() -> dict:
+def run_threshold_benchmark() -> ThresholdResult:
     """Benchmark 2: Critical gradient threshold behavior."""
-    model = NeuralTransportModel(auto_discover=False)
+    with TemporaryDirectory(prefix="scpn-neural-transport-fallback-") as tmp_dir:
+        model = NeuralTransportModel(weights_path=Path(tmp_dir) / "absent_weights.npz")
 
-    inp_sub = TransportInputs(grad_ti=3.0)
-    inp_super = TransportInputs(grad_ti=10.0)
+        inp_sub = TransportInputs(grad_ti=3.0)
+        inp_super = TransportInputs(grad_ti=10.0)
 
-    flux_sub = model.predict(inp_sub)
-    flux_super = model.predict(inp_super)
+        flux_sub = model.predict(inp_sub)
+        flux_super = model.predict(inp_super)
 
     return {
         "chi_sub": float(flux_sub.chi_i),
@@ -106,33 +142,60 @@ def run_threshold_benchmark() -> dict:
     }
 
 
-def run_iter_scaling_benchmark() -> dict:
+def run_iter_scaling_benchmark() -> IterScalingResult:
     """Benchmark 3: ITER-like confinement scaling."""
-    Ip, BT, ne19, P_loss, R, kappa, epsilon, M = 15.0, 5.3, 10.0, 50.0, 6.2, 1.7, 2.0 / 6.2, 2.5
-    tau_pred, sigma = ipb98y2_with_uncertainty(Ip, BT, ne19, P_loss, R, kappa, epsilon, M)
+    ip_ma, bt, ne19, p_loss, radius, kappa, epsilon, mass = (
+        15.0,
+        5.3,
+        10.0,
+        50.0,
+        6.2,
+        1.7,
+        2.0 / 6.2,
+        2.5,
+    )
+    tau_pred, sigma = ipb98y2_with_uncertainty(
+        ip_ma,
+        bt,
+        ne19,
+        p_loss,
+        radius,
+        kappa,
+        epsilon,
+        mass,
+    )
     return {"tau_predicted": float(tau_pred), "uncertainty_sigma": float(sigma), "pass": True}
 
 
-def main():
-    """Run transport benchmark set and write transport JSON/markdown summaries."""
-    results = {
-        "pure_diffusion": run_pure_diffusion_benchmark(),
+def main(*, nr: int = 200, report_dir: Path | None = None) -> None:
+    """Run the transport benchmarks and write JSON and Markdown summaries.
+
+    Parameters
+    ----------
+    nr : int, optional
+        Radial cells used by the pure-diffusion comparison.
+    report_dir : pathlib.Path, optional
+        Destination directory. Defaults to ``validation/reports``.
+    """
+    results: TransportBenchmarkReport = {
+        "pure_diffusion": run_pure_diffusion_benchmark(nr=nr),
         "threshold": run_threshold_benchmark(),
         "iter_scaling": run_iter_scaling_benchmark(),
     }
 
     pd = results["pure_diffusion"]
     print(
-        f"DEBUG Core: actual={pd['core_actual']:.4f}, analytic={pd['core_analytic']:.4f}, err={pd['max_relative_error']:.2%}"
+        f"DEBUG Core: actual={pd['core_actual']:.4f}, "
+        f"analytic={pd['core_analytic']:.4f}, err={pd['max_relative_error']:.2%}"
     )
 
-    report_dir = Path("validation/reports")
+    report_dir = report_dir or Path("validation/reports")
     report_dir.mkdir(parents=True, exist_ok=True)
 
-    with open(report_dir / "transport_benchmark.json", "w") as f:
+    with open(report_dir / "transport_benchmark.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    with open(report_dir / "transport_benchmark.md", "w") as f:
+    with open(report_dir / "transport_benchmark.md", "w", encoding="utf-8") as f:
         f.write("# Transport Validation Benchmark\n\n")
         f.write("| Test | Metric | Result | Pass |\n")
         f.write("|------|--------|--------|------|\n")
@@ -141,7 +204,8 @@ def main():
         )
         th = results["threshold"]
         f.write(
-            f"| Threshold | Chi Sub/Super | {th['chi_sub']:.1f} / {th['chi_super']:.1f} | {th['pass']} |\n"
+            f"| Threshold | Chi Sub/Super | {th['chi_sub']:.1f} / "
+            f"{th['chi_super']:.1f} | {th['pass']} |\n"
         )
         it = results["iter_scaling"]
         f.write(f"| ITER Scaling | Tau_E Predicted | {it['tau_predicted']:.2f}s | {it['pass']} |\n")

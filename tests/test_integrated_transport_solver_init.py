@@ -32,11 +32,16 @@ _BASE_CONFIG: dict[str, Any] = {
 }
 
 
-def _solver_from(config: dict[str, Any], tmp_path: Path) -> TransportSolver:
+def _solver_from(
+    config: dict[str, Any],
+    tmp_path: Path,
+    *,
+    nr: int = 50,
+) -> TransportSolver:
     """Write ``config`` to a temp JSON file and construct a single-ion solver."""
     path = tmp_path / "transport_config.json"
     path.write_text(json.dumps(config), encoding="utf-8")
-    return TransportSolver(str(path), multi_ion=False)
+    return TransportSolver(str(path), multi_ion=False, nr=nr)
 
 
 def test_eped_pedestal_mode_builds_pedestal_model(tmp_path: Path) -> None:
@@ -66,6 +71,29 @@ def test_absent_recovery_cap_defaults_to_none(tmp_path: Path) -> None:
     """An unset recovery cap leaves the limit unbounded (``None``)."""
     solver = _solver_from(copy.deepcopy(_BASE_CONFIG), tmp_path)
     assert solver.max_numerical_recoveries_per_step is None
+
+
+def test_requested_radial_grid_initialises_matching_profiles(tmp_path: Path) -> None:
+    """A caller-selected radial grid sizes every initial transport profile."""
+    solver = _solver_from(copy.deepcopy(_BASE_CONFIG), tmp_path, nr=73)
+
+    assert solver.nr == 73
+    assert solver.rho.shape == (73,)
+    assert solver.Te.shape == (73,)
+    assert solver.Ti.shape == (73,)
+    assert solver.ne.shape == (73,)
+    assert solver.chi_e.shape == (73,)
+    assert solver.chi_i.shape == (73,)
+    assert solver.D_n.shape == (73,)
+    assert solver.n_impurity.shape == (73,)
+    assert solver.drho == pytest.approx(1.0 / 72.0)
+
+
+@pytest.mark.parametrize("nr", [0, 2, True])
+def test_invalid_radial_grid_raises(nr: int, tmp_path: Path) -> None:
+    """Radial grids too small for finite differences fail before allocation."""
+    with pytest.raises(ValueError, match="nr must be an integer >= 3"):
+        _solver_from(copy.deepcopy(_BASE_CONFIG), tmp_path, nr=nr)
 
 
 @pytest.mark.parametrize("cap", [-1, True])

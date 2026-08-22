@@ -113,6 +113,53 @@ class TestResolveClosureInputs:
         assert source == "fallback_parabolic"
 
 
+class TestFixedTransportCoefficients:
+    """Deterministic fixed-coefficient transport backend."""
+
+    def test_backend_returns_exact_configured_profiles(self, tmp_path: Path) -> None:
+        """The fixed backend preserves caller-provided transport profiles exactly."""
+        solver = _solver(tmp_path)
+        solver.transport_backend = "fixed_coefficients"
+        solver.chi_e = np.linspace(0.2, 0.8, solver.nr)
+        solver.chi_i = np.linspace(0.3, 0.9, solver.nr)
+        solver.D_n = np.linspace(0.0, 0.1, solver.nr)
+
+        chi_e, chi_i, d_n = solver._evaluate_transport_coefficients(P_aux=10.0)
+
+        assert np.array_equal(chi_e, solver.chi_e)
+        assert np.array_equal(chi_i, solver.chi_i)
+        assert np.array_equal(d_n, solver.D_n)
+        assert solver._last_transport_closure_contract["model"] == "fixed_coefficients"
+        assert solver._last_transport_closure_contract["fallback_used"] is False
+        assert solver._last_transport_closure_contract["base_source"] == "caller_fixed"
+        assert solver._last_transport_closure_contract["classification_mode"] == (
+            "fixed_coefficients"
+        )
+
+    @pytest.mark.parametrize(
+        ("name", "value", "match"),
+        [
+            ("chi_e", 0.0, "chi_e must be > 0"),
+            ("chi_i", float("nan"), "chi_i must be finite"),
+            ("D_n", -0.1, "D_n must be >= 0"),
+        ],
+    )
+    def test_backend_rejects_invalid_profiles(
+        self,
+        name: str,
+        value: float,
+        match: str,
+        tmp_path: Path,
+    ) -> None:
+        """Invalid fixed profiles fail closed rather than entering the time step."""
+        solver = _solver(tmp_path)
+        solver.transport_backend = "fixed_coefficients"
+        setattr(solver, name, np.full(solver.nr, value))
+
+        with pytest.raises(ValueError, match=match):
+            solver._evaluate_transport_coefficients(P_aux=10.0)
+
+
 class TestRecoveryBudget:
     """Numerical-recovery limit resolution and budget enforcement."""
 

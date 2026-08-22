@@ -38,7 +38,7 @@ import traceback
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, Protocol, cast
 
 ModelPredictiveController: Any | None
 NeuralSurrogate: Any | None
@@ -55,12 +55,12 @@ repo_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(repo_root / "src"))
 
 from scpn_fusion._data_paths import default_iter_config_path
-from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
-from scpn_fusion.control.h_infinity_controller import (
+from scpn_fusion.control.flight_sim_controllers import (
     get_flight_sim_controller_v2,
     get_flight_sim_lqr_controller,
 )
-from scpn_fusion.core.neural_equilibrium import NeuralEquilibriumKernel
+from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
+from scpn_fusion.core.neural_equilibrium_kernel import NeuralEquilibriumKernel
 
 # Optional controller imports
 _mpc_available = False
@@ -145,7 +145,19 @@ class ControllerMetrics:
     disruption_rate: float = 0.0
     mean_def: float = 0.0
     mean_energy_efficiency: float = 0.0
-    episodes: list = field(default_factory=list)
+    episodes: list[EpisodeResult] = field(default_factory=list)
+
+
+class EpisodeRunner(Protocol):
+    """Callable contract shared by controller episode runners."""
+
+    def __call__(
+        self,
+        config_path: str | Path,
+        shot_duration: int = 30,
+        surrogate: bool = False,
+    ) -> EpisodeResult:
+        """Run one controller episode."""
 
 
 HINF_RESEARCH_ENV = "SCPN_ENABLE_HINF_RESEARCH"
@@ -184,7 +196,7 @@ def _env_flag_enabled(name: str) -> bool:
 
 
 def _build_isoflux_controller(
-    config_path: Any,
+    config_path: str | Path,
     *,
     surrogate: bool,
     dt: float,
@@ -195,11 +207,11 @@ def _build_isoflux_controller(
     }
     if surrogate:
         kwargs["kernel_factory"] = NeuralEquilibriumKernel
-    return IsoFluxController(config_path, **kwargs)
+    return IsoFluxController(str(config_path), **kwargs)
 
 
 def _run_pid_episode(
-    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+    config_path: str | Path, shot_duration: int = 30, surrogate: bool = False
 ) -> EpisodeResult:
     """Run a single PID episode."""
     dt = 0.01 if surrogate else 0.05
@@ -225,7 +237,7 @@ def _run_pid_episode(
 
 
 def _run_hinf_episode(
-    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+    config_path: str | Path, shot_duration: int = 30, surrogate: bool = False
 ) -> EpisodeResult:
     """Run a single H-infinity episode.
 
@@ -260,7 +272,7 @@ def _run_hinf_episode(
             return _hinf_zero_delay_command(hinf_R, err, dt)
         return HINF_VERTICAL_COMMAND_SIGN * _hinf_zero_delay_command(hinf_Z, err, dt)
 
-    ctrl.pid_step = hinf_step
+    cast(Any, ctrl).pid_step = hinf_step
 
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=steps, save_plot=False)
@@ -282,7 +294,7 @@ def _run_hinf_episode(
 
 
 def _run_lqr_episode(
-    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+    config_path: str | Path, shot_duration: int = 30, surrogate: bool = False
 ) -> EpisodeResult:
     """Run a single LQR episode with corrected integrator plant model."""
     dt = 0.01 if surrogate else 0.05
@@ -305,7 +317,7 @@ def _run_lqr_episode(
             return lqr_R.step(err, dt)
         return lqr_Z.step(err, dt)
 
-    ctrl.pid_step = lqr_step
+    cast(Any, ctrl).pid_step = lqr_step
 
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=steps, save_plot=False)
@@ -327,7 +339,7 @@ def _run_lqr_episode(
 
 
 def _run_mpc_episode(
-    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+    config_path: str | Path, shot_duration: int = 30, surrogate: bool = False
 ) -> EpisodeResult:
     """Run a single linear-surrogate MPC episode."""
     if not _mpc_available or ModelPredictiveController is None or NeuralSurrogate is None:
@@ -361,7 +373,7 @@ def _run_mpc_episode(
         action = np.asarray(mpc.plan_trajectory(state), dtype=np.float64).reshape(-1)
         return float(action[0]) if action.size else 0.0
 
-    ctrl.pid_step = mpc_step
+    cast(Any, ctrl).pid_step = mpc_step
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=steps, save_plot=False)
     total_us = (time.perf_counter_ns() - t0) / 1e3
@@ -382,7 +394,7 @@ def _run_mpc_episode(
 
 
 def _run_nmpc_jax_episode(
-    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+    config_path: str | Path, shot_duration: int = 30, surrogate: bool = False
 ) -> EpisodeResult:
     """Run a single Nonlinear MPC (JAX) episode."""
     if not _nmpc_jax_available or get_nmpc_controller is None:
@@ -396,7 +408,7 @@ def _run_nmpc_jax_episode(
     # Target state (axis R, Z and X-point R, Z)
     target = np.array([6.0, 0.0, 5.0, -3.5])
 
-    def nmpc_step(current_err: float, dt: float) -> float:
+    def nmpc_step(pid: Any, err: float) -> float:
         # Get full state for NMPC
         idx_max = int(np.argmax(ctrl.kernel.Psi))
         iz, ir = np.unravel_index(idx_max, ctrl.kernel.Psi.shape)
@@ -410,7 +422,7 @@ def _run_nmpc_jax_episode(
         # mapping to the primary radial coil (index 0)
         return float(u_opt[0])
 
-    ctrl.pid_step = nmpc_step
+    cast(Any, ctrl).pid_step = nmpc_step
 
     t0 = time.perf_counter_ns()
     steps = int(shot_duration / dt)
@@ -435,7 +447,7 @@ def _run_nmpc_jax_episode(
 
 
 # Controller registry — always includes PID and H-infinity
-CONTROLLERS: dict[str, Callable] = {
+CONTROLLERS: dict[str, EpisodeRunner] = {
     "PID": _run_pid_episode,
     "H-infinity": _run_hinf_episode,
     "LQR": _run_lqr_episode,
@@ -449,7 +461,7 @@ if _nmpc_jax_available:
 
 
 def _run_snn_episode(
-    config_path: Any, shot_duration: int = 30, surrogate: bool = False
+    config_path: str | Path, shot_duration: int = 30, surrogate: bool = False
 ) -> EpisodeResult:
     """Run a single Nengo-SNN episode."""
     if not _snn_available or NengoSNNController is None or NengoSNNConfig is None:
@@ -466,7 +478,7 @@ def _run_snn_episode(
         out = snn.step(error_vec)
         return float(out[0])
 
-    ctrl.pid_step = snn_step
+    cast(Any, ctrl).pid_step = snn_step
 
     t0 = time.perf_counter_ns()
     result = ctrl.run_shot(shot_duration=steps, save_plot=False)
@@ -492,7 +504,7 @@ if _snn_available:
 
 
 def _run_rust_pid_episode(
-    config_path: Any,
+    config_path: str | Path,
     shot_duration: int = 30,
     surrogate: bool = False,
 ) -> EpisodeResult:
@@ -539,7 +551,7 @@ if _rust_flight_sim_available:
 def run_campaign(
     n_episodes: int = 1000,
     shot_duration: int = 30,
-    config_path: Any = None,
+    config_path: str | Path | None = None,
     noise_level: float = 0.2,
     delay_ms: float = 50.0,
     surrogate: bool = False,
