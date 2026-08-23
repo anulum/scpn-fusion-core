@@ -1,0 +1,85 @@
+{
+  "schema_version": "scpn-fusion.machine-conditioned-equilibrium-generation.v2",
+  "machine": {
+    "name": "ITER-Like-Analytic-Fixed-Support-v2",
+    "reference_physical_descriptor": {
+      "major_radius_m": 6.2,
+      "minor_radius_m": 2.0,
+      "toroidal_field_t": 5.3,
+      "plasma_current_a": 15000000.0,
+      "status": "descriptive ITER-like scale; synthetic geometry, not ITER CAD"
+    },
+    "grid": {
+      "r_m": [3.0, 9.0],
+      "z_m": [-4.0, 4.0]
+    },
+    "coils": [
+      {"name": "PF1U", "r_m": 2.8, "z_m": 2.5, "turns": 1, "nominal_current_a": -4500000.0, "sample_range_a": [-4725000.0, -4275000.0]},
+      {"name": "PF1L", "r_m": 2.8, "z_m": -2.5, "turns": 1, "nominal_current_a": -4500000.0, "sample_range_a": [-4725000.0, -4275000.0]},
+      {"name": "PF2U", "r_m": 9.2, "z_m": 2.5, "turns": 1, "nominal_current_a": -4500000.0, "sample_range_a": [-4725000.0, -4275000.0]},
+      {"name": "PF2L", "r_m": 9.2, "z_m": -2.5, "turns": 1, "nominal_current_a": -4500000.0, "sample_range_a": [-4725000.0, -4275000.0]},
+      {"name": "PF3U", "r_m": 5.6, "z_m": 4.3, "turns": 1, "nominal_current_a": -1500000.0, "sample_range_a": [-1650000.0, -1350000.0]},
+      {"name": "PF3L", "r_m": 5.3, "z_m": -4.3, "turns": 1, "nominal_current_a": -9000000.0, "sample_range_a": [-9450000.0, -8550000.0]}
+    ],
+    "wall": {
+      "major_radius_m": 6.2,
+      "minor_radius_m": 2.1,
+      "elongation": 1.75,
+      "triangularity": 0.30,
+      "point_count": 129
+    },
+    "limiter": {
+      "major_radius_m": 6.2,
+      "minor_radius_m": 2.0,
+      "elongation": 1.70,
+      "triangularity": 0.33,
+      "point_count": 129
+    },
+    "plasma_support": {
+      "major_radius_m": 6.2,
+      "minor_radius_m": 1.8,
+      "elongation": 1.67,
+      "triangularity": 0.30,
+      "transition_width": 0.03
+    }
+  },
+  "solver": {
+    "psin_knots": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+    "edge_pprime_pa_per_wb": 0.0,
+    "edge_ffprime_t2m2_per_wb": 0.0,
+    "n_iter": 180,
+    "anderson_depth": 8,
+    "mixing": 0.5,
+    "ip_ramp": 30,
+    "cutoff_width": 0.03,
+    "tol": 1e-8,
+    "use_mg_preconditioner": true,
+    "inner_solver": "bicgstab"
+  },
+  "sampling": {
+    "plasma_current_target_a": [13500000.0, 16500000.0],
+    "pprime_knot_ranges": [
+      [-26450.0, -19550.0],
+      [-19550.0, -14450.0],
+      [-12650.0, -9350.0],
+      [-6555.0, -4845.0],
+      [-2300.0, -1700.0]
+    ],
+    "ffprime_knot_ranges": [
+      [-4.83, -3.57],
+      [-3.6225, -2.6775],
+      [-2.415, -1.785],
+      [-1.2075, -0.8925],
+      [-0.4025, -0.2975]
+    ],
+    "max_attempt_factor": 10
+  },
+  "tolerances": {
+    "relative_gs_residual_rms_max": 0.0001,
+    "plasma_current_relative_error_max": 1e-9,
+    "psi_span_abs_wb_min": 0.01,
+    "plasma_delta_max_abs_wb_min": 0.01,
+    "vacuum_reconstruction_max_abs": 1e-10,
+    "diagnostic_replay_max_abs": 1e-12
+  }
+}

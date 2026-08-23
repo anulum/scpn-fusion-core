@@ -80,6 +80,46 @@ settings can map to inputs that expose only their post-solve axis and flux
 summaries. Those post-solve features also leak solved-state information into a
 nominal forward-prediction interface.
 
+## Machine-conditioned v2 generator
+
+The successor generator removes that leakage and uses the compiled predictive
+Grad–Shafranov solver in SI units. Its 17 per-sample inputs are target plasma
+current, six signed PF effective currents, five `pprime` knots, and five
+`FFprime` knots. Grid, coil centres and turns, analytic wall and limiter,
+COCOS 3, flux gauge, profile boundary knots, and a static analytic D-shaped
+plasma support are machine metadata rather than repeated feature columns.
+
+The fixed support is an explicit scientific boundary: this dataset models
+equilibria within one machine-defined plasma region. It does not claim to learn
+free-boundary shape evolution. Every coil filament is outside the numerical
+rectangle, so the stored vacuum field is exactly reconstructed from the six
+unit-current Green maps without an in-domain filament singularity.
+
+Generate and verify a cohort with:
+
+```bash
+python tools/generate_iter_machine_conditioned_dataset.py \
+  --spec validation/iter_machine_conditioned_v2_spec.json \
+  --samples 50000 \
+  --seed 20260822 \
+  --grid-resolution 129 129 \
+  --output-dir /path/to/iter-machine-conditioned-v2
+python tools/verify_iter_machine_conditioned_dataset.py \
+  --dataset-dir /path/to/iter-machine-conditioned-v2 \
+  --full-field-scan
+```
+
+Generation is fail-closed. Accepted rows must stop below the iteration cap,
+close the canonical Ip-normalized GS residual and target current, have a
+non-zero smooth axis/X flux span, and contain a non-zero plasma self-field.
+The tracked three-sample 33×33 reference cohort is at
+`validation/reference/iter_machine_conditioned_v2_n3_seed20260822_33x33`;
+its manifest binds all source and array hashes and records the exact replay
+commands. Production datasets and checkpoints belong on owner-controlled
+FTP/storage with public HTTPS retrieval where available; Git retains small
+references, manifests, checksums, provenance, licensing, and reproduction
+commands.
+
 ## Training and selection
 
 The recoverable training path uses a deterministic seed-42 80/20 split: 8,000

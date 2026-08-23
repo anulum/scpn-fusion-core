@@ -152,6 +152,8 @@ def test_bad_settings_fail_closed(response) -> None:
 def test_wrong_psi_init_shape_fails_closed(response) -> None:
     with pytest.raises(ValueError, match="psi_init shape"):
         _solve_compiled(response, psi_init=jnp.zeros((5, 7)))
+    with pytest.raises(ValueError, match="fixed_support_weights shape"):
+        _solve_compiled(response, fixed_support_weights=jnp.ones((5, 7)))
 
 
 # ── Iteration diagnostics + Anderson normal-equations solver ──────
@@ -336,3 +338,5 @@ def test_batched_bad_inputs_fail_closed(response, compiled_psi) -> None:
         call(two, two_pp, two_ff, inner_cycles=0)
     with pytest.raises(ValueError, match="psi_init shape"):
         call(two, two_pp, two_ff, psi_init=jnp.zeros((5, 7)))
+    with pytest.raises(ValueError, match="fixed_support_weights shape"):
+        call(two, two_pp, two_ff, fixed_support_weights=jnp.ones((5, 7)))

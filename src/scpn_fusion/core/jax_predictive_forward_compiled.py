@@ -124,6 +124,7 @@ def _make_runner(
     inner_solver: str,
     inner_cycles: int,
     use_separatrix_continuation: bool,
+    use_fixed_support: bool,
     anderson_solver: str = "lstsq",
     trace_iteration_indices: tuple[int, ...] = (),
 ) -> Callable[..., jnp.ndarray]:
@@ -153,6 +154,7 @@ def _make_runner(
         wall_idx: jnp.ndarray,
         source_idx: jnp.ndarray,
         coil_wall: jnp.ndarray,
+        fixed_support_weights: jnp.ndarray,
         x0: jnp.ndarray,
     ) -> _RunnerOutput:
         dA = jnp.asarray(d_r * d_z)
@@ -183,6 +185,7 @@ def _make_runner(
                     cutoff_width,
                     mu0,
                     precond,
+                    fixed_support_weights=(fixed_support_weights if use_fixed_support else None),
                 )
             # inner_solver == "mg_richardson": warm-started MG-preconditioned Richardson —
             # each cycle is ONE matvec + ONE V-cycle (vs 2+2 per BiCGSTAB iteration). The
@@ -206,6 +209,7 @@ def _make_runner(
                 separatrix_refinement,
                 cutoff_width,
                 mu0,
+                fixed_support_weights=(fixed_support_weights if use_fixed_support else None),
             )
             assert precond is not None  # guarded in the wrapper
             y = x
@@ -306,12 +310,15 @@ def _make_runner(
             jnp.asarray(False),
         )
         if trace_iteration_indices:
-            return run_checkpointed_while_loop(
-                state0=state0,
-                condition=cond,
-                advance=advance,
-                trace_iteration_indices=trace_iteration_indices,
-                shape=shape,
+            return cast(
+                _RunnerOutput,
+                run_checkpointed_while_loop(
+                    state0=state0,
+                    condition=cond,
+                    advance=advance,
+                    trace_iteration_indices=trace_iteration_indices,
+                    shape=shape,
+                ),
             )
         k_final, x_final, _fh, _xh, _nv, _done = jax.lax.while_loop(cond, body, state0)
         return x_final.reshape(shape), k_final
@@ -348,6 +355,7 @@ def solve_predictive_equilibrium_compiled(
     return_iterations: bool = False,
     trace_iteration_indices: tuple[int, ...] = (),
     return_trace: bool = False,
+    fixed_support_weights: jnp.ndarray | None = None,
 ) -> jnp.ndarray | tuple[jnp.ndarray, int] | CompiledPredictiveTrace:
     """Compiled predictive free-boundary solve — same fixed point as the eager solver.
 
@@ -372,6 +380,11 @@ def solve_predictive_equilibrium_compiled(
     must be a strictly increasing tuple within ``[0, n_iter)``. Tracing is
     opt-in: the normal runner is compiled without trace state or checkpoint
     writes.
+
+    ``fixed_support_weights`` may bind a static machine-defined plasma support
+    while retaining smooth flux-based profile normalisation. This is useful
+    for explicit fixed-support synthetic model families and is never inferred
+    from the solved field.
 
     Raises
     ------
@@ -404,6 +417,11 @@ def solve_predictive_equilibrium_compiled(
     nz, nr = z_np.size, r_np.size
     if psi_init is not None and tuple(np.shape(psi_init)) != (nz, nr):
         raise ValueError(f"psi_init shape {np.shape(psi_init)} does not match grid ({nz}, {nr})")
+    if fixed_support_weights is not None and tuple(np.shape(fixed_support_weights)) != (nz, nr):
+        raise ValueError(
+            "fixed_support_weights shape "
+            f"{np.shape(fixed_support_weights)} does not match grid ({nz}, {nr})"
+        )
 
     psi_coil = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, coil_I, mu0)
     coil_wall = psi_coil.reshape(-1)[wall_idx]
@@ -426,6 +444,7 @@ def solve_predictive_equilibrium_compiled(
         str(inner_solver),
         int(inner_cycles),
         psi_init is None,
+        fixed_support_weights is not None,
         str(anderson_solver),
         trace_iteration_indices,
     )
@@ -441,6 +460,11 @@ def solve_predictive_equilibrium_compiled(
         wall_idx,
         source_idx,
         coil_wall,
+        (
+            jnp.ones((nz, nr), dtype=psi_coil.dtype)
+            if fixed_support_weights is None
+            else jnp.asarray(fixed_support_weights)
+        ),
         x0,
     )
     if return_trace:
@@ -473,6 +497,7 @@ def _make_batched_runner(
     inner_cycles: int,
     anderson_solver: str,
     shared_init: bool,
+    use_fixed_support: bool,
 ) -> Callable[..., jnp.ndarray]:
     """Build and jit the vmapped batch runner for one (geometry, settings) combination.
 
@@ -501,6 +526,7 @@ def _make_batched_runner(
         inner_solver,
         inner_cycles,
         not shared_init,
+        use_fixed_support,
         anderson_solver,
     )
 
@@ -518,6 +544,7 @@ def _make_batched_runner(
         wall_idx: jnp.ndarray,
         source_idx: jnp.ndarray,
         x0_shared: jnp.ndarray,
+        fixed_support_weights: jnp.ndarray,
     ) -> jnp.ndarray:
         psi_coil = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, ci, mu0)
         coil_wall = psi_coil.reshape(-1)[wall_idx]
@@ -534,11 +561,12 @@ def _make_batched_runner(
             wall_idx,
             source_idx,
             coil_wall,
+            fixed_support_weights,
             x0,
         )
         return cast(jnp.ndarray, psi)
 
-    in_axes = (0, 0, 0) + (None,) * 10
+    in_axes = (0, 0, 0) + (None,) * 11
     return cast(Callable[..., jnp.ndarray], jax.jit(jax.vmap(one, in_axes=in_axes)))
 
 
@@ -568,6 +596,7 @@ def solve_predictive_equilibrium_batched(
     inner_solver: str = "mg_richardson",
     inner_cycles: int = 2,
     anderson_solver: str = "lstsq",
+    fixed_support_weights: jnp.ndarray | None = None,
 ) -> jnp.ndarray:
     """Batched compiled solve — ``vmap`` over (coil currents, p′, FF′) samples.
 
@@ -585,6 +614,9 @@ def solve_predictive_equilibrium_batched(
     until EVERY element converges, so per-element results are unaffected by batching.
 
     Returns ψ batch of shape ``(B, NZ, NR)``.
+
+    ``fixed_support_weights`` has the same static machine-support semantics as
+    the single compiled solve and is shared by the batch.
     """
     r_np = np.asarray(R_grid, dtype=np.float64)
     z_np = np.asarray(Z_grid, dtype=np.float64)
@@ -609,6 +641,11 @@ def solve_predictive_equilibrium_batched(
     nz, nr = z_np.size, r_np.size
     if psi_init is not None and tuple(np.shape(psi_init)) != (nz, nr):
         raise ValueError(f"psi_init shape {np.shape(psi_init)} does not match grid ({nz}, {nr})")
+    if fixed_support_weights is not None and tuple(np.shape(fixed_support_weights)) != (nz, nr):
+        raise ValueError(
+            "fixed_support_weights shape "
+            f"{np.shape(fixed_support_weights)} does not match grid ({nz}, {nr})"
+        )
     batched = _make_batched_runner(
         nz,
         nr,
@@ -627,6 +664,7 @@ def solve_predictive_equilibrium_batched(
         int(inner_cycles),
         str(anderson_solver),
         psi_init is not None,
+        fixed_support_weights is not None,
     )
     ip_arr = jnp.asarray(float(ip_target))
     x0_shared = (
@@ -648,4 +686,9 @@ def solve_predictive_equilibrium_batched(
         wall_idx,
         source_idx,
         x0_shared,
+        (
+            jnp.ones((nz, nr), dtype=jnp.result_type(float))
+            if fixed_support_weights is None
+            else jnp.asarray(fixed_support_weights)
+        ),
     )

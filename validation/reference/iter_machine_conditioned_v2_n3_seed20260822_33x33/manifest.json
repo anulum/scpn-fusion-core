@@ -1,0 +1,502 @@
+{
+  "arrays": {
+    "coil_green_psi_per_current": {
+      "dtype": "float64",
+      "file": "coil_green_psi_per_current.npy",
+      "logical_bytes": 52272,
+      "role": "coil_green_psi_per_current",
+      "sha256": "3ca3cee6123248498f20de22c4cbd1836db90bef80c740585caabc622b1229a9",
+      "shape": [
+        6,
+        33,
+        33
+      ],
+      "size_bytes": 52400
+    },
+    "diagnostics": {
+      "dtype": "float64",
+      "file": "diagnostics.npy",
+      "logical_bytes": 240,
+      "role": "diagnostics",
+      "sha256": "3a1e09aeb0226eb2c794fea171266ac910772db49d5b801ef7ef8babf2df6a30",
+      "shape": [
+        3,
+        10
+      ],
+      "size_bytes": 368
+    },
+    "grid_r_m": {
+      "dtype": "float64",
+      "file": "grid_r_m.npy",
+      "logical_bytes": 264,
+      "role": "grid_r_m",
+      "sha256": "20030d57dd0c6ec7bc4953ad69d8e9235eab5c667c178cca298c32e5a53b0d87",
+      "shape": [
+        33
+      ],
+      "size_bytes": 392
+    },
+    "grid_z_m": {
+      "dtype": "float64",
+      "file": "grid_z_m.npy",
+      "logical_bytes": 264,
+      "role": "grid_z_m",
+      "sha256": "d4db3c4582dd646907234bbc4a9ec0a8189e77f6f64f0f13dc6591ac6df732e1",
+      "shape": [
+        33
+      ],
+      "size_bytes": 392
+    },
+    "inputs": {
+      "dtype": "float64",
+      "file": "inputs.npy",
+      "logical_bytes": 408,
+      "role": "inputs",
+      "sha256": "959fb1f5b7b6f28aa1e3db4f3d3a9009def1995bc02b60e1bdf84840eb774ed0",
+      "shape": [
+        3,
+        17
+      ],
+      "size_bytes": 536
+    },
+    "limiter_rz_m": {
+      "dtype": "float64",
+      "file": "limiter_rz_m.npy",
+      "logical_bytes": 2064,
+      "role": "limiter_rz_m",
+      "sha256": "4c095b8e586b7b567c7130f15ada4d05aea6acecfec9e08db7563e4779f2ce10",
+      "shape": [
+        129,
+        2
+      ],
+      "size_bytes": 2192
+    },
+    "plasma_support_weights": {
+      "dtype": "float64",
+      "file": "plasma_support_weights.npy",
+      "logical_bytes": 8712,
+      "role": "plasma_support_weights",
+      "sha256": "82f912cc37107c73fb873a3a1a59e662ec82c26376641b5bcab7a2af97aba542",
+      "shape": [
+        33,
+        33
+      ],
+      "size_bytes": 8840
+    },
+    "psi_total": {
+      "dtype": "float64",
+      "file": "psi_total.npy",
+      "logical_bytes": 26136,
+      "role": "psi_total",
+      "sha256": "d11009bfee6cad4a1d322f69809ac6e6a43eab37efe5cc7ddf243852b8efcafd",
+      "shape": [
+        3,
+        33,
+        33
+      ],
+      "size_bytes": 26264
+    },
+    "psi_vacuum": {
+      "dtype": "float64",
+      "file": "psi_vacuum.npy",
+      "logical_bytes": 26136,
+      "role": "psi_vacuum",
+      "sha256": "dc96f398ec5b73d7cb6743e5ac22ffc920c7fc13066a1cc649d706d8654335dc",
+      "shape": [
+        3,
+        33,
+        33
+      ],
+      "size_bytes": 26264
+    },
+    "wall_rz_m": {
+      "dtype": "float64",
+      "file": "wall_rz_m.npy",
+      "logical_bytes": 2064,
+      "role": "wall_rz_m",
+      "sha256": "ce516c4129f60df1c63d0bcde4416994838d90bcef9881bebc40e6cb1cb0cfe5",
+      "shape": [
+        129,
+        2
+      ],
+      "size_bytes": 2192
+    }
+  },
+  "artifact_custody": {
+    "bounded_reference": "may be tracked in Git",
+    "git_retains": "manifest, SHA-256, provenance, licensing and reproduction commands",
+    "production": "owner-controlled FTP/storage with public HTTPS download when available"
+  },
+  "claims": {
+    "class": "synthetic_machine_conditioned_fixed_support_equilibrium_distribution",
+    "experimental_shot_data": false,
+    "facility_validated": false,
+    "limits": [
+      "Synthetic SCPN solver output; not ITER Organisation or experimental data.",
+      "Wall, limiter, support and coil geometry are analytic ITER-like descriptors, not ITER CAD.",
+      "Plasma support is fixed across samples; free-boundary shape prediction is not claimed.",
+      "This cohort validates equilibrium-surrogate conditioning only, not shot forecasting, IDA, PCS, control or safety performance."
+    ],
+    "time_series_prediction": false
+  },
+  "dataset_id": "iter-like-fixed-support-v2-n3-seed20260822-33x33",
+  "diagnostic_names": [
+    "candidate_index",
+    "converged",
+    "iterations",
+    "relative_gs_residual_rms",
+    "plasma_current_actual_a",
+    "plasma_current_relative_error",
+    "psi_axis",
+    "psi_x",
+    "psi_span_abs_wb",
+    "plasma_delta_max_abs_wb"
+  ],
+  "features": [
+    {
+      "index": 0,
+      "maximum": 16500000.0,
+      "minimum": 13500000.0,
+      "name": "plasma_current_target_a",
+      "role": "pre_solve_control",
+      "unit": "A"
+    },
+    {
+      "index": 1,
+      "maximum": -4275000.0,
+      "minimum": -4725000.0,
+      "name": "coil_current_a.PF1U",
+      "role": "pre_solve_control",
+      "unit": "A"
+    },
+    {
+      "index": 2,
+      "maximum": -4275000.0,
+      "minimum": -4725000.0,
+      "name": "coil_current_a.PF1L",
+      "role": "pre_solve_control",
+      "unit": "A"
+    },
+    {
+      "index": 3,
+      "maximum": -4275000.0,
+      "minimum": -4725000.0,
+      "name": "coil_current_a.PF2U",
+      "role": "pre_solve_control",
+      "unit": "A"
+    },
+    {
+      "index": 4,
+      "maximum": -4275000.0,
+      "minimum": -4725000.0,
+      "name": "coil_current_a.PF2L",
+      "role": "pre_solve_control",
+      "unit": "A"
+    },
+    {
+      "index": 5,
+      "maximum": -1350000.0,
+      "minimum": -1650000.0,
+      "name": "coil_current_a.PF3U",
+      "role": "pre_solve_control",
+      "unit": "A"
+    },
+    {
+      "index": 6,
+      "maximum": -8550000.0,
+      "minimum": -9450000.0,
+      "name": "coil_current_a.PF3L",
+      "role": "pre_solve_control",
+      "unit": "A"
+    },
+    {
+      "index": 7,
+      "maximum": -19550.0,
+      "minimum": -26450.0,
+      "name": "pprime_knot_0",
+      "role": "pre_solve_control",
+      "unit": "Pa/Wb"
+    },
+    {
+      "index": 8,
+      "maximum": -14450.0,
+      "minimum": -19550.0,
+      "name": "pprime_knot_1",
+      "role": "pre_solve_control",
+      "unit": "Pa/Wb"
+    },
+    {
+      "index": 9,
+      "maximum": -9350.0,
+      "minimum": -12650.0,
+      "name": "pprime_knot_2",
+      "role": "pre_solve_control",
+      "unit": "Pa/Wb"
+    },
+    {
+      "index": 10,
+      "maximum": -4845.0,
+      "minimum": -6555.0,
+      "name": "pprime_knot_3",
+      "role": "pre_solve_control",
+      "unit": "Pa/Wb"
+    },
+    {
+      "index": 11,
+      "maximum": -1700.0,
+      "minimum": -2300.0,
+      "name": "pprime_knot_4",
+      "role": "pre_solve_control",
+      "unit": "Pa/Wb"
+    },
+    {
+      "index": 12,
+      "maximum": -3.57,
+      "minimum": -4.83,
+      "name": "ffprime_knot_0",
+      "role": "pre_solve_control",
+      "unit": "T^2*m^2/Wb"
+    },
+    {
+      "index": 13,
+      "maximum": -2.6775,
+      "minimum": -3.6225,
+      "name": "ffprime_knot_1",
+      "role": "pre_solve_control",
+      "unit": "T^2*m^2/Wb"
+    },
+    {
+      "index": 14,
+      "maximum": -1.785,
+      "minimum": -2.415,
+      "name": "ffprime_knot_2",
+      "role": "pre_solve_control",
+      "unit": "T^2*m^2/Wb"
+    },
+    {
+      "index": 15,
+      "maximum": -0.8925,
+      "minimum": -1.2075,
+      "name": "ffprime_knot_3",
+      "role": "pre_solve_control",
+      "unit": "T^2*m^2/Wb"
+    },
+    {
+      "index": 16,
+      "maximum": -0.2975,
+      "minimum": -0.4025,
+      "name": "ffprime_knot_4",
+      "role": "pre_solve_control",
+      "unit": "T^2*m^2/Wb"
+    }
+  ],
+  "generation": {
+    "accepted_samples": 3,
+    "attempted_candidates": 3,
+    "candidate_order": "ascending_index_first_accepted",
+    "grid_resolution_rz": [
+      33,
+      33
+    ],
+    "rejection_counts": {},
+    "requested_samples": 3,
+    "sampling_method": "seeded_stratified_latin_hypercube",
+    "seed": 20260822
+  },
+  "machine": {
+    "cocos": 3,
+    "coils": [
+      {
+        "current_feature": "coil_current_a.PF1U",
+        "name": "PF1U",
+        "nominal_current_a": -4500000.0,
+        "polarity": "negative",
+        "r_m": 2.8,
+        "sample_range_a": [
+          -4725000.0,
+          -4275000.0
+        ],
+        "turns": 1,
+        "z_m": 2.5
+      },
+      {
+        "current_feature": "coil_current_a.PF1L",
+        "name": "PF1L",
+        "nominal_current_a": -4500000.0,
+        "polarity": "negative",
+        "r_m": 2.8,
+        "sample_range_a": [
+          -4725000.0,
+          -4275000.0
+        ],
+        "turns": 1,
+        "z_m": -2.5
+      },
+      {
+        "current_feature": "coil_current_a.PF2U",
+        "name": "PF2U",
+        "nominal_current_a": -4500000.0,
+        "polarity": "negative",
+        "r_m": 9.2,
+        "sample_range_a": [
+          -4725000.0,
+          -4275000.0
+        ],
+        "turns": 1,
+        "z_m": 2.5
+      },
+      {
+        "current_feature": "coil_current_a.PF2L",
+        "name": "PF2L",
+        "nominal_current_a": -4500000.0,
+        "polarity": "negative",
+        "r_m": 9.2,
+        "sample_range_a": [
+          -4725000.0,
+          -4275000.0
+        ],
+        "turns": 1,
+        "z_m": -2.5
+      },
+      {
+        "current_feature": "coil_current_a.PF3U",
+        "name": "PF3U",
+        "nominal_current_a": -1500000.0,
+        "polarity": "negative",
+        "r_m": 5.6,
+        "sample_range_a": [
+          -1650000.0,
+          -1350000.0
+        ],
+        "turns": 1,
+        "z_m": 4.3
+      },
+      {
+        "current_feature": "coil_current_a.PF3L",
+        "name": "PF3L",
+        "nominal_current_a": -9000000.0,
+        "polarity": "negative",
+        "r_m": 5.3,
+        "sample_range_a": [
+          -9450000.0,
+          -8550000.0
+        ],
+        "turns": 1,
+        "z_m": -4.3
+      }
+    ],
+    "coordinate_system": "cylindrical_R_Z_m",
+    "current_semantics": "signed effective ampere-turn current; turns recorded explicitly",
+    "current_unit": "A",
+    "gauge": "absolute Green-function vacuum plus plasma self-field; no per-sample shift",
+    "grid": {
+      "r_m": [
+        3.0,
+        9.0
+      ],
+      "z_m": [
+        -4.0,
+        4.0
+      ]
+    },
+    "grid_index_order": "sample_Z_R",
+    "limiter": {
+      "elongation": 1.7,
+      "major_radius_m": 6.2,
+      "minor_radius_m": 2.0,
+      "point_count": 129,
+      "source": "analytic_synthetic",
+      "triangularity": 0.33
+    },
+    "name": "ITER-Like-Analytic-Fixed-Support-v2",
+    "plasma_support": {
+      "array": "plasma_support_weights",
+      "elongation": 1.67,
+      "major_radius_m": 6.2,
+      "minor_radius_m": 1.8,
+      "source": "analytic_synthetic_static_pre_solve",
+      "transition_width": 0.03,
+      "triangularity": 0.3
+    },
+    "poloidal_flux_definition": "psi = Phi_p/(2*pi), poloidal flux per radian [Wb]",
+    "profile_derivative_variable": "psi [Wb]",
+    "reference_physical_descriptor": {
+      "major_radius_m": 6.2,
+      "minor_radius_m": 2.0,
+      "plasma_current_a": 15000000.0,
+      "status": "descriptive ITER-like scale; synthetic geometry, not ITER CAD",
+      "toroidal_field_t": 5.3
+    },
+    "wall": {
+      "elongation": 1.75,
+      "major_radius_m": 6.2,
+      "minor_radius_m": 2.1,
+      "point_count": 129,
+      "source": "analytic_synthetic",
+      "triangularity": 0.3
+    }
+  },
+  "reproduction": {
+    "command": "python tools/generate_iter_machine_conditioned_dataset.py --spec validation/iter_machine_conditioned_v2_spec.json --samples 3 --seed 20260822 --grid-resolution 33 33 --output-dir <dataset-directory>",
+    "verification": "python tools/verify_iter_machine_conditioned_dataset.py --dataset-dir <dataset-directory> --full-field-scan"
+  },
+  "schema_version": "scpn-fusion.machine-conditioned-equilibrium-dataset.v2",
+  "solver": {
+    "anderson_depth": 8,
+    "coil_field_decomposition": false,
+    "coil_location_requirement": "every filament outside computational rectangle",
+    "cutoff_width": 0.03,
+    "edge_ffprime_t2m2_per_wb": 0.0,
+    "edge_pprime_pa_per_wb": 0.0,
+    "family": "compiled_predictive_grad_shafranov",
+    "inner_solver": "bicgstab",
+    "ip_ramp": 30,
+    "mixing": 0.5,
+    "model_boundary": "machine_defined_fixed_plasma_support",
+    "n_iter": 180,
+    "psin_knots": [
+      0.0,
+      0.2,
+      0.4,
+      0.6,
+      0.8,
+      1.0
+    ],
+    "tol": 1e-08,
+    "use_mg_preconditioner": true
+  },
+  "source": {
+    "files": {
+      "compiled_solver": {
+        "path": "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+        "sha256": "3e12a11ec9d3aedf7cfc230541a690c321a4a2af63db9d6743671871696f5931"
+      },
+      "dataset_contract": {
+        "path": "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
+        "sha256": "9bff52c1d4d74b9e31fc995ffeeb75ab29b8e8851f704a907d020f03d356045d"
+      },
+      "generation_spec": {
+        "path": "validation/iter_machine_conditioned_v2_spec.json",
+        "sha256": "aa2d255f9b33baab2a552f62e0a0b6d648e3a40ccb10a238818fd6333bf12c6b"
+      },
+      "generator": {
+        "path": "tools/generate_iter_machine_conditioned_dataset.py",
+        "sha256": "4c3a2c7165f058f7e48355df861a03385f50075cb15df3923991b3ebf4ddf6c7"
+      },
+      "predictive_solver": {
+        "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+        "sha256": "d8388dd7ad2e246e9943570d2456f472616dfc13896f2a6572c41344129b8d32"
+      }
+    },
+    "repository": "https://github.com/anulum/scpn-fusion-core",
+    "repository_head_context": "a0c047bf4ee6a45866fcc284804b23a5a1e479a7"
+  },
+  "tolerances": {
+    "diagnostic_replay_max_abs": 1e-12,
+    "plasma_current_relative_error_max": 1e-09,
+    "plasma_delta_max_abs_wb_min": 0.01,
+    "psi_span_abs_wb_min": 0.01,
+    "relative_gs_residual_rms_max": 0.0001,
+    "vacuum_reconstruction_max_abs": 1e-10
+  }
+}
