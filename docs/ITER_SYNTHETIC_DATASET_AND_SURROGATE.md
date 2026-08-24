@@ -304,9 +304,9 @@ reported field metrics use float64.
 ```bash
 python tools/train_machine_conditioned_deeponet.py \
   --dataset-dir data/iter_machine_conditioned_v2_n50000_seed20260822_129x129 \
-  --out artifacts/iter_machine_conditioned_deeponet_20260824_seed42_74c05fda/candidate_local.npz \
-  --report artifacts/iter_machine_conditioned_deeponet_20260824_seed42_74c05fda/report_local.json \
-  --checkpoint-dir artifacts/iter_machine_conditioned_deeponet_20260824_seed42_74c05fda/checkpoints \
+  --out artifacts/iter_machine_conditioned_deeponet_20260824_seed42_0f369b50/candidate_local.npz \
+  --report artifacts/iter_machine_conditioned_deeponet_20260824_seed42_0f369b50/report_local.json \
+  --checkpoint-dir artifacts/iter_machine_conditioned_deeponet_20260824_seed42_0f369b50/checkpoints \
   --steps 20000 \
   --seed 42 \
   --validation-fraction 0.10 \
@@ -322,35 +322,39 @@ python tools/train_machine_conditioned_deeponet.py \
   --early-stopping-patience 40
 ```
 
-The completed seed-42 run from published source SHA `74c05fda` evaluated all
+The completed seed-42 run from published source SHA `0f369b50` evaluated all
 20,000 requested optimiser steps and selected step 19,500 from validation
 before opening calibration and the untouched final test:
 
 | Untouched-test measure | Result |
 | --- | ---: |
-| Field RMSE | `0.023554936122933533 Wb/rad` |
-| Mean relative L2 | `0.0018768039361196063` |
-| P95 relative L2 | `0.0027345910550329064` |
-| Maximum relative L2 | `0.0042368007914158155` |
-| 95% conformal relative-L2 bound | `0.0027451468653940715` |
+| Field RMSE | `0.023554938170431822 Wb/rad` |
+| Mean relative L2 | `0.0018768040157829957` |
+| P95 relative L2 | `0.002734565529830742` |
+| Maximum relative L2 | `0.004236799003386214` |
+| 95% conformal relative-L2 bound | `0.0027451350778553625` |
 | Test coverage of that bound | `0.9516` |
-| JAX/runtime maximum absolute difference | `1.587064968333607e-7 Wb/rad` |
-| Rust/NumPy untouched-test maximum absolute difference | `8.881784197001252e-15 Wb/rad` |
+| JAX/runtime maximum absolute difference | `1.9112206040006186e-7 Wb/rad` |
+| Rust/NumPy untouched-test maximum absolute difference | `7.993605777301127e-15 Wb/rad` |
 
-Training took `432.47219220298575 s` on the local CUDA device, including the
+Training took `361.52456199005246 s` on the local CUDA device, including the
 authenticated full-cohort scan and final evaluation. The candidate SHA-256 is
-`68a432399bc647308ee081eb6ef53603ace53c323a9f2d4c9b41cd8817b67fb4`;
+`e14f73f76c0cb0e1558925d9f31a4fb87cab9dc892818833bcb9de96fd258a4b`;
 the report SHA-256 is
-`2def1624c7009d2490a3433a333405b32d17461332d678e3f6566d610f72f769`.
+`688435f7f710a15ff6e4c71a2ac0c0ed4e2a1c040171773e77e53b60bbd74edd`.
 The final optimiser and statistics stages authenticate as
-`2cf84617b68f06c6c12afec66935d5f65c3a1a8c752eeb5df30366e04bbd091a`
+`d322b2bdad4d4496ddfb24069273e0b6ef3f81dc7501fa6455adedb5d4c41d22`
 and
-`c2849f7283eb7fba1e9fed323ab196e6c82f9a6b369fac63537027e2aac1f1de`.
+`69afa0201bb85c7e2f445f25a005a4c181dc43834f9039d5ad97281b7357478a`.
 The Rust/NumPy sweep covered all 2,500 untouched-test shots and remained
-inside the declared `1e-14` relative/absolute tolerance. All 14 branch/trunk
-network arrays are bit-identical to the pre-publication run; only the recorded
-source-hash member changed after the logging-contract fix. Candidate, report,
-statistics and recovery checkpoints remain local and unpromoted.
+inside the declared `1e-14` relative/absolute tolerance. An independent rerun
+selected the same step and split as the prior source-bound run. CUDA reduction
+ordering produced a maximum `4.76837158203125e-6` absolute difference across
+trainable arrays and only `7.966338938958151e-11` change in untouched-test mean
+relative L2, so bit identity is not claimed across independent GPU executions.
+All 19 recorded source digests, both recovery pointers, and an independent
+Rust/NumPy inference probe authenticate. Candidate, report, statistics and
+recovery checkpoints remain local and unpromoted.
 
 The operator is not uniformly better than the field-aware PCA-MLP on this
 one fixed-machine cohort: the PCA-MLP has lower field RMSE and mean relative

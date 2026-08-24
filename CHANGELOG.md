@@ -69,14 +69,22 @@
   candidate-versus-reference plasma-current support, distribution distance,
   and centroid shift without changing solver physics or promotion gates.
 
+### Fixed
+
+- Make optional DeepONet backend construction a shared dispatch contract,
+  validate final optimiser metadata through the same authenticated loader used
+  for recovery, and close every reachable line and branch in the eight-module
+  training/runtime surface with real NumPy, Rust, malformed-file, overflow,
+  and end-to-end numerical failure paths.
+
 ### Validation
 
 - Record the completed 20,000-step seed-42 DeepONet run from published source
-  SHA `74c05fda`: validation selected step 19,500, untouched final-test field
-  RMSE is `0.023554936122933533 Wb/rad`, mean relative L2 is
-  `0.0018768039361196063`, and Rust/NumPy parity remains within the declared
-  tolerance across all 2,500 untouched-test shots. The candidate and recovery
-  artifacts remain local and unpromoted.
+  SHA `0f369b50`: validation selected step 19,500, untouched final-test field
+  RMSE is `0.023554938170431822 Wb/rad`, mean relative L2 is
+  `0.0018768040157829957`, and Rust/NumPy parity remains within the declared
+  tolerance across all 2,500 untouched-test shots. The candidate, report, and
+  recovery artifacts remain local, source-authenticated, and unpromoted.
 - Add digest-bound, finite-sample split-conformal certificates for the QLKNN
   transport surrogate. The corrected rank uses 47,826 held-out calibration
   rows and independent empirical checks on 47,828 test rows; all three
