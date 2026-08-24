@@ -222,7 +222,9 @@ class RecoverableNpyDataset:
                 raise ValueError("recovery rejection counts are invalid")
             rejections[reason] = count
         if next_candidate != accepted + sum(rejections.values()):
-            raise ValueError("recovery candidate cursor does not match accepted and rejected counts")
+            raise ValueError(
+                "recovery candidate cursor does not match accepted and rejected counts"
+            )
         static_names = set(normalised) - sample_array_names
         expected_static_sha256 = {
             name: _array_digest(arrays[name]) for name in sorted(static_names)
@@ -328,9 +330,7 @@ class RecoverableNpyDataset:
                 "start": self.accepted_samples,
                 "stop": accepted_samples,
                 "sha256": {
-                    name: _array_digest(
-                        self.arrays[name][self.accepted_samples : accepted_samples]
-                    )
+                    name: _array_digest(self.arrays[name][self.accepted_samples : accepted_samples])
                     for name in sorted(self.sample_array_names)
                 },
             }

@@ -670,9 +670,7 @@ def generate_dataset(
     safety_margin = max(1024**3, logical_bytes // 10)
     required_free = safety_margin if resume else logical_bytes + safety_margin
     if free_bytes < required_free:
-        raise OSError(
-            f"insufficient free disk: need {required_free} bytes, have {free_bytes}"
-        )
+        raise OSError(f"insufficient free disk: need {required_free} bytes, have {free_bytes}")
     source_paths = (
         Path(__file__).resolve(),
         REPO_ROOT / "src/scpn_fusion/io/recoverable_npy_dataset.py",
