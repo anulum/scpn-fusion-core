@@ -428,7 +428,7 @@
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
-          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.077098"
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.494330"
         }
       ]
     },
@@ -456,7 +456,7 @@
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json",
-          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*5\\.021958"
+          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*3\\.527328"
         }
       ]
     },
@@ -540,7 +540,7 @@
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
-          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.077098"
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.494330"
         }
       ]
     },

@@ -46,6 +46,12 @@ repos:
         language: system
         pass_filenames: false
         files: ^(src/|tests/|docs/|scpn-fusion-rs/|\.github/|pyproject\.toml|README\.md)
+      - id: claims-evidence
+        name: public claims evidence guard
+        entry: python tools/claims_audit.py
+        language: system
+        pass_filenames: false
+        files: ^(artifacts/|docs/|tools/claims_audit\.py|validation/claims_manifest\.json|\.pre-commit-config\.yaml|README\.md|RESULTS\.md|SECURITY\.md)
       - id: commit-trailers
         name: seat/authorship commit-message guard
         entry: python tools/check_commit_trailers.py
