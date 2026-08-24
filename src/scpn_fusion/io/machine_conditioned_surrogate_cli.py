@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 TrainingCallable = Callable[..., dict[str, Any]]
+LOGGER = logging.getLogger(__name__)
 
 
 def run_training_cli(
@@ -75,7 +76,7 @@ def run_training_cli(
         early_stopping_patience=args.early_stopping_patience,
         resume=args.resume,
     )
-    print(json.dumps(result, indent=2, sort_keys=True))
+    LOGGER.info("%s", json.dumps(result, indent=2, sort_keys=True))
 
 
 __all__ = ["run_training_cli"]

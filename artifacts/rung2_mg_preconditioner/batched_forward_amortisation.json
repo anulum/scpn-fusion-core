@@ -1,10 +1,10 @@
 {
   "correctness_load_independent": {
-    "max_element_equivalence_span_rel": 5.021958671795911e-15,
+    "max_element_equivalence_span_rel": 3.5273281109442046e-15,
     "note": "each compared element's single solve converged (k < n_iter); a -1% coil perturbation warm case does NOT converge at 33\u00b2 within 300 iterations (residual plateau near the softmax X-point extraction) while +1% converges in 11 \u2014 comparisons are made only where the single solve converges, and the batched API inherits exactly the single solver's convergence envelope."
   },
-  "generated_utc": "2026-08-22T10:17:03+00:00",
-  "jax_version": "0.6.2",
+  "generated_utc": "2026-08-24T14:18:08+00:00",
+  "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_batched_forward.py",
     "generator_sha256": "f2df790deb7e26f0f0df97f23ab461de3fe8afbf1caf78af0e85acea7c73d1db",
@@ -20,7 +20,7 @@
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "c5f202dbe1e39916a69d75cf2a19337bcfb0977b02c0887d763d55c46fb2fe30",
+    "logic_sources_sha256": "0b6c7306ccc781b6a25a6bd50da00e384b1d4e5697e4ddc2a4ec0b5a396ba444",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
     "pinned_requirements_sha256": "bd71deb22e7ab465fb79cbb554e2bcc58488034ede8836469576efc4bce9a2a9"
   },
@@ -35,31 +35,31 @@
       {
         "batch_size": 4,
         "cache_hits_gained_after_first_call": 3,
-        "compile_plus_first_call_ms": 28255.951786995865,
-        "element_equivalence_span_rel": 2.391408891331386e-15,
-        "warm_median_ms": 36.781406990485266,
+        "compile_plus_first_call_ms": 7458.9276110054925,
+        "element_equivalence_span_rel": 3.5273281109442046e-15,
+        "warm_median_ms": 24.516842036973685,
         "warm_ms": [
-          38.00761202001013,
-          35.60402599396184,
-          36.781406990485266
+          24.516842036973685,
+          24.278911005239934,
+          24.893277033697814
         ],
-        "warm_per_solve_ms": 9.195351747621316
+        "warm_per_solve_ms": 6.129210509243421
       },
       {
         "batch_size": 16,
         "cache_hits_gained_after_first_call": 4,
-        "compile_plus_first_call_ms": 34395.5684370012,
-        "element_equivalence_span_rel": 5.021958671795911e-15,
-        "warm_median_ms": 86.7858650162816,
+        "compile_plus_first_call_ms": 5610.824982984923,
+        "element_equivalence_span_rel": 2.510979333214519e-15,
+        "warm_median_ms": 68.18917201599106,
         "warm_ms": [
-          89.9756470171269,
-          86.7858650162816,
-          83.83100799983367
+          68.18917201599106,
+          73.563821031712,
+          65.46067900490016
         ],
-        "warm_per_solve_ms": 5.4241165635176
+        "warm_per_solve_ms": 4.261823250999441
       }
     ],
-    "device": "NVIDIA GeForce GTX 1060 6GB (gpu)",
+    "device": "cpu (cpu)",
     "grid": "33x33",
     "host": "aaarthuus (x86_64) - LOADED development host; indicative only, NOT a performance claim; dedicated-hardware numbers live in the unbound *_h100.json snapshot lane"
   }

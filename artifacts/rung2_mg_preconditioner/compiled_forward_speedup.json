@@ -1,10 +1,10 @@
 {
   "correctness_load_independent": {
-    "fixed_point_equivalence_span_rel_33sq": 1.07709809745585e-09,
+    "fixed_point_equivalence_span_rel_33sq": 1.4943305538438536e-09,
     "note": "compiled and eager reach the same equilibrium; warm repeats are bit-deterministic (asserted in tests/test_jax_predictive_forward_compiled.py)"
   },
-  "generated_utc": "2026-08-22T10:10:28+00:00",
-  "jax_version": "0.6.2",
+  "generated_utc": "2026-08-24T14:15:49+00:00",
+  "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_compiled_forward_speedup.py",
     "generator_sha256": "8615e1fd0e73ded061a690671f91f0d930f06a954fe10ea63d2ea70b8c3e093d",
@@ -20,7 +20,7 @@
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "c5f202dbe1e39916a69d75cf2a19337bcfb0977b02c0887d763d55c46fb2fe30",
+    "logic_sources_sha256": "0b6c7306ccc781b6a25a6bd50da00e384b1d4e5697e4ddc2a4ec0b5a396ba444",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
     "pinned_requirements_sha256": "bd71deb22e7ab465fb79cbb554e2bcc58488034ede8836469576efc4bce9a2a9"
   },
@@ -32,43 +32,43 @@
   "timings_indicative": {
     "compiled": [
       {
-        "compile_plus_first_solve_ms": 24937.202367989812,
+        "compile_plus_first_solve_ms": 5246.40135304071,
         "grid": "33x33",
-        "warm_median_ms": 392.57427997654304,
+        "warm_median_ms": 259.8095529829152,
         "warm_ms": [
-          434.2428309901152,
-          387.1225129987579,
-          392.57427997654304
+          259.8095529829152,
+          262.70296395523474,
+          241.04026198619977
         ]
       },
       {
-        "compile_plus_first_solve_ms": 26495.063665002817,
+        "compile_plus_first_solve_ms": 7139.324694988318,
         "grid": "65x65",
-        "warm_median_ms": 703.6722210177686,
+        "warm_median_ms": 1178.8465059944429,
         "warm_ms": [
-          696.2184899894055,
-          704.365418991074,
-          703.6722210177686
+          1178.8465059944429,
+          1104.5279200188816,
+          1297.3660819698125
         ]
       },
       {
-        "compile_plus_first_solve_ms": 26479.38190199784,
+        "compile_plus_first_solve_ms": 9472.791194042657,
         "grid": "129x129",
-        "warm_median_ms": 339.0029910078738,
+        "warm_median_ms": 1507.3335689958185,
         "warm_ms": [
-          341.03563500684686,
-          339.0029910078738,
-          338.2724160037469
+          1580.023585993331,
+          1225.7120240246877,
+          1507.3335689958185
         ]
       }
     ],
-    "device": "NVIDIA GeForce GTX 1060 6GB (gpu)",
+    "device": "cpu (cpu)",
     "eager_33sq_ms": [
-      64286.47653298685,
-      62242.45515401708,
-      63092.45026198914
+      27259.006260021124,
+      29139.257219037972,
+      29950.368985009845
     ],
     "host": "aaarthuus (x86_64) - LOADED development host; indicative only, NOT a performance claim; the claimable number is the dedicated-hardware re-benchmark",
-    "speedup_anchor_33sq": 160.71468122098835
+    "speedup_anchor_33sq": 112.15621937101804
   }
 }

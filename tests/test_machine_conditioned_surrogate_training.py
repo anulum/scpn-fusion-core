@@ -10,12 +10,16 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
+import shutil
+import sys
 
 import numpy as np
 import pytest
 from jax import numpy as jnp
 from jax import random
+from numpy.typing import NDArray
 
 from scpn_fusion.io.machine_conditioned_surrogate_training import (
     MachineConditionedTrainingData,
@@ -24,6 +28,7 @@ from scpn_fusion.io.machine_conditioned_surrogate_training import (
     fit_streaming_randomized_pca,
     load_machine_conditioned_training_data,
 )
+from scpn_fusion.io.machine_conditioned_equilibrium_dataset import array_contract
 from tools import train_machine_conditioned_equilibrium_surrogate as trainer
 from scpn_fusion.io.machine_conditioned_surrogate_cli import run_training_cli
 from tools.train_machine_conditioned_equilibrium_surrogate import (
@@ -38,11 +43,89 @@ REPO = Path(__file__).resolve().parents[1]
 REFERENCE = REPO / "validation/reference/iter_machine_conditioned_v2_n3_seed20260822_33x33"
 
 
-def test_successor_cli_adapter_is_directly_linked() -> None:
-    assert callable(run_training_cli)
+def _authenticated_training_fixture(tmp_path: Path) -> Path:
+    root = tmp_path / "dataset"
+    shutil.copytree(REFERENCE, root)
+    manifest_path = root / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    for name in ("inputs", "psi_total", "psi_vacuum", "diagnostics"):
+        spec = manifest["arrays"][name]
+        path = root / spec["file"]
+        expanded = np.concatenate([np.load(path, allow_pickle=False)] * 4, axis=0)
+        if name == "diagnostics":
+            expanded[:, 0] = np.arange(len(expanded), dtype=np.float64)
+        np.save(path, np.asarray(expanded, dtype=np.float64))
+        manifest["arrays"][name] = array_contract(path, expanded, role=spec["role"])
+    manifest["dataset_id"] = "iter-like-fixed-support-v2-n12-cli-contract"
+    manifest["generation"]["accepted_samples"] = 12
+    manifest["generation"]["requested_samples"] = 12
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return root
 
 
-def _low_rank_fields(*, validation_offset: float = 0.0) -> np.ndarray:
+def test_successor_cli_runs_authenticated_training_and_logs_result(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    dataset_dir = _authenticated_training_fixture(tmp_path)
+    artifact = tmp_path / "candidate.npz"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "train_machine_conditioned_equilibrium_surrogate.py",
+            "--dataset-dir",
+            str(dataset_dir),
+            "--out",
+            str(artifact),
+            "--report",
+            str(tmp_path / "report.json"),
+            "--checkpoint-dir",
+            str(tmp_path / "checkpoints"),
+            "--epochs",
+            "1",
+            "--validation-fraction",
+            str(1.0 / 6.0),
+            "--calibration-fraction",
+            str(1.0 / 6.0),
+            "--test-fraction",
+            str(1.0 / 6.0),
+            "--pca-components",
+            "3",
+            "--pca-oversampling",
+            "1",
+            "--pca-power-iterations",
+            "0",
+            "--pca-chunk-rows",
+            "2",
+            "--evaluation-every",
+            "1",
+            "--checkpoint-every",
+            "1",
+        ],
+    )
+    with caplog.at_level(
+        logging.INFO,
+        logger="scpn_fusion.io.machine_conditioned_surrogate_cli",
+    ):
+        run_training_cli(
+            trainer.run_training,
+            default_epochs=2,
+            default_pca_components=4,
+            default_pca_oversampling=2,
+            default_pca_power_iterations=1,
+        )
+    report = json.loads(caplog.messages[-1])
+    assert report["status"] == "completed_local_candidate_not_promoted"
+    assert report["artifact"]["runtime_load_predict_finite"] is True
+    assert artifact.is_file()
+
+
+def _low_rank_fields(*, validation_offset: float = 0.0) -> NDArray[np.float64]:
     rng = np.random.default_rng(17)
     factors = rng.normal(size=(8, 3))
     basis = rng.normal(size=(3, 5, 4))
