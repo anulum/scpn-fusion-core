@@ -71,6 +71,12 @@
 
 ### Validation
 
+- Record the completed 20,000-step seed-42 DeepONet run from published source
+  SHA `74c05fda`: validation selected step 19,500, untouched final-test field
+  RMSE is `0.023554936122933533 Wb/rad`, mean relative L2 is
+  `0.0018768039361196063`, and Rust/NumPy parity remains within the declared
+  tolerance across all 2,500 untouched-test shots. The candidate and recovery
+  artifacts remain local and unpromoted.
 - Add digest-bound, finite-sample split-conformal certificates for the QLKNN
   transport surrogate. The corrected rank uses 47,826 held-out calibration
   rows and independent empirical checks on 47,828 test rows; all three

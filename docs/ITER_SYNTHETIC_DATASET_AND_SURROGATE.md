@@ -304,9 +304,9 @@ reported field metrics use float64.
 ```bash
 python tools/train_machine_conditioned_deeponet.py \
   --dataset-dir data/iter_machine_conditioned_v2_n50000_seed20260822_129x129 \
-  --out artifacts/iter_machine_conditioned_deeponet_20260824_seed42/candidate_local.npz \
-  --report artifacts/iter_machine_conditioned_deeponet_20260824_seed42/report_local.json \
-  --checkpoint-dir artifacts/iter_machine_conditioned_deeponet_20260824_seed42/checkpoints \
+  --out artifacts/iter_machine_conditioned_deeponet_20260824_seed42_74c05fda/candidate_local.npz \
+  --report artifacts/iter_machine_conditioned_deeponet_20260824_seed42_74c05fda/report_local.json \
+  --checkpoint-dir artifacts/iter_machine_conditioned_deeponet_20260824_seed42_74c05fda/checkpoints \
   --steps 20000 \
   --seed 42 \
   --validation-fraction 0.10 \
@@ -321,6 +321,43 @@ python tools/train_machine_conditioned_deeponet.py \
   --checkpoint-every 500 \
   --early-stopping-patience 40
 ```
+
+The completed seed-42 run from published source SHA `74c05fda` evaluated all
+20,000 requested optimiser steps and selected step 19,500 from validation
+before opening calibration and the untouched final test:
+
+| Untouched-test measure | Result |
+| --- | ---: |
+| Field RMSE | `0.023554936122933533 Wb/rad` |
+| Mean relative L2 | `0.0018768039361196063` |
+| P95 relative L2 | `0.0027345910550329064` |
+| Maximum relative L2 | `0.0042368007914158155` |
+| 95% conformal relative-L2 bound | `0.0027451468653940715` |
+| Test coverage of that bound | `0.9516` |
+| JAX/runtime maximum absolute difference | `1.587064968333607e-7 Wb/rad` |
+| Rust/NumPy untouched-test maximum absolute difference | `8.881784197001252e-15 Wb/rad` |
+
+Training took `432.47219220298575 s` on the local CUDA device, including the
+authenticated full-cohort scan and final evaluation. The candidate SHA-256 is
+`68a432399bc647308ee081eb6ef53603ace53c323a9f2d4c9b41cd8817b67fb4`;
+the report SHA-256 is
+`2def1624c7009d2490a3433a333405b32d17461332d678e3f6566d610f72f769`.
+The final optimiser and statistics stages authenticate as
+`2cf84617b68f06c6c12afec66935d5f65c3a1a8c752eeb5df30366e04bbd091a`
+and
+`c2849f7283eb7fba1e9fed323ab196e6c82f9a6b369fac63537027e2aac1f1de`.
+The Rust/NumPy sweep covered all 2,500 untouched-test shots and remained
+inside the declared `1e-14` relative/absolute tolerance. All 14 branch/trunk
+network arrays are bit-identical to the pre-publication run; only the recorded
+source-hash member changed after the logging-contract fix. Candidate, report,
+statistics and recovery checkpoints remain local and unpromoted.
+
+The operator is not uniformly better than the field-aware PCA-MLP on this
+one fixed-machine cohort: the PCA-MLP has lower field RMSE and mean relative
+L2, while DeepONet has lower p95 and maximum relative L2 and closer-to-nominal
+95% conformal coverage. Those complementary outcomes justify retaining both
+as independently reproducible candidates rather than promoting either from a
+single synthetic-machine experiment.
 
 Every minibatch is a pure function of the seed and absolute optimiser step.
 Statistics and optimiser checkpoints are atomically replaced and SHA-256
