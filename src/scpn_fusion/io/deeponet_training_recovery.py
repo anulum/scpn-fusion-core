@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping, cast
+from typing import Any, Mapping, TypedDict, cast
 
 import jax.numpy as jnp
 import numpy as np
@@ -54,6 +54,15 @@ class OptimizerState:
     evaluation_steps: list[int]
     training_losses: list[float]
     validation_losses: list[float]
+
+
+class OptimizerRecovery(TypedDict):
+    """Authenticated pointer to one optimiser recovery stage."""
+
+    schema_version: str
+    completed_steps: int
+    stage_file: str
+    stage_sha256: str
 
 
 def serialize_network(payload: dict[str, Any], prefix: str, params: Params) -> None:
@@ -357,6 +366,49 @@ def save_optimizer(
     )
 
 
+def load_optimizer_recovery(checkpoint_dir: Path) -> OptimizerRecovery:
+    """Load and validate an optimiser recovery pointer.
+
+    Parameters
+    ----------
+    checkpoint_dir : Path
+        Directory containing ``optimizer_recovery.json``.
+
+    Returns
+    -------
+    OptimizerRecovery
+        Validated schema, stage filename, digest, and completed step.
+
+    Raises
+    ------
+    ValueError
+        If the JSON root or required metadata violates the pointer contract.
+    """
+    raw = checked_json_load(
+        checkpoint_dir / "optimizer_recovery.json", max_bytes=MAX_RECOVERY_BYTES
+    )
+    if not isinstance(raw, dict):
+        raise ValueError("DeepONet optimizer recovery must be an object")
+    recovery = cast(dict[str, Any], raw)
+    filename = recovery.get("stage_file")
+    digest = recovery.get("stage_sha256")
+    expected_steps = recovery.get("completed_steps")
+    if (
+        recovery.get("schema_version") != OPTIMIZER_SCHEMA
+        or not isinstance(filename, str)
+        or Path(filename).name != filename
+        or not isinstance(digest, str)
+        or type(expected_steps) is not int
+    ):
+        raise ValueError("DeepONet optimizer recovery metadata is invalid")
+    return {
+        "schema_version": OPTIMIZER_SCHEMA,
+        "completed_steps": expected_steps,
+        "stage_file": filename,
+        "stage_sha256": digest,
+    }
+
+
 def load_optimizer(checkpoint_dir: Path, *, identity: Mapping[str, Any]) -> OptimizerState:
     """Authenticate and restore one exact optimiser continuation point.
 
@@ -377,25 +429,9 @@ def load_optimizer(checkpoint_dir: Path, *, identity: Mapping[str, Any]) -> Opti
     ValueError
         If metadata, stage bytes, identity, or completed-step values disagree.
     """
-    raw = checked_json_load(
-        checkpoint_dir / "optimizer_recovery.json", max_bytes=MAX_RECOVERY_BYTES
-    )
-    if not isinstance(raw, dict):
-        raise ValueError("DeepONet optimizer recovery must be an object")
-    recovery = cast(dict[str, Any], raw)
-    filename = recovery.get("stage_file")
-    digest = recovery.get("stage_sha256")
-    expected_steps = recovery.get("completed_steps")
-    if (
-        recovery.get("schema_version") != OPTIMIZER_SCHEMA
-        or not isinstance(filename, str)
-        or Path(filename).name != filename
-        or not isinstance(digest, str)
-        or not isinstance(expected_steps, int)
-    ):
-        raise ValueError("DeepONet optimizer recovery metadata is invalid")
-    stage = checkpoint_dir / filename
-    if not stage.is_file() or stage.is_symlink() or sha256_file(stage) != digest:
+    recovery = load_optimizer_recovery(checkpoint_dir)
+    stage = checkpoint_dir / recovery["stage_file"]
+    if not stage.is_file() or stage.is_symlink() or sha256_file(stage) != recovery["stage_sha256"]:
         raise ValueError("DeepONet optimizer recovery SHA-256 mismatch")
     with np.load(stage, allow_pickle=False) as archive:
         _validate_identity(archive, identity)
@@ -413,7 +449,7 @@ def load_optimizer(checkpoint_dir: Path, *, identity: Mapping[str, Any]) -> Opti
             training_losses=np.asarray(archive["training_losses"], dtype=np.float64).tolist(),
             validation_losses=np.asarray(archive["validation_losses"], dtype=np.float64).tolist(),
         )
-    if state.completed_steps != expected_steps:
+    if state.completed_steps != recovery["completed_steps"]:
         raise ValueError("DeepONet optimizer recovery step mismatch")
     return state
 
@@ -421,9 +457,11 @@ def load_optimizer(checkpoint_dir: Path, *, identity: Mapping[str, Any]) -> Opti
 __all__ = [
     "MAX_RECOVERY_BYTES",
     "OPTIMIZER_SCHEMA",
+    "OptimizerRecovery",
     "OptimizerState",
     "STATISTICS_SCHEMA",
     "load_optimizer",
+    "load_optimizer_recovery",
     "load_or_compute_statistics",
     "optimizer_identity",
     "save_optimizer",

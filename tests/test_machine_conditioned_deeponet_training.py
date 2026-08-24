@@ -234,12 +234,41 @@ def test_training_coordinates_reject_grid_shape_drift(tmp_path: Path) -> None:
         load_coordinates(data)
 
 
+def test_training_rejects_nonfinite_coordinate_scale(tmp_path: Path) -> None:
+    dataset_dir = _training_fixture(tmp_path)
+    manifest_path = dataset_dir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    grid_path = dataset_dir / manifest["arrays"]["grid_r_m"]["file"]
+    grid = np.load(grid_path, allow_pickle=False)
+    spacing = 0.7e308 / (len(grid) - 1)
+    np.save(grid_path, 1.0e308 + np.arange(len(grid), dtype=np.float64) * spacing)
+    _refresh_array_contracts(dataset_dir, manifest, "grid_r_m")
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    with (
+        pytest.warns(RuntimeWarning, match="overflow encountered"),
+        pytest.raises(ValueError, match="coordinate scales must be finite and positive"),
+    ):
+        trainer.run_training(**_arguments(tmp_path, dataset_dir), steps=1)
+
+
 def test_training_rejects_tampered_statistics_recovery(tmp_path: Path) -> None:
     arguments = _arguments(tmp_path, _training_fixture(tmp_path))
     trainer.run_training(**arguments, steps=1)
     with (arguments["checkpoint_dir"] / "statistics.npz").open("ab") as handle:
         handle.write(b"tamper")
     with pytest.raises(ValueError, match="statistics recovery SHA-256 mismatch"):
+        trainer.run_training(**arguments, steps=2, resume=True)
+
+
+def test_training_rejects_non_object_statistics_recovery(tmp_path: Path) -> None:
+    arguments = _arguments(tmp_path, _training_fixture(tmp_path))
+    trainer.run_training(**arguments, steps=1)
+    statistics_recovery = arguments["checkpoint_dir"] / "statistics_recovery.json"
+    statistics_recovery.write_text("[]\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="statistics recovery must be an object"):
         trainer.run_training(**arguments, steps=2, resume=True)
 
 
@@ -274,6 +303,26 @@ def test_training_rejects_tampered_optimizer_recovery(tmp_path: Path) -> None:
     with (arguments["checkpoint_dir"] / recovery["stage_file"]).open("ab") as handle:
         handle.write(b"tamper")
     with pytest.raises(ValueError, match="optimizer recovery SHA-256 mismatch"):
+        trainer.run_training(**arguments, steps=2, resume=True)
+
+
+def test_training_rejects_non_object_optimizer_recovery(tmp_path: Path) -> None:
+    arguments = _arguments(tmp_path, _training_fixture(tmp_path))
+    trainer.run_training(**arguments, steps=1)
+    optimizer_recovery = arguments["checkpoint_dir"] / "optimizer_recovery.json"
+    optimizer_recovery.write_text("[]\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="optimizer recovery must be an object"):
+        trainer.run_training(**arguments, steps=2, resume=True)
+
+
+def test_training_rejects_invalid_optimizer_recovery_metadata(tmp_path: Path) -> None:
+    arguments = _arguments(tmp_path, _training_fixture(tmp_path))
+    trainer.run_training(**arguments, steps=1)
+    optimizer_recovery = arguments["checkpoint_dir"] / "optimizer_recovery.json"
+    recovery = json.loads(optimizer_recovery.read_text(encoding="utf-8"))
+    recovery["stage_file"] = "../optimizer.npz"
+    optimizer_recovery.write_text(json.dumps(recovery), encoding="utf-8")
+    with pytest.raises(ValueError, match="optimizer recovery metadata is invalid"):
         trainer.run_training(**arguments, steps=2, resume=True)
 
 
@@ -373,6 +422,30 @@ def test_training_rejects_invalid_hyperparameters(
     arguments.update(override)
     with pytest.raises(ValueError, match=message):
         trainer.run_training(**arguments)
+
+
+@pytest.mark.parametrize(
+    ("learning_rate", "message"),
+    [
+        (1.0e308, "no finite validation selection"),
+        (100.0, "runtime/training parity failed"),
+    ],
+)
+def test_training_rejects_numerically_invalid_finalisation(
+    tmp_path: Path, learning_rate: float, message: str
+) -> None:
+    arguments = _arguments(tmp_path, _training_fixture(tmp_path))
+    with pytest.raises(RuntimeError, match=message):
+        trainer.run_training(**arguments, steps=1, learning_rate=learning_rate)
+
+
+def test_training_rejects_native_reference_parity_breach(tmp_path: Path) -> None:
+    extension = pytest.importorskip("scpn_fusion_rs")
+    if not hasattr(extension, "PyDeepOnetEquilibrium"):
+        pytest.skip("installed Rust extension predates the DeepONet runtime")
+    arguments = _arguments(tmp_path, _training_fixture(tmp_path))
+    with pytest.raises(RuntimeError, match="Rust/NumPy untouched-test parity failed"):
+        trainer.run_training(**arguments, steps=1, learning_rate=0.4)
 
 
 def test_deeponet_cli_trains_a_runtime_loadable_artifact(

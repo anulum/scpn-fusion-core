@@ -42,9 +42,9 @@ from scpn_fusion.io.deeponet_training_data import (
     training_batch,
 )
 from scpn_fusion.io.deeponet_training_recovery import (
-    MAX_RECOVERY_BYTES,
     OptimizerState,
     load_optimizer,
+    load_optimizer_recovery,
     load_or_compute_statistics,
     optimizer_identity,
     save_optimizer,
@@ -66,7 +66,6 @@ from scpn_fusion.io.machine_conditioned_surrogate_training import (
     iter_field_rows,
     load_machine_conditioned_training_data,
 )
-from scpn_fusion.io.safe_loaders import checked_json_load
 
 logger = logging.getLogger(__name__)
 TRAINING_SCHEMA = "scpn-fusion.machine-conditioned-equilibrium-deeponet-training.v1"
@@ -446,11 +445,7 @@ def _finalise(
         int(np.ceil((len(calibration_scores) + 1) * (1.0 - alpha))),
     )
     bound = float(np.sort(calibration_scores)[rank - 1])
-    recovery = checked_json_load(
-        config.checkpoint_dir / "optimizer_recovery.json", max_bytes=MAX_RECOVERY_BYTES
-    )
-    if not isinstance(recovery, dict):
-        raise RuntimeError("DeepONet optimizer recovery is invalid after completion")
+    recovery = load_optimizer_recovery(config.checkpoint_dir)
     report = prepared.report
     report.update(
         completed_report_sections(
@@ -466,7 +461,7 @@ def _finalise(
             conformal_rank=rank,
             conformal_bound=bound,
             test_coverage=float(np.mean(test_scores <= bound)),
-            recovery=cast(dict[str, Any], recovery),
+            recovery=recovery,
             runtime_prediction=runtime_prediction,
             runtime_parity=runtime_parity,
             runtime_backend=runtime.backend,

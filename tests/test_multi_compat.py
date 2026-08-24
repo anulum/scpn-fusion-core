@@ -425,6 +425,20 @@ def test_dispatch_kernel_class_raises_when_all_unavailable(class_kernel_name: st
         multi.dispatch_kernel_class(class_kernel_name)
 
 
+def test_optional_kernel_class_instantiation_uses_real_dispatch(
+    class_kernel_name: str,
+) -> None:
+    """Optional construction returns an instance or a genuine unavailable result."""
+    multi.register_kernel_class(
+        class_kernel_name, multi.BackendTier.NUMPY, lambda: _NumpyKernelStub
+    )
+    assert isinstance(multi.instantiate_optional_kernel_class(class_kernel_name), _NumpyKernelStub)
+
+    unavailable_name = f"{class_kernel_name}_unavailable"
+    multi.register_kernel_class(unavailable_name, multi.BackendTier.MOJO, lambda: _MojoKernelStub)
+    assert multi.instantiate_optional_kernel_class(unavailable_name) is None
+
+
 def test_dispatch_kernel_class_returns_cache_populated_while_waiting_for_lock(
     class_kernel_name: str,
     monkeypatch: pytest.MonkeyPatch,

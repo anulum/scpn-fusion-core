@@ -1417,6 +1417,10 @@
         "path": "src/scpn_fusion/control/fusion_optimal_control.py"
       },
       {
+        "name": "OptimizerRecovery",
+        "path": "src/scpn_fusion/io/deeponet_training_recovery.py"
+      },
+      {
         "name": "OptimizerState",
         "path": "src/scpn_fusion/io/deeponet_training_recovery.py"
       },
@@ -2814,7 +2818,7 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 587,
+    "python_capability_classes": 588,
     "python_capability_source_modules": 334,
     "rust_workspace_crates": 13,
     "test_files": 612

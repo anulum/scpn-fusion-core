@@ -192,36 +192,32 @@ class DeepONetEquilibriumAccelerator:
         self.machine_manifest_sha256 = manifest_sha256
         self._native = None
         if self._prefer_rust:
-            try:
-                from scpn_fusion.core._multi_compat import dispatch_kernel_class
+            from scpn_fusion.core._multi_compat import instantiate_optional_kernel_class
 
-                native_class = dispatch_kernel_class("deeponet_equilibrium")
-            except (AttributeError, ImportError, RuntimeError, TypeError):
-                native_class = None
-            if native_class is not None:
-                self._native = native_class(
-                    (
-                        [weight.tolist() for weight, _ in branch],
-                        [bias.tolist() for _, bias in branch],
-                    ),
-                    (
-                        [weight.tolist() for weight, _ in trunk],
-                        [bias.tolist() for _, bias in trunk],
-                    ),
-                    (input_mean.tolist(), input_std.tolist()),
-                    (
-                        coordinates.tolist(),
-                        coordinate_mean.tolist(),
-                        coordinate_std.tolist(),
-                    ),
-                    (
-                        field_mean.tolist(),
-                        field_scale,
-                        basis_width,
-                        grid_shape[0],
-                        grid_shape[1],
-                    ),
-                )
+            self._native = instantiate_optional_kernel_class(
+                "deeponet_equilibrium",
+                (
+                    [weight.tolist() for weight, _ in branch],
+                    [bias.tolist() for _, bias in branch],
+                ),
+                (
+                    [weight.tolist() for weight, _ in trunk],
+                    [bias.tolist() for _, bias in trunk],
+                ),
+                (input_mean.tolist(), input_std.tolist()),
+                (
+                    coordinates.tolist(),
+                    coordinate_mean.tolist(),
+                    coordinate_std.tolist(),
+                ),
+                (
+                    field_mean.tolist(),
+                    field_scale,
+                    basis_width,
+                    grid_shape[0],
+                    grid_shape[1],
+                ),
+            )
         self.backend = "rust" if self._native is not None else "numpy"
         self.is_loaded = True
 
@@ -230,19 +226,16 @@ class DeepONetEquilibriumAccelerator:
     ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
         if not self.is_loaded:
             raise RuntimeError("DeepONet weights have not been loaded")
-        arrays = (
-            self._input_mean,
-            self._input_std,
-            self._coordinates,
-            self._coordinate_mean,
-            self._coordinate_std,
-            self._field_mean,
-        )
-        if any(array is None for array in arrays):
-            raise RuntimeError("DeepONet runtime state is incomplete")
         return cast(
             tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray, FloatArray],
-            arrays,
+            (
+                self._input_mean,
+                self._input_std,
+                self._coordinates,
+                self._coordinate_mean,
+                self._coordinate_std,
+                self._field_mean,
+            ),
         )
 
     def predict_batch(self, features: FloatArray) -> FloatArray:

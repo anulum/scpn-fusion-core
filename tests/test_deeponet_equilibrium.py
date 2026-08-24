@@ -61,13 +61,15 @@ def _write_artifact(
 def test_deeponet_runtime_loads_and_predicts_single_and_batch(tmp_path: Path) -> None:
     artifact = tmp_path / "deeponet.npz"
     _write_artifact(artifact)
-    runtime = DeepONetEquilibriumAccelerator()
+    runtime = DeepONetEquilibriumAccelerator(prefer_rust=False)
     runtime.load_weights(artifact)
     single = runtime.predict(np.asarray([1.0, 2.0, 3.0]))
     batch = runtime.predict_batch(np.asarray([[1.0, 2.0, 3.0], [0.0, 0.0, 0.0]]))
+    repeated = runtime.predict_batch(np.asarray([[1.0, 2.0, 3.0]]))
     assert single.shape == (2, 2)
     assert batch.shape == (2, 2, 2)
     assert np.array_equal(single, batch[0])
+    assert np.array_equal(single, repeated[0])
     assert np.all(np.isfinite(batch))
     assert runtime.machine_manifest_sha256 == "a" * 64
     assert PublicDeepONetRuntime is DeepONetEquilibriumAccelerator
@@ -135,6 +137,15 @@ def test_deeponet_runtime_rejects_nonfinite_inputs(tmp_path: Path) -> None:
         unstable_artifact,
         overrides={"branch_0_W": np.full((3, 4), np.finfo(np.float64).max)},
     )
+    extension = pytest.importorskip("scpn_fusion_rs")
+    if not hasattr(extension, "PyDeepOnetEquilibrium"):
+        pytest.skip("installed Rust extension predates the DeepONet runtime")
+    native = DeepONetEquilibriumAccelerator()
+    native.load_weights(unstable_artifact)
+    with pytest.raises(RuntimeError, match="native inference failed"):
+        native.predict(np.ones(3))
+
+    runtime = DeepONetEquilibriumAccelerator(prefer_rust=False)
     runtime.load_weights(unstable_artifact)
     with pytest.raises(RuntimeError, match="non-finite output"):
         runtime.predict(np.ones(3))

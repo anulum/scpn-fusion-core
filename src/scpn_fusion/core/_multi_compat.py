@@ -472,6 +472,34 @@ def dispatch_kernel_class(name: str) -> type:
         )
 
 
+def instantiate_optional_kernel_class(name: str, *args: Any, **kwargs: Any) -> Any | None:
+    """Instantiate an optional stateful backend or return ``None``.
+
+    Parameters
+    ----------
+    name : str
+        Registered kernel-class identifier.
+    *args, **kwargs : Any
+        Constructor arguments passed to the selected class.
+
+    Returns
+    -------
+    Any | None
+        Backend instance, or ``None`` when the registered optional backend is
+        unavailable or cannot be loaded.
+
+    Raises
+    ------
+    KeyError
+        If ``name`` has no registered kernel class.
+    """
+    try:
+        kernel_class = dispatch_kernel_class(name)
+    except (AttributeError, ImportError, RuntimeError, TypeError):
+        return None
+    return kernel_class(*args, **kwargs)
+
+
 # ---------------------------------------------------------------------------
 # Bootstrap on import
 # ---------------------------------------------------------------------------

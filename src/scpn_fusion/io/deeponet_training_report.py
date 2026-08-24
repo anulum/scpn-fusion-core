@@ -19,7 +19,11 @@ from scpn_fusion.core.deeponet_training_contracts import (
     RuntimeBackendParity,
     TrainingConfig,
 )
-from scpn_fusion.io.deeponet_training_recovery import OptimizerState, serialize_network
+from scpn_fusion.io.deeponet_training_recovery import (
+    OptimizerRecovery,
+    OptimizerState,
+    serialize_network,
+)
 from scpn_fusion.io.machine_conditioned_equilibrium_dataset import sha256_file
 from scpn_fusion.io.machine_conditioned_surrogate_training import (
     MachineConditionedSplit,
@@ -172,7 +176,7 @@ def completed_report_sections(
     conformal_rank: int,
     conformal_bound: float,
     test_coverage: float,
-    recovery: dict[str, Any],
+    recovery: OptimizerRecovery,
     runtime_prediction: np.ndarray[Any, np.dtype[np.float64]],
     runtime_parity: float,
     runtime_backend: str,
@@ -200,7 +204,7 @@ def completed_report_sections(
         One-based finite-sample order-statistic rank.
     conformal_bound, test_coverage : float
         Calibrated relative-L2 bound and untouched-test empirical coverage.
-    recovery : dict[str, Any]
+    recovery : OptimizerRecovery
         Authenticated optimiser recovery pointer.
     runtime_prediction : ndarray[float64]
         Production-runtime parity probe.
