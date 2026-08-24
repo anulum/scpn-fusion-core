@@ -127,6 +127,8 @@ def _make_runner(
     use_fixed_support: bool,
     anderson_solver: str = "lstsq",
     trace_iteration_indices: tuple[int, ...] = (),
+    separatrix_start: int = DEFAULT_SEPARATRIX_START,
+    separatrix_ramp: int = DEFAULT_SEPARATRIX_RAMP,
 ) -> Callable[..., jnp.ndarray]:
     """Build and jit the while_loop runner for one (geometry, settings) combination."""
     shape = (nz, nr)
@@ -228,7 +230,7 @@ def _make_runner(
             ip_k = ip_target * jnp.minimum(1.0, (k + 1.0) / ramp_div)
             separatrix_refinement = (
                 jnp.clip(
-                    (k + 1.0 - DEFAULT_SEPARATRIX_START) / DEFAULT_SEPARATRIX_RAMP,
+                    (k + 1.0 - separatrix_start) / separatrix_ramp,
                     0.0,
                     1.0,
                 )
@@ -239,7 +241,7 @@ def _make_runner(
             # Break-before-update semantics: once converged (Ip fully ramped), neither the
             # history nor x are touched — the loop exits returning the pre-update iterate.
             continuation_complete = (
-                k + 1 >= DEFAULT_SEPARATRIX_START + DEFAULT_SEPARATRIX_RAMP
+                k + 1 >= separatrix_start + separatrix_ramp
                 if use_separatrix_continuation
                 else jnp.asarray(True)
             )
@@ -252,8 +254,8 @@ def _make_runner(
                 k,
                 ip_ramp=ip_ramp,
                 use_separatrix_continuation=use_separatrix_continuation,
-                separatrix_start=DEFAULT_SEPARATRIX_START,
-                separatrix_ramp=DEFAULT_SEPARATRIX_RAMP,
+                separatrix_start=separatrix_start,
+                separatrix_ramp=separatrix_ramp,
             )
             f_base = jnp.where(reset_history, jnp.zeros_like(f_hist), f_hist)
             x_base = jnp.where(reset_history, jnp.zeros_like(x_hist), x_hist)
@@ -356,6 +358,9 @@ def solve_predictive_equilibrium_compiled(
     trace_iteration_indices: tuple[int, ...] = (),
     return_trace: bool = False,
     fixed_support_weights: jnp.ndarray | None = None,
+    use_separatrix_continuation: bool | None = None,
+    separatrix_start: int = DEFAULT_SEPARATRIX_START,
+    separatrix_ramp: int = DEFAULT_SEPARATRIX_RAMP,
 ) -> jnp.ndarray | tuple[jnp.ndarray, int] | CompiledPredictiveTrace:
     """Compiled predictive free-boundary solve — same fixed point as the eager solver.
 
@@ -386,6 +391,11 @@ def solve_predictive_equilibrium_compiled(
     for explicit fixed-support synthetic model families and is never inferred
     from the solved field.
 
+    ``use_separatrix_continuation`` defaults to the cold-start policy: enabled
+    for a vacuum seed and disabled for an explicit ``psi_init``. An explicit
+    true value lets a learned warm seed retain topology continuation; its
+    non-negative start and positive ramp are static compilation settings.
+
     Raises
     ------
     ValueError
@@ -398,6 +408,8 @@ def solve_predictive_equilibrium_compiled(
     d_z = _require_uniform("Z_grid", z_np)
     if min(n_iter, anderson_depth, ip_ramp) < 1:
         raise ValueError("n_iter, anderson_depth and ip_ramp must be >= 1")
+    if separatrix_start < 0 or separatrix_ramp < 1:
+        raise ValueError("separatrix_start must be >= 0 and separatrix_ramp must be >= 1")
     if not (np.isfinite(tol) and tol > 0.0):
         raise ValueError("tol must be finite and > 0")
     if inner_solver not in ("bicgstab", "mg_richardson"):
@@ -426,6 +438,11 @@ def solve_predictive_equilibrium_compiled(
     psi_coil = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, coil_I, mu0)
     coil_wall = psi_coil.reshape(-1)[wall_idx]
     x0 = (psi_coil if psi_init is None else jnp.asarray(psi_init)).reshape(-1)
+    continuation = (
+        psi_init is None
+        if use_separatrix_continuation is None
+        else bool(use_separatrix_continuation)
+    )
 
     runner = _make_runner(
         nz,
@@ -443,10 +460,12 @@ def solve_predictive_equilibrium_compiled(
         bool(use_mg_preconditioner),
         str(inner_solver),
         int(inner_cycles),
-        psi_init is None,
+        continuation,
         fixed_support_weights is not None,
         str(anderson_solver),
         trace_iteration_indices,
+        int(separatrix_start),
+        int(separatrix_ramp),
     )
     result = runner(
         coil_I,

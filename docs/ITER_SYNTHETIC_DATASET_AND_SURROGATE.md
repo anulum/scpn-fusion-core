@@ -423,6 +423,51 @@ hold out whole machines, and then move versioned geometry/coil descriptors into
 the branch contract. No cross-machine, facility, free-boundary, IDA, EFIT, PCS,
 or safety claim is made here.
 
+## DeepONet solver seeding and topology acceptance
+
+`DeepONetPredictiveWarmStarter` binds one authenticated DeepONet artifact to
+the exact machine-manifest digest, 17-feature order, and physical R/Z grid.
+It reconstructs the causal feature row from explicit plasma current, ordered
+PF currents, and profile knots, then supplies the predicted field only as
+`psi_init` to `solve_predictive_equilibrium_compiled`. The mechanistic solver
+owns the returned field, fixed-point tolerance, finite-field acceptance, and
+cold fallback. The default retains the solver's complete `100+20` separatrix
+continuation schedule. Shorter schedules are explicit research settings, not
+the safe default.
+
+That distinction is necessary. On the first 256 deterministic untouched-test
+rows at 129x129 on local `cuda:0`, the default schedule produced zero
+fallbacks and matched the stored canonical solver fields with maximum
+`2.287213857229199e-8` span-relative error (median
+`1.4163844530175448e-13`, p95 `7.277233808075973e-11`). It did not establish
+an acceleration: cold and neural-seeded iteration medians were both `150`;
+255 cases used the same count, one saved one iteration, and none became
+slower. Steady end-to-end neural-seeded latency, including Rust inference and
+solver acceptance, was `450.2419749624096 ms` median and
+`500.14232624089345 ms` p95. First-call compilation was excluded from those
+latency summaries.
+
+The tempting fast path is not yet admissible. Disabling topology continuation
+on the first 32 untouched rows reduced the median to `12` iterations and
+`51.80797399953008 ms`, but one row converged to another residual-valid basin
+`1.3649119976693784e-3` span-relative from the canonical field. A shortened
+`start=0, ramp=10` continuation over 256 rows reached a `31`-iteration and
+`145.88114497018978 ms` median, but eight rows still selected another basin;
+the maximum canonical difference was `2.058176709494169e-3`. Fixed 50% and
+25% neural/vacuum blends did not remove the same class of failure. Solver
+residual convergence therefore does not by itself certify canonical-branch
+equivalence.
+
+The current result is a fail-closed integration and a measured negative
+performance finding, not a promoted speed claim. The next model must add
+topology-aware supervision or an independently validated low-cost branch
+certificate before a shortened continuation can become the default. Candidate
+SHA-256 is
+`e14f73f76c0cb0e1558925d9f31a4fb87cab9dc892818833bcb9de96fd258a4b`;
+dataset-manifest SHA-256 is
+`b3b39ae6881fab3282cc5cdc974828a0f3650fc6fdb6c8d59fc34ae9c11b80af`.
+Both artifacts remain local and unpromoted.
+
 ## Usage
 
 The repository publishes the selected weights as

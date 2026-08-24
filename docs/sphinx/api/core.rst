@@ -187,6 +187,14 @@ Equilibrium DeepONet Runtime
    :undoc-members:
    :show-inheritance:
 
+Equilibrium DeepONet Solver Warm Start
+--------------------------------------
+
+.. automodule:: scpn_fusion.core.deeponet_solver_warm_start
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Equilibrium DeepONet Training Mathematics
 ------------------------------------------
 

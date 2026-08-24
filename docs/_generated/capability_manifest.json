@@ -417,6 +417,14 @@
         "path": "src/scpn_fusion/core/deeponet_equilibrium.py"
       },
       {
+        "name": "DeepONetPredictiveWarmStarter",
+        "path": "src/scpn_fusion/core/deeponet_solver_warm_start.py"
+      },
+      {
+        "name": "DeepONetWarmStartResult",
+        "path": "src/scpn_fusion/core/deeponet_solver_warm_start.py"
+      },
+      {
         "name": "DensityController",
         "path": "src/scpn_fusion/control/density_controller.py"
       },
@@ -2533,6 +2541,7 @@
       "src/scpn_fusion/core/current_diffusion.py",
       "src/scpn_fusion/core/current_drive.py",
       "src/scpn_fusion/core/deeponet_equilibrium.py",
+      "src/scpn_fusion/core/deeponet_solver_warm_start.py",
       "src/scpn_fusion/core/deeponet_training.py",
       "src/scpn_fusion/core/deeponet_training_contracts.py",
       "src/scpn_fusion/core/direct_energy_conversion.py",
@@ -2818,10 +2827,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 588,
-    "python_capability_source_modules": 334,
+    "python_capability_classes": 590,
+    "python_capability_source_modules": 335,
     "rust_workspace_crates": 13,
-    "test_files": 612
+    "test_files": 613
   },
   "documentation": {
     "public_pages": [
@@ -3042,6 +3051,7 @@
       "tests/test_dashboard_launcher.py",
       "tests/test_data_paths.py",
       "tests/test_deeponet_equilibrium.py",
+      "tests/test_deeponet_solver_warm_start.py",
       "tests/test_deeponet_training_modules.py",
       "tests/test_density_controller.py",
       "tests/test_deprecated_default_lane_guard.py",

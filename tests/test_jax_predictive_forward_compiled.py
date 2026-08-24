@@ -135,6 +135,36 @@ def test_mg_richardson_guards_fail_closed(response) -> None:
 
 def test_non_uniform_grid_fails_closed(response) -> None:
     m, b, s = response
+    with pytest.raises(ValueError, match="1-D axis"):
+        solve_predictive_equilibrium_compiled(
+            _COIL_I,
+            _PPRIME,
+            _FFPRIME,
+            jnp.ones((3, 3)),
+            _Z,
+            _COIL_R,
+            _COIL_Z,
+            _PSIN,
+            _IP,
+            m,
+            b,
+            s,
+        )
+    with pytest.raises(ValueError, match="strictly increasing and finite"):
+        solve_predictive_equilibrium_compiled(
+            _COIL_I,
+            _PPRIME,
+            _FFPRIME,
+            _R.at[4].set(jnp.nan),
+            _Z,
+            _COIL_R,
+            _COIL_Z,
+            _PSIN,
+            _IP,
+            m,
+            b,
+            s,
+        )
     r_bad = jnp.concatenate([_R[:-1], jnp.array([_R[-1] + 0.3])])
     with pytest.raises(ValueError, match="uniformly spaced"):
         solve_predictive_equilibrium_compiled(
@@ -147,6 +177,10 @@ def test_bad_settings_fail_closed(response) -> None:
         _solve_compiled(response, n_iter=0)
     with pytest.raises(ValueError, match="finite and > 0"):
         _solve_compiled(response, tol=float("nan"))
+    with pytest.raises(ValueError, match="separatrix_start"):
+        _solve_compiled(response, separatrix_start=-1)
+    with pytest.raises(ValueError, match="separatrix_ramp"):
+        _solve_compiled(response, separatrix_ramp=0)
 
 
 def test_wrong_psi_init_shape_fails_closed(response) -> None:
@@ -174,6 +208,23 @@ def test_warm_start_uses_fewer_iterations(response, compiled_psi) -> None:
         response, n_iter=150, psi_init=compiled_psi, ip_ramp=1, return_iterations=True
     )
     assert k_warm < k_cold
+
+
+def test_warm_start_can_retain_short_topology_continuation(response, compiled_psi) -> None:
+    """An explicit warm continuation reaches the canonical cold fixed point."""
+    warm, iterations = _solve_compiled(
+        response,
+        n_iter=150,
+        psi_init=compiled_psi,
+        ip_ramp=1,
+        use_separatrix_continuation=True,
+        separatrix_start=0,
+        separatrix_ramp=4,
+        return_iterations=True,
+    )
+    span = float(jnp.max(compiled_psi) - jnp.min(compiled_psi))
+    assert 4 <= iterations < 150
+    assert float(jnp.max(jnp.abs(warm - compiled_psi))) / span < 1e-6
 
 
 def test_normal_eq_matches_lstsq_fixed_point(response, compiled_psi) -> None:

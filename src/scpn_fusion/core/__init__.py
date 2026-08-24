@@ -89,6 +89,14 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         ".deeponet_equilibrium",
         "DeepONetEquilibriumAccelerator",
     ),
+    "DeepONetWarmStartResult": (
+        ".deeponet_solver_warm_start",
+        "DeepONetWarmStartResult",
+    ),
+    "DeepONetPredictiveWarmStarter": (
+        ".deeponet_solver_warm_start",
+        "DeepONetPredictiveWarmStarter",
+    ),
     "iter_surrogate_artifact_status": (
         ".neural_equilibrium",
         "iter_surrogate_artifact_status",

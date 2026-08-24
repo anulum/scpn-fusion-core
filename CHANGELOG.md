@@ -15,6 +15,10 @@
   resume and held-out-leakage tests, responsibility-separated training modules,
   native Rust/PyO3 inference with NumPy parity, a 129x129 Criterion benchmark,
   and the same validation/calibration/final-test evidence roles.
+- Add a manifest-, feature-, and grid-bound DeepONet predictive-solver seeding
+  API with finite residual acceptance, canonical topology continuation, genuine
+  cold fallback, explicit research-only continuation controls, public Sphinx
+  documentation, and real runtime-to-compiled-solver tests.
 - Enforce generated language-native API documentation across every shipped
   FUSION surface: warning-denied Sphinx and Cargo doc, exported-declaration Go
   comment coverage plus `go doc` rendering, strict Julia Documenter output,
@@ -85,6 +89,12 @@
   `0.0018768040157829957`, and Rust/NumPy parity remains within the declared
   tolerance across all 2,500 untouched-test shots. The candidate, report, and
   recovery artifacts remain local, source-authenticated, and unpromoted.
+- Record the 256-row untouched-test neural-seeding audit. Full canonical
+  continuation matched stored solver fields within `2.287213857229199e-8`
+  span-relative maximum with zero fallbacks, but saved only one iteration in
+  one case and no iterations in the other 255. Short continuation appeared
+  faster but selected another residual-valid basin in 8/256 cases, so no safe
+  DeepONet solver-speed claim is promoted.
 - Add digest-bound, finite-sample split-conformal certificates for the QLKNN
   transport surrogate. The corrected rank uses 47,826 held-out calibration
   rows and independent empirical checks on 47,828 test rows; all three
