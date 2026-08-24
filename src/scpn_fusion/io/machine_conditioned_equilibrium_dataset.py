@@ -370,10 +370,20 @@ def _validate_diagnostics(
     ):
         failures.append("tolerances.diagnostic_replay_max_abs must be finite and positive")
     else:
-        replayed_delta = np.max(np.abs(arrays["psi_total"] - arrays["psi_vacuum"]), axis=(1, 2))
         stored_delta = diagnostics[:, index["plasma_delta_max_abs_wb"]]
-        if np.any(np.abs(replayed_delta - stored_delta) > float(replay_tolerance)):
-            failures.append("plasma_delta_max_abs_wb does not replay from stored fields")
+        for start in range(0, len(diagnostics), 64):
+            stop = min(start + 64, len(diagnostics))
+            replayed_delta = np.max(
+                np.abs(
+                    arrays["psi_total"][start:stop] - arrays["psi_vacuum"][start:stop]
+                ),
+                axis=(1, 2),
+            )
+            if np.any(
+                np.abs(replayed_delta - stored_delta[start:stop]) > float(replay_tolerance)
+            ):
+                failures.append("plasma_delta_max_abs_wb does not replay from stored fields")
+                break
 
 
 def _validate_vacuum_reconstruction(

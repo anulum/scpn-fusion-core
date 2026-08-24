@@ -51,6 +51,8 @@ benchmarks/results/
 
 # Simulation outputs
 *.npy
+data/iter_machine_conditioned_v2_*/
+data/.iter_machine_conditioned_v2_*
 *.npz
 *.gif
 *.png

@@ -17,11 +17,13 @@ from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
+import pytest
 
 from scpn_fusion.io.machine_conditioned_equilibrium_dataset import (
     sha256_file,
     verify_machine_conditioned_dataset,
 )
+from scpn_fusion.io.recoverable_npy_dataset import RecoverableNpyDataset
 from tools.generate_iter_machine_conditioned_dataset import (
     feature_ranges,
     latin_hypercube,
@@ -128,3 +130,101 @@ def test_verifier_cli_accepts_reference() -> None:
     )
     payload = json.loads(result.stdout)
     assert payload["status"] == "passed"
+
+
+def test_recoverable_store_resumes_only_from_durable_cursor(tmp_path: Path) -> None:
+    partial = tmp_path / ".cohort.partial"
+    recovery = tmp_path / ".cohort.recovery.json"
+    shapes = {"inputs": (3, 2), "field": (3, 2, 2), "grid": (2,)}
+    sample_arrays = frozenset({"inputs", "field"})
+    contract = {"seed": 7, "candidate_design_sha256": "a" * 64}
+    store = RecoverableNpyDataset.create(
+        partial_dir=partial,
+        recovery_path=recovery,
+        shapes=shapes,
+        sample_array_names=sample_arrays,
+        run_contract=contract,
+        initial_arrays={"grid": np.asarray([1.0, 2.0])},
+    )
+    store.write_sample(
+        0,
+        {
+            "inputs": np.asarray([3.0, 4.0]),
+            "field": np.asarray([[5.0, 6.0], [7.0, 8.0]]),
+        },
+    )
+    store.checkpoint(accepted_samples=1, next_candidate_index=2, rejection_counts={"cap": 1})
+    store.write_sample(
+        1,
+        {
+            "inputs": np.asarray([30.0, 40.0]),
+            "field": np.asarray([[50.0, 60.0], [70.0, 80.0]]),
+        },
+    )
+
+    resumed = RecoverableNpyDataset.resume(
+        partial_dir=partial,
+        recovery_path=recovery,
+        shapes=shapes,
+        sample_array_names=sample_arrays,
+        run_contract=contract,
+    )
+    assert resumed.accepted_samples == 1
+    assert resumed.next_candidate_index == 2
+    assert resumed.rejection_counts == {"cap": 1}
+    resumed.require_array_equal("grid", np.asarray([1.0, 2.0]))
+    resumed.write_sample(
+        1,
+        {
+            "inputs": np.asarray([9.0, 10.0]),
+            "field": np.asarray([[11.0, 12.0], [13.0, 14.0]]),
+        },
+    )
+    resumed.checkpoint(accepted_samples=2, next_candidate_index=3)
+    assert np.array_equal(resumed.arrays["inputs"][1], np.asarray([9.0, 10.0]))
+
+
+def test_recoverable_store_rejects_changed_contract_and_static_bytes(tmp_path: Path) -> None:
+    partial = tmp_path / ".cohort.partial"
+    recovery = tmp_path / ".cohort.recovery.json"
+    shapes = {"inputs": (2, 1), "grid": (2,)}
+    sample_arrays = frozenset({"inputs"})
+    contract = {"seed": 11}
+    store = RecoverableNpyDataset.create(
+        partial_dir=partial,
+        recovery_path=recovery,
+        shapes=shapes,
+        sample_array_names=sample_arrays,
+        run_contract=contract,
+        initial_arrays={"grid": np.asarray([1.0, 2.0])},
+    )
+    with pytest.raises(ValueError, match="run contract"):
+        RecoverableNpyDataset.resume(
+            partial_dir=partial,
+            recovery_path=recovery,
+            shapes=shapes,
+            sample_array_names=sample_arrays,
+            run_contract={"seed": 12},
+        )
+    resumed = RecoverableNpyDataset.resume(
+        partial_dir=partial,
+        recovery_path=recovery,
+        shapes=shapes,
+        sample_array_names=sample_arrays,
+        run_contract=contract,
+    )
+    with pytest.raises(ValueError, match="regenerated grid"):
+        resumed.require_array_equal("grid", np.asarray([1.0, 3.0]))
+    resumed.write_sample(0, {"inputs": np.asarray([5.0])})
+    resumed.checkpoint(accepted_samples=1, next_candidate_index=1)
+    resumed.arrays["inputs"][0] = np.asarray([6.0])
+    if isinstance(resumed.arrays["inputs"], np.memmap):
+        resumed.arrays["inputs"].flush()
+    with pytest.raises(ValueError, match="sample chunk SHA-256"):
+        RecoverableNpyDataset.resume(
+            partial_dir=partial,
+            recovery_path=recovery,
+            shapes=shapes,
+            sample_array_names=sample_arrays,
+            run_contract=contract,
+        )

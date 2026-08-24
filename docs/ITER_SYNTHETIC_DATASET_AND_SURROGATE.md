@@ -103,11 +103,32 @@ python tools/generate_iter_machine_conditioned_dataset.py \
   --samples 50000 \
   --seed 20260822 \
   --grid-resolution 129 129 \
+  --checkpoint-every 100 \
   --output-dir /path/to/iter-machine-conditioned-v2
 python tools/verify_iter_machine_conditioned_dataset.py \
   --dataset-dir /path/to/iter-machine-conditioned-v2 \
   --full-field-scan
 ```
+
+The generator writes fixed-shape float64 NPY memmaps directly to a hidden
+`.partial` directory and advances a sibling recovery JSON only after flushing
+the arrays. An interrupted run resumes with the identical immutable run
+contract and candidate order:
+
+```bash
+python tools/generate_iter_machine_conditioned_dataset.py \
+  --spec validation/iter_machine_conditioned_v2_spec.json \
+  --samples 50000 \
+  --seed 20260822 \
+  --grid-resolution 129 129 \
+  --checkpoint-every 100 \
+  --resume \
+  --output-dir /path/to/iter-machine-conditioned-v2
+```
+
+The visible output directory appears only after full-field verification.
+`--pause-after-accepted N` provides an intentional operator checkpoint for
+testing or maintenance; it is not needed during an uninterrupted run.
 
 Generation is fail-closed. Accepted rows must stop below the iteration cap,
 close the canonical Ip-normalized GS residual and target current, have a
@@ -115,10 +136,10 @@ non-zero smooth axis/X flux span, and contain a non-zero plasma self-field.
 The tracked three-sample 33×33 reference cohort is at
 `validation/reference/iter_machine_conditioned_v2_n3_seed20260822_33x33`;
 its manifest binds all source and array hashes and records the exact replay
-commands. Production datasets and checkpoints belong on owner-controlled
-FTP/storage with public HTTPS retrieval where available; Git retains small
-references, manifests, checksums, provenance, licensing, and reproduction
-commands.
+commands. Production datasets and checkpoints remain in local or owner-approved
+large-artifact storage until a publication endpoint is explicitly selected.
+Git retains small references, manifests, checksums, provenance, licensing, and
+reproduction commands rather than the large arrays.
 
 ## Training and selection
 

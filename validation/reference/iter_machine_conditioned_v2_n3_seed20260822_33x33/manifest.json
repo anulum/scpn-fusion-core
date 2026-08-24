@@ -301,7 +301,8 @@
     "rejection_counts": {},
     "requested_samples": 3,
     "sampling_method": "seeded_stratified_latin_hypercube",
-    "seed": 20260822
+    "seed": 20260822,
+    "storage": "fixed_shape_float64_npy_memmap_with_atomic_external_checkpoint"
   },
   "machine": {
     "cocos": 3,
@@ -437,7 +438,8 @@
     }
   },
   "reproduction": {
-    "command": "python tools/generate_iter_machine_conditioned_dataset.py --spec validation/iter_machine_conditioned_v2_spec.json --samples 3 --seed 20260822 --grid-resolution 33 33 --output-dir <dataset-directory>",
+    "command": "python tools/generate_iter_machine_conditioned_dataset.py --spec validation/iter_machine_conditioned_v2_spec.json --samples 3 --seed 20260822 --grid-resolution 33 33 --checkpoint-every 100 --output-dir <dataset-directory>",
+    "resume_command": "python tools/generate_iter_machine_conditioned_dataset.py --spec validation/iter_machine_conditioned_v2_spec.json --samples 3 --seed 20260822 --grid-resolution 33 33 --checkpoint-every 100 --resume --output-dir <dataset-directory>",
     "verification": "python tools/verify_iter_machine_conditioned_dataset.py --dataset-dir <dataset-directory> --full-field-scan"
   },
   "schema_version": "scpn-fusion.machine-conditioned-equilibrium-dataset.v2",
@@ -473,7 +475,7 @@
       },
       "dataset_contract": {
         "path": "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
-        "sha256": "9bff52c1d4d74b9e31fc995ffeeb75ab29b8e8851f704a907d020f03d356045d"
+        "sha256": "1bbb6e7cb110e8a621ce719eb994cd999698637517432c6ec16c9a3177472343"
       },
       "generation_spec": {
         "path": "validation/iter_machine_conditioned_v2_spec.json",
@@ -481,15 +483,19 @@
       },
       "generator": {
         "path": "tools/generate_iter_machine_conditioned_dataset.py",
-        "sha256": "4c3a2c7165f058f7e48355df861a03385f50075cb15df3923991b3ebf4ddf6c7"
+        "sha256": "ee8e84bb97fd0ea0f5985b6f90686548d1a95431f95903a973c5130f8db4936b"
       },
       "predictive_solver": {
         "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
         "sha256": "d8388dd7ad2e246e9943570d2456f472616dfc13896f2a6572c41344129b8d32"
+      },
+      "recovery_store": {
+        "path": "src/scpn_fusion/io/recoverable_npy_dataset.py",
+        "sha256": "a76844103c157460c60456d29db44b1a00029fe0fd3cd2733993b2781e6e469c"
       }
     },
     "repository": "https://github.com/anulum/scpn-fusion-core",
-    "repository_head_context": "a0c047bf4ee6a45866fcc284804b23a5a1e479a7"
+    "repository_head_context": "b2f1ffd3cadae17b6ba02f22848304b6481c5799"
   },
   "tolerances": {
     "diagnostic_replay_max_abs": 1e-12,

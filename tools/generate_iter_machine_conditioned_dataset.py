@@ -10,10 +10,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
 import shutil
 import subprocess
-import tempfile
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -44,6 +45,7 @@ from scpn_fusion.io.machine_conditioned_equilibrium_dataset import (
     sha256_file,
     verify_machine_conditioned_dataset,
 )
+from scpn_fusion.io.recoverable_npy_dataset import RecoverableNpyDataset
 from scpn_fusion.io.safe_loaders import checked_json_load
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -62,6 +64,7 @@ DIAGNOSTIC_NAMES = (
 )
 FloatArray: TypeAlias = NDArray[np.float64]
 Response: TypeAlias = tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]
+SAMPLE_ARRAY_NAMES = frozenset({"inputs", "psi_total", "psi_vacuum", "diagnostics"})
 
 
 @dataclass(frozen=True)
@@ -471,6 +474,12 @@ def _repository_head() -> str:
     return result.stdout.strip()
 
 
+def _array_sha256(array: FloatArray) -> str:
+    """Hash one C-contiguous float64 array without creating a bytes copy."""
+    contiguous = np.ascontiguousarray(array, dtype=np.float64)
+    return hashlib.sha256(memoryview(contiguous).cast("B")).hexdigest()
+
+
 def _manifest(
     *,
     spec: dict[str, Any],
@@ -490,6 +499,7 @@ def _manifest(
         "generator": Path(__file__).resolve(),
         "dataset_contract": REPO_ROOT
         / "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
+        "recovery_store": REPO_ROOT / "src/scpn_fusion/io/recoverable_npy_dataset.py",
         "predictive_solver": REPO_ROOT / "src/scpn_fusion/core/jax_free_boundary_predictive.py",
         "compiled_solver": REPO_ROOT / "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
         "generation_spec": spec_path,
@@ -535,6 +545,7 @@ def _manifest(
             "rejection_counts": dict(sorted(rejection_counts.items())),
             "grid_resolution_rz": list(grid_resolution),
             "candidate_order": "ascending_index_first_accepted",
+            "storage": "fixed_shape_float64_npy_memmap_with_atomic_external_checkpoint",
         },
         "solver": {
             "family": "compiled_predictive_grad_shafranov",
@@ -594,7 +605,13 @@ def _manifest(
                 "python tools/generate_iter_machine_conditioned_dataset.py "
                 f"--spec {spec_path.relative_to(REPO_ROOT)} --samples {samples} --seed {seed} "
                 f"--grid-resolution {grid_resolution[0]} {grid_resolution[1]} "
-                "--output-dir <dataset-directory>"
+                "--checkpoint-every 100 --output-dir <dataset-directory>"
+            ),
+            "resume_command": (
+                "python tools/generate_iter_machine_conditioned_dataset.py "
+                f"--spec {spec_path.relative_to(REPO_ROOT)} --samples {samples} --seed {seed} "
+                f"--grid-resolution {grid_resolution[0]} {grid_resolution[1]} "
+                "--checkpoint-every 100 --resume --output-dir <dataset-directory>"
             ),
             "verification": (
                 "python tools/verify_iter_machine_conditioned_dataset.py "
@@ -611,14 +628,21 @@ def generate_dataset(
     samples: int,
     seed: int,
     grid_resolution: tuple[int, int],
+    checkpoint_every: int = 100,
+    resume: bool = False,
+    pause_after_accepted: int | None = None,
 ) -> dict[str, Any]:
-    """Generate, atomically install and fully verify one v2 dataset."""
-    if samples < 1 or min(grid_resolution) < 9:
+    """Stream, checkpoint, atomically install and verify one v2 dataset."""
+    if samples < 1 or min(grid_resolution) < 9 or checkpoint_every < 1:
         raise ValueError("samples must be positive and grid resolution at least 9 x 9")
+    if pause_after_accepted is not None and not 1 <= pause_after_accepted < samples:
+        raise ValueError("pause_after_accepted must lie in [1, samples)")
     output = output_dir.resolve()
     if output.exists():
         raise FileExistsError(f"output directory already exists: {output}")
     output.parent.mkdir(parents=True, exist_ok=True)
+    partial = output.parent / f".{output.name}.partial"
+    recovery = output.parent / f".{output.name}.recovery.json"
     spec_path = _repo_path(spec_path.resolve(), name="generation specification")
     spec = load_generation_spec(spec_path)
     ranges = feature_ranges(spec)
@@ -626,27 +650,7 @@ def generate_dataset(
     candidates = sample_feature_matrix(ranges, candidates=max_candidates, seed=seed)
     machine = _machine_arrays(spec, grid_resolution)
     response = build_response_matrix(jnp.asarray(machine.r), jnp.asarray(machine.z))
-    accepted: list[CandidateResult] = []
-    results: list[CandidateResult] = []
-    for index, row in enumerate(candidates):
-        result = _solve_candidate(index, row, ranges, machine, spec, response)
-        results.append(result)
-        if result.accepted:
-            accepted.append(result)
-        if len(accepted) == samples:
-            break
-    if len(accepted) < samples:
-        reasons = Counter(item.reason for item in results if not item.accepted)
-        raise RuntimeError(
-            f"accepted only {len(accepted)} of {samples}; rejections={dict(reasons)}"
-        )
-    cutoff = accepted[-1].candidate_index
-    selected_indices = [item.candidate_index for item in accepted]
-    arrays: dict[str, FloatArray] = {
-        "inputs": np.asarray(candidates[selected_indices], dtype=np.float64),
-        "psi_total": np.asarray([cast(FloatArray, item.psi_total) for item in accepted]),
-        "psi_vacuum": np.asarray([cast(FloatArray, item.psi_vacuum) for item in accepted]),
-        "diagnostics": np.asarray([cast(FloatArray, item.diagnostics) for item in accepted]),
+    static_arrays: dict[str, FloatArray] = {
         "grid_r_m": machine.r,
         "grid_z_m": machine.z,
         "wall_rz_m": machine.wall,
@@ -654,39 +658,149 @@ def generate_dataset(
         "plasma_support_weights": machine.support,
         "coil_green_psi_per_current": _unit_green_maps(machine),
     }
-    temporary = Path(tempfile.mkdtemp(prefix=f".{output.name}.", suffix=".tmp", dir=output.parent))
-    try:
-        paths: dict[str, Path] = {}
-        for name, array in arrays.items():
-            path = temporary / f"{name}.npy"
-            np.save(path, np.asarray(array, dtype=np.float64), allow_pickle=False)
-            paths[name] = path
-        rejection_counts = Counter(
-            item.reason for item in results[: cutoff + 1] if not item.accepted
+    shapes = {
+        "inputs": (samples, len(ranges)),
+        "psi_total": (samples, len(machine.z), len(machine.r)),
+        "psi_vacuum": (samples, len(machine.z), len(machine.r)),
+        "diagnostics": (samples, len(DIAGNOSTIC_NAMES)),
+        **{name: array.shape for name, array in static_arrays.items()},
+    }
+    logical_bytes = sum(int(np.prod(shape, dtype=np.int64)) * 8 for shape in shapes.values())
+    free_bytes = shutil.disk_usage(output.parent).free
+    safety_margin = max(1024**3, logical_bytes // 10)
+    required_free = safety_margin if resume else logical_bytes + safety_margin
+    if free_bytes < required_free:
+        raise OSError(
+            f"insufficient free disk: need {required_free} bytes, have {free_bytes}"
         )
-        manifest = _manifest(
-            spec=spec,
-            spec_path=spec_path,
-            ranges=ranges,
-            arrays=arrays,
-            array_paths=paths,
-            samples=samples,
-            seed=seed,
-            grid_resolution=grid_resolution,
-            attempted_candidates=cutoff + 1,
+    source_paths = (
+        Path(__file__).resolve(),
+        REPO_ROOT / "src/scpn_fusion/io/recoverable_npy_dataset.py",
+        REPO_ROOT / "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
+        REPO_ROOT / "src/scpn_fusion/core/jax_free_boundary_predictive.py",
+        REPO_ROOT / "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
+        spec_path,
+    )
+    run_contract = {
+        "generation_schema": GENERATION_SCHEMA,
+        "samples": samples,
+        "seed": seed,
+        "grid_resolution_rz": list(grid_resolution),
+        "candidate_design_sha256": _array_sha256(candidates),
+        "source_sha256": {
+            str(path.relative_to(REPO_ROOT)): sha256_file(path) for path in source_paths
+        },
+    }
+    if resume:
+        store = RecoverableNpyDataset.resume(
+            partial_dir=partial,
+            recovery_path=recovery,
+            shapes=shapes,
+            sample_array_names=SAMPLE_ARRAY_NAMES,
+            run_contract=run_contract,
+        )
+        for name, array in static_arrays.items():
+            store.require_array_equal(name, array)
+    else:
+        store = RecoverableNpyDataset.create(
+            partial_dir=partial,
+            recovery_path=recovery,
+            shapes=shapes,
+            sample_array_names=SAMPLE_ARRAY_NAMES,
+            run_contract=run_contract,
+            initial_arrays=static_arrays,
+        )
+    accepted_count = store.accepted_samples
+    next_candidate = store.next_candidate_index
+    rejection_counts = Counter(store.rejection_counts)
+    if accepted_count > samples or next_candidate > len(candidates):
+        raise ValueError("recovered progress exceeds the immutable run bounds")
+    if pause_after_accepted is not None and pause_after_accepted <= accepted_count:
+        raise ValueError("pause_after_accepted must be beyond recovered progress")
+    for index in range(next_candidate, len(candidates)):
+        row = candidates[index]
+        result = _solve_candidate(index, row, ranges, machine, spec, response)
+        if result.accepted:
+            sample_values = {
+                "inputs": row,
+                "psi_total": cast(FloatArray, result.psi_total),
+                "psi_vacuum": cast(FloatArray, result.psi_vacuum),
+                "diagnostics": cast(FloatArray, result.diagnostics),
+            }
+            store.write_sample(accepted_count, sample_values)
+            accepted_count += 1
+        else:
+            rejection_counts[result.reason] += 1
+        next_candidate = index + 1
+        checkpoint_due = accepted_count > 0 and accepted_count % checkpoint_every == 0
+        if checkpoint_due or accepted_count == samples:
+            store.checkpoint(
+                accepted_samples=accepted_count,
+                next_candidate_index=next_candidate,
+                rejection_counts=rejection_counts,
+            )
+            print(
+                json.dumps(
+                    {
+                        "status": "running" if accepted_count < samples else "finalizing",
+                        "accepted_samples": accepted_count,
+                        "requested_samples": samples,
+                        "attempted_candidates": next_candidate,
+                        "rejection_counts": dict(sorted(rejection_counts.items())),
+                    },
+                    sort_keys=True,
+                ),
+                flush=True,
+            )
+        if pause_after_accepted is not None and accepted_count >= pause_after_accepted:
+            store.checkpoint(
+                accepted_samples=accepted_count,
+                next_candidate_index=next_candidate,
+                rejection_counts=rejection_counts,
+            )
+            return {
+                "status": "paused",
+                "accepted_samples": accepted_count,
+                "requested_samples": samples,
+                "next_candidate_index": next_candidate,
+                "partial_dir": str(partial),
+                "recovery_checkpoint": str(recovery),
+            }
+        if accepted_count == samples:
+            break
+    if accepted_count < samples:
+        store.checkpoint(
+            accepted_samples=accepted_count,
+            next_candidate_index=next_candidate,
             rejection_counts=rejection_counts,
         )
-        (temporary / "manifest.json").write_text(
-            json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        raise RuntimeError(
+            f"accepted only {accepted_count} of {samples}; rejections={dict(rejection_counts)}"
         )
-        verification = verify_machine_conditioned_dataset(temporary, full_field_scan=True)
-        if verification["status"] != "passed":
-            raise RuntimeError(f"generated dataset failed verification: {verification['failures']}")
-        temporary.rename(output)
-        return verification
-    finally:
-        if temporary.exists():
-            shutil.rmtree(temporary)
+    arrays = store.arrays
+    paths = {name: partial / f"{name}.npy" for name in arrays}
+    manifest = _manifest(
+        spec=spec,
+        spec_path=spec_path,
+        ranges=ranges,
+        arrays=arrays,
+        array_paths=paths,
+        samples=samples,
+        seed=seed,
+        grid_resolution=grid_resolution,
+        attempted_candidates=next_candidate,
+        rejection_counts=rejection_counts,
+    )
+    with (partial / "manifest.json").open("w", encoding="utf-8") as handle:
+        handle.write(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    verification = verify_machine_conditioned_dataset(partial, full_field_scan=True)
+    if verification["status"] != "passed":
+        raise RuntimeError(f"generated dataset failed verification: {verification['failures']}")
+    partial.rename(output)
+    store.remove_recovery_checkpoint()
+    return verification
 
 
 def main() -> None:
@@ -698,6 +812,13 @@ def main() -> None:
     parser.add_argument(
         "--grid-resolution", type=int, nargs=2, metavar=("NR", "NZ"), default=(129, 129)
     )
+    parser.add_argument("--checkpoint-every", type=int, default=100)
+    parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--pause-after-accepted",
+        type=int,
+        help="operator pause boundary used to prove and exercise durable resume",
+    )
     args = parser.parse_args()
     result = generate_dataset(
         spec_path=args.spec,
@@ -705,6 +826,9 @@ def main() -> None:
         samples=args.samples,
         seed=args.seed,
         grid_resolution=(args.grid_resolution[0], args.grid_resolution[1]),
+        checkpoint_every=args.checkpoint_every,
+        resume=args.resume,
+        pause_after_accepted=args.pause_after_accepted,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
 
