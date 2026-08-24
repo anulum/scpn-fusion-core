@@ -260,6 +260,54 @@ until an owner-approved large-artifact publication endpoint is chosen; Git
 receives only bounded references, provenance, checksums and reproduction
 instructions.
 
+## DeepONet operator candidate
+
+`tools/train_machine_conditioned_deeponet.py` implements a genuine branch-trunk
+operator. The branch consumes the same 17 causal pre-solve controls; the trunk
+consumes normalized physical `(R, Z)` coordinates; their 64-dimensional inner
+product predicts the field residual around a training-only spatial mean. It
+does not use PCA targets. Coordinate/shot minibatches optimize a field-norm
+weighted physical objective with float32 AdamW, while final artifacts and all
+reported field metrics use float64.
+
+```bash
+python tools/train_machine_conditioned_deeponet.py \
+  --dataset-dir data/iter_machine_conditioned_v2_n50000_seed20260822_129x129 \
+  --out artifacts/iter_machine_conditioned_deeponet_20260824_seed42/candidate_local.npz \
+  --report artifacts/iter_machine_conditioned_deeponet_20260824_seed42/report_local.json \
+  --checkpoint-dir artifacts/iter_machine_conditioned_deeponet_20260824_seed42/checkpoints \
+  --steps 20000 \
+  --seed 42 \
+  --validation-fraction 0.10 \
+  --calibration-fraction 0.05 \
+  --test-fraction 0.05 \
+  --basis-width 64 \
+  --shot-batch-size 256 \
+  --coordinate-batch-size 512 \
+  --validation-probe-shots 1024 \
+  --validation-probe-coordinates 2048 \
+  --evaluation-every 250 \
+  --checkpoint-every 500 \
+  --early-stopping-patience 40
+```
+
+Every minibatch is a pure function of the seed and absolute optimizer step.
+Statistics and optimizer checkpoints are atomically replaced, SHA-256 checked,
+and bound to the dataset, four split hashes, validation probe, hyperparameters,
+and exact trainer/runtime sources. A resumed run is tested against an
+uninterrupted trajectory, array for array. The final artifact is loaded through
+`DeepONetEquilibriumAccelerator` and checked against the JAX training path.
+
+This v1 operator is deliberately *manifest-bound*. The cohort contains one
+fixed ITER-like analytic geometry, so constant machine descriptors cannot teach
+cross-machine dependence. The artifact stores that machine manifest digest and
+the complete coordinate grid; it is evidence for shot-disjoint interpolation
+and learned spatial evaluation on that one machine only. A cross-machine v2
+must train on multiple independently varied machine geometries and coil maps,
+hold out whole machines, and then move versioned geometry/coil descriptors into
+the branch contract. No cross-machine, facility, free-boundary, IDA, EFIT, PCS,
+or safety claim is made here.
+
 ## Usage
 
 The repository publishes the selected weights as
