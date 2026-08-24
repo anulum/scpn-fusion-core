@@ -53,6 +53,8 @@ benchmarks/results/
 *.npy
 data/iter_machine_conditioned_v2_*/
 data/.iter_machine_conditioned_v2_*
+artifacts/iter_machine_conditioned_retrain_local_*/
+artifacts/job_*.exit
 *.npz
 *.gif
 *.png

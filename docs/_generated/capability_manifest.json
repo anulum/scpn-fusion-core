@@ -1157,6 +1157,10 @@
         "path": "src/scpn_fusion/control/federated_disruption.py"
       },
       {
+        "name": "MachineConditionedTrainingData",
+        "path": "src/scpn_fusion/io/machine_conditioned_surrogate_training.py"
+      },
+      {
         "name": "MagneticConfiguration",
         "path": "src/scpn_fusion/control/stellarator_control_contracts.py"
       },
@@ -1741,6 +1745,10 @@
         "path": "src/scpn_fusion/control/realtime_efit.py"
       },
       {
+        "name": "RecoverableNpyDataset",
+        "path": "src/scpn_fusion/io/recoverable_npy_dataset.py"
+      },
+      {
         "name": "ReducedMHD",
         "path": "src/scpn_fusion/core/mhd_sawtooth.py"
       },
@@ -2039,6 +2047,10 @@
       {
         "name": "StochasticPetriNet",
         "path": "src/scpn_fusion/scpn/structure.py"
+      },
+      {
+        "name": "StreamingPCAState",
+        "path": "src/scpn_fusion/io/machine_conditioned_surrogate_training.py"
       },
       {
         "name": "StructuralMember",
@@ -2665,8 +2677,12 @@
       "src/scpn_fusion/io/imas_connector_transport.py",
       "src/scpn_fusion/io/imas_history_payloads.py",
       "src/scpn_fusion/io/logging_config.py",
+      "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
+      "src/scpn_fusion/io/machine_conditioned_surrogate_cli.py",
+      "src/scpn_fusion/io/machine_conditioned_surrogate_training.py",
       "src/scpn_fusion/io/mast_ingestor.py",
       "src/scpn_fusion/io/omas_free_boundary_inputs.py",
+      "src/scpn_fusion/io/recoverable_npy_dataset.py",
       "src/scpn_fusion/io/safe_loaders.py",
       "src/scpn_fusion/io/tokamak_archive.py",
       "src/scpn_fusion/io/tokamak_archive_profiles.py",
@@ -2767,10 +2783,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 578,
-    "python_capability_source_modules": 323,
+    "python_capability_classes": 581,
+    "python_capability_source_modules": 327,
     "rust_workspace_crates": 13,
-    "test_files": 607
+    "test_files": 609
   },
   "documentation": {
     "public_pages": [
@@ -3276,6 +3292,8 @@
       "tests/test_locked_mode.py",
       "tests/test_logging_config.py",
       "tests/test_lyapunov_guard.py",
+      "tests/test_machine_conditioned_equilibrium_dataset.py",
+      "tests/test_machine_conditioned_surrogate_training.py",
       "tests/test_marfe.py",
       "tests/test_mast_ingestor_acquisition.py",
       "tests/test_mast_validation_tools.py",

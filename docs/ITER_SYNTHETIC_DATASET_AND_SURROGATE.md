@@ -141,9 +141,9 @@ large-artifact storage until a publication endpoint is explicitly selected.
 Git retains small references, manifests, checksums, provenance, licensing, and
 reproduction commands rather than the large arrays.
 
-## Training and selection
+## Historical v1 training and selection
 
-The recoverable training path uses a deterministic seed-42 80/20 split: 8,000
+The historical v1 training path uses a deterministic seed-42 80/20 split: 8,000
 training samples and 2,000 held-out samples. It fits a 20-component PCA on the
 training subset, normalizes inputs and latent targets, and trains a
 `12 -> 256 -> 128 -> 64 -> 20` JAX MLP with Adam.
@@ -175,6 +175,72 @@ while p95 worsened from 6.8996% to 7.0070% and the maximum worsened from
 16.1436% to 17.2674%. The selection therefore favors the stronger error tail.
 The machine-readable record is
 [`validation/reports/iter_surrogate_v2_selection.json`](../validation/reports/iter_surrogate_v2_selection.json).
+
+This result remains a reproducible historical baseline. It must not be used as
+evidence for the 17-input machine-conditioned v2 cohort because its data,
+feature contract and model-selection problem are different.
+
+## Machine-conditioned v2 successor training
+
+The successor trainer consumes only a fully authenticated v2 dataset. It uses a
+deterministic seed-42 80/20 split before fitting any transform. Input scaling,
+field mean, randomized PCA basis, and latent scaling are learned exclusively
+from the training indices; validation rows are used only for model selection
+and held-out metrics. The production 50,000-sample contract therefore contains
+40,000 training rows and 10,000 validation rows.
+
+The default model is a `17 -> 512 -> 256 -> 128 -> 64` float64 JAX MLP. The
+64-dimensional target is produced by recovery-safe streaming randomized PCA
+with 16 oversampling vectors and one power iteration. The implementation never
+forms the infeasible sample-by-sample Gram matrix and never materializes all
+50,000 fields as one in-memory matrix.
+
+```bash
+python tools/train_machine_conditioned_equilibrium_surrogate.py \
+  --dataset-dir data/iter_machine_conditioned_v2_n50000_seed20260822_129x129 \
+  --out artifacts/iter_machine_conditioned_retrain_local_20260824/candidate_local.npz \
+  --report artifacts/iter_machine_conditioned_retrain_local_20260824/report_local.json \
+  --checkpoint-dir artifacts/iter_machine_conditioned_retrain_local_20260824/checkpoints \
+  --epochs 20000 \
+  --pca-components 64 \
+  --pca-oversampling 16 \
+  --pca-power-iterations 1 \
+  --pca-chunk-rows 256 \
+  --evaluation-every 100 \
+  --checkpoint-every 500 \
+  --early-stopping-patience 50
+```
+
+Resume repeats dataset authentication, verifies the SHA-bound PCA stage and
+optimizer state, and then continues the exact Adam trajectory:
+
+```bash
+python tools/train_machine_conditioned_equilibrium_surrogate.py \
+  --dataset-dir data/iter_machine_conditioned_v2_n50000_seed20260822_129x129 \
+  --out artifacts/iter_machine_conditioned_retrain_local_20260824/candidate_local.npz \
+  --report artifacts/iter_machine_conditioned_retrain_local_20260824/report_local.json \
+  --checkpoint-dir artifacts/iter_machine_conditioned_retrain_local_20260824/checkpoints \
+  --epochs 20000 \
+  --resume
+```
+
+Recovery identities bind the dataset and array hashes, split indices, PCA
+configuration and result, optimizer hyperparameters, and the exact trainer,
+PCA, and production-runtime source files. The final NPZ records the feature
+order, grid shape, transforms, network weights, selected epoch, dataset
+manifest hash, and source hashes. Before completion, the trainer loads that NPZ
+through `NeuralEquilibriumAccelerator`, performs a finite prediction, and checks
+its numerical parity with the training path.
+
+The report deliberately labels every output
+`completed_local_candidate_not_promoted`. Selection requires the held-out
+latent loss, full-field RMSE and relative-L2 distribution, the PCA-only
+validation floor, and runtime parity. A good synthetic validation result does
+not make the artifact facility-validated, free-boundary capable, or an IDA/EFIT
+replacement. Dataset, checkpoints, candidate weights, and reports remain local
+until an owner-approved large-artifact publication endpoint is chosen; Git
+receives only bounded references, provenance, checksums and reproduction
+instructions.
 
 ## Usage
 
