@@ -95,6 +95,15 @@ def _load_numpy_mpc_controller() -> type:
     return MpcKernel
 
 
+def _load_rust_deeponet_equilibrium() -> type:
+    """Load the Rust fixed-grid equilibrium DeepONet runtime class."""
+    module = import_module("scpn_fusion_rs")
+    runtime = module.PyDeepOnetEquilibrium
+    if not isinstance(runtime, type):
+        raise TypeError("scpn_fusion_rs.PyDeepOnetEquilibrium is not a class")
+    return runtime
+
+
 def _load_rust_fno() -> type:
     """Load the Rust FNO turbulence surrogate kernel class."""
     module = import_module("scpn_fusion_rs")
@@ -196,6 +205,7 @@ def _bootstrap_kernel_classes() -> None:
     register_kernel_class("fokker_planck_re", BackendTier.NUMPY, _load_numpy_fokker_planck)
     register_kernel_class("neural_surrogate_mpc", BackendTier.RUST, _load_rust_mpc_controller)
     register_kernel_class("neural_surrogate_mpc", BackendTier.NUMPY, _load_numpy_mpc_controller)
+    register_kernel_class("deeponet_equilibrium", BackendTier.RUST, _load_rust_deeponet_equilibrium)
     register_kernel_class("fno_turbulence", BackendTier.RUST, _load_rust_fno)
     register_kernel_class("fno_turbulence", BackendTier.NUMPY, _load_numpy_fno)
     register_kernel_class("global_design_scan", BackendTier.RUST, _load_rust_design_evaluator)

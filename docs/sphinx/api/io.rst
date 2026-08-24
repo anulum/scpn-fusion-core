@@ -13,3 +13,35 @@ IMAS Connector
    :members:
    :undoc-members:
    :show-inheritance:
+
+Equilibrium DeepONet Training Data
+----------------------------------
+
+.. automodule:: scpn_fusion.io.deeponet_training_data
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Equilibrium DeepONet Recovery
+-----------------------------
+
+.. automodule:: scpn_fusion.io.deeponet_training_recovery
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Equilibrium DeepONet Reports
+----------------------------
+
+.. automodule:: scpn_fusion.io.deeponet_training_report
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Equilibrium DeepONet CLI
+------------------------
+
+.. automodule:: scpn_fusion.io.machine_conditioned_deeponet_cli
+   :members:
+   :undoc-members:
+   :show-inheritance:

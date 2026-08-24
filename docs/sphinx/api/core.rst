@@ -179,6 +179,30 @@ Neural Equilibrium
    :undoc-members:
    :show-inheritance:
 
+Equilibrium DeepONet Runtime
+----------------------------
+
+.. automodule:: scpn_fusion.core.deeponet_equilibrium
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Equilibrium DeepONet Training Mathematics
+------------------------------------------
+
+.. automodule:: scpn_fusion.core.deeponet_training
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Equilibrium DeepONet Training Contracts
+----------------------------------------
+
+.. automodule:: scpn_fusion.core.deeponet_training_contracts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Neural Transport
 ------------------
 

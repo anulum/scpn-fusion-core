@@ -194,13 +194,13 @@ are bound into recovery state, weights, and the report.
 The default model is a `17 -> 512 -> 256 -> 128 -> 64` float64 JAX MLP. The
 64-dimensional target is produced by recovery-safe streaming randomized PCA
 with 16 oversampling vectors and one power iteration. The implementation never
-forms the infeasible sample-by-sample Gram matrix and never materializes all
+forms the infeasible sample-by-sample Gram matrix and never materialises all
 50,000 fields as one in-memory matrix.
 
-The default loss is 90% field-aligned and 10% standardized-latent MSE. Because
+The default loss is 90% field-aligned and 10% standardised-latent MSE. Because
 the PCA basis is orthonormal, raw latent squared error equals squared error in
 the reconstructible field subspace. Per-component weights undo latent
-standardization and per-row weights divide by the field norm; both are scaled
+standardisation and per-row weights divide by the field norm; both are scaled
 only by training-set constants. This corrects the old objective's tendency to
 give equal importance to low-energy PCA tail modes. Validation uses the same
 declared objective. A finite-sample 95% split-conformal relative-L2 bound is
@@ -210,10 +210,11 @@ the untouched test partition.
 ```bash
 python tools/train_machine_conditioned_equilibrium_surrogate.py \
   --dataset-dir data/iter_machine_conditioned_v2_n50000_seed20260822_129x129 \
-  --out artifacts/iter_machine_conditioned_retrain_local_20260824/candidate_local.npz \
-  --report artifacts/iter_machine_conditioned_retrain_local_20260824/report_local.json \
-  --checkpoint-dir artifacts/iter_machine_conditioned_retrain_local_20260824/checkpoints \
+  --out artifacts/iter_machine_conditioned_field_aware_20260824_seed42/candidate_local.npz \
+  --report artifacts/iter_machine_conditioned_field_aware_20260824_seed42/report_local.json \
+  --checkpoint-dir artifacts/iter_machine_conditioned_field_aware_20260824_seed42/checkpoints \
   --epochs 20000 \
+  --seed 42 \
   --validation-fraction 0.10 \
   --calibration-fraction 0.05 \
   --test-fraction 0.05 \
@@ -227,21 +228,49 @@ python tools/train_machine_conditioned_equilibrium_surrogate.py \
   --early-stopping-patience 50
 ```
 
+The completed local seed-42 run selected epoch 20,000 from validation and then
+opened calibration and final test exactly once:
+
+| Untouched-test measure | Result |
+| --- | ---: |
+| Field RMSE | `0.020297107883367773 Wb/rad` |
+| Mean relative L2 | `0.0015291318885462526` |
+| P95 relative L2 | `0.0028262867732278905` |
+| Maximum relative L2 | `0.004641217924994206` |
+| 95% conformal relative-L2 bound | `0.002787281010345701` |
+| Test coverage of that bound | `0.9464` |
+| Runtime/training maximum absolute difference | `7.105427357601002e-15 Wb/rad` |
+
+Training took `6692.994974019006 s` on the local CUDA device. The candidate
+SHA-256 is
+`a6684a82ec0b683384b512b1723be5ac16218852f516b46fb2134c99a7216d41`;
+the report SHA-256 is
+`4b8185b24d58d1b3e59acef5381170c894c54557a2bcba60d7d0838dece9c396`.
+The final optimiser stage and complete PCA stage authenticate as
+`8b21b2e630f6a8e11de8f3909b8e5d4f8c4db3f57a4015d83d16affabb0ce7a4`
+and
+`bda830de8c22e15a6e9bb32a442e4fbddd67143243e17c12aab8282e7c822698`.
+All remain local and unpromoted. Against the earlier 80/20 objective baseline,
+the new final-test values are lower by 56.42% for field RMSE, 52.94% for mean,
+59.81% for p95, and 76.79% for maximum relative L2. That comparison is
+descriptive rather than a strict paired benchmark because the old run used a
+different holdout and model-selection contract.
+
 Resume repeats dataset authentication, verifies the SHA-bound PCA stage and
-optimizer state, and then continues the exact Adam trajectory:
+optimiser state, and then continues the exact Adam trajectory:
 
 ```bash
 python tools/train_machine_conditioned_equilibrium_surrogate.py \
   --dataset-dir data/iter_machine_conditioned_v2_n50000_seed20260822_129x129 \
-  --out artifacts/iter_machine_conditioned_retrain_local_20260824/candidate_local.npz \
-  --report artifacts/iter_machine_conditioned_retrain_local_20260824/report_local.json \
-  --checkpoint-dir artifacts/iter_machine_conditioned_retrain_local_20260824/checkpoints \
+  --out artifacts/iter_machine_conditioned_field_aware_20260824_seed42/candidate_local.npz \
+  --report artifacts/iter_machine_conditioned_field_aware_20260824_seed42/report_local.json \
+  --checkpoint-dir artifacts/iter_machine_conditioned_field_aware_20260824_seed42/checkpoints \
   --epochs 20000 \
   --resume
 ```
 
 Recovery identities bind the dataset and array hashes, all four split-index
-hashes, loss contract, PCA configuration and result, optimizer hyperparameters,
+hashes, loss contract, PCA configuration and result, optimiser hyperparameters,
 and the exact trainer, PCA, and production-runtime source files. The final NPZ
 records the feature order, grid shape, transforms, network weights, selected
 epoch, split hashes, dataset manifest hash, and source hashes. Before
@@ -263,10 +292,12 @@ instructions.
 ## DeepONet operator candidate
 
 `tools/train_machine_conditioned_deeponet.py` implements a genuine branch-trunk
-operator. The branch consumes the same 17 causal pre-solve controls; the trunk
-consumes normalized physical `(R, Z)` coordinates; their 64-dimensional inner
+operator following the branch-trunk construction of Lu et al. (2021),
+DOI [`10.1038/s42256-021-00302-5`](https://doi.org/10.1038/s42256-021-00302-5).
+The branch consumes the same 17 causal pre-solve controls; the trunk consumes
+normalised physical `(R, Z)` coordinates; their 64-dimensional inner
 product predicts the field residual around a training-only spatial mean. It
-does not use PCA targets. Coordinate/shot minibatches optimize a field-norm
+does not use PCA targets. Coordinate/shot minibatches optimise a field-norm
 weighted physical objective with float32 AdamW, while final artifacts and all
 reported field metrics use float64.
 
@@ -291,12 +322,55 @@ python tools/train_machine_conditioned_deeponet.py \
   --early-stopping-patience 40
 ```
 
-Every minibatch is a pure function of the seed and absolute optimizer step.
-Statistics and optimizer checkpoints are atomically replaced, SHA-256 checked,
-and bound to the dataset, four split hashes, validation probe, hyperparameters,
-and exact trainer/runtime sources. A resumed run is tested against an
+Every minibatch is a pure function of the seed and absolute optimiser step.
+Statistics and optimiser checkpoints are atomically replaced and SHA-256
+checked; recovery rejects symlinked stage files. Their identities are bound to
+the dataset, four split hashes, validation probe, hyperparameters, and exact
+trainer/runtime sources. A resumed run is tested against an
 uninterrupted trajectory, array for array. The final artifact is loaded through
 `DeepONetEquilibriumAccelerator` and checked against the JAX training path.
+The source identity includes Python orchestration, mathematics, persistence,
+safe loading and backend dispatch, plus the Rust/PyO3 implementation, crate
+manifests, and workspace `Cargo.lock` dependency resolution.
+When the current `scpn_fusion_rs` extension is installed, inference dispatches
+first to the native `fusion-ml` branch-trunk kernel through PyO3; otherwise it
+uses the NumPy reference path. The parity test loads one authenticated artifact
+through both backends and requires agreement within `1e-14` relative and
+absolute tolerance. The fixed-coefficient runtime fixture currently agrees bit
+for bit. The authenticated tiny-training fixture differs by at most
+`1.4210854715202004e-14 Wb/rad` (`256` ULP; normalised tolerance ratio
+`0.15228015611094084`) while remaining inside the declared bound. Portable bit
+identity is not claimed across different BLAS implementations, CPU instruction
+sets, or compiler floating-point policies. Finalisation also
+streams both backends over every untouched-test row and records maximum
+absolute difference, normalised tolerance ratio, and IEEE-754 ULP distance.
+An installed native backend fails closed when the normalised ratio exceeds
+one. Run the 129x129 native regression benchmark with:
+
+```bash
+cargo bench --manifest-path scpn-fusion-rs/Cargo.toml \
+  -p fusion-ml --bench deeponet_equilibrium_bench
+```
+
+Two 2026-08-24 local non-isolated regression runs measured
+`1.0636–1.3730 ms` per one-shot 129x129 prediction; the latest range was
+`1.2301–1.3730 ms`. These are workstation regression ranges, not an
+isolated-core production latency claim.
+
+Implementation responsibilities remain explicit: `deeponet_training.py` owns
+only branch-trunk mathematics and AdamW; `deeponet_training_data.py` owns
+coordinate, minibatch, and metric preparation;
+`deeponet_training_recovery.py` owns identity-bound persistence;
+`deeponet_training_report.py` owns evidence composition; and
+`machine_conditioned_deeponet_cli.py` owns argument adaptation. The top-level
+tool only orchestrates those contracts. Runtime tests exercise malformed and
+non-finite artifacts, shape rejection, and public inference. Training tests
+exercise exact interrupted-versus-uninterrupted recovery, tamper rejection,
+four-way evidence, runtime parity, and a leakage test in which changing only
+calibration/test values cannot change selected network weights. The training
+suite derives its fixture from the tracked authenticated v2 reference cohort,
+rewrites every changed array contract, and exercises the real verifier, loader,
+CLI subprocess, recovery files, candidate artifact, and production runtime.
 
 This v1 operator is deliberately *manifest-bound*. The cohort contains one
 fixed ITER-like analytic geometry, so constant machine descriptors cannot teach

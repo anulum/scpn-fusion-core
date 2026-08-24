@@ -10,9 +10,11 @@
   relative-L2 conformal evidence, split-bound recovery, and production-runtime
   parity checks.
 - Add a recovery-safe equilibrium DeepONet with a causal-control branch,
-  coordinate trunk, training-only field normalization, deterministic
+  coordinate trunk, training-only field normalisation, deterministic
   coordinate/shot minibatches, AdamW, manifest-bound runtime artifacts, exact
-  resume tests, and the same validation/calibration/final-test evidence roles.
+  resume and held-out-leakage tests, responsibility-separated training modules,
+  native Rust/PyO3 inference with NumPy parity, a 129x129 Criterion benchmark,
+  and the same validation/calibration/final-test evidence roles.
 - Enforce generated language-native API documentation across every shipped
   FUSION surface: warning-denied Sphinx and Cargo doc, exported-declaration Go
   comment coverage plus `go doc` rendering, strict Julia Documenter output,

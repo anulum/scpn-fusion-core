@@ -11,6 +11,7 @@
 #![deny(missing_docs)]
 #![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
+pub mod deeponet_equilibrium;
 pub mod disruption;
 pub mod mast_snn;
 pub mod neural_equilibrium;

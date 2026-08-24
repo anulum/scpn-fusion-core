@@ -28,7 +28,7 @@ use bindings::frc::{
 use bindings::gpu as gpu_bindings;
 use bindings::gyrokinetics::PyNonlinearGKSolver;
 use bindings::mhd::{rutherford_island_growth, simulate_tearing_mode, PyHallMHD, PyReducedMHD};
-use bindings::ml::PyNeuralTransport;
+use bindings::ml::{PyDeepOnetEquilibrium, PyNeuralTransport};
 use bindings::neural::{
     scpn_dense_activations, scpn_marking_update, scpn_sample_firing, PySnnController, PySnnPool,
 };
@@ -54,6 +54,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyEquilibriumResult>()?;
     m.add_class::<PyThermodynamicsResult>()?;
     m.add_class::<PyNeuralTransport>()?;
+    m.add_class::<PyDeepOnetEquilibrium>()?;
     m.add_class::<PyInverseSolver>()?;
     m.add_class::<PyInverseResult>()?;
     m.add_class::<PyPlantModel>()?;
