@@ -413,6 +413,10 @@
         "path": "src/scpn_fusion/core/gk_domain_decomposition.py"
       },
       {
+        "name": "DeepONetEquilibriumAccelerator",
+        "path": "src/scpn_fusion/core/deeponet_equilibrium.py"
+      },
+      {
         "name": "DensityController",
         "path": "src/scpn_fusion/control/density_controller.py"
       },
@@ -1157,6 +1161,10 @@
         "path": "src/scpn_fusion/control/federated_disruption.py"
       },
       {
+        "name": "MachineConditionedSplit",
+        "path": "src/scpn_fusion/io/machine_conditioned_surrogate_training.py"
+      },
+      {
         "name": "MachineConditionedTrainingData",
         "path": "src/scpn_fusion/io/machine_conditioned_surrogate_training.py"
       },
@@ -1409,6 +1417,10 @@
         "path": "src/scpn_fusion/control/fusion_optimal_control.py"
       },
       {
+        "name": "OptimizerState",
+        "path": "src/scpn_fusion/io/deeponet_training_recovery.py"
+      },
+      {
         "name": "OracleESN",
         "path": "src/scpn_fusion/core/turbulence_oracle.py"
       },
@@ -1583,6 +1595,10 @@
       {
         "name": "PredictiveIterationSnapshot",
         "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py"
+      },
+      {
+        "name": "PreparedTraining",
+        "path": "src/scpn_fusion/core/deeponet_training_contracts.py"
       },
       {
         "name": "PretrainedMLPSurrogate",
@@ -1807,6 +1823,10 @@
       {
         "name": "RunawayParams",
         "path": "src/scpn_fusion/core/runaway_electrons.py"
+      },
+      {
+        "name": "RuntimeBackendParity",
+        "path": "src/scpn_fusion/core/deeponet_training_contracts.py"
       },
       {
         "name": "RuntimeBenchmark",
@@ -2217,6 +2237,10 @@
         "path": "src/scpn_fusion/control/jax_traceable_runtime.py"
       },
       {
+        "name": "TrainingConfig",
+        "path": "src/scpn_fusion/core/deeponet_training_contracts.py"
+      },
+      {
         "name": "TrainingDataGenerator",
         "path": "src/scpn_fusion/core/neural_turbulence.py"
       },
@@ -2504,6 +2528,9 @@
       "src/scpn_fusion/core/config_schema.py",
       "src/scpn_fusion/core/current_diffusion.py",
       "src/scpn_fusion/core/current_drive.py",
+      "src/scpn_fusion/core/deeponet_equilibrium.py",
+      "src/scpn_fusion/core/deeponet_training.py",
+      "src/scpn_fusion/core/deeponet_training_contracts.py",
       "src/scpn_fusion/core/direct_energy_conversion.py",
       "src/scpn_fusion/core/disruption_sequence.py",
       "src/scpn_fusion/core/disruption_structural_response.py",
@@ -2668,6 +2695,9 @@
       "src/scpn_fusion/hpc/_hpc_native_trust.py",
       "src/scpn_fusion/hpc/hpc_bridge.py",
       "src/scpn_fusion/io/_tokamak_archive_shots.py",
+      "src/scpn_fusion/io/deeponet_training_data.py",
+      "src/scpn_fusion/io/deeponet_training_recovery.py",
+      "src/scpn_fusion/io/deeponet_training_report.py",
       "src/scpn_fusion/io/imas_connector.py",
       "src/scpn_fusion/io/imas_connector_common.py",
       "src/scpn_fusion/io/imas_connector_digital_twin.py",
@@ -2677,6 +2707,7 @@
       "src/scpn_fusion/io/imas_connector_transport.py",
       "src/scpn_fusion/io/imas_history_payloads.py",
       "src/scpn_fusion/io/logging_config.py",
+      "src/scpn_fusion/io/machine_conditioned_deeponet_cli.py",
       "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
       "src/scpn_fusion/io/machine_conditioned_surrogate_cli.py",
       "src/scpn_fusion/io/machine_conditioned_surrogate_training.py",
@@ -2783,10 +2814,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 581,
-    "python_capability_source_modules": 327,
+    "python_capability_classes": 587,
+    "python_capability_source_modules": 334,
     "rust_workspace_crates": 13,
-    "test_files": 609
+    "test_files": 612
   },
   "documentation": {
     "public_pages": [
@@ -3006,6 +3037,8 @@
       "tests/test_dashboard_generator.py",
       "tests/test_dashboard_launcher.py",
       "tests/test_data_paths.py",
+      "tests/test_deeponet_equilibrium.py",
+      "tests/test_deeponet_training_modules.py",
       "tests/test_density_controller.py",
       "tests/test_deprecated_default_lane_guard.py",
       "tests/test_detachment_controller.py",
@@ -3292,6 +3325,7 @@
       "tests/test_locked_mode.py",
       "tests/test_logging_config.py",
       "tests/test_lyapunov_guard.py",
+      "tests/test_machine_conditioned_deeponet_training.py",
       "tests/test_machine_conditioned_equilibrium_dataset.py",
       "tests/test_machine_conditioned_surrogate_training.py",
       "tests/test_marfe.py",

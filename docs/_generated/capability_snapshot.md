@@ -7,12 +7,12 @@
 |---|---:|
 | Package version | 4.0.0 |
 | Public API exports | 2 |
-| Python capability source modules | 327 |
-| Python capability classes | 581 |
+| Python capability source modules | 334 |
+| Python capability classes | 587 |
 | Capability documentation pages | 64 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 609 |
+| Python test files | 612 |
 | Public documentation pages | 64 |
 | GitHub Actions workflows | 15 |
 
