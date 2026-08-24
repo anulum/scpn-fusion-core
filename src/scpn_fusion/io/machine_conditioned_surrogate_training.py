@@ -49,6 +49,16 @@ class MachineConditionedTrainingData:
 
 
 @dataclass(frozen=True)
+class MachineConditionedSplit:
+    """Leakage-safe training, selection, calibration, and final-test rows."""
+
+    training: IndexArray
+    validation: IndexArray
+    calibration: IndexArray
+    test: IndexArray
+
+
+@dataclass(frozen=True)
 class StreamingPCAState:
     """A fitted PCA basis learned exclusively from declared training rows."""
 
@@ -92,6 +102,44 @@ def deterministic_split(
     validation = np.sort(permutation[:n_validation]).astype(np.int64)
     training = np.sort(permutation[n_validation:]).astype(np.int64)
     return training, validation
+
+
+def deterministic_four_way_split(
+    n_samples: int,
+    *,
+    validation_fraction: float,
+    calibration_fraction: float,
+    test_fraction: float,
+    seed: int,
+) -> MachineConditionedSplit:
+    """Return one complete deterministic split with four disjoint roles.
+
+    Training rows alone may fit transforms and parameters. Validation rows may
+    select an epoch or architecture. Calibration rows may construct post-hoc
+    uncertainty intervals only after selection. Test rows remain untouched
+    until the final selected model is evaluated.
+    """
+    if n_samples < 5:
+        raise ValueError("at least five samples are required for a four-way split")
+    fractions = (validation_fraction, calibration_fraction, test_fraction)
+    if any(not 0.0 < fraction < 1.0 for fraction in fractions):
+        raise ValueError("held-out fractions must lie strictly between zero and one")
+    if sum(fractions) >= 1.0:
+        raise ValueError("held-out fractions leave no training partition")
+    counts = tuple(max(1, int(round(n_samples * fraction))) for fraction in fractions)
+    if sum(counts) > n_samples - 2:
+        raise ValueError("held-out fractions leave fewer than two training samples")
+
+    permutation = np.random.default_rng(seed).permutation(n_samples)
+    validation_stop = counts[0]
+    calibration_stop = validation_stop + counts[1]
+    test_stop = calibration_stop + counts[2]
+    return MachineConditionedSplit(
+        training=np.sort(permutation[test_stop:]).astype(np.int64),
+        validation=np.sort(permutation[:validation_stop]).astype(np.int64),
+        calibration=np.sort(permutation[validation_stop:calibration_stop]).astype(np.int64),
+        test=np.sort(permutation[calibration_stop:test_stop]).astype(np.int64),
+    )
 
 
 def load_machine_conditioned_training_data(
@@ -473,6 +521,7 @@ def fit_streaming_randomized_pca(
 
 
 __all__ = [
+    "MachineConditionedSplit",
     "MachineConditionedTrainingData",
     "PCA_RECOVERY_SCHEMA",
     "StreamingPCAState",
@@ -480,6 +529,7 @@ __all__ = [
     "atomic_savez",
     "array_sha256",
     "deterministic_split",
+    "deterministic_four_way_split",
     "fit_streaming_randomized_pca",
     "iter_field_rows",
     "load_machine_conditioned_training_data",

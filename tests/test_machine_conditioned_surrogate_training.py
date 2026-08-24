@@ -18,15 +18,19 @@ from jax import numpy as jnp
 from jax import random
 
 from scpn_fusion.io.machine_conditioned_surrogate_training import (
+    MachineConditionedTrainingData,
+    deterministic_four_way_split,
     deterministic_split,
     fit_streaming_randomized_pca,
     load_machine_conditioned_training_data,
 )
+from tools import train_machine_conditioned_equilibrium_surrogate as trainer
 from scpn_fusion.io.machine_conditioned_surrogate_cli import run_training_cli
 from tools.train_machine_conditioned_equilibrium_surrogate import (
     _load_optimizer_checkpoint,
     _save_optimizer_checkpoint,
     adam_step,
+    hybrid_latent_loss,
     init_mlp_params,
 )
 
@@ -63,6 +67,54 @@ def test_deterministic_split_is_disjoint_complete_and_stable() -> None:
     assert np.array_equal(first_validation, second_validation)
     assert np.intersect1d(first_train, first_validation).size == 0
     assert np.array_equal(np.sort(np.concatenate((first_train, first_validation))), np.arange(50))
+
+
+def test_four_way_split_is_disjoint_complete_stable_and_role_sized() -> None:
+    first = deterministic_four_way_split(
+        50_000,
+        validation_fraction=0.10,
+        calibration_fraction=0.05,
+        test_fraction=0.05,
+        seed=42,
+    )
+    second = deterministic_four_way_split(
+        50_000,
+        validation_fraction=0.10,
+        calibration_fraction=0.05,
+        test_fraction=0.05,
+        seed=42,
+    )
+    assert len(first.training) == 40_000
+    assert len(first.validation) == 5_000
+    assert len(first.calibration) == 2_500
+    assert len(first.test) == 2_500
+    for first_role, second_role in zip(first.__dict__.values(), second.__dict__.values()):
+        assert np.array_equal(first_role, second_role)
+    combined = np.concatenate((first.training, first.validation, first.calibration, first.test))
+    assert np.array_equal(np.sort(combined), np.arange(50_000))
+    assert len(np.unique(combined)) == len(combined)
+
+
+@pytest.mark.parametrize(
+    ("validation", "calibration", "test"),
+    [
+        (0.0, 0.05, 0.05),
+        (0.10, -0.05, 0.05),
+        (0.10, 0.05, 1.0),
+        (0.40, 0.30, 0.30),
+    ],
+)
+def test_four_way_split_rejects_invalid_fractions(
+    validation: float, calibration: float, test: float
+) -> None:
+    with pytest.raises(ValueError):
+        deterministic_four_way_split(
+            100,
+            validation_fraction=validation,
+            calibration_fraction=calibration,
+            test_fraction=test,
+            seed=42,
+        )
 
 
 def test_streaming_pca_is_train_only_and_resume_exact(tmp_path: Path) -> None:
@@ -168,6 +220,41 @@ def test_successor_adam_step_is_seeded_and_deterministic() -> None:
     assert np.array_equal(first_result[3], second_result[3])
 
 
+def test_hybrid_loss_reduces_to_standardized_mse_at_zero_weight() -> None:
+    predictions = jnp.asarray([[1.0, 2.0], [3.0, 5.0]])
+    targets = jnp.asarray([[0.0, 1.0], [1.0, 1.0]])
+    loss = hybrid_latent_loss(
+        predictions,
+        targets,
+        component_weights=jnp.asarray([100.0, 0.01]),
+        sample_weights=jnp.asarray([7.0, 0.2]),
+        field_loss_weight=0.0,
+    )
+    assert float(loss) == pytest.approx(float(jnp.mean(jnp.square(predictions - targets))))
+
+
+def test_field_aligned_loss_prioritizes_physical_component_and_relative_sample() -> None:
+    targets = jnp.zeros((2, 2), dtype=jnp.float64)
+    component_weights = jnp.asarray([10.0, 1.0], dtype=jnp.float64)
+    sample_weights = jnp.asarray([4.0, 1.0], dtype=jnp.float64)
+    leading_small_field_error = hybrid_latent_loss(
+        jnp.asarray([[1.0, 0.0], [0.0, 0.0]]),
+        targets,
+        component_weights,
+        sample_weights,
+        1.0,
+    )
+    tail_large_field_error = hybrid_latent_loss(
+        jnp.asarray([[0.0, 0.0], [0.0, 1.0]]),
+        targets,
+        component_weights,
+        sample_weights,
+        1.0,
+    )
+    assert float(leading_small_field_error) == pytest.approx(10.0)
+    assert float(tail_large_field_error) == pytest.approx(0.25)
+
+
 def test_optimizer_recovery_is_exact_and_rejects_tamper(tmp_path: Path) -> None:
     params = init_mlp_params(random.PRNGKey(9), input_dim=17, hidden_sizes=(8,), output_dim=3)
     moments = [{name: jnp.zeros_like(value) for name, value in layer.items()} for layer in params]
@@ -196,3 +283,58 @@ def test_optimizer_recovery_is_exact_and_rejects_tamper(tmp_path: Path) -> None:
         handle.write(b"tamper")
     with pytest.raises(ValueError, match="SHA-256 mismatch"):
         _load_optimizer_checkpoint(tmp_path, identity=identity)
+
+
+def test_field_aware_training_emits_four_way_evidence_and_runtime_artifact(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rng = np.random.default_rng(81)
+    inputs = rng.normal(size=(12, 17))
+    factors = inputs[:, :3]
+    basis = rng.normal(size=(3, 5, 4))
+    fields = np.einsum("nk,kij->nij", factors, basis)
+    data = MachineConditionedTrainingData(
+        root=tmp_path / "dataset",
+        manifest={"dataset_id": "unit-four-way"},
+        manifest_sha256="a" * 64,
+        inputs=np.asarray(inputs, dtype=np.float64),
+        fields=np.asarray(fields, dtype=np.float64),
+        feature_names=tuple(f"feature_{index}" for index in range(17)),
+        grid_shape=(5, 4),
+        inputs_sha256="b" * 64,
+        fields_sha256="c" * 64,
+    )
+    monkeypatch.setattr(trainer, "load_machine_conditioned_training_data", lambda *a, **k: data)
+
+    report = trainer.run_training(
+        dataset_dir=data.root,
+        output_path=tmp_path / "candidate.npz",
+        report_path=tmp_path / "report.json",
+        checkpoint_dir=tmp_path / "checkpoints",
+        epochs=2,
+        seed=7,
+        validation_fraction=1.0 / 6.0,
+        calibration_fraction=1.0 / 6.0,
+        test_fraction=1.0 / 6.0,
+        field_loss_weight=0.9,
+        n_components=3,
+        pca_oversampling=1,
+        pca_power_iterations=0,
+        pca_chunk_rows=2,
+        hidden_sizes=(8,),
+        evaluation_every=1,
+        checkpoint_every=1,
+        early_stopping_patience=3,
+    )
+
+    assert report["status"] == "completed_local_candidate_not_promoted"
+    assert report["split"]["training_samples"] == 6
+    assert report["split"]["validation_samples"] == 2
+    assert report["split"]["calibration_samples"] == 2
+    assert report["split"]["test_samples"] == 2
+    assert report["training"]["field_loss_weight"] == pytest.approx(0.9)
+    assert report["conformal_relative_l2"]["calibration_samples"] == 2
+    assert 0.0 <= report["conformal_relative_l2"]["test_empirical_coverage"] <= 1.0
+    assert report["artifact"]["runtime_load_predict_finite"] is True
+    assert (tmp_path / "candidate.npz").is_file()
+    assert (tmp_path / "report.json").is_file()

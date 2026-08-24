@@ -32,7 +32,7 @@ from scpn_fusion.io.machine_conditioned_surrogate_training import (
     array_sha256,
     atomic_json,
     atomic_savez,
-    deterministic_split,
+    deterministic_four_way_split,
     fit_streaming_randomized_pca,
     iter_field_rows,
     load_machine_conditioned_training_data,
@@ -45,9 +45,9 @@ IndexArray: TypeAlias = NDArray[np.int64]
 Layer: TypeAlias = dict[str, jax.Array]
 Params: TypeAlias = list[Layer]
 
-TRAINING_SCHEMA = "scpn-fusion.machine-conditioned-equilibrium-surrogate-training.v1"
-OPTIMIZER_RECOVERY_SCHEMA = "scpn-fusion.machine-conditioned-adam-recovery.v1"
-OPTIMIZER_CHECKPOINT_VERSION = 1
+TRAINING_SCHEMA = "scpn-fusion.machine-conditioned-equilibrium-surrogate-training.v2"
+OPTIMIZER_RECOVERY_SCHEMA = "scpn-fusion.machine-conditioned-adam-recovery.v2"
+OPTIMIZER_CHECKPOINT_VERSION = 2
 MAX_OPTIMIZER_RECOVERY_BYTES = 2 * 1024 * 1024
 DEFAULT_HIDDEN_SIZES = (512, 256, 128)
 DEFAULT_PCA_COMPONENTS = 64
@@ -93,6 +93,47 @@ def model_forward(params: Params, features: jax.Array) -> jax.Array:
 def _mse(params: Params, features: jax.Array, targets: jax.Array) -> jax.Array:
     predictions = vmap(lambda row: model_forward(params, row))(features)
     return jnp.mean(jnp.square(predictions - targets))
+
+
+def hybrid_latent_loss(
+    predictions: jax.Array,
+    targets: jax.Array,
+    component_weights: jax.Array,
+    sample_weights: jax.Array,
+    field_loss_weight: float,
+) -> jax.Array:
+    """Blend standardized latent MSE with a relative field-aligned objective.
+
+    Orthonormal PCA makes squared raw-latent error equal to squared error in
+    the reconstructible field subspace. ``component_weights`` undo latent
+    standardization, while ``sample_weights`` divide by each field's squared
+    norm. Both weight vectors are scaled by training-only constants so this
+    objective remains numerically comparable to standardized latent MSE.
+    """
+    squared_error = jnp.square(predictions - targets)
+    standardized_mse = jnp.mean(squared_error)
+    field_aligned_mse = jnp.mean(
+        sample_weights * jnp.mean(squared_error * component_weights, axis=1)
+    )
+    return (1.0 - field_loss_weight) * standardized_mse + (field_loss_weight * field_aligned_mse)
+
+
+def _hybrid_objective(
+    params: Params,
+    features: jax.Array,
+    targets: jax.Array,
+    component_weights: jax.Array,
+    sample_weights: jax.Array,
+    field_loss_weight: float,
+) -> jax.Array:
+    predictions = vmap(lambda row: model_forward(params, row))(features)
+    return hybrid_latent_loss(
+        predictions,
+        targets,
+        component_weights,
+        sample_weights,
+        field_loss_weight,
+    )
 
 
 @jax.jit
@@ -152,9 +193,95 @@ def adam_step(
 
 
 @jax.jit
+def hybrid_adam_step(
+    params: Params,
+    first_moment: Params,
+    second_moment: Params,
+    features: jax.Array,
+    targets: jax.Array,
+    component_weights: jax.Array,
+    sample_weights: jax.Array,
+    field_loss_weight: float,
+    learning_rate: float,
+    gradient_clip: float,
+    step: int,
+) -> tuple[Params, Params, Params, jax.Array]:
+    """Run one deterministic full-batch Adam update on the hybrid objective."""
+    loss, gradients = value_and_grad(_hybrid_objective)(
+        params,
+        features,
+        targets,
+        component_weights,
+        sample_weights,
+        field_loss_weight,
+    )
+    gradients = cast(
+        Params,
+        jax.tree_util.tree_map(
+            lambda gradient: jnp.clip(gradient, -gradient_clip, gradient_clip), gradients
+        ),
+    )
+    beta_1, beta_2, epsilon = 0.9, 0.999, 1.0e-8
+    first_moment = cast(
+        Params,
+        jax.tree_util.tree_map(
+            lambda moment, gradient: beta_1 * moment + (1.0 - beta_1) * gradient,
+            first_moment,
+            gradients,
+        ),
+    )
+    second_moment = cast(
+        Params,
+        jax.tree_util.tree_map(
+            lambda moment, gradient: beta_2 * moment + (1.0 - beta_2) * gradient * gradient,
+            second_moment,
+            gradients,
+        ),
+    )
+    corrected_first = jax.tree_util.tree_map(
+        lambda moment: moment / (1.0 - beta_1**step), first_moment
+    )
+    corrected_second = jax.tree_util.tree_map(
+        lambda moment: moment / (1.0 - beta_2**step), second_moment
+    )
+    params = cast(
+        Params,
+        jax.tree_util.tree_map(
+            lambda parameter, moment_1, moment_2: (
+                parameter - learning_rate * moment_1 / (jnp.sqrt(moment_2) + epsilon)
+            ),
+            params,
+            corrected_first,
+            corrected_second,
+        ),
+    )
+    return params, first_moment, second_moment, loss
+
+
+@jax.jit
 def validation_mse(params: Params, features: jax.Array, targets: jax.Array) -> jax.Array:
     """Evaluate normalized latent validation MSE."""
     return _mse(params, features, targets)
+
+
+@jax.jit
+def validation_hybrid_loss(
+    params: Params,
+    features: jax.Array,
+    targets: jax.Array,
+    component_weights: jax.Array,
+    sample_weights: jax.Array,
+    field_loss_weight: float,
+) -> jax.Array:
+    """Evaluate the selection objective on validation rows only."""
+    return _hybrid_objective(
+        params,
+        features,
+        targets,
+        component_weights,
+        sample_weights,
+        field_loss_weight,
+    )
 
 
 def _serialize_params(payload: dict[str, Any], prefix: str, params: Params) -> None:
@@ -180,9 +307,14 @@ def _optimizer_identity(
     data: MachineConditionedTrainingData,
     train_indices: IndexArray,
     validation_indices: IndexArray,
+    calibration_indices: IndexArray,
+    test_indices: IndexArray,
     pca_checkpoint_sha256: str,
     seed: int,
     validation_fraction: float,
+    calibration_fraction: float,
+    test_fraction: float,
+    field_loss_weight: float,
     hidden_sizes: tuple[int, ...],
     learning_rate: float,
     gradient_clip: float,
@@ -202,9 +334,14 @@ def _optimizer_identity(
         "fields_sha256": np.asarray([data.fields_sha256]),
         "train_indices_sha256": np.asarray([array_sha256(train_indices)]),
         "validation_indices_sha256": np.asarray([array_sha256(validation_indices)]),
+        "calibration_indices_sha256": np.asarray([array_sha256(calibration_indices)]),
+        "test_indices_sha256": np.asarray([array_sha256(test_indices)]),
         "pca_checkpoint_sha256": np.asarray([pca_checkpoint_sha256]),
         "seed": np.asarray([seed], dtype=np.int64),
         "validation_fraction": np.asarray([validation_fraction], dtype=np.float64),
+        "calibration_fraction": np.asarray([calibration_fraction], dtype=np.float64),
+        "test_fraction": np.asarray([test_fraction], dtype=np.float64),
+        "field_loss_weight": np.asarray([field_loss_weight], dtype=np.float64),
         "hidden_sizes": np.asarray(hidden_sizes, dtype=np.int64),
         "learning_rate": np.asarray([learning_rate], dtype=np.float64),
         "gradient_clip": np.asarray([gradient_clip], dtype=np.float64),
@@ -335,6 +472,19 @@ def _encode_fields(
     return latent
 
 
+def _field_norm_squared(
+    fields: FloatArray,
+    indices: IndexArray,
+    *,
+    chunk_rows: int,
+) -> FloatArray:
+    """Compute per-row field norms without materialising the indexed cohort."""
+    norms = np.empty(len(indices), dtype=np.float64)
+    for start, stop, rows in iter_field_rows(fields, indices, chunk_rows=chunk_rows):
+        norms[start:stop] = np.einsum("ij,ij->i", rows, rows)
+    return np.maximum(norms, 1.0e-30)
+
+
 def _field_metrics(
     *,
     pca: StreamingPCAState,
@@ -346,7 +496,7 @@ def _field_metrics(
     indices: IndexArray,
     true_latent: FloatArray,
     chunk_rows: int,
-) -> dict[str, float]:
+) -> tuple[dict[str, float], FloatArray]:
     squared_error = 0.0
     elements = 0
     relative_l2: list[float] = []
@@ -381,7 +531,7 @@ def _field_metrics(
     }
     if params is not None:
         metrics["latent_rmse"] = float(np.sqrt(squared_latent_error / max(latent_elements, 1)))
-    return metrics
+    return metrics, np.asarray(relative_l2, dtype=np.float64)
 
 
 def run_training(
@@ -392,7 +542,10 @@ def run_training(
     checkpoint_dir: Path,
     epochs: int,
     seed: int = 42,
-    validation_fraction: float = 0.2,
+    validation_fraction: float = 0.10,
+    calibration_fraction: float = 0.05,
+    test_fraction: float = 0.05,
+    field_loss_weight: float = 0.9,
     n_components: int = DEFAULT_PCA_COMPONENTS,
     pca_oversampling: int = DEFAULT_PCA_OVERSAMPLING,
     pca_power_iterations: int = DEFAULT_PCA_POWER_ITERATIONS,
@@ -415,15 +568,24 @@ def run_training(
         or gradient_clip <= 0.0
         or n_components < 1
         or any(size < 1 for size in hidden_sizes)
+        or not 0.0 <= field_loss_weight <= 1.0
     ):
         raise ValueError("training hyperparameters must be positive")
     started = time.perf_counter()
     data = load_machine_conditioned_training_data(dataset_dir, full_field_scan=True)
     if len(data.inputs) < 5:
         raise ValueError("successor training requires at least five authenticated samples")
-    train_indices, validation_indices = deterministic_split(
-        len(data.inputs), validation_fraction=validation_fraction, seed=seed
+    split = deterministic_four_way_split(
+        len(data.inputs),
+        validation_fraction=validation_fraction,
+        calibration_fraction=calibration_fraction,
+        test_fraction=test_fraction,
+        seed=seed,
     )
+    train_indices = split.training
+    validation_indices = split.validation
+    calibration_indices = split.calibration
+    test_indices = split.test
     actual_components = min(n_components, len(train_indices) - 1, int(np.prod(data.grid_shape)))
     pca_source_paths = (
         Path(__file__).resolve(),
@@ -436,6 +598,8 @@ def run_training(
         "fields_sha256": data.fields_sha256,
         "train_indices_sha256": array_sha256(train_indices),
         "validation_indices_sha256": array_sha256(validation_indices),
+        "calibration_indices_sha256": array_sha256(calibration_indices),
+        "test_indices_sha256": array_sha256(test_indices),
         "n_components": actual_components,
         "oversampling": pca_oversampling,
         "power_iterations": pca_power_iterations,
@@ -468,11 +632,20 @@ def run_training(
         "split": {
             "seed": seed,
             "validation_fraction": validation_fraction,
+            "calibration_fraction": calibration_fraction,
+            "test_fraction": test_fraction,
             "training_samples": len(train_indices),
             "validation_samples": len(validation_indices),
+            "calibration_samples": len(calibration_indices),
+            "test_samples": len(test_indices),
             "train_indices_sha256": array_sha256(train_indices),
             "validation_indices_sha256": array_sha256(validation_indices),
+            "calibration_indices_sha256": array_sha256(calibration_indices),
+            "test_indices_sha256": array_sha256(test_indices),
             "transforms_fit_on": "training_indices_only",
+            "model_selection_on": "validation_indices_only",
+            "uncertainty_calibration_on": "calibration_indices_after_selection_only",
+            "final_evaluation_on": "test_indices_after_selection_only",
         },
         "recovery": {
             "checkpoint_dir": str(checkpoint_dir),
@@ -511,13 +684,35 @@ def run_training(
     validation_latent_norm = np.asarray(
         (validation_latent - latent_mean) / latent_std, dtype=np.float64
     )
+    train_field_norm_squared = _field_norm_squared(
+        data.fields, train_indices, chunk_rows=pca_chunk_rows
+    )
+    validation_field_norm_squared = _field_norm_squared(
+        data.fields, validation_indices, chunk_rows=pca_chunk_rows
+    )
+    field_norm_reference = float(np.mean(train_field_norm_squared))
+    component_weight_scale = float(np.mean(latent_std * latent_std))
+    component_weights = np.asarray(
+        (latent_std * latent_std) / component_weight_scale, dtype=np.float64
+    )
+    train_sample_weights = np.asarray(
+        field_norm_reference / train_field_norm_squared, dtype=np.float64
+    )
+    validation_sample_weights = np.asarray(
+        field_norm_reference / validation_field_norm_squared, dtype=np.float64
+    )
     identity = _optimizer_identity(
         data=data,
         train_indices=train_indices,
         validation_indices=validation_indices,
+        calibration_indices=calibration_indices,
+        test_indices=test_indices,
         pca_checkpoint_sha256=pca_checkpoint_sha256,
         seed=seed,
         validation_fraction=validation_fraction,
+        calibration_fraction=calibration_fraction,
+        test_fraction=test_fraction,
+        field_loss_weight=field_loss_weight,
         hidden_sizes=hidden_sizes,
         learning_rate=learning_rate,
         gradient_clip=gradient_clip,
@@ -563,16 +758,22 @@ def run_training(
     y_train_jax = jnp.asarray(train_latent_norm)
     x_validation_jax = jnp.asarray(x_validation_norm)
     y_validation_jax = jnp.asarray(validation_latent_norm)
+    component_weights_jax = jnp.asarray(component_weights)
+    train_sample_weights_jax = jnp.asarray(train_sample_weights)
+    validation_sample_weights_jax = jnp.asarray(validation_sample_weights)
     stopped_early = without_improvement >= early_stopping_patience
     first_epoch = epochs if stopped_early else completed_epochs
     for epoch in range(first_epoch, epochs):
         step = epoch + 1
-        params, first_moment, second_moment, loss = adam_step(
+        params, first_moment, second_moment, loss = hybrid_adam_step(
             params,
             first_moment,
             second_moment,
             x_train_jax,
             y_train_jax,
+            component_weights_jax,
+            train_sample_weights_jax,
+            field_loss_weight,
             learning_rate,
             gradient_clip,
             step,
@@ -581,7 +782,16 @@ def run_training(
         completed_epochs = step
         evaluate = step == 1 or step % evaluation_every == 0 or step == epochs
         if evaluate:
-            current_validation = float(validation_mse(params, x_validation_jax, y_validation_jax))
+            current_validation = float(
+                validation_hybrid_loss(
+                    params,
+                    x_validation_jax,
+                    y_validation_jax,
+                    component_weights_jax,
+                    validation_sample_weights_jax,
+                    field_loss_weight,
+                )
+            )
             evaluation_epochs.append(step)
             training_losses.append(final_training_loss)
             validation_losses.append(current_validation)
@@ -623,7 +833,19 @@ def run_training(
 
     if best_epoch < 1 or not np.isfinite(best_validation_loss):
         raise RuntimeError("training produced no finite validation selection")
-    pca_only_metrics = _field_metrics(
+
+    # These partitions are first transformed and inspected only after the
+    # validation-selected parameter state is frozen.
+    calibration_latent = _encode_fields(
+        pca, data.fields, calibration_indices, chunk_rows=pca_chunk_rows
+    )
+    test_latent = _encode_fields(pca, data.fields, test_indices, chunk_rows=pca_chunk_rows)
+    x_calibration = np.asarray(data.inputs[calibration_indices], dtype=np.float64)
+    x_test = np.asarray(data.inputs[test_indices], dtype=np.float64)
+    x_calibration_norm = np.asarray((x_calibration - input_mean) / input_std, dtype=np.float64)
+    x_test_norm = np.asarray((x_test - input_mean) / input_std, dtype=np.float64)
+
+    pca_validation_metrics, _ = _field_metrics(
         pca=pca,
         params=None,
         normalized_inputs=None,
@@ -634,7 +856,7 @@ def run_training(
         true_latent=validation_latent,
         chunk_rows=pca_chunk_rows,
     )
-    model_metrics = _field_metrics(
+    validation_metrics, _ = _field_metrics(
         pca=pca,
         params=best_params,
         normalized_inputs=x_validation_norm,
@@ -645,6 +867,46 @@ def run_training(
         true_latent=validation_latent,
         chunk_rows=pca_chunk_rows,
     )
+    calibration_metrics, calibration_scores = _field_metrics(
+        pca=pca,
+        params=best_params,
+        normalized_inputs=x_calibration_norm,
+        latent_mean=latent_mean,
+        latent_std=latent_std,
+        fields=data.fields,
+        indices=calibration_indices,
+        true_latent=calibration_latent,
+        chunk_rows=pca_chunk_rows,
+    )
+    pca_test_metrics, _ = _field_metrics(
+        pca=pca,
+        params=None,
+        normalized_inputs=None,
+        latent_mean=latent_mean,
+        latent_std=latent_std,
+        fields=data.fields,
+        indices=test_indices,
+        true_latent=test_latent,
+        chunk_rows=pca_chunk_rows,
+    )
+    test_metrics, test_scores = _field_metrics(
+        pca=pca,
+        params=best_params,
+        normalized_inputs=x_test_norm,
+        latent_mean=latent_mean,
+        latent_std=latent_std,
+        fields=data.fields,
+        indices=test_indices,
+        true_latent=test_latent,
+        chunk_rows=pca_chunk_rows,
+    )
+    conformal_alpha = 0.05
+    conformal_rank = min(
+        len(calibration_scores),
+        int(np.ceil((len(calibration_scores) + 1) * (1.0 - conformal_alpha))),
+    )
+    conformal_bound = float(np.sort(calibration_scores)[conformal_rank - 1])
+    conformal_test_coverage = float(np.mean(test_scores <= conformal_bound))
     weights_payload: dict[str, Any] = {
         "n_components": np.asarray([actual_components], dtype=np.int64),
         "grid_nh": np.asarray([data.grid_shape[0]], dtype=np.int64),
@@ -662,6 +924,11 @@ def run_training(
         "dataset_manifest_sha256": np.asarray([data.manifest_sha256]),
         "training_schema": np.asarray([TRAINING_SCHEMA]),
         "selected_epoch": np.asarray([best_epoch], dtype=np.int64),
+        "field_loss_weight": np.asarray([field_loss_weight], dtype=np.float64),
+        "train_indices_sha256": np.asarray([array_sha256(train_indices)]),
+        "validation_indices_sha256": np.asarray([array_sha256(validation_indices)]),
+        "calibration_indices_sha256": np.asarray([array_sha256(calibration_indices)]),
+        "test_indices_sha256": np.asarray([array_sha256(test_indices)]),
         "source_sha256_names": identity["source_sha256_names"],
         "source_sha256_values": identity["source_sha256_values"],
     }
@@ -705,7 +972,8 @@ def run_training(
                 "power_iterations": pca_power_iterations,
                 "explained_variance_ratio_sum": float(np.sum(pca.explained_variance_ratio)),
                 "checkpoint_sha256": pca_checkpoint_sha256,
-                "validation_reconstruction": pca_only_metrics,
+                "validation_reconstruction": pca_validation_metrics,
+                "test_reconstruction": pca_test_metrics,
             },
             "training": {
                 "backend": jax.default_backend(),
@@ -715,7 +983,14 @@ def run_training(
                 "selected_epoch": best_epoch,
                 "stopped_early": stopped_early,
                 "final_training_loss": final_training_loss,
-                "best_validation_latent_mse": best_validation_loss,
+                "selection_objective": "hybrid_relative_field_aligned_and_standardized_latent_mse",
+                "field_loss_weight": field_loss_weight,
+                "standardized_latent_loss_weight": 1.0 - field_loss_weight,
+                "component_weight_contract": "latent_variance_over_mean_training_latent_variance",
+                "sample_weight_contract": "mean_training_field_norm_squared_over_row_field_norm_squared",
+                "field_norm_reference": field_norm_reference,
+                "component_weight_scale": component_weight_scale,
+                "best_validation_objective": best_validation_loss,
                 "evaluation_epochs": evaluation_epochs,
                 "training_losses": training_losses,
                 "validation_losses": validation_losses,
@@ -734,7 +1009,18 @@ def run_training(
                 },
                 "elapsed_seconds": elapsed,
             },
-            "held_out_validation": model_metrics,
+            "held_out_validation": validation_metrics,
+            "post_selection_calibration": calibration_metrics,
+            "untouched_final_test": test_metrics,
+            "conformal_relative_l2": {
+                "alpha": conformal_alpha,
+                "calibration_samples": len(calibration_scores),
+                "finite_sample_rank_one_based": conformal_rank,
+                "bound": conformal_bound,
+                "test_samples": len(test_scores),
+                "test_empirical_coverage": conformal_test_coverage,
+                "contract": "calibration relative-L2 nonconformity after validation selection",
+            },
             "artifact": {
                 "path": str(output_path),
                 "sha256": sha256_file(output_path),

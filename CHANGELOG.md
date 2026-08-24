@@ -4,6 +4,11 @@
 
 ### Added
 
+- Add a leakage-safe four-way machine-conditioned surrogate contract with
+  training-only transforms, validation-only selection, post-selection
+  calibration, untouched final testing, field-aligned PCA loss, finite-sample
+  relative-L2 conformal evidence, split-bound recovery, and production-runtime
+  parity checks.
 - Enforce generated language-native API documentation across every shipped
   FUSION surface: warning-denied Sphinx and Cargo doc, exported-declaration Go
   comment coverage plus `go doc` rendering, strict Julia Documenter output,

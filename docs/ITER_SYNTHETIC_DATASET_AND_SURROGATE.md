@@ -182,18 +182,30 @@ feature contract and model-selection problem are different.
 
 ## Machine-conditioned v2 successor training
 
-The successor trainer consumes only a fully authenticated v2 dataset. It uses a
-deterministic seed-42 80/20 split before fitting any transform. Input scaling,
-field mean, randomized PCA basis, and latent scaling are learned exclusively
-from the training indices; validation rows are used only for model selection
-and held-out metrics. The production 50,000-sample contract therefore contains
-40,000 training rows and 10,000 validation rows.
+The successor trainer consumes only a fully authenticated v2 dataset. Its v2
+training contract uses a deterministic seed-42 80/10/5/5 split before fitting
+any transform. Input scaling, field mean, randomized PCA basis, and latent
+scaling are learned exclusively from the 40,000 training rows. The 5,000
+validation rows select the epoch, 2,500 calibration rows construct post-hoc
+uncertainty evidence only after selection, and 2,500 final-test rows remain
+untouched until both model and epoch are frozen. Index hashes for all four roles
+are bound into recovery state, weights, and the report.
 
 The default model is a `17 -> 512 -> 256 -> 128 -> 64` float64 JAX MLP. The
 64-dimensional target is produced by recovery-safe streaming randomized PCA
 with 16 oversampling vectors and one power iteration. The implementation never
 forms the infeasible sample-by-sample Gram matrix and never materializes all
 50,000 fields as one in-memory matrix.
+
+The default loss is 90% field-aligned and 10% standardized-latent MSE. Because
+the PCA basis is orthonormal, raw latent squared error equals squared error in
+the reconstructible field subspace. Per-component weights undo latent
+standardization and per-row weights divide by the field norm; both are scaled
+only by training-set constants. This corrects the old objective's tendency to
+give equal importance to low-energy PCA tail modes. Validation uses the same
+declared objective. A finite-sample 95% split-conformal relative-L2 bound is
+then fitted on calibration residuals and its empirical coverage is reported on
+the untouched test partition.
 
 ```bash
 python tools/train_machine_conditioned_equilibrium_surrogate.py \
@@ -202,6 +214,10 @@ python tools/train_machine_conditioned_equilibrium_surrogate.py \
   --report artifacts/iter_machine_conditioned_retrain_local_20260824/report_local.json \
   --checkpoint-dir artifacts/iter_machine_conditioned_retrain_local_20260824/checkpoints \
   --epochs 20000 \
+  --validation-fraction 0.10 \
+  --calibration-fraction 0.05 \
+  --test-fraction 0.05 \
+  --field-loss-weight 0.9 \
   --pca-components 64 \
   --pca-oversampling 16 \
   --pca-power-iterations 1 \
@@ -224,18 +240,20 @@ python tools/train_machine_conditioned_equilibrium_surrogate.py \
   --resume
 ```
 
-Recovery identities bind the dataset and array hashes, split indices, PCA
-configuration and result, optimizer hyperparameters, and the exact trainer,
-PCA, and production-runtime source files. The final NPZ records the feature
-order, grid shape, transforms, network weights, selected epoch, dataset
-manifest hash, and source hashes. Before completion, the trainer loads that NPZ
-through `NeuralEquilibriumAccelerator`, performs a finite prediction, and checks
-its numerical parity with the training path.
+Recovery identities bind the dataset and array hashes, all four split-index
+hashes, loss contract, PCA configuration and result, optimizer hyperparameters,
+and the exact trainer, PCA, and production-runtime source files. The final NPZ
+records the feature order, grid shape, transforms, network weights, selected
+epoch, split hashes, dataset manifest hash, and source hashes. Before
+completion, the trainer loads that NPZ through
+`NeuralEquilibriumAccelerator`, performs a finite prediction, and checks its
+numerical parity with the training path.
 
 The report deliberately labels every output
-`completed_local_candidate_not_promoted`. Selection requires the held-out
-latent loss, full-field RMSE and relative-L2 distribution, the PCA-only
-validation floor, and runtime parity. A good synthetic validation result does
+`completed_local_candidate_not_promoted`. Selection requires the validation
+objective; reporting separately exposes full-field RMSE and relative-L2 on
+validation, calibration, and final test, the PCA-only test floor, conformal
+coverage, and runtime parity. A good synthetic final-test result does
 not make the artifact facility-validated, free-boundary capable, or an IDA/EFIT
 replacement. Dataset, checkpoints, candidate weights, and reports remain local
 until an owner-approved large-artifact publication endpoint is chosen; Git

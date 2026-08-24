@@ -36,7 +36,15 @@ def run_training_cli(
     parser.add_argument("--checkpoint-dir", type=Path, required=True)
     parser.add_argument("--epochs", type=int, default=default_epochs)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--validation-fraction", type=float, default=0.2)
+    parser.add_argument("--validation-fraction", type=float, default=0.10)
+    parser.add_argument("--calibration-fraction", type=float, default=0.05)
+    parser.add_argument("--test-fraction", type=float, default=0.05)
+    parser.add_argument(
+        "--field-loss-weight",
+        type=float,
+        default=0.9,
+        help="Hybrid weight on the relative field-aligned objective (0..1).",
+    )
     parser.add_argument("--pca-components", type=int, default=default_pca_components)
     parser.add_argument("--pca-oversampling", type=int, default=default_pca_oversampling)
     parser.add_argument("--pca-power-iterations", type=int, default=default_pca_power_iterations)
@@ -55,6 +63,9 @@ def run_training_cli(
         epochs=args.epochs,
         seed=args.seed,
         validation_fraction=args.validation_fraction,
+        calibration_fraction=args.calibration_fraction,
+        test_fraction=args.test_fraction,
+        field_loss_weight=args.field_loss_weight,
         n_components=args.pca_components,
         pca_oversampling=args.pca_oversampling,
         pca_power_iterations=args.pca_power_iterations,
