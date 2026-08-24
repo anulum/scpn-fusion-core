@@ -475,7 +475,7 @@
       },
       "dataset_contract": {
         "path": "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
-        "sha256": "1bbb6e7cb110e8a621ce719eb994cd999698637517432c6ec16c9a3177472343"
+        "sha256": "5668d917e2d45bf3e31b3dc57aabcebe6907f642b68567b367c78c6c977bafc6"
       },
       "generation_spec": {
         "path": "validation/iter_machine_conditioned_v2_spec.json",
@@ -483,7 +483,7 @@
       },
       "generator": {
         "path": "tools/generate_iter_machine_conditioned_dataset.py",
-        "sha256": "ee8e84bb97fd0ea0f5985b6f90686548d1a95431f95903a973c5130f8db4936b"
+        "sha256": "291764a3d1ee386f782a217f4b0584407574e58a2cc9f1f243fa2850e6eb4d34"
       },
       "predictive_solver": {
         "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
@@ -491,7 +491,7 @@
       },
       "recovery_store": {
         "path": "src/scpn_fusion/io/recoverable_npy_dataset.py",
-        "sha256": "a76844103c157460c60456d29db44b1a00029fe0fd3cd2733993b2781e6e469c"
+        "sha256": "5c32a8edbd7547ad7cc2b59aa976094b1bb6b3d8c491807e587ae0cc6e897b5a"
       }
     },
     "repository": "https://github.com/anulum/scpn-fusion-core",

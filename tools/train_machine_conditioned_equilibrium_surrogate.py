@@ -95,7 +95,7 @@ def _mse(params: Params, features: jax.Array, targets: jax.Array) -> jax.Array:
     return jnp.mean(jnp.square(predictions - targets))
 
 
-@jax.jit  # type: ignore[untyped-decorator]
+@jax.jit
 def adam_step(
     params: Params,
     first_moment: Params,
@@ -151,7 +151,7 @@ def adam_step(
     return params, first_moment, second_moment, loss
 
 
-@jax.jit  # type: ignore[untyped-decorator]
+@jax.jit
 def validation_mse(params: Params, features: jax.Array, targets: jax.Array) -> jax.Array:
     """Evaluate normalized latent validation MSE."""
     return _mse(params, features, targets)
