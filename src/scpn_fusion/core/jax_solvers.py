@@ -36,6 +36,7 @@ try:
     import jax.numpy as jnp
     from jax import lax
 
+    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
     _HAS_JAX = True
 except ImportError:
     jax = None  # type: ignore[assignment]
@@ -243,6 +244,67 @@ if _HAS_JAX:
 
 
 # ── Public API ────────────────────────────────────────────────────
+
+
+def crank_nicolson_step_jax(
+    T: Any,
+    chi: Any,
+    source: Any,
+    rho: Any,
+    drho: Any,
+    dt: Any,
+    T_edge: Any = 0.1,
+) -> Any:
+    """Advance one profile through the differentiable JAX CN kernel.
+
+    This is the JAX-native counterpart of :func:`crank_nicolson_step`. It
+    retains JAX arrays on the selected device and does not convert the result
+    through NumPy, so gradients propagate through temperature, diffusivity,
+    source, time step, and edge value.
+
+    Parameters
+    ----------
+    T : array-like
+        Temperature profile of length ``n`` in keV.
+    chi : array-like
+        Diffusivity profile of length ``n`` in m²/s.
+    source : array-like
+        Net temperature source profile of length ``n`` in keV/s.
+    rho : array-like
+        Strictly increasing uniform radial grid.
+    drho : scalar
+        Uniform radial spacing.
+    dt : scalar
+        Positive time step in seconds.
+    T_edge : scalar, default=0.1
+        Prescribed outer-edge temperature in keV.
+
+    Returns
+    -------
+    jax.Array
+        Updated float64 temperature profile on the active JAX device.
+
+    Raises
+    ------
+    RuntimeError
+        If the optional JAX backend is unavailable.
+
+    Notes
+    -----
+    Callers needing input validation should use
+    :func:`scpn_fusion.core.jax_transport_solver.transport_step_checked`.
+    """
+    if not _HAS_JAX or jnp is None:
+        raise RuntimeError("JAX transport requested but JAX is unavailable.")
+    return _cn_step_jax(
+        jnp.asarray(T, dtype=jnp.float64),
+        jnp.asarray(chi, dtype=jnp.float64),
+        jnp.asarray(source, dtype=jnp.float64),
+        jnp.asarray(rho, dtype=jnp.float64),
+        drho,
+        dt,
+        T_edge,
+    )
 
 
 def thomas_solve(

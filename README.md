@@ -166,7 +166,7 @@ checksums, thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 64 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 613 |
+| Python test files | 615 |
 | Public documentation pages | 64 |
 | GitHub Actions workflows | 15 |
 

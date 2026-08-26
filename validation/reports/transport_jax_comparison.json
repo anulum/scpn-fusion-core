@@ -1,0 +1,207 @@
+{
+  "benchmark": "cylindrical_transport_jax_vs_numpy",
+  "case": {
+    "case_sha256": "dc1d96d736149fda00f3c1a70be7014ad3a8f185b0f14dce525469d6024bc4d0",
+    "diffusivity_m2_s": 1.0,
+    "dt_s": 0.001,
+    "edge_temperature_kev": 0.1,
+    "initial_condition": "0.1 + 0.9*J0(2.404825557695773*rho)",
+    "nodes": 129,
+    "precision": "float64",
+    "sources": "zero",
+    "steps": 10,
+    "timed_scope": "construct backend state, transfer inputs, execute 10 public steps, and transfer/read the final profile"
+  },
+  "command": ".venv/bin/python benchmarks/bench_transport_jax.py",
+  "correctness": {
+    "analytic_rmse_kev": 1.050047556893281e-06,
+    "analytic_rmse_kev_limit": 2.2829306504541543e-06,
+    "edge_exact": true,
+    "finite_positive_profiles": true,
+    "jax_profile_sha256": "123fbd27d74d074da926b542bac6f441ec74c1277f5d0c5c86f87ab5ab0519fb",
+    "maximum_profile_difference_kev": 0.0,
+    "maximum_profile_difference_kev_limit": 2e-14,
+    "numpy_profile_sha256": "123fbd27d74d074da926b542bac6f441ec74c1277f5d0c5c86f87ab5ab0519fb",
+    "passes": true,
+    "source_gradient": {
+      "autodiff": 0.006517294437844264,
+      "central_finite_difference": 0.006517294437458076,
+      "finite_difference_epsilon": 1e-05,
+      "passes": true,
+      "relative_error": 5.925595056915533e-11,
+      "relative_error_limit": 0.01,
+      "source_amplitude_kev_s": 0.2
+    }
+  },
+  "disclosure": {
+    "classification": "local_machine_observation",
+    "interpretation": "The ratio is the observed result on the disclosed local machine. It is not a portable performance guarantee.",
+    "portable_performance_claim_admitted": false,
+    "timing_excludes": [
+      "module import"
+    ],
+    "timing_includes": [
+      "backend array construction",
+      "host-to-device transfer for JAX",
+      "one compiled public rollout containing 10 solver steps",
+      "device synchronization",
+      "final device-to-host transfer/readback"
+    ]
+  },
+  "environment": {
+    "affinity_cpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "cpu_model": "11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz",
+    "governors": {
+      "powersave": 12
+    },
+    "jax": "0.7.1",
+    "jax_default_backend": "gpu",
+    "jax_devices": [
+      {
+        "device_kind": "NVIDIA GeForce GTX 1060 6GB",
+        "id": 0,
+        "platform": "gpu"
+      }
+    ],
+    "jax_enable_x64": true,
+    "jaxlib": "0.7.1",
+    "load_average_after": [
+      10.37158203125,
+      9.4345703125,
+      10.95703125
+    ],
+    "load_average_before": [
+      9.70751953125,
+      9.28955078125,
+      10.9189453125
+    ],
+    "logical_cpu_count": 12,
+    "machine": "x86_64",
+    "memory_total_bytes": 33422110720,
+    "numpy": "1.26.4",
+    "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
+    "process_count": 933,
+    "python": "3.12.3",
+    "scipy": "1.15.3",
+    "source_sha256": {
+      "benchmark": "cdbb79439a51ba15336105ff8783942445bb8a058c7dc281a613f7ac96fc1715",
+      "benchmark_common": "935fe25f5f982e743989d40e20dd6e3b6f0201dd19378db42abefdb1faaa9e26",
+      "canonical_operator": "31b5c1636e88b9b16498028b1f0fc0a4637b5b6381d90791752f1657f655bbdf",
+      "jax_transport": "85a1cc13b9fa59667694d4d31368c57ec411239875017b56037babde007892ec"
+    },
+    "thread_environment": {}
+  },
+  "gate": {
+    "candidate_build_verified": true,
+    "correctness_passes": true,
+    "passes": true
+  },
+  "generated_at": "2026-08-26T04:12:41.136759+02:00",
+  "schema": "scpn-fusion-core.polyglot-performance-comparison.v1",
+  "timing": {
+    "discarded_warmups": 10,
+    "numpy_over_candidate_ratio": 0.1375703304376458,
+    "paired_order": "alternating NumPy-JAX and JAX-NumPy pairs",
+    "rows": [
+      {
+        "backend": "numpy",
+        "build_profile": "CPython/NumPy",
+        "cold_sample_s": 0.004188955,
+        "implementation": "scpn_fusion.core.jax_solvers.crank_nicolson_step(use_jax=False)",
+        "language": "Python",
+        "warm_median_s": 0.004644339,
+        "warm_p05_s": 0.0042555710000000005,
+        "warm_p95_s": 0.0058394485,
+        "warm_samples_s": [
+          0.004316445,
+          0.004350758000000001,
+          0.004356388,
+          0.005202761,
+          0.004451783,
+          0.004309753,
+          0.004734797000000001,
+          0.005621022000000001,
+          0.0048053900000000005,
+          0.0045386720000000005,
+          0.00470157,
+          0.005335408000000001,
+          0.004623637,
+          0.0055303520000000005,
+          0.007270043,
+          0.004848365,
+          0.004836496,
+          0.0044889100000000005,
+          0.00452166,
+          0.004288484,
+          0.004184513,
+          0.006057875000000001,
+          0.0048407780000000004,
+          0.004666480000000001,
+          0.005434651,
+          0.004644339,
+          0.005434136,
+          0.0045830490000000005,
+          0.004627781,
+          0.004387499,
+          0.004222658000000001
+        ]
+      },
+      {
+        "backend": "jax",
+        "build_profile": "JAX float64/gpu",
+        "cold_sample_s": 0.9430071640000001,
+        "implementation": "scpn_fusion.core.jax_transport_solver.simulate_scenario_jax",
+        "language": "JAX/XLA via Python",
+        "warm_median_s": 0.033759743,
+        "warm_p05_s": 0.030790580000000005,
+        "warm_p95_s": 0.038697058500000006,
+        "warm_samples_s": [
+          0.032334376000000005,
+          0.030848871000000003,
+          0.030849241000000003,
+          0.031574235,
+          0.031069567000000003,
+          0.030732289000000003,
+          0.035080045000000004,
+          0.034396288000000004,
+          0.039667222,
+          0.036492932000000006,
+          0.032004578,
+          0.031186710000000003,
+          0.03152879,
+          0.035720163,
+          0.038275291,
+          0.032548195,
+          0.032884763000000004,
+          0.032129910000000005,
+          0.034185642,
+          0.030498134000000003,
+          0.036551084000000005,
+          0.034599208,
+          0.035053359,
+          0.035106423000000005,
+          0.035238161000000004,
+          0.03467316,
+          0.034803547000000004,
+          0.031207731000000002,
+          0.033759743,
+          0.039118826,
+          0.031874388000000003
+        ]
+      }
+    ]
+  }
+}

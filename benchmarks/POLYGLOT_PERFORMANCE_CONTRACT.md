@@ -53,6 +53,23 @@ The command writes:
 - `validation/reports/transport_polyglot_comparison.json`
 - `validation/reports/transport_polyglot_comparison.md`
 
+The reconciled differentiable transport rollout compares JAX/XLA with its
+canonical NumPy tier:
+
+```bash
+.venv/bin/python benchmarks/bench_transport_jax.py
+```
+
+The command writes:
+
+- `validation/reports/transport_jax_comparison.json`
+- `validation/reports/transport_jax_comparison.md`
+
+For small device-backed workloads, transfer and synchronization costs can make
+an accelerator slower than NumPy. The automatic runtime order must follow the
+retained same-scope result; callers can still request an available reconciled
+backend explicitly when they require its differentiability or device semantics.
+
 ## Interpretation
 
 The report may state the observed ratio on the disclosed machine. It must not

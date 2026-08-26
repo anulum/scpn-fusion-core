@@ -67,7 +67,7 @@ test, documentation, and workflow surfaces.
  └──────────┘                      └────────────────────────────┬───────────────────────────────┘      └──────────────┘
                                                                 │
                             ┌──────────────────── MULTI-BACKEND DISPATCH FLOOR ────────────────────┐
-                            │  core/_multi_compat.py  ·  fastest-first: RUST → … → JAX → NUMPY      │
+                            │  core/_multi_compat.py · default RUST → … → JAX → NUMPY + evidence order │
                             │  Rust tier: scpn-fusion-rs (PyO3)   ·   NumPy: always-available floor  │
                             └──────────────────────────────────┬──────────────────────────────────┘
                                                                │
@@ -86,10 +86,15 @@ subsystem map.
 ## 3. Backends and wiring
 
 The package separates **physics contracts** (Python reference implementations) from
-**acceleration tiers**. The NumPy reference path is always available; faster tiers are used
-when present.
+**acceleration tiers**. The NumPy reference path is always available; optional tiers are
+selected only when they are present and first in the retained kernel-specific order.
 
 ### 3.1 The fastest-first dispatcher (`core/_multi_compat.py`)
+
+The tier enumeration supplies the default order. A reconciled kernel may retain
+a different per-kernel order when its same-case benchmark demonstrates that
+dispatch or transfer overhead changes the ordering. Explicit tier requests are
+fail-closed and bypass fallback.
 
 A `BackendTier` priority enum orders accelerators fastest→slowest:
 
@@ -98,8 +103,9 @@ RUST (0) → GPU (1) → MOJO (2) → JULIA (3) → GO (4) → JAX (5) → NUMPY
 ```
 
 `register_kernel(name, tier, provider)` registers a provider for a kernel at a tier;
-`dispatch(name)` returns the fastest **available** provider, probing once and caching the
-winner, and records a `fallback_telemetry` event when a non-fastest tier is selected.
+`dispatch(name)` returns the first **available** provider in the retained order, probing
+once and caching the winner. Kernels without an evidence override use the default order.
+Selection records a `fallback_telemetry` event when the first-choice tier is unavailable.
 `register_kernel_class` / `dispatch_kernel_class` do the same for stateful backends (the
 equilibrium kernel), using lazy loader thunks to break import cycles.
 Rust-only extension symbols without a NumPy floor are resolved through
@@ -108,7 +114,7 @@ Rust-only extension symbols without a NumPy floor are resolved through
 
 **Currently registered tiers (verified):**
 
-| Kernel | Rust tier | NumPy tier | Notes |
+| Kernel | Optional/native tier | NumPy tier | Notes |
 |---|---|---|---|
 | `equilibrium_kernel` (class) | `RustAcceleratedKernel` | `FusionKernel` | drop-in swap; Grad-Shafranov solve |
 | `hall_mhd_discovery` (class) | `PyHallMHD` | `HallMHD` | reconciled reduced Hall-MHD; statistically equivalent seeded trajectories |
@@ -120,6 +126,7 @@ Rust-only extension symbols without a NumPy floor are resolved through
 | `kuramoto_step` | ✓ (`fusion-phase`) | ✓ | deterministic; agreement bounded by fp summation order (measured rel L2 ~1e-16) |
 | `upde_tick` / `upde_run` | ✓ (`fusion-phase`) | ✓ | flat multi-layer contract (non-uniform N); `upde_run` batches the whole loop behind one boundary crossing |
 | `gs_rb_sor_smooth` | GPU tier (`PyGpuSolver`, wgpu f32) | ✓ (`mg_smooth`, f64) | fixed-sweep Red-Black SOR of the toroidal GS* operator; f32-bounded agreement (rel L2 ~5e-6); GPU tier exists only when the extension is built with `--features gpu` AND a physical adapter passes the runtime probe |
+| `transport_cn_rollout` | JAX tier (explicit JAX/XLA rollout) | ✓ | reconciled cylindrical CN; local small-grid evidence order is NumPy → JAX |
 
 All dispatched kernels have a **NumPy floor** — the package runs with no Rust extension
 present. In addition, `diagnostics.PlasmaTomography.reconstruct` prefers the Rust
@@ -189,21 +196,28 @@ same pattern used for the Hall-MHD and tomography lanes.
 
 ### 3.3 JAX research tier
 
-The `jax_*` modules (`core/jax_gs_solver`, `jax_equilibrium_solver`, `jax_transport_solver`,
-`jax_solvers`, `jax_gk_solver`, `jax_gk_nonlinear`, `jax_neural_equilibrium`,
-`control/jax_traceable_runtime`) are **differentiable reference implementations** — JIT-compilable
-and GPU-capable, enabling `jax.grad` through full solves for sensitivity/optimisation. They are
-re-exported from `core/__init__` but are **not on the production dispatch path**; they are
-research/benchmark backends, not the canonical CPU floor (NumPy is).
+The `jax_*` modules (`core/jax_gs_solver`, `jax_equilibrium_solver`, `jax_solvers`,
+`jax_gk_solver`, `jax_gk_nonlinear`, `jax_neural_equilibrium`,
+`control/jax_traceable_runtime`) are generally **differentiable reference
+implementations**: JIT-compilable and GPU-capable, enabling `jax.grad` through
+full solves for sensitivity and optimisation. They remain explicit
+research/benchmark paths until each kernel is numerically reconciled and has a
+measured runtime consumer. NumPy remains the canonical CPU floor.
 
-This is a deliberate disposition (master-plan W-3), not an omission: (a) JAX is an OPTIONAL
-pinned extra, and a dispatch tier must not silently change production numerics based on which
-optional dependency happens to be installed; (b) none of the JAX solvers is contract-reconciled
-against its NumPy twin (each pair would need a Hall-MHD-style reconciliation before tier
-registration); (c) their value is differentiability, not throughput — the consumers are research
-scripts and the traceable-runtime validation lane (`validation/traceable_runtime_parity.py`),
-which exercises them explicitly. The `BackendTier.JAX` enum slot stays reserved for a future
-reconciled kernel; nothing registers it today.
+`core/jax_transport_solver` is the reconciled exception. Its checked public
+`simulate_transport_scenario` surface dispatches the `transport_cn_rollout`
+kernel across NumPy and JAX providers that share the conservative cylindrical
+Crank–Nicolson operator. `backend="jax"` explicitly selects the differentiable
+JAX/XLA rollout and fails closed if unavailable. `backend="auto"` follows the
+retained per-kernel evidence order; the published 129-node, 10-step local
+comparison currently places NumPy before JAX because GPU transfers dominate
+that workload. Accuracy, gradient and side-by-side timing evidence is retained
+in `validation/reports/transport_jax_comparison.{json,md}`.
+
+This disposition keeps optional-dependency installation from silently changing
+numerics or performance. The remaining JAX modules require the same parity,
+failure-semantics and cost evidence before registration; their explicit
+research consumers include `validation/traceable_runtime_parity.py`.
 
 ### 3.4 Native C++ bridge (`hpc/hpc_bridge.py`)
 

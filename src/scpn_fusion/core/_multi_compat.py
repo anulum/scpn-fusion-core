@@ -13,7 +13,9 @@ Probes available acceleration backends in priority order:
 
 Each backend tier is detected once at import time. Individual compute
 kernels register themselves via :func:`register_kernel` and callers use
-:func:`dispatch` to invoke the fastest available implementation.
+:func:`dispatch` to invoke the first available implementation in the retained
+per-kernel evidence order. Kernels without an override use the default tier
+order above.
 
 The dispatcher integrates with :mod:`scpn_fusion.fallback_telemetry` to
 record backend-selection events and enforce optional budget gates.
@@ -22,7 +24,7 @@ Usage::
 
     from scpn_fusion.core._multi_compat import dispatch, available_backends
 
-    # Get the fastest available GK nonlinear solver
+    # Get the first available GK nonlinear solver in its evidence order
     solver = dispatch("gk_nonlinear_step")
     result = solver(state, dt)
 
@@ -37,6 +39,7 @@ from __future__ import annotations
 import logging
 import os
 import threading
+from collections.abc import Sequence
 from importlib import import_module
 from importlib.util import find_spec
 from enum import IntEnum
@@ -50,7 +53,7 @@ logger = logging.getLogger(__name__)
 
 
 class BackendTier(IntEnum):
-    """Acceleration backend tiers, ordered fastest → slowest.
+    """Default acceleration tiers, ordered fastest → slowest.
 
     Ordering is *relative within each kernel's registered tiers*: a kernel
     only dispatches across the tiers actually registered for it. GPU sits
@@ -58,6 +61,8 @@ class BackendTier(IntEnum):
     colour per sweep plus PCIe transfers) dominates at production
     equilibrium grid sizes; per-kernel benchmarks decide where GPU is
     registered at all (see ``validation/reports/gpu_gs_solver_benchmark.json``).
+    A kernel may override this default through :func:`set_kernel_preference`
+    when its retained same-case benchmark proves a different ordering.
     """
 
     RUST = 0
@@ -202,10 +207,17 @@ def is_available(tier: BackendTier) -> bool:
 # Maps kernel_name → sorted list of (tier, callable)
 _registry_lock = threading.Lock()
 _registry: dict[str, list[tuple[BackendTier, Callable[..., Any]]]] = {}
+_kernel_preferences: dict[str, tuple[BackendTier, ...]] = {}
 
 # Tracks which tier was selected for each kernel on first dispatch
 _dispatch_cache: dict[str, tuple[BackendTier, Callable[..., Any]]] = {}
 _rust_symbol_cache: dict[str, tuple[int, Callable[..., object]]] = {}
+
+
+def _sort_kernel_entries(name: str) -> None:
+    preference = _kernel_preferences.get(name, ())
+    rank = {tier: index for index, tier in enumerate(preference)}
+    _registry[name].sort(key=lambda entry: (rank.get(entry[0], len(rank)), int(entry[0])))
 
 
 def _record_fallback_event_safe(
@@ -257,13 +269,88 @@ def register_kernel(
         if name not in _registry:
             _registry[name] = []
         _registry[name].append((tier, implementation))
-        _registry[name].sort(key=lambda x: x[0])
+        _sort_kernel_entries(name)
         # Invalidate dispatch cache for this kernel
         _dispatch_cache.pop(name, None)
 
 
+def set_kernel_preference(name: str, tiers: Sequence[BackendTier]) -> None:
+    """Set an evidence-backed backend order for one registered kernel.
+
+    Parameters
+    ----------
+    name : str
+        Registered kernel identifier.
+    tiers : sequence of BackendTier
+        Preferred order from first choice to last choice. Registered tiers not
+        listed here retain their default relative ordering after these entries.
+
+    Raises
+    ------
+    KeyError
+        If ``name`` or any requested tier is not registered.
+    ValueError
+        If ``tiers`` is empty or contains a duplicate.
+    """
+    ordered = tuple(tiers)
+    if not ordered:
+        raise ValueError("kernel preference requires at least one tier")
+    if len(set(ordered)) != len(ordered):
+        raise ValueError("kernel preference tiers must be unique")
+    with _registry_lock:
+        entries = _registry.get(name)
+        if entries is None:
+            raise KeyError(f"No implementations registered for kernel {name!r}")
+        registered = {tier for tier, _ in entries}
+        missing = [tier for tier in ordered if tier not in registered]
+        if missing:
+            labels = [_TIER_NAMES[tier] for tier in missing]
+            raise KeyError(f"Unregistered preferred tiers for {name!r}: {labels}")
+        _kernel_preferences[name] = ordered
+        _sort_kernel_entries(name)
+        _dispatch_cache.pop(name, None)
+
+
+def dispatch_for_tier(name: str, tier: BackendTier | str) -> Callable[..., Any]:
+    """Return one explicitly requested registered backend implementation.
+
+    Unlike :func:`dispatch`, this function never falls back. It is intended for
+    reproducibility, differentiation, and explicit backend comparisons where a
+    silent substitution would invalidate the caller's contract.
+
+    Raises
+    ------
+    ValueError
+        If a string tier name is unknown.
+    KeyError
+        If the kernel or requested tier is not registered.
+    RuntimeError
+        If the requested registered backend is unavailable.
+    """
+    _ensure_probed()
+    if isinstance(tier, str):
+        matches = [candidate for candidate, label in _TIER_NAMES.items() if label == tier]
+        if not matches:
+            raise ValueError(f"Unknown backend tier {tier!r}")
+        resolved_tier = matches[0]
+    else:
+        resolved_tier = tier
+    with _registry_lock:
+        entries = _registry.get(name)
+        if entries is None:
+            raise KeyError(f"No implementations registered for kernel {name!r}")
+        for candidate, implementation in entries:
+            if candidate == resolved_tier:
+                if not _availability.get(candidate, False):
+                    raise RuntimeError(
+                        f"Requested backend {_TIER_NAMES[candidate]!r} for {name!r} is unavailable"
+                    )
+                return implementation
+    raise KeyError(f"Backend {_TIER_NAMES[resolved_tier]!r} is not registered for kernel {name!r}")
+
+
 def dispatch(name: str) -> Callable[..., Any]:
-    """Return the fastest available implementation for the named kernel.
+    """Return the first available implementation in the kernel's evidence order.
 
     Raises
     ------

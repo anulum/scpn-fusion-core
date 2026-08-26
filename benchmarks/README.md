@@ -94,6 +94,30 @@ The measured timing ratio describes the disclosed loaded workstation and is
 not a portable performance guarantee. Re-run the same command to measure the
 comparison on another machine.
 
+## Transport JAX and NumPy Comparison
+
+Run the reconciled ten-step cylindrical transport rollout through JAX/XLA and
+the canonical NumPy implementation:
+
+```bash
+.venv/bin/python benchmarks/bench_transport_jax.py
+```
+
+The JAX path uses one compiled `lax.scan` rollout. The timed boundary includes
+array construction, host/device transfers, ten CN steps, synchronization, and
+final readback. The report also compares the JAX source gradient with a central
+finite-difference replay through the NumPy path.
+
+| File | Contents |
+|------|----------|
+| `validation/reports/transport_jax_comparison.json` | Raw paired samples, JAX device metadata, parity, analytic accuracy, and gradient evidence |
+| `validation/reports/transport_jax_comparison.md` | Human-readable JAX/NumPy timing and correctness table |
+
+The automatic runtime uses the retained per-kernel ordering rather than
+assuming an accelerator is faster. Use `backend="jax"` on
+`simulate_transport_scenario` to request the reconciled JAX provider without a
+silent fallback.
+
 ## Rust Multigrid Scaling Validation
 
 `python validation/benchmark_rust_multigrid_scaling.py` runs the native Rust

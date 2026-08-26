@@ -17,8 +17,8 @@ The engine imports this module at the bottom of its own module body and calls
 registration still runs on ``import scpn_fusion.core._multi_compat``. Each tier
 provider imports its backend lazily (inside the call), so a tier can be
 registered even when its backend is absent — the availability probe in
-:func:`scpn_fusion.core._multi_compat.dispatch` selects the fastest *available*
-tier at call time.
+:func:`scpn_fusion.core._multi_compat.dispatch` selects the first *available*
+tier in the retained per-kernel evidence order at call time.
 """
 
 from __future__ import annotations
@@ -26,7 +26,12 @@ from __future__ import annotations
 from importlib import import_module
 from typing import Any
 
-from scpn_fusion.core._multi_compat import BackendTier, register_kernel, register_kernel_class
+from scpn_fusion.core._multi_compat import (
+    BackendTier,
+    register_kernel,
+    register_kernel_class,
+    set_kernel_preference,
+)
 
 # ---------------------------------------------------------------------------
 # Kernel-class (factory) loaders and bootstrap
@@ -215,6 +220,98 @@ def _bootstrap_kernel_classes() -> None:
 # ---------------------------------------------------------------------------
 # Function-kernel tier providers
 # ---------------------------------------------------------------------------
+
+
+def _numpy_transport_cn_rollout(
+    initial_te: Any,
+    initial_ti: Any,
+    chi_e: Any,
+    chi_i: Any,
+    source_e_history: Any,
+    source_i_history: Any,
+    rho: Any,
+    dt: float,
+    *,
+    t_edge_e: float = 0.1,
+    t_edge_i: float = 0.1,
+) -> tuple[Any, Any]:
+    """NumPy provider for the reconciled cylindrical transport CN rollout."""
+    import numpy as np
+
+    from scpn_fusion.core.jax_solvers import crank_nicolson_step
+
+    rho_array = np.asarray(rho, dtype=np.float64)
+    spacing = float(rho_array[1] - rho_array[0])
+    te = np.asarray(initial_te, dtype=np.float64)
+    ti = np.asarray(initial_ti, dtype=np.float64)
+    chi_e_array = np.asarray(chi_e, dtype=np.float64)
+    chi_i_array = np.asarray(chi_i, dtype=np.float64)
+    source_e_array = np.asarray(source_e_history, dtype=np.float64)
+    source_i_array = np.asarray(source_i_history, dtype=np.float64)
+    te_history = np.empty_like(source_e_array)
+    ti_history = np.empty_like(source_i_array)
+    for index, (source_e, source_i) in enumerate(zip(source_e_array, source_i_array, strict=True)):
+        te = crank_nicolson_step(
+            te,
+            chi_e_array,
+            source_e,
+            rho_array,
+            spacing,
+            float(dt),
+            float(t_edge_e),
+            use_jax=False,
+        )
+        ti = crank_nicolson_step(
+            ti,
+            chi_i_array,
+            source_i,
+            rho_array,
+            spacing,
+            float(dt),
+            float(t_edge_i),
+            use_jax=False,
+        )
+        te_history[index] = te
+        ti_history[index] = ti
+    return te_history, ti_history
+
+
+def _jax_transport_cn_rollout(
+    initial_te: Any,
+    initial_ti: Any,
+    chi_e: Any,
+    chi_i: Any,
+    source_e_history: Any,
+    source_i_history: Any,
+    rho: Any,
+    dt: float,
+    *,
+    t_edge_e: float = 0.1,
+    t_edge_i: float = 0.1,
+) -> tuple[Any, Any]:
+    """JAX provider for the reconciled cylindrical transport CN rollout."""
+    import numpy as np
+
+    from scpn_fusion.core.jax_transport_solver import simulate_scenario_jax
+
+    te_history, ti_history = simulate_scenario_jax(
+        initial_te,
+        initial_ti,
+        chi_e,
+        chi_i,
+        source_e_history,
+        source_i_history,
+        rho,
+        dt,
+        t_edge_e=t_edge_e,
+        t_edge_i=t_edge_i,
+    )
+    te_history.block_until_ready()
+    ti_history.block_until_ready()
+    return (
+        np.asarray(te_history, dtype=np.float64),
+        np.asarray(ti_history, dtype=np.float64),
+    )
 
 
 def _numpy_shafranov_bv(
@@ -807,9 +904,23 @@ def _bootstrap_existing_backends() -> None:
 
     Tier providers import their backend lazily, so a tier can be registered even
     when its backend is absent — the availability probe in :func:`dispatch`
-    selects the fastest *available* tier at call time. This bridges the existing
-    implementations into the multi-tier dispatcher without an import cycle.
+    selects the first *available* tier in each kernel's retained order at call
+    time. This bridges the existing implementations into the multi-tier
+    dispatcher without an import cycle.
     """
+    # transport_cn_rollout — the JAX and NumPy tiers share the conservative
+    # cylindrical Crank-Nicolson operator, explicit source histories, and
+    # outer-edge values. The retained local same-case benchmark shows the small
+    # GPU rollout is transfer-bound, so NumPy remains the automatic default;
+    # callers request JAX explicitly when they need device execution or
+    # differentiation.
+    register_kernel("transport_cn_rollout", BackendTier.JAX, _jax_transport_cn_rollout)
+    register_kernel("transport_cn_rollout", BackendTier.NUMPY, _numpy_transport_cn_rollout)
+    set_kernel_preference(
+        "transport_cn_rollout",
+        (BackendTier.NUMPY, BackendTier.JAX),
+    )
+
     # shafranov_bv — canonical contract reconciled (A2 kernel #1). Both tiers are
     # bit-exact for the returned Bv, so registration is unconditional and the
     # NumPy tier guarantees `dispatch("shafranov_bv")` resolves without Rust.

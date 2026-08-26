@@ -28,6 +28,7 @@ def _clear_kernel(name: str) -> None:
     """Remove a test function-kernel registration and dispatch cache entry."""
     with multi._registry_lock:
         multi._registry.pop(name, None)
+        multi._kernel_preferences.pop(name, None)
         multi._dispatch_cache.pop(name, None)
 
 
@@ -148,6 +149,65 @@ def test_dispatch_tier_populates_cache_for_registered_kernel(kernel_name: str) -
 
     assert multi.dispatch_tier(kernel_name) == "numpy"
     assert multi._dispatch_cache[kernel_name][1] is numpy_impl
+
+
+def test_kernel_preference_overrides_default_tier_order(kernel_name: str) -> None:
+    """A retained per-kernel order controls automatic dispatch."""
+
+    def jax_impl() -> str:
+        return "jax"
+
+    def numpy_impl() -> str:
+        return "numpy"
+
+    multi.register_kernel(kernel_name, multi.BackendTier.JAX, jax_impl)
+    multi.register_kernel(kernel_name, multi.BackendTier.NUMPY, numpy_impl)
+
+    multi.set_kernel_preference(
+        kernel_name,
+        (multi.BackendTier.NUMPY, multi.BackendTier.JAX),
+    )
+
+    assert multi.dispatch(kernel_name) is numpy_impl
+    assert multi.registered_kernels()[kernel_name] == ["numpy*", "jax*"]
+    assert multi.dispatch_for_tier(kernel_name, "jax") is jax_impl
+    assert multi.dispatch_for_tier(kernel_name, multi.BackendTier.NUMPY) is numpy_impl
+
+
+def test_kernel_preference_rejects_invalid_contracts(kernel_name: str) -> None:
+    """Incomplete or contradictory preference declarations fail closed."""
+    multi.register_kernel(kernel_name, multi.BackendTier.NUMPY, lambda: "numpy")
+
+    with pytest.raises(ValueError, match="at least one"):
+        multi.set_kernel_preference(kernel_name, ())
+    with pytest.raises(ValueError, match="unique"):
+        multi.set_kernel_preference(
+            kernel_name,
+            (multi.BackendTier.NUMPY, multi.BackendTier.NUMPY),
+        )
+    with pytest.raises(KeyError, match="Unregistered preferred"):
+        multi.set_kernel_preference(kernel_name, (multi.BackendTier.JAX,))
+    with pytest.raises(KeyError, match="No implementations"):
+        multi.set_kernel_preference("test_missing_preference", (multi.BackendTier.NUMPY,))
+
+
+def test_explicit_tier_dispatch_rejects_unknown_or_unavailable(
+    kernel_name: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Explicit selection never substitutes another backend."""
+    multi.register_kernel(kernel_name, multi.BackendTier.JAX, lambda: "jax")
+    multi._ensure_probed()
+    monkeypatch.setitem(multi._availability, multi.BackendTier.JAX, False)
+
+    with pytest.raises(RuntimeError, match="unavailable"):
+        multi.dispatch_for_tier(kernel_name, "jax")
+    with pytest.raises(ValueError, match="Unknown backend"):
+        multi.dispatch_for_tier(kernel_name, "fortran")
+    with pytest.raises(KeyError, match="No implementations"):
+        multi.dispatch_for_tier("test_missing_explicit", "numpy")
+    with pytest.raises(KeyError, match="not registered"):
+        multi.dispatch_for_tier(kernel_name, "numpy")
 
 
 def test_dispatch_returns_cache_populated_while_waiting_for_lock(

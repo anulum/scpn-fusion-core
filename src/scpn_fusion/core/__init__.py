@@ -420,6 +420,11 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # JAX differentiable solvers
     "jax_gs_solve": (".jax_gs_solver", "jax_gs_solve"),
     "thomas_solve": (".jax_solvers", "thomas_solve"),
+    "simulate_transport_scenario": (
+        ".jax_transport_solver",
+        "simulate_transport_scenario",
+    ),
+    "transport_step_jax": (".jax_transport_solver", "transport_step_jax"),
     # Integrated scenario simulator
     "ScenarioConfig": (".integrated_scenario", "ScenarioConfig"),
     "ScenarioState": (".integrated_scenario", "ScenarioState"),

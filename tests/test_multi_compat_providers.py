@@ -18,6 +18,39 @@ from scpn_fusion.core import _multi_compat_providers as providers
 FloatArray = NDArray[np.float64]
 
 
+def test_transport_cn_rollout_registers_evidence_ordered_tiers() -> None:
+    """The production dispatcher exposes both reconciled transport tiers."""
+    tiers = multi.registered_kernels().get("transport_cn_rollout")
+    assert tiers is not None
+    assert [tier.rstrip("*") for tier in tiers] == ["numpy", "jax"]
+    assert "numpy*" in tiers
+    assert multi.dispatch_tier("transport_cn_rollout") == "numpy"
+
+
+def test_jax_transport_provider_matches_numpy_provider() -> None:
+    """The real provider boundary retains cylindrical CN parity."""
+    pytest.importorskip("jax")
+    rho = np.linspace(0.0, 1.0, 65, dtype=np.float64)
+    te = 0.1 + 1.2 * (1.0 - rho**2)
+    ti = 0.1 + 0.8 * (1.0 - rho**2)
+    chi_e = 0.7 + 0.2 * rho**2
+    chi_i = 0.5 + 0.3 * rho**2
+    source_e = 0.04 * (1.0 - rho)
+    source_i = 0.02 * (1.0 - rho**2)
+    source_e_history = np.stack([source_e, 1.5 * source_e, 0.5 * source_e])
+    source_i_history = np.stack([source_i, 1.5 * source_i, 0.5 * source_i])
+
+    expected = providers._numpy_transport_cn_rollout(
+        te, ti, chi_e, chi_i, source_e_history, source_i_history, rho, 1.0e-3
+    )
+    result = providers._jax_transport_cn_rollout(
+        te, ti, chi_e, chi_i, source_e_history, source_i_history, rho, 1.0e-3
+    )
+
+    np.testing.assert_allclose(result[0], expected[0], rtol=0.0, atol=2.0e-14)
+    np.testing.assert_allclose(result[1], expected[1], rtol=0.0, atol=2.0e-14)
+
+
 def test_equilibrium_kernel_class_dispatches_to_python_without_rust() -> None:
     """The equilibrium kernel class falls back to Python when Rust is unavailable."""
     cls = multi.dispatch_kernel_class("equilibrium_kernel")

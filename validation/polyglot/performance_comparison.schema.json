@@ -67,11 +67,12 @@
     },
     "timing": {
       "type": "object",
-      "required": ["paired_order", "discarded_warmups", "rows", "numpy_over_rust_ratio"],
+      "required": ["paired_order", "discarded_warmups", "rows"],
       "properties": {
         "paired_order": {"type": "string", "minLength": 1},
         "discarded_warmups": {"type": "integer", "minimum": 0},
         "numpy_over_rust_ratio": {"type": "number", "exclusiveMinimum": 0},
+        "numpy_over_candidate_ratio": {"type": "number", "exclusiveMinimum": 0},
         "rows": {
           "type": "array",
           "minItems": 2,
@@ -107,7 +108,11 @@
           }
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "anyOf": [
+        {"required": ["numpy_over_rust_ratio"]},
+        {"required": ["numpy_over_candidate_ratio"]}
+      ]
     },
     "environment": {"type": "object", "additionalProperties": true},
     "disclosure": {
@@ -126,13 +131,18 @@
     },
     "gate": {
       "type": "object",
-      "required": ["passes", "correctness_passes", "release_build_verified"],
+      "required": ["passes", "correctness_passes"],
       "properties": {
         "passes": {"type": "boolean"},
         "correctness_passes": {"type": "boolean"},
-        "release_build_verified": {"type": "boolean"}
+        "release_build_verified": {"type": "boolean"},
+        "candidate_build_verified": {"type": "boolean"}
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "anyOf": [
+        {"required": ["release_build_verified"]},
+        {"required": ["candidate_build_verified"]}
+      ]
     }
   }
 }

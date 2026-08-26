@@ -610,21 +610,41 @@ e-foldings instead of only pointwise growth.
 
 ---
 
-## 2. JAX Differentiable GS Transport
+## 2. JAX Differentiable Transport
 
-A fully differentiable 1.5D transport kernel in JAX, enabling `jax.grad` through the transport evolution for optimal-control and inverse problems.
+A differentiable 1.5D temperature-transport runtime in JAX, enabling `jax.grad`
+through a complete source-history rollout for optimal-control and inverse
+problems. The JAX and NumPy providers share the same conservative cylindrical
+Crank–Nicolson operator.
 
-**Equation solved (explicit step):**
+**Equation solved:**
 
 $$\frac{\partial T}{\partial t} = \frac{1}{n_e}\,\nabla\!\cdot\!\left(n_e\,\chi\,\nabla T\right) + S$$
 
-**Numerical method.** Explicit finite-difference on a uniform $\rho$ grid. Spatial gradients use `jnp.gradient`. The domain is cylindrical-like in the normalised coordinate. Boundary conditions: $T(\rho=0) = T(\rho=\delta\rho)$ (axis symmetry), $T(\rho=1) = 0.1$ keV (fixed edge). Positivity enforced by `jnp.maximum(T, 0.01)`.
+**Numerical method.** The solver uses the same centred face-flux,
+Crank–Nicolson discretisation described in §3.1, including its cylindrical
+half-control-volume axis row and an exact prescribed outer edge. Sources are
+explicit arrays in keV/s; density normalisation belongs to source construction.
+The kernel does not apply hidden source scaling or a post-solve temperature
+floor.
 
-For multi-step rollout, `jax.lax.scan` is used, making the entire pulse trajectory JIT-compilable and differentiable end-to-end.
+`transport_step_jax` retains device arrays for direct differentiation.
+`simulate_scenario_jax` compiles a complete explicit source history with
+`jax.lax.scan`. The checked public `simulate_transport_scenario` surface is
+registered as `transport_cn_rollout` with reconciled NumPy and JAX providers.
+An explicit `backend="jax"` request is fail-closed and never silently falls back.
+For `backend="auto"`, the retained 129-node, 10-step local comparison selects
+NumPy because transfers dominate the JAX GPU path at this workload size.
 
 **Key file:** `core/jax_transport_solver.py`
 
-**Validation:** `tests/test_jax_transport_solver.py`, `tests/test_gpu_jax_backend.py`.
+**Validation:** `tests/test_jax_transport_solver.py`,
+`tests/test_transport_jax_benchmark.py`,
+`validation/reports/transport_jax_comparison.{json,md}`. The frozen comparison
+records the JAX/NumPy profile difference, analytic Bessel-mode RMSE, source
+gradient versus a central finite difference, cold/warm timings, device and host
+state, and source hashes. Its timing is a disclosed local-machine observation,
+not a portable performance guarantee.
 
 ---
 
