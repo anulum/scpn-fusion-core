@@ -9,14 +9,14 @@
     "finite_after_probe": true,
     "finite_initial_state": true,
     "one_step_probe": {
-      "core_te_after_step_keV": 17.734376440855876,
-      "core_te_delta_keV": -5.417184220562454,
-      "core_ti_after_step_keV": 17.734376440855876,
-      "core_ti_delta_keV": -0.09380903180820965,
+      "core_te_after_step_keV": 17.790460740657757,
+      "core_te_delta_keV": -5.361099920760573,
+      "core_ti_after_step_keV": 17.790460740657757,
+      "core_ti_delta_keV": -0.03772473200632831,
       "dt_s": 0.001,
       "energy_balance": [
-        9.716096010740554,
-        17.734376440855876
+        9.71818452717818,
+        17.790460740657757
       ],
       "p_aux_mw": 0.0
     },

@@ -36,6 +36,20 @@ def test_module_available_returns_false_when_discovery_raises(
     assert module._module_available("broken.optional") is False
 
 
+def test_internal_files_are_never_admitted_from_hosted_ci_residue(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    module = _load_module()
+    private_input = tmp_path / "private.md"
+    private_input.write_text("local only\n", encoding="utf-8")
+
+    monkeypatch.delenv("CI", raising=False)
+    assert module._internal_files_available(private_input) is True
+
+    monkeypatch.setenv("CI", "true")
+    assert module._internal_files_available(private_input) is False
+
+
 def test_main_returns_zero_when_no_checks_selected(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],

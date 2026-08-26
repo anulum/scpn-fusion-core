@@ -45,7 +45,9 @@ def _module_available(module_name: str) -> bool:
 
 
 def _internal_files_available(*paths: Path) -> bool:
-    """Return true when all private gitignored governance inputs exist locally."""
+    """Return true only for local private governance inputs, never hosted CI residue."""
+    if os.environ.get("CI", "").strip().lower() in {"1", "true", "yes"}:
+        return False
     return all(path.exists() for path in paths)
 
 

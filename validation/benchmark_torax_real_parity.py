@@ -165,9 +165,9 @@ def build_report(*, include_runtime_environment: bool = False) -> dict[str, Any]
         "physics_equivalence_claimed": False,
         "claim_boundary": (
             "Comparison against a really-executed TORAX basic_config run; the "
-            "reduced 1.5D solver and TORAX differ by design and by the open "
-            "solver-stability finding below. Metrics are recorded divergence, "
-            "not equivalence."
+            "reduced 1.5D solver and TORAX differ by design. The prior numerical "
+            "solver-stability finding is resolved and retained below for provenance. "
+            "Metrics are recorded divergence, not equivalence."
         ),
         "reference": {
             "artifact": str(REFERENCE.relative_to(ROOT)),

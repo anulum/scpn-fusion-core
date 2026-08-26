@@ -124,6 +124,8 @@ def test_build_report_records_divergence_and_findings(monkeypatch: pytest.Monkey
     assert report["passes_thresholds"] is True
     assert report["status"] == "real_torax_reference_acquired_divergence_documented"
     assert report["physics_equivalence_claimed"] is False
+    assert "prior numerical solver-stability finding is resolved" in report["claim_boundary"]
+    assert "not equivalence" in report["claim_boundary"]
     assert report["reference"]["provenance"]["code"] == "TORAX"
     assert len(report["reference"]["profile_checksum_sha256"]) == 64
     assert "core_te_ratio_fine_over_torax" in report["divergence_metrics"]
