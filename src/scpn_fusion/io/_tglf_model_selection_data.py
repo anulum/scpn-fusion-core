@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — TGLF Model-Selection Data Contract
-"""Verified corpus loading and fixed-width MODEL-04 representation."""
+"""Verified corpus loading and fixed-width TGLF selection representation."""
 
 from __future__ import annotations
 
@@ -236,7 +236,7 @@ def load_tglf_model_study_data(dataset_root: str | Path) -> TGLFModelStudyData:
     split_counts = {name: splits.count(name) for name in SPLITS}
     if any(count == 0 for count in split_counts.values()):
         raise ValueError(
-            f"MODEL-04 requires non-empty train/calibration/test splits: {split_counts}"
+            f"TGLF model selection requires non-empty train/calibration/test splits: {split_counts}"
         )
     features = np.asarray(rows_x, dtype=np.float64)
     targets = np.asarray(rows_y, dtype=np.float64)

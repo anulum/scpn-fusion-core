@@ -52,7 +52,7 @@ def _is_within(path: Path, parent: Path) -> bool:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Execute the fail-closed MODEL-04 command-line boundary."""
+    """Execute the fail-closed TGLF candidate-family selection boundary."""
     args = _parser().parse_args(argv)
     dataset_argument = cast(Path, args.dataset_root)
     dataset_root = dataset_argument.resolve()

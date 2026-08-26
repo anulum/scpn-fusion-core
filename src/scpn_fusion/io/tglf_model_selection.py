@@ -350,7 +350,7 @@ def run_tglf_model_selection(
 
 
 def write_tglf_model_selection_report(report: dict[str, Any], output_path: str | Path) -> Path:
-    """Atomically persist a strict finite MODEL-04 JSON report."""
+    """Atomically persist a strict finite TGLF model-selection report."""
     payload = json.dumps(report, allow_nan=False, indent=2, sort_keys=True) + "\n"
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
