@@ -471,7 +471,7 @@
     "files": {
       "compiled_solver": {
         "path": "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
-        "sha256": "3e12a11ec9d3aedf7cfc230541a690c321a4a2af63db9d6743671871696f5931"
+        "sha256": "c002a202809fdefbbfe6d3c0f8ed9e1c5490ac9020e5fb0d281d22e5ab48ccca"
       },
       "dataset_contract": {
         "path": "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
@@ -495,7 +495,7 @@
       }
     },
     "repository": "https://github.com/anulum/scpn-fusion-core",
-    "repository_head_context": "b2f1ffd3cadae17b6ba02f22848304b6481c5799"
+    "repository_head_context": "c8c582ef6e5900fd45b0d1274847aa7979b2e3ca"
   },
   "tolerances": {
     "diagnostic_replay_max_abs": 1e-12,

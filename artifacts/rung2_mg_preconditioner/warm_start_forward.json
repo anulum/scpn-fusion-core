@@ -96,7 +96,7 @@
       "65x65_warm_mg_richardson2": null
     }
   },
-  "generated_utc": "2026-08-24T14:17:33+00:00",
+  "generated_utc": "2026-08-26T08:20:51+00:00",
   "jax_version": "0.7.1",
   "method": "base solve at nominal coil currents; perturb all coil currents by +0.5% (the documented in-basin FD-validation scale); warm solve = psi_init=base + ip_ramp=1 (the ramp exists for cold-start robustness and would otherwise force 30 iterations before the early stop can fire); correctness = warm solve agrees with the COLD solve of the perturbed problem at span-relative tolerance",
   "provenance": {
@@ -114,7 +114,7 @@
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "0b6c7306ccc781b6a25a6bd50da00e384b1d4e5697e4ddc2a4ec0b5a396ba444",
+    "logic_sources_sha256": "47c0d8dfc7482361be43b6960881a8e7f06b50053c24bd4be43841ec5b6bba98",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
     "pinned_requirements_sha256": "bd71deb22e7ab465fb79cbb554e2bcc58488034ede8836469576efc4bce9a2a9"
   },
@@ -129,66 +129,66 @@
     "host": "aaarthuus (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
     "rows": [
       {
-        "cold_median_ms": 226.92938201362267,
+        "cold_median_ms": 292.8733180160634,
         "cold_ms": [
-          248.72162600513548,
-          224.7645439929329,
-          226.92938201362267
+          293.8827599864453,
+          292.8733180160634,
+          289.593152992893
         ],
         "grid": "33x33",
-        "warm_median_ms": 14.81331797549501,
-        "warm_mg_richardson2_median_ms": 12.5546749914065,
+        "warm_median_ms": 21.011721983086318,
+        "warm_mg_richardson2_median_ms": 16.799903998617083,
         "warm_mg_richardson2_ms": [
-          12.625563016626984,
-          12.5546749914065,
-          12.18684297055006
+          19.085251027718186,
+          16.799903998617083,
+          14.239146024920046
         ],
         "warm_ms": [
-          16.34104101685807,
-          14.81331797549501,
-          14.543401019182056
+          20.856973016634583,
+          21.011721983086318,
+          24.744746973738074
         ]
       },
       {
-        "cold_median_ms": 1328.0379060306586,
+        "cold_median_ms": 1218.6124349827878,
         "cold_ms": [
-          1328.0379060306586,
-          1259.6591010224074,
-          1379.0952720446512
+          1295.9702470107004,
+          1159.8276579752564,
+          1218.6124349827878
         ],
         "grid": "65x65",
-        "warm_median_ms": 1107.8532310202718,
-        "warm_mg_richardson2_median_ms": 929.3646049918607,
+        "warm_median_ms": 1289.4725080113858,
+        "warm_mg_richardson2_median_ms": 850.5812719813548,
         "warm_mg_richardson2_ms": [
-          816.0780220059678,
-          929.3646049918607,
-          1004.2275370215066
+          837.3796269879676,
+          973.23335200781,
+          850.5812719813548
         ],
         "warm_ms": [
-          1442.0309919514693,
-          1107.8532310202718,
-          1035.9417530125938
+          1289.4725080113858,
+          1395.1303499634378,
+          1141.66781201493
         ]
       },
       {
-        "cold_median_ms": 1358.300534018781,
+        "cold_median_ms": 1388.7896920205094,
         "cold_ms": [
-          1616.8880999903195,
-          1358.300534018781,
-          1253.7376380059868
+          1438.7269199942239,
+          1388.7896920205094,
+          1346.3449060218409
         ],
         "grid": "129x129",
-        "warm_median_ms": 60.12889003613964,
-        "warm_mg_richardson2_median_ms": 74.19616600964218,
+        "warm_median_ms": 48.24931395705789,
+        "warm_mg_richardson2_median_ms": 58.09326301096007,
         "warm_mg_richardson2_ms": [
-          81.04763296432793,
-          74.19616600964218,
-          71.69010199140757
+          56.33986403699964,
+          58.09326301096007,
+          74.5278259855695
         ],
         "warm_ms": [
-          55.59475702466443,
-          60.12889003613964,
-          64.08495997311547
+          48.24931395705789,
+          45.878029020968825,
+          48.96495398133993
         ]
       }
     ]
