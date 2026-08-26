@@ -729,6 +729,28 @@ The transport closure separates three operational lanes with strict provenance t
 
 Input-deck generation and output parsing for TGLF, GENE, GS2, GKW, and CGYRO. The `TGLFInputDeck` builder in `core/tglf_interface.py` constructs a complete TGLF input from the `TransportSolver` state. Reference data is stored in `validation/tglf_reference/` for ITG-dominated, TEM-dominated, and ETG-dominated regimes.
 
+Official-GACODE run corpora use the versioned
+`schemas/tglf_gacode_dataset.schema.json` manifest. The public
+`build_tglf_dataset_manifest`, `write_tglf_dataset_manifest`, and
+`verify_tglf_dataset` surfaces bind the exact 40-character GACODE revision,
+Apache-2.0 source licence, PATH-only `tglf` executable, complete input and
+signed-output field units, retained raw-file sizes and SHA-256 digests, and a
+deterministic group-isolated train/calibration/test split. The v1 parameter
+domain matches the current two-species electron/deuterium generator: seven
+drive fields vary and the other deck fields remain explicitly fixed. A
+`development` manifest must contain interior, boundary, and threshold sampling
+strata; a bounded `pilot` may contain interior samples only. Regime values are
+limited to `stable`, `ITG`, `TEM`, `ETG`, `mixed`, or `unclassified`; data remain
+`unclassified` when branch-resolved evidence is unavailable.
+
+The command-line boundary is `python tools/tglf_dataset_contract.py build` or
+`verify`. Validation rejects out-of-domain or duplicate decks, solver-version
+drift, split reassignment, path traversal, symlinks, missing or undeclared raw
+files, hash changes, and records/manifest disagreement. Passing this custody
+contract establishes dataset identity and integrity only; it does not establish
+surrogate accuracy, uncertainty calibration, experimental validation, or
+cross-solver agreement.
+
 ### Path B: Native gyrokinetic solvers
 
 The native path has two distinct surfaces. `core/gk_eigenvalue.py` and
@@ -758,9 +780,13 @@ The neural surrogate (Section 5) provides per-point out-of-distribution (OOD) de
 
 **Mixing-length saturation.** All three paths use a gyro-Bohm reference: $\chi_{\rm gB} = \rho_s^2\,c_s / R$, where $\rho_s = \sqrt{m_i T_e}/(eB)$ and $c_s = \sqrt{T_e/m_i}$.
 
-**Key files:** `core/neural_transport.py`, `core/tglf_interface.py`, `core/tglf_surrogate_bridge.py`, `core/tglf_validation_runtime.py`.
+**Key files:** `core/neural_transport.py`, `core/tglf_interface.py`,
+`core/tglf_surrogate_bridge.py`, `core/tglf_validation_runtime.py`,
+`io/tglf_dataset_contract.py`, and `schemas/tglf_gacode_dataset.schema.json`.
 
-**Validation:** `tests/test_neural_transport.py`, `tests/test_tglf_interface.py`, `validation/validate_fno_tglf.py`, `validation/validate_transport_qlknn.py`.
+**Validation:** `tests/test_neural_transport.py`, `tests/test_tglf_interface.py`,
+`tests/test_tglf_dataset_contract.py`, `validation/validate_fno_tglf.py`, and
+`validation/validate_transport_qlknn.py`.
 
 ---
 

@@ -25,6 +25,12 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 from scpn_fusion.io.safe_loaders import checked_json_load
+from scpn_fusion.io.tglf_dataset_contract import (
+    TGLF_DATASET_SCHEMA_VERSION,
+    build_tglf_dataset_manifest,
+    verify_tglf_dataset,
+    write_tglf_dataset_manifest,
+)
 from scpn_fusion.core._tglf_interface_benchmark import TGLFBenchmark
 from scpn_fusion.core._tglf_interface_reference import (
     REFERENCE_CASES,
@@ -70,6 +76,7 @@ __all__ = [
     "REFERENCE_CASES",
     "TGLFBenchmark",
     "TGLFComparisonResult",
+    "TGLF_DATASET_SCHEMA_VERSION",
     "TGLFDatasetGenerator",
     "TGLFSurrogate",
     "TGLFInputDeck",
@@ -86,6 +93,7 @@ __all__ = [
     "_resolve_tglf_command",
     "_reference_case_filename",
     "_reference_case_to_transport_input",
+    "build_tglf_dataset_manifest",
     "generate_input_deck",
     "parse_tglf_output",
     "render_tglf_input",
@@ -93,9 +101,11 @@ __all__ = [
     "run_tglf_profile_scan",
     "train_surrogate_from_tglf",
     "validate_against_tglf",
+    "verify_tglf_dataset",
     "validate_reduced_transport_reference_case",
     "validate_reduced_transport_reference_suite",
     "write_reference_data",
+    "write_tglf_dataset_manifest",
     "write_tglf_input_file",
 ]
 

@@ -301,7 +301,10 @@ The repository can ingest the following external formats:
   distinct TGLF roles (not duplicates): `gk_tglf` wraps the external binary (GKSolverBase
   deck contract), `gk_tglf_native` is the always-available quasilinear model, and
   `tglf_interface` is the TransportSolver comparison framework (JSON references, benchmark
-  tables) used by the `tglf_live` pipeline backend. `gk_nonlinear.NonlinearGKSolver` is
+  tables) used by the `tglf_live` pipeline backend. Official-GACODE corpus custody is a
+  separate IO boundary in `io/tglf_dataset_contract.py`; its versioned manifest binds raw
+  run hashes, exact solver revision, units, domains, group-isolated splits, and admitted
+  claims before any surrogate training consumes the data. `gk_nonlinear.NonlinearGKSolver` is
   config-driven 5D δf and intentionally outside the deck-file registry. `gk_online_learner.py` is
   validation/offline workflow support for supervised surrogate refreshes from accepted GK samples; no
   live transport pipeline mutates deployed weights through it.

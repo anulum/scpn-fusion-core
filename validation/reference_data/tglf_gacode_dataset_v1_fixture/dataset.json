@@ -1,0 +1,48 @@
+[
+  {
+    "SPDX-License-Identifier": "AGPL-3.0-or-later",
+    "sample_index": 0,
+    "seed": 20260826,
+    "sampling_stratum": "interior",
+    "regime": "unclassified",
+    "input": {
+      "rho": 0.5,
+      "s_hat": 0.5430691596858127,
+      "q": 3.2920971624981217,
+      "q_prime_loc": 0.0,
+      "alpha_mhd": 0.0,
+      "p_prime_loc": 0.0,
+      "kappa": 1.7,
+      "delta": 0.3,
+      "s_kappa": 0.0,
+      "s_delta": 0.0,
+      "R_LTi": 1.9157327576926053,
+      "R_LTe": 4.683416901647256,
+      "R_Lne": 4.191105189646161,
+      "R_Lni": 2.0,
+      "beta_e": 0.006907335369969312,
+      "Z_eff": 2.7514921393711793,
+      "xnue": 0.0,
+      "T_e_keV": 10.0,
+      "T_i_keV": 10.0,
+      "n_e_19": 8.0,
+      "R_major": 6.2,
+      "a_minor": 2.0,
+      "B_toroidal": 5.3,
+      "use_bper": false,
+      "use_bpar": false
+    },
+    "output": {
+      "rho": 0.5,
+      "chi_i": 38.5136296205459,
+      "chi_e": 15.192034162085042,
+      "gamma_max": 2.594914993534312,
+      "q_i": 9.2536,
+      "q_e": 8.9236,
+      "particle_e": 2.8471,
+      "particle_i": 2.8471,
+      "d_e": 5.4164259824284855,
+      "d_i": 11.350405522145167
+    }
+  }
+]

@@ -1,0 +1,290 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.github.io/scpn-fusion-core/schemas/tglf_gacode_dataset.schema.json",
+  "title": "SCPN Fusion Core official-GACODE TGLF dataset manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "SPDX-License-Identifier",
+    "schema_version",
+    "dataset_id",
+    "purpose",
+    "source",
+    "generation",
+    "split_policy",
+    "output_contract",
+    "records",
+    "claims",
+    "samples"
+  ],
+  "properties": {
+    "SPDX-License-Identifier": {"const": "AGPL-3.0-or-later"},
+    "schema_version": {"const": "scpn-fusion.tglf-gacode-dataset.v1"},
+    "dataset_id": {"$ref": "#/$defs/identifier"},
+    "purpose": {"enum": ["pilot", "development"]},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "solver",
+        "repository",
+        "revision",
+        "licence",
+        "executable",
+        "path_resolution_required",
+        "reported_versions"
+      ],
+      "properties": {
+        "solver": {"const": "GACODE TGLF"},
+        "repository": {"const": "https://github.com/gafusion/gacode"},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "licence": {"const": "Apache-2.0"},
+        "executable": {"const": "tglf"},
+        "path_resolution_required": {"const": true},
+        "reported_versions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 8}
+        }
+      }
+    },
+    "generation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "seed",
+        "accepted_samples",
+        "failed_samples",
+        "input_domains",
+        "sampling_strata",
+        "required_strata"
+      ],
+      "properties": {
+        "seed": {"type": "integer", "minimum": 0},
+        "accepted_samples": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "failed_samples": {"const": 0},
+        "input_domains": {
+          "type": "object",
+          "minProperties": 25,
+          "additionalProperties": {"$ref": "#/$defs/inputDomain"}
+        },
+        "sampling_strata": {"$ref": "#/$defs/samplingStrata"},
+        "required_strata": {"$ref": "#/$defs/samplingStrata"}
+      }
+    },
+    "split_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "seed", "bucket_counts", "group_isolation_required"],
+      "properties": {
+        "method": {"const": "sha256-group-modulo-10000.v1"},
+        "seed": {"type": "integer", "minimum": 0},
+        "bucket_counts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["train", "calibration", "test"],
+          "properties": {
+            "train": {"const": 6000},
+            "calibration": {"const": 2000},
+            "test": {"const": 2000}
+          }
+        },
+        "group_isolation_required": {"const": true}
+      }
+    },
+    "output_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["units", "signed_fluxes_preserved"],
+      "properties": {
+        "units": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rho",
+            "chi_i",
+            "chi_e",
+            "gamma_max",
+            "q_i",
+            "q_e",
+            "particle_e",
+            "particle_i",
+            "d_e",
+            "d_i"
+          ],
+          "properties": {
+            "rho": {"const": "1"},
+            "chi_i": {"const": "m^2 s^-1"},
+            "chi_e": {"const": "m^2 s^-1"},
+            "gamma_max": {"const": "c_s/a"},
+            "q_i": {"const": "gyro-Bohm"},
+            "q_e": {"const": "gyro-Bohm"},
+            "particle_e": {"const": "gyro-Bohm"},
+            "particle_i": {"const": "gyro-Bohm"},
+            "d_e": {"const": "m^2 s^-1"},
+            "d_i": {"const": "m^2 s^-1"}
+          }
+        },
+        "signed_fluxes_preserved": {"const": true}
+      }
+    },
+    "records": {"$ref": "#/$defs/fileContractWithPath"},
+    "claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "official_gacode_outputs",
+        "surrogate_promoted",
+        "experimental_validation",
+        "cross_solver_parity"
+      ],
+      "properties": {
+        "official_gacode_outputs": {"const": true},
+        "surrogate_promoted": {"const": false},
+        "experimental_validation": {"const": false},
+        "cross_solver_parity": {"const": false}
+      }
+    },
+    "samples": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000000,
+      "items": {"$ref": "#/$defs/sample"}
+    }
+  },
+  "$defs": {
+    "identifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "fileContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "size_bytes", "sha256"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[^/\\\\]+$"},
+        "size_bytes": {"type": "integer", "minimum": 0, "maximum": 268435456},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "fileContractWithPath": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "size_bytes", "sha256"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "size_bytes": {"type": "integer", "minimum": 0, "maximum": 268435456},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "inputDomain": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "unit", "minimum", "maximum", "sampling"],
+          "properties": {
+            "type": {"const": "number"},
+            "unit": {"type": "string", "minLength": 1},
+            "minimum": {"type": "number"},
+            "maximum": {"type": "number"},
+            "sampling": {"enum": ["fixed", "uniform"]}
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "unit", "value", "sampling"],
+          "properties": {
+            "type": {"const": "boolean"},
+            "unit": {"const": "1"},
+            "value": {"type": "boolean"},
+            "sampling": {"const": "fixed"}
+          }
+        }
+      ]
+    },
+    "samplingStrata": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"enum": ["interior", "boundary", "threshold"]}
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rho", "s_hat", "q", "q_prime_loc", "alpha_mhd", "p_prime_loc",
+        "kappa", "delta", "s_kappa", "s_delta", "R_LTi", "R_LTe",
+        "R_Lne", "R_Lni", "beta_e", "Z_eff", "xnue", "T_e_keV",
+        "T_i_keV", "n_e_19", "R_major", "a_minor", "B_toroidal",
+        "use_bper", "use_bpar"
+      ],
+      "properties": {
+        "rho": {"type": "number"}, "s_hat": {"type": "number"},
+        "q": {"type": "number"}, "q_prime_loc": {"type": "number"},
+        "alpha_mhd": {"type": "number"}, "p_prime_loc": {"type": "number"},
+        "kappa": {"type": "number"}, "delta": {"type": "number"},
+        "s_kappa": {"type": "number"}, "s_delta": {"type": "number"},
+        "R_LTi": {"type": "number"}, "R_LTe": {"type": "number"},
+        "R_Lne": {"type": "number"}, "R_Lni": {"type": "number"},
+        "beta_e": {"type": "number"}, "Z_eff": {"type": "number"},
+        "xnue": {"type": "number"}, "T_e_keV": {"type": "number"},
+        "T_i_keV": {"type": "number"}, "n_e_19": {"type": "number"},
+        "R_major": {"type": "number"}, "a_minor": {"type": "number"},
+        "B_toroidal": {"type": "number"}, "use_bper": {"type": "boolean"},
+        "use_bpar": {"type": "boolean"}
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rho", "chi_i", "chi_e", "gamma_max", "q_i", "q_e",
+        "particle_e", "particle_i", "d_e", "d_i"
+      ],
+      "properties": {
+        "rho": {"type": "number"}, "chi_i": {"type": "number"},
+        "chi_e": {"type": "number"}, "gamma_max": {"type": "number"},
+        "q_i": {"type": "number"}, "q_e": {"type": "number"},
+        "particle_e": {"type": "number"}, "particle_i": {"type": "number"},
+        "d_e": {"type": "number"}, "d_i": {"type": "number"}
+      }
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_index", "sample_id", "group_id", "split", "sampling_stratum",
+        "regime", "reported_version", "run_directory", "input", "output",
+        "raw_files"
+      ],
+      "properties": {
+        "sample_index": {"type": "integer", "minimum": 0},
+        "sample_id": {"$ref": "#/$defs/sha256"},
+        "group_id": {"$ref": "#/$defs/identifier"},
+        "split": {"enum": ["train", "calibration", "test"]},
+        "sampling_stratum": {"enum": ["interior", "boundary", "threshold"]},
+        "regime": {"enum": ["stable", "ITG", "TEM", "ETG", "mixed", "unclassified"]},
+        "reported_version": {"type": "string", "minLength": 8},
+        "run_directory": {"$ref": "#/$defs/relativePath"},
+        "input": {"$ref": "#/$defs/input"},
+        "output": {"$ref": "#/$defs/output"},
+        "raw_files": {
+          "type": "array",
+          "minItems": 6,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/fileContract"}
+        }
+      }
+    }
+  }
+}
