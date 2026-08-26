@@ -45,6 +45,7 @@ class TransportSolverRuntimeMixin(
     D_n: FloatArray
     chi_e: FloatArray
     chi_i: FloatArray
+    impurity_transport_enabled: bool
     n_impurity: FloatArray
     _last_transport_predictor_corrector: dict[str, float | int | bool | str]
 
@@ -77,8 +78,9 @@ class TransportSolverRuntimeMixin(
     def _explicit_diffusion_rhs(self, T: FloatArray, chi: FloatArray) -> FloatArray:
         """Compute explicit diffusion operator L_h(T) = (1/r) d/dr(r chi dT/dr).
 
-        Uses half-grid diffusivities and central differences on the
-        interior, returning an array of the same length as *T*.
+        Uses a cylindrical half-control-volume at the magnetic axis and
+        centred half-grid fluxes on the interior, returning an array of the
+        same length as *T*.
         """
         return _explicit_diffusion_rhs_impl(
             rho=self.rho,
@@ -96,7 +98,9 @@ class TransportSolverRuntimeMixin(
             (I - 0.5*dt*L_h) T^{n+1} = (I + 0.5*dt*L_h) T^n + dt*(S - Sink)
 
         Returns (a, b, c) sub/main/super diagonals for the interior points,
-        padded to full grid size (BCs applied separately).
+        padded to full grid size. The magnetic-axis row is assembled from its
+        conservative half-control-volume; the edge condition is applied by the
+        thermal runtime.
         """
         return _build_cn_tridiag_impl(
             rho=self.rho,
@@ -220,14 +224,10 @@ class TransportSolverRuntimeMixin(
         account("cn.ion_rhs", n_rhs_i)
         a, b, c = self._build_cn_tridiag(chi_i, dt)
         b_sink = b + dt * (nu_rad_i + nu_eq)
-        b_sink[0] = 1.0
-        c[0] = -1.0
-        rhs[0] = 0.0
         b_sink[-1] = 1.0
         a[-1] = 0.0
         rhs[-1] = 0.1
         new_Ti = self._thomas_solve(a, b_sink, c, rhs)
-        new_Ti[0] = new_Ti[1]
         new_Ti[-1] = 0.1
         solved_ti, n_ti_new = self._sanitize_with_fallback(new_Ti, Ti_old, floor=0.01, ceil=1e3)
         account("cn.ion_solution", n_ti_new)
@@ -271,14 +271,10 @@ class TransportSolverRuntimeMixin(
         account("cn.electron_rhs", n_rhs_e)
         a_e, b_e, c_e = self._build_cn_tridiag(chi_e, dt)
         b_e_sink = b_e + dt * (nu_rad_e + nu_eq)
-        b_e_sink[0] = 1.0
-        c_e[0] = -1.0
-        rhs_e[0] = 0.0
         b_e_sink[-1] = 1.0
         a_e[-1] = 0.0
         rhs_e[-1] = self.T_edge_keV
         new_Te = self._thomas_solve(a_e, b_e_sink, c_e, rhs_e)
-        new_Te[0] = new_Te[1]
         new_Te[-1] = self.T_edge_keV
         solved_te, n_te_new = self._sanitize_with_fallback(new_Te, Te_old, floor=0.01, ceil=1e3)
         account("cn.electron_solution", n_te_new)
@@ -341,7 +337,11 @@ class TransportSolverRuntimeMixin(
         if self.multi_ion:
             _S_He, P_rad_line_Wm3 = self._evolve_species(dt)
         else:
-            self._evolve_impurity(dt)
+            if self.impurity_transport_enabled:
+                self._evolve_impurity(dt)
+            else:
+                self.n_impurity.fill(0.0)
+                self._Z_eff = 1.0
             P_rad_line_Wm3 = np.zeros(self.nr)
 
         S_heat_i, S_heat_e_aux = self._compute_aux_heating_sources(P_aux)
@@ -529,7 +529,6 @@ class TransportSolverRuntimeMixin(
             if np.isfinite(mean_ti_old) and np.isfinite(mean_ti_new) and mean_ti_new > mean_ti_old:
                 scale = mean_ti_old / max(mean_ti_new, 1e-12)
                 self.Ti *= scale
-                self.Ti[0] = self.Ti[1]
                 self.Ti[-1] = max(0.1, self.T_edge_keV)
                 self.Ti = np.maximum(0.01, self.Ti)
                 if not self.multi_ion:

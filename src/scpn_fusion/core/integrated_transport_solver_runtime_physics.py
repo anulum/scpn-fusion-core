@@ -279,21 +279,18 @@ class TransportSolverRuntimePhysicsMixin(TransportSolverState):
         rhs_D = self.n_D + 0.5 * dt * L_D_exp - dt * S_fuel
         a, b, c = self._build_cn_tridiag(self.D_species * np.ones(self.nr), dt)
         self.n_D = self._thomas_solve(a, b, c, rhs_D)
-        self.n_D[0] = self.n_D[1]
         self.n_D[-1] = 0.01
         self.n_D = np.maximum(0.001, self.n_D)
 
         L_T_exp = self._explicit_diffusion_rhs(self.n_T, self.D_species * np.ones(self.nr))
         rhs_T = self.n_T + 0.5 * dt * L_T_exp - dt * S_fuel
         self.n_T = self._thomas_solve(a, b, c, rhs_T)
-        self.n_T[0] = self.n_T[1]
         self.n_T[-1] = 0.01
         self.n_T = np.maximum(0.001, self.n_T)
 
         L_He_exp = self._explicit_diffusion_rhs(self.n_He, self.D_species * np.ones(self.nr))
         rhs_He = self.n_He + 0.5 * dt * L_He_exp + dt * (S_He - S_He_pump_rate * self.n_He)
         self.n_He = self._thomas_solve(a, b, c, rhs_He)
-        self.n_He[0] = self.n_He[1]
         self.n_He[-1] = 0.0
         self.n_He = np.maximum(0.0, self.n_He)
 

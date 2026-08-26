@@ -276,18 +276,21 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
         )
 
     def inject_impurities(self, flux_from_wall_per_sec: float, dt: float) -> None:
-        """Models impurity influx from PWI erosion with explicit diffusion."""
+        """Model PWI impurity influx with the shared cylindrical CN operator."""
         d_n_edge = (flux_from_wall_per_sec * dt) / 20.0 * 1e-18
         self.n_impurity[-1] += d_n_edge
 
-        d_imp = 1.0
-        new_imp = self.n_impurity.copy()
-        grad = np.gradient(self.n_impurity, self.drho)
-        flux = -d_imp * grad
-        div = np.gradient(flux, self.drho) / (self.rho + 1e-6)
-        new_imp += (-div) * dt
-        new_imp[0] = new_imp[1]
-        self.n_impurity = np.maximum(0, new_imp)
+        d_imp = np.ones_like(self.n_impurity)
+        explicit = self._explicit_diffusion_rhs(self.n_impurity, d_imp)
+        rhs = self.n_impurity + 0.5 * dt * explicit
+        a, b, c = self._build_cn_tridiag(d_imp, dt)
+        edge_value = float(self.n_impurity[-1])
+        b[-1] = 1.0
+        a[-1] = 0.0
+        rhs[-1] = edge_value
+        new_impurity = self._thomas_solve(a, b, c, rhs)
+        new_impurity[-1] = edge_value
+        self.n_impurity = np.maximum(0.0, np.asarray(new_impurity, dtype=np.float64))
 
     def _evolve_impurity(self, dt: float) -> None:
         """Autonomous impurity evolution: edge source, implicit diffusion, loss.
@@ -318,18 +321,15 @@ class TransportSolverModelMixin(TransportSolverBackendMixin, TransportSolverPede
         rhs = self.n_impurity + 0.5 * dt * lh_explicit
         a, b, c = self._build_cn_tridiag(d_imp, dt)
         b_loss = b + dt / max(tau_imp, 1e-3)
-        # Fold the boundary conditions into the system (Neumann axis,
-        # Dirichlet source-loaded edge) so the fixed point is dt-independent.
+        # The shared CN matrix already contains the conservative cylindrical
+        # half-control-volume axis row.  Fold only the source-loaded edge into
+        # the system so the fixed point is dt-independent.
         edge_value = float(self.n_impurity[-1]) / (1.0 + dt / max(tau_imp, 1e-3))
-        b_loss[0] = 1.0
-        c[0] = -1.0
-        rhs[0] = 0.0
         b_loss[-1] = 1.0
         a[-1] = 0.0
         rhs[-1] = edge_value
         new_impurity = self._thomas_solve(a, b_loss, c, rhs)
 
-        new_impurity[0] = new_impurity[1]
         new_impurity[-1] = edge_value
         self.n_impurity = np.maximum(0.0, np.asarray(new_impurity, dtype=np.float64))
 

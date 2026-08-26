@@ -66,10 +66,19 @@ def explicit_diffusion_rhs(
     T: FloatArray,
     chi: FloatArray,
 ) -> FloatArray:
-    """Compute explicit diffusion operator L_h(T) = (1/r) d/dr(r chi dT/dr)."""
+    """Compute the cylindrical diffusion operator on a node-centred radial grid.
+
+    The magnetic-axis node uses the finite-volume balance over
+    ``0 <= rho <= drho/2``; interior nodes use centred face fluxes. The outer
+    boundary row is left zero because the runtime applies its Dirichlet value.
+    """
     n = len(T)
     Lh = np.zeros(n)
     dr = drho
+
+    if rho[0] == 0.0:
+        chi_axis_face = 0.5 * (chi[0] + chi[1])
+        Lh[0] = 4.0 * chi_axis_face * (T[1] - T[0]) / (dr * dr)
 
     r = rho[1 : n - 1]
     chi_ip = 0.5 * (chi[1 : n - 1] + chi[2:n])
@@ -118,7 +127,11 @@ def build_cn_tridiag(
     chi: FloatArray,
     dt: float,
 ) -> tuple[FloatArray, FloatArray, FloatArray]:
-    """Build tridiagonal coefficients for Crank-Nicolson LHS."""
+    """Build the cylindrical Crank-Nicolson left-hand-side coefficients.
+
+    The first row is the conservative magnetic-axis half-control-volume row.
+    The runtime replaces the final row with its prescribed edge temperature.
+    """
     global _cn_grid_cache  # noqa: PLW0603
     if _cn_grid_cache is None or not _cn_grid_cache.matches(rho, drho):
         _cn_grid_cache = _CNGridCache(rho, drho)
@@ -134,6 +147,11 @@ def build_cn_tridiag(
 
     coeff_ip = chi_ip * cache.geo_ip
     coeff_im = chi_im * cache.geo_im
+
+    if rho[0] == 0.0:
+        axis_coeff = 4.0 * 0.5 * (chi[0] + chi[1]) / (drho * drho)
+        b[0] = 1.0 + 0.5 * dt * axis_coeff
+        c[0] = -0.5 * dt * axis_coeff
 
     b[1 : n - 1] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im)
     c[1 : n - 1] = -0.5 * dt * coeff_ip

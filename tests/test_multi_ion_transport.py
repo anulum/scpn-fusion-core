@@ -188,6 +188,24 @@ def test_quasineutrality(solver_multi: TransportSolver):
     np.testing.assert_allclose(solver_multi.ne, expected_ne, atol=1e-10)
 
 
+def test_species_cn_preserves_conservative_axis_solution(
+    solver_multi: TransportSolver, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """D/T/He transport must not overwrite the solved cylindrical axis row."""
+    rho = solver_multi.rho
+    initial = 1.0 + 0.5 * rho**2
+    solver_multi.n_D = initial.copy()
+    solver_multi.n_T = initial.copy()
+    solver_multi.n_He = initial.copy()
+    monkeypatch.setattr(solver_multi, "_bosch_hale_sigmav", lambda _temperature: np.zeros_like(rho))
+
+    solver_multi._evolve_species(dt=1.0e-3)
+
+    assert solver_multi.n_D[0] != pytest.approx(solver_multi.n_D[1])
+    assert solver_multi.n_T[0] != pytest.approx(solver_multi.n_T[1])
+    assert solver_multi.n_He[0] != pytest.approx(solver_multi.n_He[1])
+
+
 # ── Independent Te evolution ─────────────────────────────────────────
 
 

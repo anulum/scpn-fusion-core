@@ -100,9 +100,12 @@ def _diffusion_rhs_np(
     rho: FloatArray,
     drho: float,
 ) -> FloatArray:
-    """L_h(T) = (1/r) d/dr(r chi dT/dr) via central differences."""
+    """Evaluate cylindrical diffusion with a conservative axis control volume."""
     n = len(T)
     Lh = np.zeros(n)
+    if rho[0] == 0.0:
+        chi_axis_face = 0.5 * (chi[0] + chi[1])
+        Lh[0] = 4.0 * chi_axis_face * (T[1] - T[0]) / (drho * drho)
     for i in range(1, n - 1):
         r = rho[i]
         chi_ip = 0.5 * (chi[i] + chi[i + 1])
@@ -171,25 +174,10 @@ if _HAS_JAX:
         rho: jnp.ndarray,
         drho: float,
     ) -> jnp.ndarray:
-        """Vectorised cylindrical diffusion (no Python loops)."""
+        """Evaluate cylindrical diffusion with a conservative axis control volume."""
         n = T.shape[0]
-        # Half-grid diffusivities
-        chi_ip = 0.5 * (chi[:-1] + chi[1:])  # (n-1,)
-        chi_im = chi_ip  # shifted view
-        r_ip = rho[:-1] + 0.5 * drho  # (n-1,)
-        r_im = rho[:-1] - 0.5 * drho
-
-        # Fluxes on half-grid
-        dT = jnp.diff(T)  # (n-1,)
-        flux_ip = chi_ip * r_ip * dT / drho  # flux at i+1/2
-        flux_im = chi_im[:-1] * r_im[:-1] * dT[:-1] / drho  # flux at i-1/2 (shifted)
-
-        # Actually need flux_ip[i] and flux_im[i] = flux at (i-1/2)
-        # flux at i+1/2 = chi_{i+1/2} * r_{i+1/2} * (T[i+1] - T[i]) / dr
-        # flux at i-1/2 = chi_{i-1/2} * r_{i-1/2} * (T[i] - T[i-1]) / dr
-        # Recompute cleanly for interior i=1..n-2:
-        chi_right = 0.5 * (chi[1:-1] + chi[2:])  # chi at (i+1/2) for i=1..n-2
-        chi_left = 0.5 * (chi[1:-1] + chi[:-2])  # chi at (i-1/2) for i=1..n-2
+        chi_right = 0.5 * (chi[1:-1] + chi[2:])
+        chi_left = 0.5 * (chi[1:-1] + chi[:-2])
         r_right = rho[1:-1] + 0.5 * drho
         r_left = rho[1:-1] - 0.5 * drho
         r_center = rho[1:-1]
@@ -199,6 +187,9 @@ if _HAS_JAX:
 
         Lh_interior = (flux_r - flux_l) / (r_center * drho)
         Lh = jnp.zeros(n)
+        chi_axis_face = 0.5 * (chi[0] + chi[1])
+        axis_value = 4.0 * chi_axis_face * (T[1] - T[0]) / (drho * drho)
+        Lh = Lh.at[0].set(jnp.where(rho[0] == 0.0, axis_value, 0.0))
         Lh = Lh.at[1:-1].set(Lh_interior)
         return Lh
 
@@ -237,11 +228,15 @@ if _HAS_JAX:
         c_sup = jnp.zeros(n - 1)
         c_sup = c_sup.at[1:].set(-0.5 * dt * coeff_ip)
 
+        has_axis = rho[0] == 0.0
+        axis_coeff = 4.0 * 0.5 * (chi[0] + chi[1]) / (drho * drho)
+        b_diag = b_diag.at[0].set(jnp.where(has_axis, 1.0 + 0.5 * dt * axis_coeff, 1.0))
+        c_sup = c_sup.at[0].set(jnp.where(has_axis, -0.5 * dt * axis_coeff, 0.0))
+
         rhs = T + 0.5 * dt * Lh + dt * source
         T_new = _thomas_solve_jax_impl(a_sub, b_diag, c_sup, rhs)
 
-        # Boundary conditions: Neumann at core, Dirichlet at edge
-        T_new = T_new.at[0].set(T_new[1])
+        T_new = T_new.at[0].set(jnp.where(has_axis, T_new[0], T_new[1]))
         T_new = T_new.at[-1].set(T_edge)
         result: jnp.ndarray = T_new
         return result
@@ -288,7 +283,12 @@ def diffusion_rhs(
     *,
     use_jax: bool = True,
 ) -> FloatArray:
-    """Cylindrical diffusion operator L_h(T) with JAX/GPU dispatch."""
+    """Evaluate cylindrical diffusion with JAX/GPU dispatch.
+
+    A grid beginning at ``rho=0`` uses the conservative cylindrical
+    half-control-volume axis row. A grid beginning inside the domain retains a
+    zero explicit inner-boundary row for the caller's boundary condition.
+    """
     if use_jax and _HAS_JAX:
         return np.asarray(
             _diffusion_rhs_jax_impl(
@@ -312,17 +312,32 @@ def crank_nicolson_step(
     *,
     use_jax: bool = True,
 ) -> FloatArray:
-    """Single Crank-Nicolson transport step with JAX/GPU dispatch.
+    """Advance one cylindrical profile by a Crank-Nicolson step.
 
     Parameters
     ----------
-    T       : temperature profile, length n
-    chi     : diffusivity profile, length n
-    source  : net heating source, length n
-    rho     : radial grid, length n
-    drho    : grid spacing
-    dt      : timestep
-    T_edge  : edge boundary condition (Dirichlet), keV
+    T : FloatArray
+        Temperature profile of length ``n``.
+    chi : FloatArray
+        Diffusivity profile of length ``n``.
+    source : FloatArray
+        Net temperature source profile of length ``n``.
+    rho : FloatArray
+        Strictly increasing radial grid. A first value of zero activates the
+        conservative cylindrical axis row.
+    drho : float
+        Uniform radial spacing.
+    dt : float
+        Time step.
+    T_edge : float, default=0.1
+        Prescribed outer-edge temperature in keV.
+    use_jax : bool, default=True
+        Dispatch through the JAX implementation when available.
+
+    Returns
+    -------
+    FloatArray
+        Updated temperature profile with the outer Dirichlet value applied.
     """
     if use_jax and _HAS_JAX:
         return np.asarray(
@@ -343,6 +358,10 @@ def crank_nicolson_step(
     a_sub = np.zeros(n - 1)
     b_diag = np.ones(n)
     c_sup = np.zeros(n - 1)
+    if rho[0] == 0.0:
+        axis_coeff = 4.0 * 0.5 * (chi[0] + chi[1]) / (dr * dr)
+        b_diag[0] = 1.0 + 0.5 * dt * axis_coeff
+        c_sup[0] = -0.5 * dt * axis_coeff
     for i in range(1, n - 1):
         r = rho[i]
         chi_ip = 0.5 * (chi[i] + chi[i + 1])
@@ -358,7 +377,8 @@ def crank_nicolson_step(
 
     rhs = T + 0.5 * dt * Lh + dt * source
     T_new = _thomas_solve_np(a_sub, b_diag, c_sup, rhs)
-    T_new[0] = T_new[1]
+    if rho[0] != 0.0:
+        T_new[0] = T_new[1]
     T_new[-1] = T_edge
     return T_new
 

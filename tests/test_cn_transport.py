@@ -12,6 +12,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from scipy.special import j0
 
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
 
@@ -42,6 +43,61 @@ def solver(tmp_path: Path) -> TransportSolver:
     ts.ne = 5.0 * (1 - ts.rho**2) ** 0.5
     ts.update_transport_model(50.0)
     return ts
+
+
+def test_impurity_transport_can_be_disabled(tmp_path: Path) -> None:
+    """The public runtime can represent a genuinely source-free heat step."""
+    config = json.loads(json.dumps(MOCK_CONFIG))
+    config["physics"]["transport_backend"] = "fixed_coefficients"
+    config["physics"]["impurity_transport_enabled"] = False
+    cfg = tmp_path / "source_free.json"
+    cfg.write_text(json.dumps(config), encoding="utf-8")
+
+    ts = TransportSolver(str(cfg), nr=33)
+    ts.Ti = 0.1 + 0.9 * (1.0 - ts.rho**2)
+    ts.Te = ts.Ti.copy()
+    ts.ne = np.full(ts.nr, 10.0)
+    ts.chi_i = np.ones(ts.nr)
+    ts.chi_e = np.ones(ts.nr)
+    ts.D_n = np.zeros(ts.nr)
+    initial = ts.Ti.copy()
+
+    ts.evolve_profiles(1.0e-3, 0.0)
+
+    np.testing.assert_array_equal(ts.n_impurity, np.zeros(ts.nr))
+    assert ts._Z_eff == 1.0
+    assert np.all(np.isfinite(ts.Ti))
+    assert np.all(ts.Ti > 0.0)
+    assert float(np.mean(ts.Ti)) < float(np.mean(initial))
+
+
+def test_impurity_transport_flag_rejects_non_boolean(tmp_path: Path) -> None:
+    """Ambiguous truthy values cannot silently change source physics."""
+    config = json.loads(json.dumps(MOCK_CONFIG))
+    config["physics"]["impurity_transport_enabled"] = "false"
+    cfg = tmp_path / "invalid_impurity_flag.json"
+    cfg.write_text(json.dumps(config), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="impurity_transport_enabled must be a boolean"):
+        TransportSolver(str(cfg))
+
+
+def test_impurity_cn_preserves_conservative_axis_solution(solver: TransportSolver) -> None:
+    """Impurity transport must retain the solved cylindrical axis row."""
+    solver.n_impurity = 1.0 + 0.5 * solver.rho**2
+
+    solver._evolve_impurity(dt=1.0e-3)
+
+    assert solver.n_impurity[0] != pytest.approx(solver.n_impurity[1])
+
+
+def test_injected_impurity_uses_conservative_axis_solution(solver: TransportSolver) -> None:
+    """The public PWI injection path must use the same cylindrical axis row."""
+    solver.n_impurity = 1.0 + 0.5 * solver.rho**2
+
+    solver.inject_impurities(flux_from_wall_per_sec=0.0, dt=1.0e-3)
+
+    assert solver.n_impurity[0] != pytest.approx(solver.n_impurity[1])
 
 
 # ── Thomas solver unit tests ──────────────────────────────────────
@@ -178,7 +234,6 @@ def test_cn_matches_euler_small_dt(tmp_path: Path):
     S_heat, _ = ts_fe._compute_aux_heating_sources(P_aux)
     S_rad = 5.0 * ts_fe.ne * ts_fe.n_impurity * np.sqrt(ts_fe.Te + 0.1)
     euler_Ti = ts_fe.Ti + dt * (Lh + S_heat - S_rad)
-    euler_Ti[0] = euler_Ti[1]
     euler_Ti[-1] = 0.1
     euler_Ti = np.maximum(0.01, euler_Ti)
 
@@ -187,6 +242,97 @@ def test_cn_matches_euler_small_dt(tmp_path: Path):
     core = slice(2, len(ts_cn.rho) * 3 // 4)
     rel_diff = np.abs(ts_cn.Ti[core] - euler_Ti[core]) / (euler_Ti[core] + 1e-10)
     assert np.max(rel_diff) < 0.05, f"Max relative diff {np.max(rel_diff):.4f} > 5%"
+
+
+def test_cn_cylindrical_axis_operator_uses_half_control_volume(
+    solver: TransportSolver,
+) -> None:
+    """The axis operator must use the cylindrical half-control-volume balance."""
+    temperature = 1.4 - 0.9 * solver.rho**2
+    diffusivity = 1.0 + 0.5 * solver.rho**2
+
+    diffusion = solver._explicit_diffusion_rhs(temperature, diffusivity)
+    face_diffusivity = 0.5 * (diffusivity[0] + diffusivity[1])
+    expected_axis = 4.0 * face_diffusivity * (temperature[1] - temperature[0]) / solver.drho**2
+
+    assert diffusion[0] == pytest.approx(expected_axis, rel=1.0e-13, abs=1.0e-13)
+    assert diffusion[0] == pytest.approx(-3.6, rel=2.0e-4)
+
+
+def test_cn_cylindrical_axis_matrix_matches_explicit_operator(
+    solver: TransportSolver,
+) -> None:
+    """The implicit axis row must be the CN counterpart of the explicit row."""
+    dt = 0.013
+    diffusivity = 0.7 + 0.4 * solver.rho**2
+    _, diagonal, upper = solver._build_cn_tridiag(diffusivity, dt)
+    axis_coefficient = 4.0 * 0.5 * (diffusivity[0] + diffusivity[1]) / solver.drho**2
+
+    assert diagonal[0] == pytest.approx(1.0 + 0.5 * dt * axis_coefficient)
+    assert upper[0] == pytest.approx(-0.5 * dt * axis_coefficient)
+    assert diagonal[0] + upper[0] == pytest.approx(1.0)
+
+
+def test_cn_public_bessel_mode_accuracy(tmp_path: Path) -> None:
+    """The public runtime must resolve the frozen cylindrical Bessel mode."""
+    config = json.loads(json.dumps(MOCK_CONFIG))
+    config["physics"]["transport_backend"] = "fixed_coefficients"
+    config["physics"]["impurity_transport_enabled"] = False
+    config["solver"]["max_numerical_recoveries_per_step"] = 0
+    cfg = tmp_path / "bessel_mode.json"
+    cfg.write_text(json.dumps(config), encoding="utf-8")
+
+    transport = TransportSolver(str(cfg), nr=129)
+    radial_mode = j0(2.4048255576957728 * transport.rho)
+    transport.T_edge_keV = 0.1
+    transport.Ti = 0.1 + 0.9 * radial_mode
+    transport.Te = transport.Ti.copy()
+    transport.ne = np.full(transport.nr, 10.0)
+    transport.chi_i = np.ones(transport.nr)
+    transport.chi_e = np.ones(transport.nr)
+    transport.D_n = np.zeros(transport.nr)
+
+    for _ in range(10):
+        transport.evolve_profiles(
+            1.0e-3,
+            0.0,
+            enforce_conservation=True,
+            enforce_numerical_recovery=True,
+            max_numerical_recoveries=0,
+        )
+
+    exact = 0.1 + 0.9 * radial_mode * np.exp(-(2.4048255576957728**2) * 0.01)
+    error = transport.Ti - exact
+    rmse = float(np.sqrt(np.mean(error**2)))
+    max_error = float(np.max(np.abs(error)))
+
+    assert rmse <= 2.2829306504541543e-6
+    assert max_error <= 7.870399983275767e-6
+    assert transport._last_conservation_error <= 2.564156129034178e-3
+    assert transport._last_numerical_recovery_count == 0
+
+
+def test_cn_public_multi_ion_runtime_solves_both_axis_rows(tmp_path: Path) -> None:
+    """Ion and electron public-runtime branches must retain their solved axis values."""
+    config = json.loads(json.dumps(MOCK_CONFIG))
+    config["physics"]["transport_backend"] = "fixed_coefficients"
+    cfg = tmp_path / "multi_ion_axis.json"
+    cfg.write_text(json.dumps(config), encoding="utf-8")
+
+    transport = TransportSolver(str(cfg), multi_ion=True, nr=65)
+    transport.Ti = 0.2 + 1.1 * (1.0 - transport.rho**2)
+    transport.Te = 0.2 + 0.7 * (1.0 - transport.rho**2)
+    transport.ne = np.full(transport.nr, 10.0)
+    transport.chi_i = np.full(transport.nr, 0.8)
+    transport.chi_e = 1.2 + 0.3 * transport.rho**2
+    transport.D_n = np.zeros(transport.nr)
+
+    transport.evolve_profiles(1.0e-4, 0.0)
+
+    assert np.all(np.isfinite(transport.Ti))
+    assert np.all(np.isfinite(transport.Te))
+    assert abs(float(transport.Ti[0] - transport.Ti[1])) > 1.0e-10
+    assert abs(float(transport.Te[0] - transport.Te[1])) > 1.0e-10
 
 
 def test_cn_backward_compatible(solver: TransportSolver):
@@ -199,11 +345,11 @@ def test_cn_backward_compatible(solver: TransportSolver):
 
 
 def test_cn_boundary_conditions(solver: TransportSolver):
-    """Core Neumann and edge Dirichlet must be enforced after each step."""
+    """Axis finite-volume symmetry and edge Dirichlet rows remain active."""
     for _ in range(5):
         solver.evolve_profiles(dt=0.5, P_aux=40.0)
-    # Neumann: T[0] == T[1]
-    assert abs(solver.Ti[0] - solver.Ti[1]) < 1e-12, "Core Neumann BC violated"
+    assert np.isfinite(solver.Ti[0])
+    assert abs(solver.Ti[0] - solver.Ti[1]) > 1.0e-12
     # Dirichlet: T[-1] == 0.1
     assert abs(solver.Ti[-1] - 0.1) < 1e-12, "Edge Dirichlet BC violated"
 

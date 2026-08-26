@@ -42,6 +42,13 @@ class TransportSolverInitializationMixin(TransportSolverState):
 
         self.n_impurity = np.zeros(self.nr)
 
+        raw_impurity_transport_enabled = self.cfg.get("physics", {}).get(
+            "impurity_transport_enabled", True
+        )
+        if not isinstance(raw_impurity_transport_enabled, bool):
+            raise ValueError("physics.impurity_transport_enabled must be a boolean.")
+        self.impurity_transport_enabled = raw_impurity_transport_enabled
+
         self.T_edge_keV = 0.08
         self.pedestal_model: EpedPedestalModel | None = None
         if self.cfg.get("physics", {}).get("pedestal_mode") == "eped":
