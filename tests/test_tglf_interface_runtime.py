@@ -262,7 +262,14 @@ def test_run_tglf_binary_executes_current_cli_and_parses_outputs(
     _mock_resolution(monkeypatch)
     work_dir = tmp_path / "work"
 
-    def _run(args, *, cwd, capture_output, text, timeout):
+    def _run(
+        args: list[str],
+        *,
+        cwd: str,
+        capture_output: bool,
+        text: bool,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
         assert args == ["/resolved/tglf-test", "-e", "."]
         assert capture_output and text and timeout == 30.0
         _write_current_outputs(Path(cwd))
@@ -311,7 +318,14 @@ def test_run_tglf_binary_retries_and_cleans_auto_work_dir(
         auto_dir.mkdir()
         return str(auto_dir)
 
-    def _run(args, *, cwd, capture_output, text, timeout):
+    def _run(
+        args: list[str],
+        *,
+        cwd: str,
+        capture_output: bool,
+        text: bool,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
         nonlocal calls
         calls += 1
         if calls == 1:
@@ -335,7 +349,14 @@ def test_run_tglf_binary_fails_closed_after_final_attempt(
 ) -> None:
     _mock_resolution(monkeypatch)
 
-    def _run(args, *, cwd, capture_output, text, timeout):
+    def _run(
+        args: list[str],
+        *,
+        cwd: str,
+        capture_output: bool,
+        text: bool,
+        timeout: float,
+    ) -> subprocess.CompletedProcess[str]:
         if failure == "timeout":
             raise subprocess.TimeoutExpired(cmd=args, timeout=timeout)
         return _completed()
