@@ -267,6 +267,14 @@ impl PyTransportSolver {
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
     }
 
+    fn build_profile(&self) -> &'static str {
+        if cfg!(debug_assertions) {
+            "debug"
+        } else {
+            "release"
+        }
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn set_transport_state(
         &mut self,

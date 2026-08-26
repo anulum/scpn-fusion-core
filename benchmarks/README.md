@@ -67,6 +67,33 @@ The local CLI benchmark includes process start-up and compilation-cache checks
 for language CLI paths. Use long-lived processes or cloud GPU/CPU runners for
 throughput comparisons.
 
+## Transport Rust/PyO3 and NumPy Comparison
+
+Build the Python extension in release mode, then run the fixed cylindrical
+transport comparison:
+
+```bash
+maturin develop --release --manifest-path scpn-fusion-rs/crates/fusion-python/Cargo.toml
+.venv/bin/python benchmarks/bench_transport_polyglot.py
+```
+
+The benchmark applies identical `float64` inputs and accuracy gates to the
+canonical NumPy path and the Rust solver exposed through PyO3. Its timed scope
+includes backend construction, input transfer, ten public solver steps, and
+final-profile readback. The checked-in local result records one cold sample,
+31 paired warm samples per backend, software and build versions, host load,
+CPU affinity, governor state, and the complete numerical-parity result.
+
+| File | Contents |
+|------|----------|
+| `POLYGLOT_PERFORMANCE_CONTRACT.md` | Required correctness, timing, provenance, and disclosure fields for promoted polyglot backends |
+| `validation/reports/transport_polyglot_comparison.json` | Machine-readable raw samples, environment metadata, and gate result |
+| `validation/reports/transport_polyglot_comparison.md` | Human-readable side-by-side timing and correctness table |
+
+The measured timing ratio describes the disclosed loaded workstation and is
+not a portable performance guarantee. Re-run the same command to measure the
+comparison on another machine.
+
 ## Rust Multigrid Scaling Validation
 
 `python validation/benchmark_rust_multigrid_scaling.py` runs the native Rust

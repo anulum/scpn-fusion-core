@@ -1,0 +1,190 @@
+{
+  "benchmark": "cylindrical_transport_rust_pyo3_vs_numpy",
+  "case": {
+    "case_sha256": "dc1d96d736149fda00f3c1a70be7014ad3a8f185b0f14dce525469d6024bc4d0",
+    "diffusivity_m2_s": 1.0,
+    "dt_s": 0.001,
+    "edge_temperature_kev": 0.1,
+    "initial_condition": "0.1 + 0.9*J0(2.404825557695773*rho)",
+    "nodes": 129,
+    "precision": "float64",
+    "sources": "zero",
+    "steps": 10,
+    "timed_scope": "construct backend state, transfer inputs, execute 10 public steps, and transfer/read the final profile"
+  },
+  "command": ".venv/bin/python benchmarks/bench_transport_polyglot.py",
+  "correctness": {
+    "analytic_rmse_kev": 1.0500475568708117e-06,
+    "analytic_rmse_kev_limit": 2.2829306504541543e-06,
+    "edge_exact": true,
+    "finite_positive_profiles": true,
+    "maximum_profile_difference_kev": 3.3306690738754696e-16,
+    "maximum_profile_difference_kev_limit": 2e-14,
+    "numpy_profile_sha256": "123fbd27d74d074da926b542bac6f441ec74c1277f5d0c5c86f87ab5ab0519fb",
+    "passes": true,
+    "rust_profile_sha256": "6900152685b6c691b7fb7fe35d9467066b65524fa430364f603e5c8a4f20a781"
+  },
+  "disclosure": {
+    "classification": "local_machine_observation",
+    "interpretation": "The ratio is the observed result on the disclosed local machine. It is not a portable performance guarantee.",
+    "portable_performance_claim_admitted": false,
+    "timing_excludes": [
+      "module import",
+      "extension compilation"
+    ],
+    "timing_includes": [
+      "backend construction",
+      "input state transfer",
+      "ten public solver calls",
+      "final result transfer/readback"
+    ]
+  },
+  "environment": {
+    "affinity_cpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "cargo": "cargo 1.96.0 (30a34c682 2026-05-25)",
+    "cpu_model": "11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz",
+    "governors": {
+      "powersave": 12
+    },
+    "load_average_after": [
+      12.82275390625,
+      13.92041015625,
+      14.27685546875
+    ],
+    "load_average_before": [
+      12.82275390625,
+      13.92041015625,
+      14.27685546875
+    ],
+    "logical_cpu_count": 12,
+    "machine": "x86_64",
+    "memory_total_bytes": 33422110720,
+    "numpy": "1.26.4",
+    "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
+    "process_count": 930,
+    "python": "3.12.3",
+    "rustc": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+    "scipy": "1.15.3",
+    "scpn_fusion_rs": "4.0.0",
+    "source_sha256": {
+      "benchmark": "935fe25f5f982e743989d40e20dd6e3b6f0201dd19378db42abefdb1faaa9e26",
+      "numpy_reference": "bb0832d666ed2192327d7d8841e20fb98c3f9c7b3e2119766178fa402fa4415f",
+      "pyo3_binding": "6453d02f98170b453521368b56d413b3c017f06fd9d44c95bb59a9c8bd2b169b",
+      "rust_transport": "45f428f5bbc83d1a827674b7fd0a9abdff45c77d5ee3cf44b2a1ad1737e71bbc"
+    },
+    "thread_environment": {}
+  },
+  "gate": {
+    "correctness_passes": true,
+    "passes": true,
+    "release_build_verified": true
+  },
+  "generated_at": "2026-08-26T03:27:38.347714+02:00",
+  "schema": "scpn-fusion-core.polyglot-performance-comparison.v1",
+  "timing": {
+    "discarded_warmups": 10,
+    "numpy_over_rust_ratio": 72.95633670180013,
+    "paired_order": "alternating NumPy-Rust and Rust-NumPy pairs",
+    "rows": [
+      {
+        "backend": "numpy",
+        "build_profile": "CPython/NumPy",
+        "cold_sample_s": 0.004279457,
+        "implementation": "scpn_fusion.core.jax_solvers.crank_nicolson_step(use_jax=False)",
+        "language": "Python",
+        "warm_median_s": 0.004028503,
+        "warm_p05_s": 0.0038661765000000004,
+        "warm_p95_s": 0.0044540745,
+        "warm_samples_s": [
+          0.003926944,
+          0.0041767290000000006,
+          0.0058042960000000005,
+          0.004047325,
+          0.004211223,
+          0.004690347,
+          0.004151049,
+          0.003995097,
+          0.0042178020000000005,
+          0.00403927,
+          0.003959102,
+          0.0041158290000000005,
+          0.003960493,
+          0.0041520030000000005,
+          0.004004851,
+          0.004025147000000001,
+          0.004162122,
+          0.004026738,
+          0.0038987350000000004,
+          0.003971802,
+          0.0038164790000000002,
+          0.0041027400000000006,
+          0.004213614,
+          0.0038336180000000004,
+          0.004079506,
+          0.0040211430000000005,
+          0.003906621,
+          0.003937782,
+          0.003978486,
+          0.004028503,
+          0.004111034
+        ]
+      },
+      {
+        "backend": "rust_pyo3",
+        "build_profile": "release",
+        "cold_sample_s": 0.000149619,
+        "implementation": "scpn_fusion_rs.PyTransportSolver.evolve_profiles",
+        "language": "Rust via PyO3",
+        "warm_median_s": 5.5218000000000006e-05,
+        "warm_p05_s": 4.4460000000000005e-05,
+        "warm_p95_s": 6.76655e-05,
+        "warm_samples_s": [
+          5.7169e-05,
+          4.5994e-05,
+          8.586800000000001e-05,
+          4.8797e-05,
+          6.598400000000001e-05,
+          4.7121000000000005e-05,
+          6.745500000000001e-05,
+          4.7265e-05,
+          6.5616e-05,
+          4.6609e-05,
+          5.8092000000000006e-05,
+          4.6443e-05,
+          5.8357000000000004e-05,
+          4.6228000000000005e-05,
+          6.7876e-05,
+          4.6529e-05,
+          6.0320000000000005e-05,
+          4.6248e-05,
+          6.694100000000001e-05,
+          5.5218000000000006e-05,
+          5.2134000000000006e-05,
+          4.4089000000000004e-05,
+          5.9789000000000006e-05,
+          4.4349000000000005e-05,
+          5.7454e-05,
+          4.4571000000000004e-05,
+          6.1485e-05,
+          4.7238000000000004e-05,
+          5.8996e-05,
+          4.5281e-05,
+          6.2391e-05
+        ]
+      }
+    ]
+  }
+}

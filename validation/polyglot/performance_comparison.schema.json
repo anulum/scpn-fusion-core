@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.github.io/scpn-fusion-core/schemas/polyglot-performance-comparison-v1.json",
+  "title": "SCPN Fusion Core polyglot performance comparison",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "benchmark",
+    "generated_at",
+    "command",
+    "case",
+    "correctness",
+    "timing",
+    "environment",
+    "disclosure",
+    "gate"
+  ],
+  "properties": {
+    "schema": {
+      "const": "scpn-fusion-core.polyglot-performance-comparison.v1"
+    },
+    "benchmark": {"type": "string", "minLength": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "command": {"type": "string", "minLength": 1},
+    "case": {
+      "type": "object",
+      "required": [
+        "case_sha256",
+        "nodes",
+        "steps",
+        "dt_s",
+        "precision",
+        "timed_scope"
+      ],
+      "properties": {
+        "case_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "nodes": {"type": "integer", "minimum": 3},
+        "steps": {"type": "integer", "minimum": 1},
+        "dt_s": {"type": "number", "exclusiveMinimum": 0},
+        "precision": {"const": "float64"},
+        "timed_scope": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "correctness": {
+      "type": "object",
+      "required": [
+        "maximum_profile_difference_kev",
+        "maximum_profile_difference_kev_limit",
+        "analytic_rmse_kev",
+        "analytic_rmse_kev_limit",
+        "edge_exact",
+        "finite_positive_profiles",
+        "passes"
+      ],
+      "properties": {
+        "maximum_profile_difference_kev": {"type": "number", "minimum": 0},
+        "maximum_profile_difference_kev_limit": {"type": "number", "minimum": 0},
+        "analytic_rmse_kev": {"type": "number", "minimum": 0},
+        "analytic_rmse_kev_limit": {"type": "number", "exclusiveMinimum": 0},
+        "edge_exact": {"type": "boolean"},
+        "finite_positive_profiles": {"type": "boolean"},
+        "passes": {"type": "boolean"}
+      },
+      "additionalProperties": true
+    },
+    "timing": {
+      "type": "object",
+      "required": ["paired_order", "discarded_warmups", "rows", "numpy_over_rust_ratio"],
+      "properties": {
+        "paired_order": {"type": "string", "minLength": 1},
+        "discarded_warmups": {"type": "integer", "minimum": 0},
+        "numpy_over_rust_ratio": {"type": "number", "exclusiveMinimum": 0},
+        "rows": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "backend",
+              "language",
+              "implementation",
+              "build_profile",
+              "cold_sample_s",
+              "warm_samples_s",
+              "warm_median_s",
+              "warm_p05_s",
+              "warm_p95_s"
+            ],
+            "properties": {
+              "backend": {"type": "string", "minLength": 1},
+              "language": {"type": "string", "minLength": 1},
+              "implementation": {"type": "string", "minLength": 1},
+              "build_profile": {"type": "string", "minLength": 1},
+              "cold_sample_s": {"type": "number", "minimum": 0},
+              "warm_samples_s": {
+                "type": "array",
+                "minItems": 3,
+                "items": {"type": "number", "minimum": 0}
+              },
+              "warm_median_s": {"type": "number", "minimum": 0},
+              "warm_p05_s": {"type": "number", "minimum": 0},
+              "warm_p95_s": {"type": "number", "minimum": 0}
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "environment": {"type": "object", "additionalProperties": true},
+    "disclosure": {
+      "type": "object",
+      "required": [
+        "classification",
+        "portable_performance_claim_admitted",
+        "interpretation"
+      ],
+      "properties": {
+        "classification": {"const": "local_machine_observation"},
+        "portable_performance_claim_admitted": {"const": false},
+        "interpretation": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": true
+    },
+    "gate": {
+      "type": "object",
+      "required": ["passes", "correctness_passes", "release_build_verified"],
+      "properties": {
+        "passes": {"type": "boolean"},
+        "correctness_passes": {"type": "boolean"},
+        "release_build_verified": {"type": "boolean"}
+      },
+      "additionalProperties": false
+    }
+  }
+}
