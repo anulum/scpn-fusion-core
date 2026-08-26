@@ -9,7 +9,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -32,8 +31,9 @@ def _resolve_runtime_transport_profiles(transport_solver: Any) -> tuple[FloatArr
 
 def validate_against_tglf(
     transport_solver: Any,
-    tglf_binary_path: str | Path,
     rho_indices: list[int] | None = None,
+    *,
+    tglf_command: str = "tglf",
 ) -> TGLFComparisonResult:
     """Run TGLF on multiple flux surfaces and compare against our transport."""
     from scpn_fusion.core import tglf_interface as tglf
@@ -48,7 +48,7 @@ def validate_against_tglf(
     tglf_outputs = []
     for idx in rho_indices:
         deck = tglf.generate_input_deck(ts, idx)
-        output = tglf.run_tglf_binary(deck, tglf_binary_path)
+        output = tglf.run_tglf_binary(deck, tglf_command=tglf_command)
         tglf_outputs.append(output)
 
     chi_i_profile, chi_e_profile = _resolve_runtime_transport_profiles(ts)

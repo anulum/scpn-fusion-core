@@ -10,8 +10,8 @@
 ``TGLFDatasetGenerator`` samples the TGLF binary to build a training set;
 ``TGLFSurrogate`` is a deterministic ridge-regularised polynomial regression that
 maps the turbulence-drive inputs (``R/LTi``, ``R/LTe``, ``R/Lne``, ``q``,
-``s_hat``, ``beta_e``, ``Z_eff``) to the TGLF transport outputs (``chi_i``,
-``chi_e``, ``gamma_max``, ``q_i``, ``q_e``). The fit is a closed-form
+``s_hat``, ``beta_e``, ``Z_eff``) to signed native GACODE particle/heat fluxes
+and the maximum growth rate. The fit is a closed-form
 ``(ΦᵀΦ + ridge·I)⁻¹ Φᵀ Y`` solve over standardised, per-feature quadratic features,
 so it is reproducible bit-for-bit from a given dataset (no RNG, no iterative
 optimiser). ``train_surrogate_from_tglf`` fits, persists ``.npz`` weights, and
@@ -46,27 +46,43 @@ DEFAULT_TGLF_FEATURES: tuple[str, ...] = (
 
 #: TGLF transport outputs the surrogate predicts.
 DEFAULT_TGLF_TARGETS: tuple[str, ...] = (
-    "chi_i",
-    "chi_e",
-    "gamma_max",
+    "particle_e",
+    "particle_i",
     "q_i",
     "q_e",
+    "gamma_max",
 )
 
 
 class TGLFDatasetGenerator:
     """Automated generation of TGLF datasets for surrogate training."""
 
-    def __init__(self, tglf_binary_path: str | Path) -> None:
-        """Store the TGLF executable path used by sampled dataset runs."""
-        self.tglf_path = Path(tglf_binary_path)
+    def __init__(
+        self,
+        tglf_command: str = "tglf",
+        *,
+        seed: int = 0,
+        run_root: str | Path | None = None,
+    ) -> None:
+        """Configure deterministic PATH-resolved TGLF sampling.
+
+        When ``run_root`` is supplied, every sample keeps its complete GACODE
+        input/output directory for provenance and later parser replay.
+        """
+        self.tglf_command = tglf_command
+        self.seed = int(seed)
+        self.run_root = None if run_root is None else Path(run_root)
 
     def generate_random_dataset(self, n_samples: int = 100) -> list[dict[str, Any]]:
-        """Generate a randomized dataset of TGLF runs."""
+        """Generate a deterministic randomized dataset of real TGLF runs."""
         from scpn_fusion.core import tglf_interface as tglf
 
-        rng = np.random.default_rng()
+        if isinstance(n_samples, bool) or not isinstance(n_samples, int) or n_samples < 0:
+            raise ValueError("n_samples must be a non-negative integer.")
+        rng = np.random.default_rng(self.seed)
         dataset: list[dict[str, Any]] = []
+        if self.run_root is not None:
+            self.run_root.mkdir(parents=True, exist_ok=True)
 
         print(f"[TGLF] Generating {n_samples} samples for surrogate training...")
         for i in range(n_samples):
@@ -81,10 +97,23 @@ class TGLFDatasetGenerator:
             )
 
             try:
-                out = tglf.run_tglf_binary(deck, self.tglf_path, timeout_s=60.0)
-                dataset.append({"input": deck.__dict__, "output": out.__dict__})
+                sample_dir = None if self.run_root is None else self.run_root / f"sample_{i:06d}"
+                out = tglf.run_tglf_binary(
+                    deck,
+                    tglf_command=self.tglf_command,
+                    timeout_s=60.0,
+                    work_dir=sample_dir,
+                )
+                dataset.append(
+                    {
+                        "sample_index": i,
+                        "seed": self.seed,
+                        "input": deck.__dict__,
+                        "output": out.__dict__,
+                    }
+                )
             except Exception as exc:
-                logger.warning("Sample %s failed: %s", i, exc)
+                raise RuntimeError(f"TGLF dataset sample {i} failed closed: {exc}") from exc
 
         return dataset
 

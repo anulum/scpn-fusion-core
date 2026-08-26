@@ -148,7 +148,18 @@ class TestTGLFOutput:
     def test_output_fields(self) -> None:
         """Output dataclass has the expected field set."""
         field_names = {f.name for f in fields(TGLFOutput)}
-        assert {"rho", "chi_i", "chi_e", "gamma_max", "q_i", "q_e"} == field_names
+        assert {
+            "rho",
+            "chi_i",
+            "chi_e",
+            "gamma_max",
+            "q_i",
+            "q_e",
+            "particle_e",
+            "particle_i",
+            "d_e",
+            "d_i",
+        } == field_names
 
 
 # ── 3. TGLFComparisonResult ──────────────────────────────────────────
@@ -268,8 +279,15 @@ class TestGenerateInputDeck:
         assert 0.0 <= deck.delta < 1.0
 
     def test_run_tglf_profile_scan_interpolates_samples(self, mock_solver, monkeypatch) -> None:
-        def _stub_run(deck, _path, *, timeout_s=120.0, max_retries=2):
-            _ = (timeout_s, max_retries)
+        def _stub_run(
+            deck,
+            *,
+            tglf_command="tglf",
+            timeout_s=120.0,
+            work_dir=None,
+            max_retries=2,
+        ):
+            _ = (tglf_command, timeout_s, work_dir, max_retries)
             return TGLFOutput(
                 rho=deck.rho,
                 chi_i=2.0 * deck.rho,
@@ -278,7 +296,11 @@ class TestGenerateInputDeck:
             )
 
         monkeypatch.setattr(tglf_mod, "run_tglf_binary", _stub_run)
-        result = run_tglf_profile_scan(mock_solver, "C:/fake/tglf", rho_indices=[10, 20, 30])
+        result = run_tglf_profile_scan(
+            mock_solver,
+            tglf_command="tglf-test",
+            rho_indices=[10, 20, 30],
+        )
         assert len(result.rho_samples) == 3
         assert len(result.chi_i_profile) == mock_solver.nr
         assert len(result.chi_e_profile) == mock_solver.nr
@@ -392,7 +414,7 @@ class TestWriteInputFile:
         text = path.read_text(encoding="utf-8")
         assert "Q_LOC" in text
         assert "KAPPA_LOC" in text
-        assert "RLTS_1" in text  # R_LTi is written as RLTS_1
+        assert "RLTS_1" in text  # Electron temperature gradient.
 
     def test_write_tglf_input_file_values_present(self, tmp_path: Path) -> None:
         """Written file should contain the numerical values from the deck."""
@@ -408,12 +430,12 @@ class TestWriteInputFile:
         )
         path = write_tglf_input_file(deck, tmp_path)
         text = path.read_text(encoding="utf-8")
-        assert "2.000000" in text  # q value
-        assert "1.850000" in text  # kappa value
-        assert "Q_PRIME_LOC = 1.200000" in text
-        assert "P_PRIME_LOC = -4200.000000" in text
-        assert "ALPHA_LOC = 0.180000" in text
-        assert "XNUE = 0.070000" in text
+        assert "Q_LOC = 2" in text
+        assert "KAPPA_LOC = 1.85" in text
+        assert "Q_PRIME_LOC = 1.2" in text
+        assert "P_PRIME_LOC = -4200" in text
+        assert "ALPHA_LOC" not in text
+        assert "XNUE = 0.07" in text
 
 
 # ── 7. TGLFBenchmark Comparison ──────────────────────────────────────

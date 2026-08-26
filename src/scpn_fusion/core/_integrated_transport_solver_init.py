@@ -12,6 +12,8 @@ from typing import Any
 
 import numpy as np
 
+from scpn_fusion.core._tglf_interface_runtime import _validate_tglf_command_name
+
 from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
 from scpn_fusion.core.eped_pedestal import EpedPedestalModel
 
@@ -94,7 +96,15 @@ class TransportSolverInitializationMixin(TransportSolverState):
         )
         self._neural_transport_model = None
         self._neural_transport_model_weights_path: str | None = None
-        self.tglf_binary_path: str | None = self.cfg.get("physics", {}).get("tglf_binary_path")
+        legacy_tglf_path = self.cfg.get("physics", {}).get("tglf_binary_path")
+        if legacy_tglf_path is not None:
+            raise ValueError(
+                "physics.tglf_binary_path is forbidden; install TGLF on PATH and use "
+                "physics.tglf_command with a command name only."
+            )
+        self.tglf_command: str = _validate_tglf_command_name(
+            self.cfg.get("physics", {}).get("tglf_command", "tglf")
+        )
         self.tglf_timeout_s: float = float(self.cfg.get("physics", {}).get("tglf_timeout_s", 120.0))
         self.tglf_max_retries: int = int(self.cfg.get("physics", {}).get("tglf_max_retries", 2))
 

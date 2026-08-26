@@ -123,9 +123,9 @@ class TestTGLFInputWriter:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = write_tglf_input_file(deck, tmpdir)
             content = path.read_text()
-            assert "Q_LOC = 2.500000" in content
-            assert "RLTS_1 = 8.000000" in content
-            assert "KAPPA_LOC = 1.800000" in content
+            assert "Q_LOC = 2.5" in content
+            assert "RLTS_2 = 2.58064516129" in content
+            assert "KAPPA_LOC = 1.8" in content
 
     def test_creates_output_dir(self) -> None:
         deck = TGLFInputDeck()
@@ -140,23 +140,23 @@ class TestTGLFInputWriter:
 
 
 class TestTGLFOutputParser:
-    def test_parse_key_value_output(self) -> None:
+    def test_parse_current_species_summary(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
-            out_path.write_text("CHI_I = 1.5\nCHI_E = 0.8\nGAMMA_MAX = 0.12\nOTHER = ignored\n")
+            out_path.write_text("elec -0.2 0.8 0\nion1 -0.2 1.5 0\n")
             result = _parse_tglf_run_output(out_path, rho=0.5)
             assert result.rho == pytest.approx(0.5)
-            assert result.chi_i == pytest.approx(1.5)
-            assert result.chi_e == pytest.approx(0.8)
-            assert result.gamma_max == pytest.approx(0.12)
+            assert result.q_i == pytest.approx(1.5)
+            assert result.q_e == pytest.approx(0.8)
+            assert result.particle_e == pytest.approx(-0.2)
+            assert result.particle_i == pytest.approx(-0.2)
 
-    def test_parse_chieff_aliases(self) -> None:
+    def test_parse_rejects_obsolete_chieff_aliases(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
             out_path.write_text("CHIEFF_I = 2.0\nCHIEFF_E = 1.0\n")
             result = _parse_tglf_run_output(out_path, rho=0.3)
-            assert result.chi_i == pytest.approx(2.0)
-            assert result.chi_e == pytest.approx(1.0)
+            assert result == TGLFOutput(rho=0.3)
 
     def test_parse_empty_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -169,19 +169,21 @@ class TestTGLFOutputParser:
     def test_parse_malformed_lines(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
-            out_path.write_text("# comment\nno_equals_here\nCHI_I = notanumber\nCHI_E = 1.5\n")
+            out_path.write_text("# comment\nno_species_data\nelec notanumber 1.5\nion1 0.2 2.5\n")
             result = _parse_tglf_run_output(out_path, rho=0.5)
-            assert result.chi_i == 0.0  # couldn't parse
-            assert result.chi_e == pytest.approx(1.5)
+            assert result.q_e == 0.0
+            assert result.particle_i == pytest.approx(0.2)
+            assert result.q_i == pytest.approx(2.5)
 
     def test_parse_non_finite_values(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             out_path = Path(tmpdir) / "out.tglf.run"
-            out_path.write_text("CHI_I = NaN\nCHI_E = Infinity\nGAMMA_MAX = -Infinity\n")
+            out_path.write_text("elec NaN Infinity\nion1 -Infinity NaN\n")
             result = _parse_tglf_run_output(out_path, rho=0.5)
-            assert result.chi_i == 0.0
-            assert result.chi_e == 0.0
-            assert result.gamma_max == 0.0
+            assert result.particle_e == 0.0
+            assert result.q_e == 0.0
+            assert result.particle_i == 0.0
+            assert result.q_i == 0.0
 
 
 # ── TGLF binary execution (mocked) ────────────────────────────────────
@@ -190,8 +192,8 @@ class TestTGLFOutputParser:
 class TestTGLFBinaryExecution:
     def test_run_tglf_binary_not_found(self) -> None:
         deck = TGLFInputDeck()
-        with pytest.raises(FileNotFoundError, match="TGLF binary not found"):
-            run_tglf_binary(deck, "/nonexistent/path/to/tglf")
+        with pytest.raises(FileNotFoundError, match="not found on PATH"):
+            run_tglf_binary(deck, tglf_command="nonexistent-tglf-command")
 
     @pytest.mark.parametrize("timeout_s", [0.0, -1.0, float("inf"), float("nan")])
     def test_run_tglf_binary_rejects_invalid_timeout(self, timeout_s: float) -> None:
@@ -199,7 +201,7 @@ class TestTGLFBinaryExecution:
         with pytest.raises(ValueError, match="timeout_s must be finite and > 0."):
             run_tglf_binary(
                 deck,
-                "/nonexistent/path/to/tglf",
+                tglf_command="nonexistent-tglf-command",
                 timeout_s=timeout_s,
             )
 
@@ -209,7 +211,7 @@ class TestTGLFBinaryExecution:
         with pytest.raises(ValueError, match="max_retries must be an integer in \\[0, 10\\]."):
             run_tglf_binary(
                 deck,
-                "/nonexistent/path/to/tglf",
+                tglf_command="nonexistent-tglf-command",
                 max_retries=max_retries,
             )
 

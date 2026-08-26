@@ -43,13 +43,9 @@ class TransportSolverBackendMixin(TransportSolverState):
             if transport_backend_key == "tglf_live":
                 from scpn_fusion.core.tglf_interface import run_tglf_profile_scan
 
-                tglf_binary_path = getattr(self, "tglf_binary_path", None)
-                if not tglf_binary_path:
-                    raise ValueError("tglf_live backend requires physics.tglf_binary_path.")
-
                 scan = run_tglf_profile_scan(
                     self,
-                    tglf_binary_path,
+                    tglf_command=str(getattr(self, "tglf_command", "tglf")),
                     timeout_s=float(getattr(self, "tglf_timeout_s", 120.0)),
                     max_retries=int(getattr(self, "tglf_max_retries", 2)),
                 )
@@ -108,12 +104,6 @@ class TransportSolverBackendMixin(TransportSolverState):
             elif transport_backend_key in {"neural_transport_hybrid", "qlknn_tglf_hybrid"}:
                 from scpn_fusion.core.tglf_interface import run_tglf_profile_scan
 
-                tglf_binary_path = getattr(self, "tglf_binary_path", None)
-                if not tglf_binary_path:
-                    raise ValueError(
-                        "neural_transport_hybrid backend requires physics.tglf_binary_path."
-                    )
-
                 neural_model = self._get_neural_transport_model()
                 if not getattr(neural_model, "is_neural", False):
                     weights_path = getattr(neural_model, "weights_path", None)
@@ -151,7 +141,7 @@ class TransportSolverBackendMixin(TransportSolverState):
                 if selected_indices:
                     scan = run_tglf_profile_scan(
                         self,
-                        tglf_binary_path,
+                        tglf_command=str(getattr(self, "tglf_command", "tglf")),
                         rho_indices=selected_indices,
                         timeout_s=float(getattr(self, "tglf_timeout_s", 120.0)),
                         max_retries=int(getattr(self, "tglf_max_retries", 2)),
@@ -372,6 +362,14 @@ class TransportSolverBackendMixin(TransportSolverState):
                     "error": None,
                 }
         except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
+            if transport_backend_key in {
+                "tglf_live",
+                "neural_transport_hybrid",
+                "qlknn_tglf_hybrid",
+            }:
+                raise RuntimeError(
+                    f"Explicit transport backend {transport_backend!r} failed closed: {exc}"
+                ) from exc
             grad_t = np.gradient(self.Ti, self.drho)
             chi_turb_i = 5.0 * np.maximum(0.0, -grad_t - 2.0)
             chi_turb_e = 0.35 * chi_turb_i

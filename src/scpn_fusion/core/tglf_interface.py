@@ -38,6 +38,8 @@ from scpn_fusion.core._tglf_interface_runtime import (
     _normalize_tglf_max_retries,
     _normalize_tglf_timeout_seconds,
     _parse_tglf_run_output,
+    _resolve_tglf_command,
+    render_tglf_input,
     run_tglf_binary,
     write_tglf_input_file,
 )
@@ -81,10 +83,12 @@ __all__ = [
     "_normalize_tglf_max_retries",
     "_normalize_tglf_timeout_seconds",
     "_parse_tglf_run_output",
+    "_resolve_tglf_command",
     "_reference_case_filename",
     "_reference_case_to_transport_input",
     "generate_input_deck",
     "parse_tglf_output",
+    "render_tglf_input",
     "run_tglf_binary",
     "run_tglf_profile_scan",
     "train_surrogate_from_tglf",
@@ -181,7 +185,6 @@ def generate_input_deck(transport_solver: Any, rho_idx: int) -> TGLFInputDeck:
     dq_drho = np.gradient(q_profile, ts.rho)
     q_val = float(q_profile[rho_idx])
     s_hat = float(np.clip(rho * dq_drho[rho_idx] / max(q_val, 0.2), 0.0, 10.0))
-    q_prime_loc = float(dq_drho[rho_idx] / max(a_minor, 1e-6))
 
     pressure_pa = np.maximum(ts.ne, 0.0) * 1e19 * np.maximum(ts.Te + ts.Ti, 0.0) * 1e3 * e_charge
     dp_drho = np.gradient(pressure_pa, ts.rho)
@@ -189,7 +192,13 @@ def generate_input_deck(transport_solver: Any, rho_idx: int) -> TGLFInputDeck:
     alpha_mhd = float(
         np.clip(-2.0 * mu0 * r0 * q_val**2 * dp_dr / max(b_toroidal**2, 1e-6), -20.0, 20.0)
     )
-    beta_e = float(np.clip(4.03e-3 * ne * Te, 0.0, 1.0))
+    beta_e = float(
+        np.clip(
+            2.0 * mu0 * ne * 1.0e19 * Te * 1.0e3 * e_charge / max(b_toroidal**2, 1e-12),
+            0.0,
+            1.0,
+        )
+    )
     xnue = float(np.clip(_compute_nustar(Te, ne, q_val, rho, r0, a_minor, z_eff), 0.0, 50.0))
 
     physics_cfg = ts.cfg.get("physics", {}) if isinstance(getattr(ts, "cfg", None), dict) else {}
@@ -200,9 +209,9 @@ def generate_input_deck(transport_solver: Any, rho_idx: int) -> TGLFInputDeck:
         rho=rho,
         s_hat=s_hat,
         q=q_val,
-        q_prime_loc=q_prime_loc,
+        q_prime_loc=0.0,
         alpha_mhd=alpha_mhd,
-        p_prime_loc=dp_dr,
+        p_prime_loc=0.0,
         kappa=kappa,
         delta=delta,
         R_LTi=R_LTi,
@@ -277,6 +286,10 @@ def parse_tglf_output(output_dir: str | Path) -> list[TGLFOutput]:
         gamma_list = _coerce_sequence(data.get("gamma_max", 0.0), default=0.0)
         qi_list = _coerce_sequence(data.get("q_i", 0.0), default=0.0)
         qe_list = _coerce_sequence(data.get("q_e", 0.0), default=0.0)
+        particle_e_list = _coerce_sequence(data.get("particle_e", 0.0), default=0.0)
+        particle_i_list = _coerce_sequence(data.get("particle_i", 0.0), default=0.0)
+        de_list = _coerce_sequence(data.get("d_e", 0.0), default=0.0)
+        di_list = _coerce_sequence(data.get("d_i", 0.0), default=0.0)
 
         for j in range(len(rho_pts)):
             results.append(
@@ -287,6 +300,10 @@ def parse_tglf_output(output_dir: str | Path) -> list[TGLFOutput]:
                     gamma_max=gamma_list[j] if j < len(gamma_list) else 0.0,
                     q_i=qi_list[j] if j < len(qi_list) else 0.0,
                     q_e=qe_list[j] if j < len(qe_list) else 0.0,
+                    particle_e=(particle_e_list[j] if j < len(particle_e_list) else 0.0),
+                    particle_i=(particle_i_list[j] if j < len(particle_i_list) else 0.0),
+                    d_e=de_list[j] if j < len(de_list) else 0.0,
+                    d_i=di_list[j] if j < len(di_list) else 0.0,
                 )
             )
 
@@ -295,8 +312,8 @@ def parse_tglf_output(output_dir: str | Path) -> list[TGLFOutput]:
 
 def run_tglf_profile_scan(
     transport_solver: Any,
-    tglf_binary_path: str | Path,
     *,
+    tglf_command: str = "tglf",
     rho_indices: list[int] | None = None,
     timeout_s: float = 120.0,
     max_retries: int = 2,
@@ -323,7 +340,7 @@ def run_tglf_profile_scan(
         outputs.append(
             run_tglf_binary(
                 deck,
-                tglf_binary_path,
+                tglf_command=tglf_command,
                 timeout_s=timeout_s,
                 max_retries=max_retries,
             )

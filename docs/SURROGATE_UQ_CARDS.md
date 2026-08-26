@@ -19,7 +19,7 @@ run `tools/generate_surrogate_uq_cards.py` to refresh.
 | `disruption_risk_predictor` | `promoted` | `unavailable` | No explicit feature-space OOD detector | 2 |
 | `itpa_pretrained_mlp` | `promoted` | `unavailable` | Coverage-manifest domain bounds | 1 |
 | `fno_turbulence_suppressor` | `deprecated_scoped` | `not_applicable` | None | 1 |
-| `tglf_surrogate_bridge` | `fail_closed_stub` | `not_applicable` | Not applicable — no model | 1 |
+| `tglf_surrogate_bridge` | `fail_closed_stub` | `not_applicable` | Not applicable — no promoted model | 3 |
 | `iter_gpu_surrogate` | `retrain_blocked` | `unavailable` | None beyond the training-domain description in the validation report | 1 |
 
 ## Cards
@@ -258,7 +258,7 @@ Declared gaps:
 
 ### `tglf_surrogate_bridge`
 
-TGLF surrogate bridge: dataset generation scaffolding for a future TGLF-trained transport surrogate.
+TGLF surrogate bridge with PATH-resolved official GACODE dataset generation; no weights are promoted.
 
 - Status: `fail_closed_stub`
 
@@ -266,14 +266,15 @@ Model artifacts:
 
 - `src/scpn_fusion/core/tglf_surrogate_bridge.py::train_surrogate_from_tglf`
 
-Training provenance: Dataset generator exists; no trained weights are shipped, and no surrogate claim is made.
+Training provenance: The generator now executes pinned official GACODE TGLF runs and preserves per-sample run directories. A small local pilot demonstrated the path, but no trained weights are shipped and no surrogate accuracy claim is made.
 
 Training provenance anchors:
 
 - `src/scpn_fusion/core/tglf_surrogate_bridge.py::TGLFDatasetGenerator`
-- `tools/generate_tglf_dataset.py`
+- `validation/benchmark_tglf_gacode_runtime.py`
+- `validation/reports/tglf_gacode_runtime.json`
 
-Calibration: Not applicable until a real fit lands (master-plan F-7).
+Calibration: Unavailable until a sufficiently large, split-safe real-GACODE fit passes held-out accuracy and uncertainty gates.
 
 Calibration anchors:
 
@@ -281,13 +282,13 @@ Calibration anchors:
 
 Conformal status: `not_applicable`
 
-Conformal certificate: No trained model exists, so there are no predictions or residuals to certify.
+Conformal certificate: No promoted model exists, so there are no promotion-grade residuals to certify.
 
 Conformal anchors:
 
 - `src/scpn_fusion/core/tglf_surrogate_bridge.py::train_surrogate_from_tglf`
 
-OOD mechanism: Not applicable — no model.
+OOD mechanism: Not applicable — no promoted model.
 
 OOD anchors:
 
@@ -299,7 +300,7 @@ Fallback behaviour anchors:
 
 - `src/scpn_fusion/core/gk_registry.py::resolve_tglf_solver`
 
-Retraining: Not applicable — nothing trained yet.
+Retraining: No public retraining procedure is admitted; versioned corpus, split, held-out, UQ, and OOD evidence are absent.
 
 Retraining anchors:
 
@@ -307,7 +308,9 @@ Retraining anchors:
 
 Declared gaps:
 
-- Real TGLF-trained fit pending (master-plan F-7); the lane stays fail-closed until then.
+- The only real-GACODE fit is a 32-sample local unpromoted pilot; no promotion-scale corpus exists.
+- The current quadratic baseline did not meet held-out evidence requirements and remains unpromoted.
+- Machine/discharge-disjoint validation, calibrated uncertainty, and OOD escalation evidence are absent.
 
 ### `iter_gpu_surrogate`
 

@@ -8,7 +8,6 @@
 
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from typing import Any, cast
 
@@ -57,11 +56,11 @@ def _synthetic_dataset(n_samples: int = 200, *, seed: int = 7) -> list[dict[str,
         feats = {name: float(rng.uniform(lo[name], hi[name])) for name in DEFAULT_TGLF_FEATURES}
         drive = feats["R_LTi"] + 0.5 * feats["R_LTe"] + 0.2 * feats["R_Lne"]
         out = {
-            "chi_i": 0.3 + 0.4 * drive + 0.02 * feats["R_LTi"] ** 2,
-            "chi_e": 0.2 + 0.25 * drive + 0.01 * feats["R_LTe"] ** 2,
-            "gamma_max": 0.05 + 0.03 * feats["R_LTi"] - 0.01 * feats["s_hat"] ** 2,
+            "particle_e": -0.2 + 0.02 * drive - 0.01 * feats["R_Lne"] ** 2,
+            "particle_i": -0.1 + 0.018 * drive - 0.008 * feats["R_Lne"] ** 2,
             "q_i": 0.1 + 0.15 * drive,
             "q_e": 0.1 + 0.12 * drive,
+            "gamma_max": 0.05 + 0.03 * feats["R_LTi"] - 0.01 * feats["s_hat"] ** 2,
         }
         dataset.append({"input": dict(feats), "output": dict(out)})
     return dataset
@@ -69,7 +68,7 @@ def _synthetic_dataset(n_samples: int = 200, *, seed: int = 7) -> list[dict[str,
 
 def test_dataset_generator_accepts_zero_samples() -> None:
     """A zero-sample request returns an empty dataset without invoking TGLF."""
-    gen = TGLFDatasetGenerator("C:/fake/tglf")
+    gen = TGLFDatasetGenerator("tglf-test")
     out = gen.generate_random_dataset(n_samples=0)
     assert out == []
 
@@ -80,18 +79,27 @@ def test_dataset_generator_records_successful_tglf_runs(monkeypatch: pytest.Monk
 
     def _run_tglf_binary(
         deck: tglf.TGLFInputDeck,
-        binary: str | Path,
         *,
+        tglf_command: str,
         timeout_s: float,
+        work_dir: str | Path | None,
     ) -> tglf.TGLFOutput:
         calls.append(deck)
-        assert Path(binary) == Path("/opt/tglf")
+        assert tglf_command == "tglf-test"
         assert timeout_s == 60.0
-        return tglf.TGLFOutput(rho=deck.rho, chi_i=1.25, chi_e=2.5, gamma_max=0.75)
+        assert work_dir is None
+        return tglf.TGLFOutput(
+            rho=deck.rho,
+            particle_e=-0.25,
+            particle_i=-0.2,
+            q_i=1.25,
+            q_e=2.5,
+            gamma_max=0.75,
+        )
 
     monkeypatch.setattr(tglf, "run_tglf_binary", _run_tglf_binary)
 
-    dataset = TGLFDatasetGenerator("/opt/tglf").generate_random_dataset(n_samples=2)
+    dataset = TGLFDatasetGenerator("tglf-test", seed=7).generate_random_dataset(n_samples=2)
 
     assert len(calls) == 2
     assert len(dataset) == 2
@@ -105,33 +113,33 @@ def test_dataset_generator_records_successful_tglf_runs(monkeypatch: pytest.Monk
         assert 0.0 <= input_payload["s_hat"] <= 3.0
         assert 0.001 <= input_payload["beta_e"] <= 0.05
         assert 1.0 <= input_payload["Z_eff"] <= 3.0
-        assert output_payload["chi_i"] == pytest.approx(1.25)
-        assert output_payload["chi_e"] == pytest.approx(2.5)
+        assert output_payload["particle_e"] == pytest.approx(-0.25)
+        assert output_payload["particle_i"] == pytest.approx(-0.2)
+        assert output_payload["q_i"] == pytest.approx(1.25)
+        assert output_payload["q_e"] == pytest.approx(2.5)
         assert output_payload["gamma_max"] == pytest.approx(0.75)
+        assert record["seed"] == 7
 
 
-def test_dataset_generator_logs_failed_tglf_runs(
+def test_dataset_generator_fails_closed_on_failed_tglf_run(
     monkeypatch: pytest.MonkeyPatch,
-    caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Failed sampled TGLF calls are logged and omitted from the dataset."""
+    """A failed sample aborts the dataset instead of silently biasing it."""
 
     def _run_tglf_binary(
         deck: tglf.TGLFInputDeck,
-        binary: str | Path,
         *,
+        tglf_command: str,
         timeout_s: float,
+        work_dir: str | Path | None,
     ) -> tglf.TGLFOutput:
-        del deck, binary, timeout_s
+        del deck, tglf_command, timeout_s, work_dir
         raise RuntimeError("synthetic TGLF failure")
 
     monkeypatch.setattr(tglf, "run_tglf_binary", _run_tglf_binary)
 
-    with caplog.at_level(logging.WARNING, logger="scpn_fusion.core.tglf_surrogate_bridge"):
-        dataset = TGLFDatasetGenerator("/opt/tglf").generate_random_dataset(n_samples=1)
-
-    assert dataset == []
-    assert "Sample 0 failed: synthetic TGLF failure" in caplog.text
+    with pytest.raises(RuntimeError, match="sample 0 failed closed"):
+        TGLFDatasetGenerator("tglf-test").generate_random_dataset(n_samples=1)
 
 
 def test_train_surrogate_writes_weights_and_report(tmp_path: Path) -> None:

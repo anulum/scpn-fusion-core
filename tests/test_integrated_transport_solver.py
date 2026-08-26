@@ -625,7 +625,7 @@ class TestNeoclassical:
             "plasma_current_target": 15.0,
             "vacuum_permeability": 1.0,
             "transport_backend": "tglf_live",
-            "tglf_binary_path": "C:/fake/tglf",
+            "tglf_command": "tglf-test",
             "tglf_timeout_s": 30.0,
             "tglf_max_retries": 1,
         }
@@ -634,8 +634,15 @@ class TestNeoclassical:
 
         import scpn_fusion.core.tglf_interface as tglf_mod
 
-        def _stub_scan(_solver, _binary, *, timeout_s=120.0, max_retries=2, rho_indices=None):
-            _ = (timeout_s, max_retries, rho_indices)
+        def _stub_scan(
+            _solver,
+            *,
+            tglf_command="tglf",
+            timeout_s=120.0,
+            max_retries=2,
+            rho_indices=None,
+        ):
+            _ = (tglf_command, timeout_s, max_retries, rho_indices)
             rho = _solver.rho
             return tglf_mod.TGLFProfileScanResult(
                 rho_samples=[float(rho[10]), float(rho[25]), float(rho[40])],
@@ -661,6 +668,18 @@ class TestNeoclassical:
         assert contract["fallback_used"] is False
         assert contract["profile_contract"]["n_points"] == solver.nr
         assert np.mean(solver.chi_e) > np.mean(solver.chi_i)
+
+    def test_transport_runtime_rejects_tglf_filesystem_path(self, tmp_path: Path) -> None:
+        cfg = dict(MINIMAL_CONFIG)
+        cfg["physics"] = {
+            "plasma_current_target": 15.0,
+            "vacuum_permeability": 1.0,
+            "tglf_command": "/opt/gacode/tglf",
+        }
+        cfg_path = tmp_path / "tglf_path_forbidden.json"
+        cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+        with pytest.raises(ValueError, match="resolved through PATH"):
+            TransportSolver(str(cfg_path))
 
     def test_transport_runtime_can_use_neural_transport_backend(self, tmp_path: Path) -> None:
         weights_path = _write_transport_weights(tmp_path / "neural_transport_weights.npz")
@@ -716,15 +735,22 @@ class TestNeoclassical:
             "neural_transport_weights_path": str(weights_path),
             "neural_transport_tglf_ood_sigma": 5.0,
             "neural_transport_tglf_max_points": 4,
-            "tglf_binary_path": "C:/fake/tglf",
+            "tglf_command": "tglf-test",
         }
         cfg_path = tmp_path / "neural_transport_hybrid.json"
         cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
 
         import scpn_fusion.core.tglf_interface as tglf_mod
 
-        def _stub_scan(_solver, _binary, *, timeout_s=120.0, max_retries=2, rho_indices=None):
-            _ = (timeout_s, max_retries, _binary)
+        def _stub_scan(
+            _solver,
+            *,
+            tglf_command="tglf",
+            timeout_s=120.0,
+            max_retries=2,
+            rho_indices=None,
+        ):
+            _ = (timeout_s, max_retries, tglf_command)
             assert rho_indices is not None
             rho = _solver.rho
             return tglf_mod.TGLFProfileScanResult(
@@ -785,7 +811,7 @@ class TestNeoclassical:
         assert contract["weights_path"] is None
         assert "FileNotFoundError" in str(contract["error"])
 
-    def test_transport_runtime_tglf_live_falls_back_cleanly(
+    def test_transport_runtime_tglf_live_fails_closed(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         cfg = dict(MINIMAL_CONFIG)
@@ -793,7 +819,7 @@ class TestNeoclassical:
             "plasma_current_target": 15.0,
             "vacuum_permeability": 1.0,
             "transport_backend": "tglf_live",
-            "tglf_binary_path": "C:/missing/tglf",
+            "tglf_command": "missing-tglf",
         }
         cfg_path = tmp_path / "tglf_live_fallback.json"
         cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
@@ -809,13 +835,8 @@ class TestNeoclassical:
         solver.Ti = 5.0 * (1 - solver.rho**2)
         solver.Te = 5.0 * (1 - solver.rho**2)
         solver.ne = 8.0 * (1 - solver.rho**2) ** 0.5
-        solver.update_transport_model(20.0)
-
-        contract = solver._last_transport_closure_contract
-        assert contract["requested_backend"] == "tglf_live"
-        assert contract["fallback_used"] is True
-        assert contract["model"] == "legacy_ti_threshold_fallback"
-        assert "FileNotFoundError" in str(contract["error"])
+        with pytest.raises(RuntimeError, match="tglf_live.*failed closed"):
+            solver.update_transport_model(20.0)
 
     @pytest.mark.parametrize(
         ("overrides", "field"),

@@ -29,7 +29,8 @@ class _DummyTransport:
 
 
 def test_validate_against_tglf_with_stubbed_binary(monkeypatch) -> None:
-    def _stub_run(deck, _path):
+    def _stub_run(deck, *, tglf_command="tglf"):
+        assert tglf_command == "tglf-test"
         return tglf_mod.TGLFOutput(
             rho=deck.rho,
             chi_i=1.0,
@@ -40,7 +41,7 @@ def test_validate_against_tglf_with_stubbed_binary(monkeypatch) -> None:
     monkeypatch.setattr(tglf_mod, "run_tglf_binary", _stub_run)
     result = validate_against_tglf(
         _DummyTransport(),
-        tglf_binary_path="C:/fake/tglf",
+        tglf_command="tglf-test",
         rho_indices=[2, 3, 4],
     )
     assert result.case_name == "Live TGLF validation"
@@ -48,7 +49,8 @@ def test_validate_against_tglf_with_stubbed_binary(monkeypatch) -> None:
 
 
 def test_validate_against_tglf_prefers_public_transport_profiles(monkeypatch) -> None:
-    def _stub_run(deck, _path):
+    def _stub_run(deck, *, tglf_command="tglf"):
+        assert tglf_command == "tglf-test"
         return tglf_mod.TGLFOutput(
             rho=deck.rho,
             chi_i=1.0,
@@ -59,7 +61,7 @@ def test_validate_against_tglf_prefers_public_transport_profiles(monkeypatch) ->
     monkeypatch.setattr(tglf_mod, "run_tglf_binary", _stub_run)
     result = validate_against_tglf(
         _DummyTransport(),
-        tglf_binary_path="C:/fake/tglf",
+        tglf_command="tglf-test",
         rho_indices=[2, 4, 6],
     )
     expected_i = np.interp(result.rho_points, np.linspace(0.0, 1.0, 9), np.linspace(0.8, 1.6, 9))
@@ -75,13 +77,14 @@ def test_validate_against_tglf_defaults_rho_indices_when_none(monkeypatch) -> No
     all satisfy ``1 <= i < n - 1``, so five surfaces survive the interior filter.
     """
 
-    def _stub_run(deck, _path):
+    def _stub_run(deck, *, tglf_command="tglf"):
+        assert tglf_command == "tglf-test"
         return tglf_mod.TGLFOutput(rho=deck.rho, chi_i=1.0, chi_e=0.5, gamma_max=0.1)
 
     monkeypatch.setattr(tglf_mod, "run_tglf_binary", _stub_run)
     result = validate_against_tglf(
         _DummyTransport(),
-        tglf_binary_path="C:/fake/tglf",
+        tglf_command="tglf-test",
         rho_indices=None,
     )
     assert len(result.rho_points) == 5

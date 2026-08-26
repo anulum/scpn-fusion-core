@@ -133,6 +133,11 @@ class GKOutput:
     D_e: float  # particle diffusivity [m^2/s]
     D_i: float = 0.0  # ion particle diffusivity [m^2/s]
 
+    particle_flux_e_gb: float = 0.0
+    particle_flux_i_gb: float = 0.0
+    heat_flux_e_gb: float = 0.0
+    heat_flux_i_gb: float = 0.0
+
     gamma: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     omega_r: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     k_y: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))

@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import subprocess
+from pathlib import Path
 from unittest.mock import patch
 
 import numpy as np
@@ -49,79 +50,82 @@ def cyclone_params():
     )
 
 
-def test_generate_tglf_input_contains_keys(cyclone_params):
+def _write_current_outputs(run_dir: Path) -> None:
+    (run_dir / "out.tglf.gbflux").write_text(
+        "-0.4 -0.4 3.2 5.1 0 0 0 0\n",
+        encoding="utf-8",
+    )
+    (run_dir / "out.tglf.eigenvalue_spectrum").write_text(
+        "# gamma/frequency pairs\n# mode 1 mode 2\n0.2 -0.5 0.1 0.2\n0.4 -0.8 0.3 0.4\n0.6 1.2 0.5 -0.2\n",
+        encoding="utf-8",
+    )
+    (run_dir / "out.tglf.ky_spectrum").write_text(
+        "# ky rho_s\n# values\n0.1\n0.4\n1.5\n",
+        encoding="utf-8",
+    )
+
+
+def test_generate_tglf_input_contains_current_keys(cyclone_params):
     text = generate_tglf_input(cyclone_params)
-    assert "&tglf_namelist" in text
-    assert "RLTS_1 = 6.900000" in text
-    assert "Q_LOC = 1.400000" in text
-    assert "SHAT = 0.780000" in text
-    assert "BETAE = 0.000000e+00" in text
+    assert "&tglf_namelist" not in text
+    assert "RLTS_1 = 2.48201438849" in text
+    assert "RLTS_2 = 2.48201438849" in text
+    assert "Q_LOC = 1.4" in text
+    assert "Q_PRIME_LOC" in text
+    assert "BETAE = 0" in text
+    assert "MASS_1 = 2.723000e-4" in text
+    assert "ZS_1 = -1.0" in text
 
 
 def test_generate_tglf_input_geometry(cyclone_params):
     cyclone_params.kappa = 1.7
     cyclone_params.delta = 0.33
     text = generate_tglf_input(cyclone_params)
-    assert "KAPPA_LOC = 1.700000" in text
-    assert "DELTA_LOC = 0.330000" in text
+    assert "KAPPA_LOC = 1.7" in text
+    assert "DELTA_LOC = 0.33" in text
+    assert "RMAJ_LOC = 2.78" in text
+    assert "RMIN_LOC = 0.5" in text
 
 
-def test_generate_tglf_input_aspect_ratio(cyclone_params):
-    text = generate_tglf_input(cyclone_params)
-    # R0/a = 2.78 / 1.0
-    assert "RMAJ_LOC = 2.780000" in text
+def test_generate_tglf_input_rejects_nonlinear_request(cyclone_params):
+    cyclone_params.physics_model = "nonlinear_electrostatic"
+    with pytest.raises(ValueError, match="quasilinear"):
+        generate_tglf_input(cyclone_params)
 
 
-def test_parse_tglf_output_empty(tmp_path):
+def test_parse_tglf_output_requires_metadata(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        parse_tglf_output(tmp_path)
+
+
+def test_parse_tglf_output_current_gacode_files(tmp_path, cyclone_params):
+    solver = TGLFSolver(work_dir=tmp_path)
+    solver.prepare_input(cyclone_params)
+    _write_current_outputs(tmp_path)
     result = parse_tglf_output(tmp_path)
-    assert result.chi_i == 0.0
-    assert result.converged is False
-
-
-def test_parse_tglf_output_transport_file(tmp_path):
-    transport = tmp_path / "out.tglf.transport"
-    transport.write_text("chi_i 2.5\nchi_e 1.8\nd_e 0.4\n")
-    result = parse_tglf_output(tmp_path)
-    assert result.chi_i == pytest.approx(2.5)
-    assert result.chi_e == pytest.approx(1.8)
-    assert result.D_e == pytest.approx(0.4)
     assert result.converged is True
+    assert result.heat_flux_i_gb == pytest.approx(5.1)
+    assert result.heat_flux_e_gb == pytest.approx(3.2)
+    assert result.particle_flux_e_gb == pytest.approx(-0.4)
+    assert result.particle_flux_i_gb == pytest.approx(-0.4)
+    assert np.isfinite([result.chi_i, result.chi_e, result.D_e, result.D_i]).all()
+    np.testing.assert_allclose(result.k_y, [0.1, 0.4, 1.5])
+    np.testing.assert_allclose(result.gamma, [0.2, 0.4, 0.6])
+    assert result.dominant_mode == "ETG"
 
 
-def test_parse_tglf_output_eigenvalue_file(tmp_path):
-    transport = tmp_path / "out.tglf.transport"
-    transport.write_text("chi_i 1.0\nchi_e 0.8\n")
-    eigen = tmp_path / "out.tglf.eigenvalue_spectrum"
-    data = np.column_stack(
-        [
-            np.linspace(0.1, 2.0, 12),
-            np.random.default_rng(0).random(12) * 0.3,
-            -np.random.default_rng(1).random(12) * 0.5,
-        ]
+def test_classify_dominant_modes():
+    assert _classify_dominant_mode(np.array([0.0, -0.1]), np.zeros(2)) == "stable"
+    assert _classify_dominant_mode(np.array([0.1, 0.3]), np.array([0.5, -0.8])) == "ITG"
+    assert _classify_dominant_mode(np.array([0.1, 0.3]), np.array([-0.5, 0.8])) == "TEM"
+    assert (
+        _classify_dominant_mode(
+            np.array([0.1, 0.3]),
+            np.array([-0.5, 0.8]),
+            np.array([0.2, 1.5]),
+        )
+        == "ETG"
     )
-    np.savetxt(eigen, data, header="ky gamma omega_r")
-    result = parse_tglf_output(tmp_path)
-    assert len(result.k_y) == 12
-    assert len(result.gamma) == 12
-    assert result.dominant_mode == "ITG"
-
-
-def test_classify_dominant_mode_stable():
-    gamma = np.array([0.0, -0.1, 0.0])
-    omega = np.array([0.0, 0.0, 0.0])
-    assert _classify_dominant_mode(gamma, omega) == "stable"
-
-
-def test_classify_dominant_mode_itg():
-    gamma = np.array([0.1, 0.3, 0.05])
-    omega = np.array([-0.5, -0.8, 0.2])
-    assert _classify_dominant_mode(gamma, omega) == "ITG"
-
-
-def test_classify_dominant_mode_tem():
-    gamma = np.array([0.1, 0.05, 0.3])
-    omega = np.array([0.5, -0.2, 0.8])
-    assert _classify_dominant_mode(gamma, omega) == "TEM"
 
 
 def test_tglf_solver_not_available():
@@ -129,51 +133,52 @@ def test_tglf_solver_not_available():
     assert solver.is_available() is False
 
 
+def test_tglf_solver_rejects_binary_paths(tmp_path):
+    solver = TGLFSolver(binary="/opt/gacode/tglf", work_dir=tmp_path)
+    assert solver.is_available() is False
+
+
 def test_tglf_solver_prepare_input(tmp_path, cyclone_params):
     solver = TGLFSolver(work_dir=tmp_path)
     run_dir = solver.prepare_input(cyclone_params)
     assert (run_dir / "input.tglf").exists()
-    content = (run_dir / "input.tglf").read_text()
-    assert "RLTS_1" in content
+    assert (run_dir / "scpn_fusion_tglf_deck.json").exists()
 
 
 def test_tglf_solver_run_binary_missing(tmp_path, cyclone_params):
     solver = TGLFSolver(binary="nonexistent_tglf_binary_xyz", work_dir=tmp_path)
     solver.prepare_input(cyclone_params)
-    with pytest.raises(RuntimeError, match="TGLF binary not available"):
+    with pytest.raises(RuntimeError, match="unavailable through PATH"):
         solver.run(tmp_path)
 
 
-@patch("shutil.which", return_value="/usr/bin/tglf")
-@patch("subprocess.run")
-def test_tglf_solver_run_mocked_success(mock_run, mock_which, tmp_path, cyclone_params):
-    """Mock a successful TGLF execution by writing output files."""
+@patch("scpn_fusion.core.gk_tglf._resolve_tglf_command", return_value="/usr/bin/tglf")
+@patch("scpn_fusion.core.gk_tglf.subprocess.run")
+def test_tglf_solver_run_mocked_success(mock_run, mock_resolve, tmp_path, cyclone_params):
     solver = TGLFSolver(work_dir=tmp_path)
     solver.prepare_input(cyclone_params)
-
-    # Simulate TGLF writing output
-    (tmp_path / "out.tglf.transport").write_text("chi_i 3.2\nchi_e 2.1\nd_e 0.6\n")
-    mock_run.return_value = None
-
+    _write_current_outputs(tmp_path)
+    mock_run.return_value = subprocess.CompletedProcess([], 0)
     result = solver.run(tmp_path)
     assert result.converged is True
-    assert result.chi_i == pytest.approx(3.2)
-    mock_run.assert_called_once()
+    assert result.heat_flux_i_gb == pytest.approx(5.1)
+    mock_run.assert_called_once_with(
+        ["/usr/bin/tglf", "-e", "."],
+        cwd=str(tmp_path),
+        capture_output=True,
+        text=True,
+        timeout=30.0,
+        check=True,
+    )
 
 
-@patch("shutil.which", return_value="/usr/bin/tglf")
+@patch("scpn_fusion.core.gk_tglf._resolve_tglf_command", return_value="/usr/bin/tglf")
 @patch(
-    "subprocess.run",
+    "scpn_fusion.core.gk_tglf.subprocess.run",
     side_effect=subprocess.TimeoutExpired(cmd="tglf", timeout=1.0),
 )
-def test_tglf_solver_timeout_fallback(mock_run, mock_which, tmp_path, cyclone_params):
+def test_tglf_solver_timeout_fails_closed(mock_run, mock_resolve, tmp_path, cyclone_params):
     solver = TGLFSolver(work_dir=tmp_path)
     solver.prepare_input(cyclone_params)
     with pytest.raises(RuntimeError, match="TGLF execution failed"):
         solver.run(tmp_path, timeout_s=1.0)
-
-
-def test_tglf_solver_run_from_params(tmp_path, cyclone_params):
-    solver = TGLFSolver(binary="nonexistent_tglf_binary_xyz", work_dir=tmp_path)
-    with pytest.raises(RuntimeError, match="TGLF binary not available"):
-        solver.run_from_params(cyclone_params)

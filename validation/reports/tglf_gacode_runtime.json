@@ -1,0 +1,96 @@
+{
+  "case": {
+    "dominant_ky": 24.24019843107654,
+    "elapsed_seconds_orientation_only": 0.9034745240351185,
+    "input": {
+      "B_toroidal": 2.0,
+      "R_LTe": 6.9,
+      "R_LTi": 6.9,
+      "R_Lne": 2.2,
+      "R_Lni": 2.2,
+      "R_major": 2.78,
+      "T_e_keV": 2.0,
+      "T_i_keV": 2.0,
+      "Z_eff": 1.0,
+      "a_minor": 1.0,
+      "alpha_mhd": 0.0,
+      "beta_e": 0.0,
+      "delta": 0.0,
+      "kappa": 1.0,
+      "n_e_19": 8.0,
+      "p_prime_loc": 0.0,
+      "q": 1.4,
+      "q_prime_loc": 0.0,
+      "rho": 0.5,
+      "s_delta": 0.0,
+      "s_hat": 0.78,
+      "s_kappa": 0.0,
+      "use_bpar": false,
+      "use_bper": false,
+      "xnue": 0.01
+    },
+    "name": "Cyclone-like electrostatic two-species activation case",
+    "output": {
+      "chi_e": 8.592434618291165,
+      "chi_i": 24.476169334612596,
+      "d_e": -1.330853097797653,
+      "d_i": -1.330853097797653,
+      "gamma_max": 8.599626095748041,
+      "particle_e": -0.32596,
+      "particle_i": -0.32596,
+      "q_e": 6.6005,
+      "q_i": 18.802,
+      "rho": 0.5
+    },
+    "sha256": {
+      "input.tglf": "3e14d99e96d57b347bcd8359e30952ee89475b47b57560d7aec1bce5150933a5",
+      "out.tglf.eigenvalue_spectrum": "3c1835fe30b625ce1dddd5910a69b186a484944c4f078f85c27d850629e7a7cb",
+      "out.tglf.gbflux": "65fa40a4368d67d887622f334a541adccc6db3f6fccc933ba93d538927903202",
+      "out.tglf.ky_spectrum": "f4a48a2318c41a258d80ddcc7e91270c7458cdcb5925aaa4058cb117fe6ae7ba",
+      "out.tglf.version": "02907764f960114dd7d0b1d6ae86fc4709625130c78a8149230e3577a577e501"
+    },
+    "spectrum_points": 21
+  },
+  "gacode": {
+    "command_name": "tglf",
+    "expected_commit": "b49339750a4aa4cf2b089fa9ff3afe098005f0f8",
+    "path_resolution_required": true,
+    "reported_version": "b4933975 [2026-08-20]",
+    "repository": "https://github.com/gafusion/gacode"
+  },
+  "gates": {
+    "expected_gacode_revision": true,
+    "finite_public_output": true,
+    "nonempty_consistent_spectrum": true,
+    "official_regression_9_of_9": true,
+    "signed_fluxes_preserved": true
+  },
+  "limitations": [
+    "Elapsed times are orientation-only measurements from the reported workstation.",
+    "This activation benchmark does not establish surrogate accuracy or uncertainty calibration.",
+    "This activation benchmark does not establish superiority over another transport solver."
+  ],
+  "machine": {
+    "architecture": "x86_64",
+    "cpu": "11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz",
+    "system": "Linux"
+  },
+  "official_regression": {
+    "elapsed_seconds_orientation_only": 9.462037079036236,
+    "pass_count": 9,
+    "passed_cases": [
+      "tglf01",
+      "tglf02",
+      "tglf03",
+      "tglf04",
+      "tglf05",
+      "tglf06",
+      "tglf07",
+      "tglf08",
+      "tglf09"
+    ]
+  },
+  "schema_version": 1,
+  "scope": "official GACODE runtime activation and parser fidelity",
+  "status": "PASS"
+}

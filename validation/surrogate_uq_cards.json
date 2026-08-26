@@ -215,37 +215,40 @@
     },
     {
       "id": "tglf_surrogate_bridge",
-      "description": "TGLF surrogate bridge: dataset generation scaffolding for a future TGLF-trained transport surrogate.",
+      "description": "TGLF surrogate bridge with PATH-resolved official GACODE dataset generation; no weights are promoted.",
       "status": "fail_closed_stub",
       "model_artifacts": [
         "src/scpn_fusion/core/tglf_surrogate_bridge.py::train_surrogate_from_tglf"
       ],
       "training_provenance": {
-        "summary": "Dataset generator exists; no trained weights are shipped, and no surrogate claim is made.",
+        "summary": "The generator now executes pinned official GACODE TGLF runs and preserves per-sample run directories. A small local pilot demonstrated the path, but no trained weights are shipped and no surrogate accuracy claim is made.",
         "anchors": [
           "src/scpn_fusion/core/tglf_surrogate_bridge.py::TGLFDatasetGenerator",
-          "tools/generate_tglf_dataset.py"
+          "validation/benchmark_tglf_gacode_runtime.py",
+          "validation/reports/tglf_gacode_runtime.json"
         ]
       },
-      "calibration": { "summary": "Not applicable until a real fit lands (master-plan F-7).", "anchors": [] },
+      "calibration": { "summary": "Unavailable until a sufficiently large, split-safe real-GACODE fit passes held-out accuracy and uncertainty gates.", "anchors": [] },
       "conformal": {
         "status": "not_applicable",
-        "summary": "No trained model exists, so there are no predictions or residuals to certify.",
+        "summary": "No promoted model exists, so there are no promotion-grade residuals to certify.",
         "certificate_id": null,
         "anchors": [
           "src/scpn_fusion/core/tglf_surrogate_bridge.py::train_surrogate_from_tglf"
         ]
       },
-      "ood": { "mechanism": "Not applicable — no model.", "thresholds": {}, "anchors": [] },
+      "ood": { "mechanism": "Not applicable — no promoted model.", "thresholds": {}, "anchors": [] },
       "fallback": {
         "summary": "The canonical TGLF path resolves through the GK registry (external binary preferred, native fallback); the bridge is not on that path.",
         "anchors": [
           "src/scpn_fusion/core/gk_registry.py::resolve_tglf_solver"
         ]
       },
-      "retraining": { "summary": "Not applicable — nothing trained yet.", "anchors": [] },
+      "retraining": { "summary": "No public retraining procedure is admitted; versioned corpus, split, held-out, UQ, and OOD evidence are absent.", "anchors": [] },
       "gaps": [
-        "Real TGLF-trained fit pending (master-plan F-7); the lane stays fail-closed until then."
+        "The only real-GACODE fit is a 32-sample local unpromoted pilot; no promotion-scale corpus exists.",
+        "The current quadratic baseline did not meet held-out evidence requirements and remains unpromoted.",
+        "Machine/discharge-disjoint validation, calibrated uncertainty, and OOD escalation evidence are absent."
       ]
     },
     {

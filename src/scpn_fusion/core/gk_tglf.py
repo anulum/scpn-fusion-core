@@ -8,7 +8,7 @@
 """
 TGLF (Trapped Gyro-Landau Fluid) external solver interface.
 
-Generates TGLF input namelists, executes the ``tglf`` binary via
+Generates current GACODE TGLF key-value decks, executes ``tglf`` via
 subprocess, and parses growth-rate / flux output files. Missing or failed
 external TGLF execution is a hard error so zero-flux placeholders cannot enter
 production transport validation.
@@ -18,8 +18,8 @@ Reference: Staebler et al., Phys. Plasmas 14 (2007) 055909.
 
 from __future__ import annotations
 
-import logging
-import shutil
+from dataclasses import asdict
+import json
 import subprocess
 import tempfile
 from pathlib import Path
@@ -27,152 +27,103 @@ from pathlib import Path
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core._tglf_interface_runtime import (
+    _parse_gacode_tglf_output,
+    _parse_gacode_tglf_spectrum,
+    _resolve_tglf_command,
+    render_tglf_input,
+)
+from scpn_fusion.core._tglf_interface_types import TGLFInputDeck
 from scpn_fusion.core.gk_interface import GKLocalParams, GKOutput, GKSolverBase
+from scpn_fusion.io.safe_loaders import checked_json_load
 
 FloatArray = NDArray[np.float64]
 
-_logger = logging.getLogger(__name__)
-
-# TGLF namelist keys mapped from GKLocalParams
-_TGLF_NAMELIST_TEMPLATE = """\
-&tglf_namelist
- UNITS = 'GYRO'
- USE_TRANSPORT_MODEL = .true.
- GEOMETRY_FLAG = 1
- SIGN_BT = 1.0
- SIGN_IT = 1.0
- NS = 2
- MASS_1 = 1.0
- MASS_2 = 2.7234e-4
- RLNS_1 = {R_L_ne:.6f}
- RLNS_2 = {R_L_ne:.6f}
- RLTS_1 = {R_L_Ti:.6f}
- RLTS_2 = {R_L_Te:.6f}
- TAUS_1 = 1.0
- TAUS_2 = {Te_Ti:.6f}
- AS_1 = 1.0
- AS_2 = 1.0
- ZS_1 = 1.0
- ZS_2 = -1.0
- VPAR_1 = 0.0
- VPAR_2 = 0.0
- VEXB_SHEAR = 0.0
- BETAE = {beta_e:.6e}
- XNUE = {nu_star:.6e}
- ZEFF = {Z_eff:.4f}
- RMIN_LOC = {rho:.6f}
- RMAJ_LOC = {R0_over_a:.6f}
- Q_LOC = {q:.6f}
- Q_PRIME_LOC = 0.0
- P_PRIME_LOC = 0.0
- KAPPA_LOC = {kappa:.6f}
- S_KAPPA_LOC = 0.0
- DELTA_LOC = {delta:.6f}
- S_DELTA_LOC = 0.0
- DRMINDX_LOC = 1.0
- DRMAJDX_LOC = 0.0
- DZMAJDX_LOC = 0.0
- SHAT = {s_hat:.6f}
- ALPHA_MHD = {alpha_MHD:.6f}
- NKY = 12
- KY = 0.3
-/
-"""
+_DECK_METADATA_NAME = "scpn_fusion_tglf_deck.json"
 
 
-def generate_tglf_input(params: GKLocalParams) -> str:
-    """Render a TGLF namelist string from local plasma parameters."""
-    R0_over_a = params.R0 / max(params.a, 0.01)
-    return _TGLF_NAMELIST_TEMPLATE.format(
-        R_L_ne=params.R_L_ne,
-        R_L_Ti=params.R_L_Ti,
-        R_L_Te=params.R_L_Te,
-        Te_Ti=params.Te_Ti,
-        beta_e=params.beta_e,
-        nu_star=params.nu_star,
-        Z_eff=params.Z_eff,
+def _deck_from_params(params: GKLocalParams) -> TGLFInputDeck:
+    """Map the public GK contract to the shared current-GACODE deck."""
+    if params.requires_nonlinear_solver:
+        raise ValueError("TGLF is quasilinear and cannot satisfy a nonlinear GK request.")
+    return TGLFInputDeck(
         rho=params.rho,
-        R0_over_a=R0_over_a,
+        s_hat=params.s_hat,
         q=params.q,
+        alpha_mhd=params.alpha_MHD,
+        R_LTi=params.R_L_Ti,
+        R_LTe=params.R_L_Te,
+        R_Lne=params.R_L_ne,
+        R_Lni=params.R_L_ne,
+        beta_e=params.beta_e,
+        Z_eff=params.Z_eff,
+        xnue=params.nu_star,
+        T_e_keV=params.T_e_keV,
+        T_i_keV=params.T_i_keV,
+        n_e_19=params.n_e,
+        R_major=params.R0,
+        a_minor=params.a,
+        B_toroidal=params.B0,
         kappa=params.kappa,
         delta=params.delta,
-        s_hat=params.s_hat,
-        alpha_MHD=params.alpha_MHD,
+        use_bper=params.is_electromagnetic,
     )
 
 
+def generate_tglf_input(params: GKLocalParams) -> str:
+    """Render a current GACODE key-value input deck from local parameters."""
+    return render_tglf_input(_deck_from_params(params))
+
+
+def _load_deck_metadata(run_dir: Path) -> TGLFInputDeck:
+    """Load the SCPN dimensional metadata required for physical scaling."""
+    payload = checked_json_load(run_dir / _DECK_METADATA_NAME)
+    if not isinstance(payload, dict):
+        raise RuntimeError("TGLF deck metadata must be a JSON object.")
+    try:
+        return TGLFInputDeck(**payload)
+    except TypeError as exc:
+        raise RuntimeError(f"Invalid TGLF deck metadata: {exc}") from exc
+
+
 def parse_tglf_output(run_dir: Path) -> GKOutput:
-    """Parse TGLF output files from *run_dir*.
-
-    Expects ``out.tglf.run`` with growth rates and ``out.tglf.transport``
-    with quasilinear fluxes.  If files are missing, returns a zero-flux
-    unconverged result.
-
-    Not to be confused with ``tglf_interface.parse_tglf_output``, which
-    parses JSON reference payloads for the TransportSolver comparison
-    framework; this function parses the real GACODE ``out.tglf.*`` files
-    produced by the external binary.
-    """
-    transport_file = run_dir / "out.tglf.transport"
-    eigenvalue_file = run_dir / "out.tglf.eigenvalue_spectrum"
-
-    chi_i = 0.0
-    chi_e = 0.0
-    D_e = 0.0
-    converged = False
-
-    if transport_file.exists():
-        try:
-            lines = transport_file.read_text().strip().splitlines()
-            for line in lines:
-                tokens = line.split()
-                if len(tokens) < 2:
-                    continue
-                key = tokens[0].lower()
-                val = float(tokens[1])
-                if key == "chi_i":
-                    chi_i = val
-                elif key == "chi_e":
-                    chi_e = val
-                elif key in ("d_e", "particle_flux"):
-                    D_e = val
-            converged = True
-        except (ValueError, IndexError) as exc:
-            _logger.warning("TGLF transport parse error: %s", exc)
-
-    gamma: FloatArray = np.empty(0)
-    omega_r: FloatArray = np.empty(0)
-    k_y: FloatArray = np.empty(0)
-
-    if eigenvalue_file.exists():
-        try:
-            data = np.loadtxt(eigenvalue_file, comments="#")
-            if data.ndim == 2 and data.shape[1] >= 3:
-                k_y = data[:, 0]
-                gamma = data[:, 1]
-                omega_r = data[:, 2]
-        except (ValueError, OSError) as exc:
-            _logger.warning("TGLF eigenvalue parse error: %s", exc)
-
-    dominant = _classify_dominant_mode(gamma, omega_r)
-
+    """Parse real current-GACODE outputs with preserved dimensional metadata."""
+    deck = _load_deck_metadata(run_dir)
+    output = _parse_gacode_tglf_output(run_dir, deck)
+    gamma, omega_r, k_y = _parse_gacode_tglf_spectrum(run_dir)
+    dominant = _classify_dominant_mode(gamma, omega_r, k_y)
     return GKOutput(
-        chi_i=chi_i,
-        chi_e=chi_e,
-        D_e=D_e,
+        chi_i=output.chi_i,
+        chi_e=output.chi_e,
+        D_e=output.d_e,
+        D_i=output.d_i,
+        particle_flux_e_gb=output.particle_e,
+        particle_flux_i_gb=output.particle_i,
+        heat_flux_e_gb=output.q_e,
+        heat_flux_i_gb=output.q_i,
         gamma=gamma,
         omega_r=omega_r,
         k_y=k_y,
         dominant_mode=dominant,
-        converged=converged,
+        converged=True,
     )
 
 
-def _classify_dominant_mode(gamma: FloatArray, omega_r: FloatArray) -> str:
-    """Identify dominant instability from growth rate spectrum."""
+def _classify_dominant_mode(
+    gamma: FloatArray,
+    omega_r: FloatArray,
+    k_y: FloatArray | None = None,
+) -> str:
+    """Identify the dominant instability from sign and perpendicular scale.
+
+    Electron-scale modes (``k_y rho_s >= 1``) are labelled ETG before using
+    propagation direction to distinguish ion-scale ITG and TEM modes.
+    """
     if len(gamma) == 0 or np.all(gamma <= 0):
         return "stable"
     idx = int(np.argmax(gamma))
+    if k_y is not None and len(k_y) == len(gamma) and k_y[idx] >= 1.0:
+        return "ETG"
     if omega_r[idx] < 0:
         return "ITG"  # ion diamagnetic direction
     return "TEM"  # electron diamagnetic direction
@@ -184,7 +135,7 @@ class TGLFSolver(GKSolverBase):
     Parameters
     ----------
     binary : str
-        Path or name of the ``tglf`` executable.
+        Command name of the ``tglf`` executable, resolved exclusively via PATH.
     work_dir : Path or None
         Persistent working directory.  If None, uses a tempdir per call.
     """
@@ -199,29 +150,38 @@ class TGLFSolver(GKSolverBase):
 
     def is_available(self) -> bool:
         """Return whether the configured TGLF executable is on ``PATH``."""
-        return shutil.which(self.binary) is not None
+        try:
+            _resolve_tglf_command(self.binary)
+        except (FileNotFoundError, ValueError):
+            return False
+        return True
 
     def prepare_input(self, params: GKLocalParams) -> Path:
         """Create a TGLF run directory containing ``input.tglf``."""
         base = self.work_dir or Path(tempfile.mkdtemp(prefix="tglf_"))
         base.mkdir(parents=True, exist_ok=True)
         input_file = base / "input.tglf"
-        input_file.write_text(generate_tglf_input(params))
+        deck = _deck_from_params(params)
+        input_file.write_text(render_tglf_input(deck), encoding="utf-8")
+        (base / _DECK_METADATA_NAME).write_text(
+            json.dumps(asdict(deck), indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
         return base
 
     def run(self, input_path: Path, *, timeout_s: float = 30.0) -> GKOutput:
         """Execute TGLF for a prepared input directory and parse transport output."""
-        if not self.is_available():
-            raise RuntimeError(
-                f"TGLF binary not available: {self.binary!r}. Install GACODE/TGLF or use an "
-                "explicit non-TGLF solver lane."
-            )
+        try:
+            resolved = _resolve_tglf_command(self.binary)
+        except (FileNotFoundError, ValueError) as exc:
+            raise RuntimeError(f"TGLF command unavailable through PATH: {self.binary!r}.") from exc
 
         try:
             subprocess.run(
-                [self.binary, "-i", str(input_path / "input.tglf")],
+                [resolved, "-e", "."],
                 cwd=str(input_path),
                 capture_output=True,
+                text=True,
                 timeout=timeout_s,
                 check=True,
             )

@@ -2830,7 +2830,7 @@
     "python_capability_classes": 590,
     "python_capability_source_modules": 335,
     "rust_workspace_crates": 13,
-    "test_files": 615
+    "test_files": 616
   },
   "documentation": {
     "public_pages": [
@@ -3000,6 +3000,7 @@
       "tests/test_benchmark_ida_same_case.py",
       "tests/test_benchmark_regression_guard.py",
       "tests/test_benchmark_sparc_geqdsk_rmse.py",
+      "tests/test_benchmark_tglf_gacode_runtime.py",
       "tests/test_blanket_neutronics.py",
       "tests/test_blanket_validators.py",
       "tests/test_blob_transport.py",

@@ -46,11 +46,19 @@ class TGLFInputDeck:
     R_major: float = 6.2
     a_minor: float = 2.0
     B_toroidal: float = 5.3
+    use_bper: bool = False
+    use_bpar: bool = False
 
 
 @dataclass
 class TGLFOutput:
-    """Parsed TGLF output for a single run."""
+    """Parsed TGLF output for a single run.
+
+    ``q_i``, ``q_e``, ``particle_i`` and ``particle_e`` retain the signed
+    gyro-Bohm-normalised fluxes emitted by GACODE. ``chi_i``, ``chi_e``,
+    ``d_i`` and ``d_e`` are derived gradient-normalised physical coefficients
+    in ``m^2/s``.
+    """
 
     rho: float = 0.5
     chi_i: float = 0.0
@@ -58,6 +66,10 @@ class TGLFOutput:
     gamma_max: float = 0.0
     q_i: float = 0.0
     q_e: float = 0.0
+    particle_e: float = 0.0
+    particle_i: float = 0.0
+    d_e: float = 0.0
+    d_i: float = 0.0
 
 
 @dataclass

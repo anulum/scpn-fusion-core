@@ -7,10 +7,9 @@
 """Backend-selection guard tests for the transport-closure mixin.
 
 Covers the external-backend precondition guards that the reduced-multichannel
-integration tests never reach: the TGLF-live and neural-hybrid binary-path
-requirements and the neural-weights validation. Each guard raises inside the
-closure and is caught by the legacy Ti-threshold fallback, so the observable
-contract is ``fallback_used`` with the originating exception recorded.
+integration tests never reach: TGLF execution failure and neural-weights
+validation. Explicit live/hybrid backends fail closed rather than silently
+substituting the legacy Ti-threshold closure.
 """
 
 from __future__ import annotations
@@ -73,45 +72,40 @@ def _closure_contract(solver: TransportSolver, backend: str) -> dict[str, Any]:
     return dict(solver._last_transport_closure_contract)
 
 
-def test_tglf_live_without_binary_falls_back(tmp_path: Path) -> None:
-    """Selecting ``tglf_live`` with no binary path falls back with a ValueError."""
+def test_tglf_live_execution_failure_fails_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     solver = _solver(tmp_path)
-    contract = _closure_contract(solver, "tglf_live")
-    assert contract["fallback_used"] is True
-    assert str(contract["error"]).startswith("ValueError")
+    import scpn_fusion.core.tglf_interface as tglf_mod
+
+    monkeypatch.setattr(
+        tglf_mod,
+        "run_tglf_profile_scan",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(FileNotFoundError("missing")),
+    )
+    with pytest.raises(RuntimeError, match="tglf_live.*failed closed"):
+        _closure_contract(solver, "tglf_live")
 
 
-def test_neural_hybrid_without_binary_falls_back(tmp_path: Path) -> None:
-    """The neural-hybrid backend also requires a TGLF binary path."""
-    solver = _solver(tmp_path)
-    contract = _closure_contract(solver, "neural_transport_hybrid")
-    assert contract["fallback_used"] is True
-    assert str(contract["error"]).startswith("ValueError")
-
-
-def test_neural_hybrid_without_weights_falls_back(
+def test_neural_hybrid_non_neural_model_fails_closed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A non-neural hybrid model with no weights path raises RuntimeError."""
     solver = _solver(tmp_path)
-    solver.tglf_binary_path = "/nonexistent/tglf"
     monkeypatch.setattr(solver, "_get_neural_transport_model", lambda: _NonNeuralModel(None))
-    contract = _closure_contract(solver, "neural_transport_hybrid")
-    assert contract["fallback_used"] is True
-    assert str(contract["error"]).startswith("RuntimeError")
+    with pytest.raises(RuntimeError, match="neural_transport_hybrid.*failed closed"):
+        _closure_contract(solver, "neural_transport_hybrid")
 
 
-def test_neural_hybrid_with_missing_weights_file_falls_back(
+def test_neural_hybrid_with_missing_weights_file_fails_closed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A hybrid model pointing at an absent weights file raises FileNotFoundError."""
     solver = _solver(tmp_path)
-    solver.tglf_binary_path = "/nonexistent/tglf"
     missing = str(tmp_path / "absent_weights.npz")
     monkeypatch.setattr(solver, "_get_neural_transport_model", lambda: _NonNeuralModel(missing))
-    contract = _closure_contract(solver, "neural_transport_hybrid")
-    assert contract["fallback_used"] is True
-    assert str(contract["error"]).startswith("FileNotFoundError")
+    with pytest.raises(RuntimeError, match="neural_transport_hybrid.*failed closed"):
+        _closure_contract(solver, "neural_transport_hybrid")
 
 
 def test_neural_backend_without_weights_falls_back(
