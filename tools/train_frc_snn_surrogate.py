@@ -52,7 +52,7 @@ def spike_function(v: jax.Array) -> jax.Array:
 @jit
 def surrogate_spike(v: jax.Array) -> jax.Array:
     """Fast Sigmoid surrogate for backprop through spikes."""
-    return jax.nn.sigmoid(10.0 * (v - 1.0))
+    return cast(jax.Array, jax.nn.sigmoid(10.0 * (v - 1.0)))
 
 
 def lif_step(

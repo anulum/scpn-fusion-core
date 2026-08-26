@@ -76,7 +76,7 @@ def forward(params: Params, x: jax.Array) -> jax.Array:
     h2 = jax.nn.relu(h1 @ params["w2"] + params["b2"])
     # Softplus ensures non-negative fluxes
     out = jax.nn.softplus(h2 @ params["w3"] + params["b3"])
-    return out * params["output_scale"]
+    return cast(jax.Array, out * params["output_scale"])
 
 
 def loss_fn(params: Params, x: jax.Array, y: jax.Array) -> jax.Array:

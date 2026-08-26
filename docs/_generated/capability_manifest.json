@@ -309,6 +309,10 @@
         "path": "src/scpn_fusion/core/fusion_kernel.py"
       },
       {
+        "name": "CompactNeuralEnsemble",
+        "path": "src/scpn_fusion/core/tglf_surrogate_candidates.py"
+      },
+      {
         "name": "CompactReactorArchitect",
         "path": "src/scpn_fusion/core/compact_reactor_optimizer.py"
       },
@@ -1661,6 +1665,10 @@
         "path": "src/scpn_fusion/core/gk_qualikiz.py"
       },
       {
+        "name": "QuadraticPolynomialCandidate",
+        "path": "src/scpn_fusion/core/tglf_surrogate_candidates.py"
+      },
+      {
         "name": "QuenchReport",
         "path": "src/scpn_fusion/core/hts_quench.py"
       },
@@ -1731,6 +1739,10 @@
       {
         "name": "RadiationFrontModel",
         "path": "src/scpn_fusion/control/detachment_controller.py"
+      },
+      {
+        "name": "RandomisedTreeEnsemble",
+        "path": "src/scpn_fusion/core/tglf_surrogate_candidates.py"
       },
       {
         "name": "RankPhaseTile",
@@ -2141,6 +2153,10 @@
         "path": "src/scpn_fusion/core/_tglf_interface_types.py"
       },
       {
+        "name": "TGLFModelStudyData",
+        "path": "src/scpn_fusion/io/_tglf_model_selection_data.py"
+      },
+      {
         "name": "TGLFNativeConfig",
         "path": "src/scpn_fusion/core/gk_tglf_native.py"
       },
@@ -2167,6 +2183,10 @@
       {
         "name": "TGLFReferenceCaseResult",
         "path": "src/scpn_fusion/core/_tglf_interface_types.py"
+      },
+      {
+        "name": "TGLFRegressionCandidate",
+        "path": "src/scpn_fusion/core/tglf_surrogate_candidates.py"
       },
       {
         "name": "TGLFSolver",
@@ -2705,6 +2725,7 @@
       "src/scpn_fusion/core/tearing_mode_theory.py",
       "src/scpn_fusion/core/tglf_interface.py",
       "src/scpn_fusion/core/tglf_surrogate_bridge.py",
+      "src/scpn_fusion/core/tglf_surrogate_candidates.py",
       "src/scpn_fusion/core/tglf_validation_runtime.py",
       "src/scpn_fusion/core/tilt_mode_frc.py",
       "src/scpn_fusion/core/tokamak_config.py",
@@ -2723,6 +2744,8 @@
       "src/scpn_fusion/engineering/thermal_hydraulics.py",
       "src/scpn_fusion/hpc/_hpc_native_trust.py",
       "src/scpn_fusion/hpc/hpc_bridge.py",
+      "src/scpn_fusion/io/_tglf_model_selection_data.py",
+      "src/scpn_fusion/io/_tglf_model_selection_metrics.py",
       "src/scpn_fusion/io/_tokamak_archive_shots.py",
       "src/scpn_fusion/io/deeponet_training_data.py",
       "src/scpn_fusion/io/deeponet_training_recovery.py",
@@ -2747,6 +2770,7 @@
       "src/scpn_fusion/io/tglf_dataset_contract.py",
       "src/scpn_fusion/io/tglf_development_corpus.py",
       "src/scpn_fusion/io/tglf_development_plan.py",
+      "src/scpn_fusion/io/tglf_model_selection.py",
       "src/scpn_fusion/io/tglf_species_dataset_contract.py",
       "src/scpn_fusion/io/tokamak_archive.py",
       "src/scpn_fusion/io/tokamak_archive_profiles.py",
@@ -2847,10 +2871,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 594,
-    "python_capability_source_modules": 339,
+    "python_capability_classes": 599,
+    "python_capability_source_modules": 343,
     "rust_workspace_crates": 13,
-    "test_files": 620
+    "test_files": 622
   },
   "documentation": {
     "public_pages": [
@@ -3558,8 +3582,10 @@
       "tests/test_tglf_interface_benchmark.py",
       "tests/test_tglf_interface_reference.py",
       "tests/test_tglf_interface_runtime.py",
+      "tests/test_tglf_model_selection.py",
       "tests/test_tglf_species_dataset_contract.py",
       "tests/test_tglf_surrogate_bridge.py",
+      "tests/test_tglf_surrogate_candidates.py",
       "tests/test_tglf_validation_runtime.py",
       "tests/test_thermal_hydraulics.py",
       "tests/test_tilt_mode_frc.py",
