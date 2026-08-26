@@ -17,10 +17,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
-from typing import Protocol, Self
+from typing import Protocol
 
 import numpy as np
 from numpy.typing import NDArray
+from typing_extensions import Self
 
 from scpn_fusion.core.tglf_surrogate_bridge import TGLFSurrogate
 
