@@ -159,6 +159,7 @@ class TestTGLFOutput:
             "particle_i",
             "d_e",
             "d_i",
+            "species_fluxes",
         } == field_names
 
 

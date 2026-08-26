@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import logging
 import math
+import re
 import shutil
 import subprocess
 import tempfile
+from dataclasses import fields
 from pathlib import Path
+from collections.abc import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
@@ -22,6 +25,9 @@ from numpy.typing import NDArray
 from scpn_fusion.core._tglf_interface_types import (
     TGLFInputDeck,
     TGLFOutput,
+    TGLFParticleTransportIdentification,
+    TGLFSpecies,
+    TGLFSpeciesFlux,
     _TGLF_MAX_RETRIES_LIMIT,
     _TGLF_RETRY_BACKOFF_SECONDS,
 )
@@ -30,6 +36,13 @@ logger = logging.getLogger(__name__)
 
 _DEUTERIUM_MASS_KG = 2.0 * 1.67262192369e-27
 _ELEMENTARY_CHARGE_C = 1.602176634e-19
+_TGLF_MAX_SPECIES = 12
+_SPECIES_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9._-]{0,63}$")
+
+
+def _format_tglf_scientific(value: float) -> str:
+    """Match current GACODE's compact exponent spelling."""
+    return f"{value:.6e}".replace("e-0", "e-").replace("e+0", "e+")
 
 
 def _normalize_tglf_timeout_seconds(timeout_s: float) -> float:
@@ -70,13 +83,22 @@ def _resolve_tglf_command(command: str = "tglf") -> str:
 def _validate_tglf_deck(deck: TGLFInputDeck) -> None:
     """Reject non-finite or physically invalid values before external execution."""
     for field_name, value in deck.__dict__.items():
-        if isinstance(value, (float, int)) and not np.isfinite(value):
+        if field_name == "species":
+            continue
+        if field_name in {"use_bper", "use_bpar"}:
+            if not isinstance(value, bool):
+                raise ValueError(f"TGLF input {field_name!r} must be boolean.")
+            continue
+        if isinstance(value, bool) or not isinstance(value, (float, int)):
+            raise ValueError(f"TGLF input {field_name!r} must be numeric; got {value!r}.")
+        if not np.isfinite(value):
             raise ValueError(f"TGLF input {field_name!r} must be finite; got {value!r}.")
     positive = {
         "q": deck.q,
         "kappa": deck.kappa,
         "T_e_keV": deck.T_e_keV,
         "T_i_keV": deck.T_i_keV,
+        "n_e_19": deck.n_e_19,
         "R_major": deck.R_major,
         "a_minor": deck.a_minor,
         "B_toroidal": deck.B_toroidal,
@@ -88,14 +110,61 @@ def _validate_tglf_deck(deck: TGLFInputDeck) -> None:
         raise ValueError(f"TGLF input 'rho' must be in (0, 1]; got {deck.rho!r}.")
     if deck.beta_e < 0.0 or deck.xnue < 0.0 or deck.Z_eff < 1.0:
         raise ValueError("TGLF beta_e/xnue must be non-negative and Z_eff must be >= 1.")
+    species = deck.resolved_species()
+    if not 2 <= len(species) <= _TGLF_MAX_SPECIES:
+        raise ValueError(f"TGLF requires between 2 and {_TGLF_MAX_SPECIES} kinetic species.")
+    if not all(isinstance(item, TGLFSpecies) for item in species):
+        raise ValueError("Every explicit TGLF species must be a TGLFSpecies instance.")
+    names: set[str] = set()
+    for item in species:
+        if (
+            not isinstance(item.name, str)
+            or _SPECIES_NAME_RE.fullmatch(item.name) is None
+            or item.name in names
+        ):
+            raise ValueError("TGLF species names must be unique portable identifiers.")
+        names.add(item.name)
+        numeric = (
+            item.mass_deuterium,
+            item.charge_e,
+            item.density_e_ratio,
+            item.temperature_e_ratio,
+            item.R_Ln,
+            item.R_LT,
+        )
+        if any(
+            isinstance(value, bool) or not isinstance(value, (int, float)) for value in numeric
+        ) or not all(math.isfinite(value) for value in numeric):
+            raise ValueError(f"TGLF species {item.name!r} contains a non-finite value.")
+        if (
+            item.mass_deuterium <= 0.0
+            or item.density_e_ratio <= 0.0
+            or item.temperature_e_ratio <= 0.0
+        ):
+            raise ValueError(
+                f"TGLF species {item.name!r} mass, density and temperature must be > 0."
+            )
+    if not math.isclose(species[0].charge_e, -1.0, rel_tol=0.0, abs_tol=1e-12) or any(
+        item.charge_e <= 0.0 for item in species[1:]
+    ):
+        raise ValueError("TGLF species 1 must have Z=-1; all following species must be ions.")
+    if not (
+        math.isclose(species[0].density_e_ratio, 1.0, rel_tol=0.0, abs_tol=1e-12)
+        and math.isclose(species[0].temperature_e_ratio, 1.0, rel_tol=0.0, abs_tol=1e-12)
+    ):
+        raise ValueError("TGLF electron AS_1 and TAUS_1 reference ratios must both equal 1.")
+    electron_charge_density = abs(species[0].charge_e) * species[0].density_e_ratio
+    ion_charge_density = sum(item.charge_e * item.density_e_ratio for item in species[1:])
+    if not math.isclose(electron_charge_density, ion_charge_density, rel_tol=1e-9, abs_tol=1e-12):
+        raise ValueError("TGLF species densities and charges must satisfy quasineutrality.")
 
 
 def render_tglf_input(deck: TGLFInputDeck) -> str:
     """Render a current GACODE ``input.tglf`` key-value deck.
 
     Public SCPN inputs use ``R/L`` gradients; GACODE TGLF consumes ``a/L``.
-    Species 1 is the electron and species 2 is a deuterium main ion, matching
-    current GACODE defaults and output ordering.
+    Species order is explicit when ``deck.species`` is populated. An empty
+    tuple resolves to the legacy electron/deuterium pair.
     """
     _validate_tglf_deck(deck)
     a_over_r = deck.a_minor / deck.R_major
@@ -109,6 +178,7 @@ def render_tglf_input(deck: TGLFInputDeck) -> str:
         if deck.p_prime_loc != 0.0
         else -deck.alpha_mhd / (8.0 * math.pi * deck.q * rmaj_loc * rmin_loc)
     )
+    species = deck.resolved_species()
     lines = [
         "# TGLF input deck generated by SCPN Fusion Core",
         f"# rho = {deck.rho:.6f}",
@@ -119,19 +189,7 @@ def render_tglf_input(deck: TGLFInputDeck) -> str:
         f"USE_BPAR = {'.true.' if deck.use_bpar else '.false.'}",
         "SIGN_BT = 1.0",
         "SIGN_IT = 1.0",
-        "NS = 2",
-        "MASS_1 = 2.723000e-4",
-        "MASS_2 = 1.0",
-        "ZS_1 = -1.0",
-        "ZS_2 = 1.0",
-        f"RLNS_1 = {deck.R_Lne * a_over_r:.12g}",
-        f"RLNS_2 = {deck.R_Lni * a_over_r:.12g}",
-        f"RLTS_1 = {deck.R_LTe * a_over_r:.12g}",
-        f"RLTS_2 = {deck.R_LTi * a_over_r:.12g}",
-        "TAUS_1 = 1.0",
-        f"TAUS_2 = {deck.T_i_keV / deck.T_e_keV:.12g}",
-        "AS_1 = 1.0",
-        "AS_2 = 1.0",
+        f"NS = {len(species)}",
         f"Q_LOC = {deck.q:.12g}",
         f"Q_PRIME_LOC = {q_prime_loc:.12g}",
         f"P_PRIME_LOC = {p_prime_loc:.12g}",
@@ -145,6 +203,17 @@ def render_tglf_input(deck: TGLFInputDeck) -> str:
         f"RMAJ_LOC = {rmaj_loc:.12g}",
         f"RMIN_LOC = {rmin_loc:.12g}",
     ]
+    for index, item in enumerate(species, start=1):
+        lines.extend(
+            [
+                f"MASS_{index} = {_format_tglf_scientific(item.mass_deuterium)}",
+                f"ZS_{index} = {item.charge_e:.1f}",
+                f"RLNS_{index} = {item.R_Ln * a_over_r:.12g}",
+                f"RLTS_{index} = {item.R_LT * a_over_r:.12g}",
+                f"TAUS_{index} = {item.temperature_e_ratio:.12g}",
+                f"AS_{index} = {item.density_e_ratio:.12g}",
+            ]
+        )
     return "\n".join(lines) + "\n"
 
 
@@ -191,12 +260,32 @@ def _parse_gacode_tglf_output(output_dir: Path, deck: TGLFInputDeck) -> TGLFOutp
     flux_path = output_dir / "out.tglf.gbflux"
     eigen_path = output_dir / "out.tglf.eigenvalue_spectrum"
     flux = _load_numeric_rows(flux_path, skiprows=0).reshape(-1)
-    if flux.size < 4:
-        raise RuntimeError("TGLF out.tglf.gbflux must contain at least four values.")
-    particle_e = float(flux[0])
-    particle_i = float(flux[1])
-    q_e = float(flux[2])
-    q_i = float(flux[3])
+    species = deck.resolved_species()
+    expected_flux_values = 4 * len(species)
+    if flux.size != expected_flux_values:
+        raise RuntimeError(
+            "TGLF out.tglf.gbflux must contain exactly "
+            f"4 * NS = {expected_flux_values} values; got {flux.size}."
+        )
+    species_fluxes = tuple(
+        TGLFSpeciesFlux(
+            species_index=index,
+            name=item.name,
+            charge_e=item.charge_e,
+            particle_gb=float(flux[index]),
+            energy_gb=float(flux[len(species) + index]),
+            momentum_gb=float(flux[2 * len(species) + index]),
+            exchange_gb=float(flux[3 * len(species) + index]),
+        )
+        for index, item in enumerate(species)
+    )
+    electron = species_fluxes[0]
+    main_ion_index = next(index for index, item in enumerate(species) if item.charge_e > 0.0)
+    main_ion = species_fluxes[main_ion_index]
+    particle_e = electron.particle_gb
+    particle_i = main_ion.particle_gb
+    q_e = electron.energy_gb
+    q_i = main_ion.energy_gb
 
     eigen = _load_numeric_rows(eigen_path, skiprows=2)
     if eigen.shape[1] < 2 or eigen.shape[1] % 2 != 0:
@@ -205,10 +294,28 @@ def _parse_gacode_tglf_output(output_dir: Path, deck: TGLFInputDeck) -> TGLFOutp
 
     a_over_r = deck.a_minor / deck.R_major
     chi_gb = _gyro_bohm_diffusivity(deck)
-    chi_i = _effective_coefficient(q_i, deck.R_LTi * a_over_r, chi_gb)
-    chi_e = _effective_coefficient(q_e, deck.R_LTe * a_over_r, chi_gb)
-    d_e = _effective_coefficient(particle_e, deck.R_Lne * a_over_r, chi_gb)
-    d_i = _effective_coefficient(particle_i, deck.R_Lni * a_over_r, chi_gb)
+    main_ion_density_temperature = (
+        species[main_ion_index].density_e_ratio * species[main_ion_index].temperature_e_ratio
+    )
+    chi_i = (
+        _effective_coefficient(
+            q_i,
+            species[main_ion_index].R_LT * a_over_r,
+            chi_gb,
+        )
+        / main_ion_density_temperature
+    )
+    chi_e = _effective_coefficient(q_e, species[0].R_LT * a_over_r, chi_gb) / (
+        species[0].density_e_ratio * species[0].temperature_e_ratio
+    )
+    d_e = (
+        _effective_coefficient(particle_e, species[0].R_Ln * a_over_r, chi_gb)
+        / species[0].density_e_ratio
+    )
+    d_i = (
+        _effective_coefficient(particle_i, species[main_ion_index].R_Ln * a_over_r, chi_gb)
+        / species[main_ion_index].density_e_ratio
+    )
     return TGLFOutput(
         rho=deck.rho,
         chi_i=chi_i,
@@ -220,6 +327,109 @@ def _parse_gacode_tglf_output(output_dir: Path, deck: TGLFInputDeck) -> TGLFOutp
         particle_i=particle_i,
         d_e=d_e,
         d_i=d_i,
+        species_fluxes=species_fluxes,
+    )
+
+
+def identify_tglf_particle_transport(
+    decks: Sequence[TGLFInputDeck],
+    outputs: Sequence[TGLFOutput],
+    *,
+    species_name: str,
+) -> TGLFParticleTransportIdentification:
+    """Identify diffusion and convective pinch from matched density-gradient runs.
+
+    At least three runs are required so a residual can be reported. Every deck
+    parameter and every non-target species field must match exactly; only the
+    selected species ``R/L_n`` may vary.
+    """
+    if len(decks) != len(outputs) or len(decks) < 3:
+        raise ValueError(
+            "TGLF diffusion/pinch identification requires at least three matched runs."
+        )
+    reference_species = decks[0].resolved_species()
+    matching_indices = [i for i, item in enumerate(reference_species) if item.name == species_name]
+    if len(matching_indices) != 1:
+        raise ValueError(
+            f"TGLF species {species_name!r} is not uniquely present in the reference deck."
+        )
+    species_index = matching_indices[0]
+    deck_field_names = tuple(item.name for item in fields(TGLFInputDeck) if item.name != "species")
+    reference_scalars = tuple(getattr(decks[0], name) for name in deck_field_names)
+    reference_species_signature = tuple(
+        (
+            item.name,
+            item.mass_deuterium,
+            item.charge_e,
+            item.density_e_ratio,
+            item.temperature_e_ratio,
+            None if index == species_index else item.R_Ln,
+            item.R_LT,
+        )
+        for index, item in enumerate(reference_species)
+    )
+
+    gradients: list[float] = []
+    fluxes: list[float] = []
+    for run_index, (deck, output) in enumerate(zip(decks, outputs, strict=True)):
+        _validate_tglf_deck(deck)
+        if tuple(getattr(deck, name) for name in deck_field_names) != reference_scalars:
+            raise ValueError(f"TGLF paired-gradient deck {run_index} changes a non-species field.")
+        run_species = deck.resolved_species()
+        run_signature = tuple(
+            (
+                item.name,
+                item.mass_deuterium,
+                item.charge_e,
+                item.density_e_ratio,
+                item.temperature_e_ratio,
+                None if index == species_index else item.R_Ln,
+                item.R_LT,
+            )
+            for index, item in enumerate(run_species)
+        )
+        if run_signature != reference_species_signature:
+            raise ValueError(
+                f"TGLF paired-gradient deck {run_index} changes species order or state."
+            )
+        if len(output.species_fluxes) != len(run_species):
+            raise ValueError(
+                f"TGLF paired-gradient output {run_index} lacks canonical species fluxes."
+            )
+        flux = output.species_fluxes[species_index]
+        if flux.name != species_name or flux.species_index != species_index:
+            raise ValueError(
+                f"TGLF paired-gradient output {run_index} changes species identity/order."
+            )
+        gradients.append(run_species[species_index].R_Ln * deck.a_minor / deck.R_major)
+        fluxes.append(flux.particle_gb)
+
+    gradient_array = np.asarray(gradients, dtype=np.float64)
+    flux_array = np.asarray(fluxes, dtype=np.float64)
+    density_e_ratio = reference_species[species_index].density_e_ratio
+    normalized_flux_array = flux_array / density_e_ratio
+    if np.unique(gradient_array).size < 3:
+        raise ValueError("TGLF diffusion/pinch identification requires three distinct gradients.")
+    design = np.column_stack((gradient_array, np.ones_like(gradient_array)))
+    coefficients, _, rank, _ = np.linalg.lstsq(design, normalized_flux_array, rcond=None)
+    if rank != 2:
+        raise ValueError("TGLF paired-gradient design matrix is rank deficient.")
+    diffusion_gb, pinch_gb = (float(coefficients[0]), float(coefficients[1]))
+    residual = normalized_flux_array - design @ coefficients
+    chi_gb = _gyro_bohm_diffusivity(decks[0])
+    return TGLFParticleTransportIdentification(
+        species_index=species_index,
+        species_name=species_name,
+        density_e_ratio=density_e_ratio,
+        gradients_a_over_l=tuple(float(value) for value in gradient_array),
+        particle_fluxes_gb=tuple(float(value) for value in flux_array),
+        normalized_particle_fluxes_gb=tuple(float(value) for value in normalized_flux_array),
+        diffusion_gb=diffusion_gb,
+        pinch_gb=pinch_gb,
+        diffusion_m2_s=diffusion_gb * chi_gb,
+        pinch_m_s=pinch_gb * chi_gb / decks[0].a_minor,
+        residual_rms_gb_per_density=float(np.sqrt(np.mean(residual * residual))),
+        residual_max_abs_gb_per_density=float(np.max(np.abs(residual))),
     )
 
 
@@ -301,34 +511,70 @@ def run_tglf_binary(
             shutil.rmtree(work_dir, ignore_errors=True)
 
 
-def _parse_tglf_run_output(path: Path, rho: float) -> TGLFOutput:
+def _parse_tglf_run_output(
+    path: Path,
+    rho: float,
+    species: Sequence[TGLFSpecies] | None = None,
+) -> TGLFOutput:
     """Parse the human-readable GACODE run summary into signed raw fluxes."""
-    particle_e = 0.0
-    particle_i = 0.0
-    q_e = 0.0
-    q_i = 0.0
+    species = tuple(species) if species is not None else TGLFInputDeck().resolved_species()
+    parsed: dict[int, TGLFSpeciesFlux] = {}
     text = path.read_text(encoding="utf-8", errors="replace")
     for line in text.splitlines():
         tokens = line.split()
-        if len(tokens) < 3:
+        label = tokens[0].lower() if tokens else ""
+        if label == "elec":
+            species_index = 0
+        elif label.startswith("ion") and label[3:].isdigit():
+            species_index = int(label[3:])
+        else:
+            continue
+        if species_index >= len(species):
             continue
         try:
-            particle_flux = float(tokens[1])
-            energy_flux = float(tokens[2])
-        except ValueError:
+            if len(tokens) >= 9 and tokens[1].lower() == "particle":
+                particle_flux = float(tokens[2])
+                energy_flux = float(tokens[4])
+                momentum_flux = float(tokens[6])
+                exchange_flux = float(tokens[8])
+            else:
+                particle_flux = float(tokens[1])
+                energy_flux = float(tokens[2])
+                # Current out.tglf.run inserts Q_low between energy and momentum.
+                momentum_index = 4 if len(tokens) >= 6 else 3
+                exchange_index = 5 if len(tokens) >= 6 else 4
+                momentum_flux = (
+                    float(tokens[momentum_index]) if len(tokens) > momentum_index else 0.0
+                )
+                exchange_flux = (
+                    float(tokens[exchange_index]) if len(tokens) > exchange_index else 0.0
+                )
+        except (IndexError, ValueError):
             continue
-        if not (math.isfinite(particle_flux) and math.isfinite(energy_flux)):
+        if not all(
+            math.isfinite(value)
+            for value in (particle_flux, energy_flux, momentum_flux, exchange_flux)
+        ):
             continue
-        if tokens[0].lower() == "elec":
-            particle_e = particle_flux
-            q_e = energy_flux
-        elif tokens[0].lower() == "ion1":
-            particle_i = particle_flux
-            q_i = energy_flux
+        item = species[species_index]
+        parsed[species_index] = TGLFSpeciesFlux(
+            species_index=species_index,
+            name=item.name,
+            charge_e=item.charge_e,
+            particle_gb=particle_flux,
+            energy_gb=energy_flux,
+            momentum_gb=momentum_flux,
+            exchange_gb=exchange_flux,
+        )
+    species_fluxes = tuple(parsed[index] for index in sorted(parsed))
+    electron = parsed.get(0)
+    main_ion_index = next(index for index, item in enumerate(species) if item.charge_e > 0.0)
+    main_ion = parsed.get(main_ion_index)
     return TGLFOutput(
         rho=rho,
-        q_i=q_i,
-        q_e=q_e,
-        particle_e=particle_e,
-        particle_i=particle_i,
+        q_i=main_ion.energy_gb if main_ion is not None else 0.0,
+        q_e=electron.energy_gb if electron is not None else 0.0,
+        particle_e=electron.particle_gb if electron is not None else 0.0,
+        particle_i=main_ion.particle_gb if main_ion is not None else 0.0,
+        species_fluxes=species_fluxes,
     )

@@ -108,8 +108,18 @@ class TGLFDatasetGenerator:
                     {
                         "sample_index": i,
                         "seed": self.seed,
-                        "input": deck.__dict__,
-                        "output": out.__dict__,
+                        # This generator is the frozen two-species v1 lane.
+                        # Multi-species runs use tglf_species_dataset_contract.
+                        "input": {
+                            name: value
+                            for name, value in deck.__dict__.items()
+                            if name != "species"
+                        },
+                        "output": {
+                            name: value
+                            for name, value in out.__dict__.items()
+                            if name != "species_fluxes"
+                        },
                     }
                 )
             except Exception as exc:

@@ -21,6 +21,7 @@ from scpn_fusion.core.gk_tglf import (
     generate_tglf_input,
     parse_tglf_output,
 )
+from scpn_fusion.core._tglf_interface_types import TGLFInputDeck, TGLFSpecies
 
 
 @pytest.fixture
@@ -143,6 +144,31 @@ def test_tglf_solver_prepare_input(tmp_path, cyclone_params):
     run_dir = solver.prepare_input(cyclone_params)
     assert (run_dir / "input.tglf").exists()
     assert (run_dir / "scpn_fusion_tglf_deck.json").exists()
+
+
+def test_tglf_solver_explicit_species_deck_round_trip(tmp_path):
+    species = (
+        TGLFSpecies("electron", 2.723e-4, -1.0, 1.0, 1.0, 3.0, 9.0),
+        TGLFSpecies("deuterium", 1.0, 1.0, 0.4, 1.0, 3.0, 9.0),
+        TGLFSpecies("carbon", 6.0, 6.0, 0.1, 1.0, 3.0, 9.0),
+    )
+    solver = TGLFSolver(work_dir=tmp_path)
+    solver.prepare_deck(TGLFInputDeck(species=species))
+    (tmp_path / "out.tglf.gbflux").write_text(
+        "0.1 0.2 0.3 1.1 1.2 1.3 2.1 2.2 2.3 3.1 3.2 3.3\n", encoding="utf-8"
+    )
+    (tmp_path / "out.tglf.eigenvalue_spectrum").write_text(
+        "# gamma/frequency\n# mode 1\n0.2 -0.4\n", encoding="utf-8"
+    )
+    (tmp_path / "out.tglf.ky_spectrum").write_text("# ky\n# values\n0.1\n", encoding="utf-8")
+    output = parse_tglf_output(tmp_path)
+    assert [item.name for item in output.species_fluxes_gb] == [
+        "electron",
+        "deuterium",
+        "carbon",
+    ]
+    assert output.species_fluxes_gb[2].particle_gb == pytest.approx(0.3)
+    assert output.species_fluxes_gb[2].exchange_gb == pytest.approx(3.3)
 
 
 def test_tglf_solver_run_binary_missing(tmp_path, cyclone_params):

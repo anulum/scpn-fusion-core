@@ -913,6 +913,10 @@
         "path": "src/scpn_fusion/core/gk_species.py"
       },
       {
+        "name": "GKSpeciesFlux",
+        "path": "src/scpn_fusion/core/gk_interface.py"
+      },
+      {
         "name": "GPURuntimeBridge",
         "path": "src/scpn_fusion/core/gpu_runtime.py"
       },
@@ -2153,6 +2157,10 @@
         "path": "src/scpn_fusion/core/_tglf_interface_types.py"
       },
       {
+        "name": "TGLFParticleTransportIdentification",
+        "path": "src/scpn_fusion/core/_tglf_interface_types.py"
+      },
+      {
         "name": "TGLFProfileScanResult",
         "path": "src/scpn_fusion/core/_tglf_interface_types.py"
       },
@@ -2163,6 +2171,14 @@
       {
         "name": "TGLFSolver",
         "path": "src/scpn_fusion/core/gk_tglf.py"
+      },
+      {
+        "name": "TGLFSpecies",
+        "path": "src/scpn_fusion/core/_tglf_interface_types.py"
+      },
+      {
+        "name": "TGLFSpeciesFlux",
+        "path": "src/scpn_fusion/core/_tglf_interface_types.py"
       },
       {
         "name": "TGLFSurrogate",
@@ -2729,6 +2745,7 @@
       "src/scpn_fusion/io/recoverable_npy_dataset.py",
       "src/scpn_fusion/io/safe_loaders.py",
       "src/scpn_fusion/io/tglf_dataset_contract.py",
+      "src/scpn_fusion/io/tglf_species_dataset_contract.py",
       "src/scpn_fusion/io/tokamak_archive.py",
       "src/scpn_fusion/io/tokamak_archive_profiles.py",
       "src/scpn_fusion/io/tokamak_disruption_archive.py",
@@ -2828,10 +2845,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 590,
-    "python_capability_source_modules": 336,
+    "python_capability_classes": 594,
+    "python_capability_source_modules": 337,
     "rust_workspace_crates": 13,
-    "test_files": 617
+    "test_files": 618
   },
   "documentation": {
     "public_pages": [
@@ -3537,6 +3554,7 @@
       "tests/test_tglf_interface_benchmark.py",
       "tests/test_tglf_interface_reference.py",
       "tests/test_tglf_interface_runtime.py",
+      "tests/test_tglf_species_dataset_contract.py",
       "tests/test_tglf_surrogate_bridge.py",
       "tests/test_tglf_validation_runtime.py",
       "tests/test_thermal_hydraulics.py",

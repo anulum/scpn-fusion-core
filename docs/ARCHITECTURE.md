@@ -304,7 +304,11 @@ The repository can ingest the following external formats:
   tables) used by the `tglf_live` pipeline backend. Official-GACODE corpus custody is a
   separate IO boundary in `io/tglf_dataset_contract.py`; its versioned manifest binds raw
   run hashes, exact solver revision, units, domains, group-isolated splits, and admitted
-  claims before any surrogate training consumes the data. `gk_nonlinear.NonlinearGKSolver` is
+  claims before any surrogate training consumes the data. Ordered impurity and isotope runs
+  use `io/tglf_species_dataset_contract.py`: the canonical flux representation follows all
+  four `NS`-length GACODE blocks and the scalar electron/main-ion fields are derived views.
+  Paired density-gradient groups are kept in one split and support a residual-bearing
+  diffusion/pinch fit. `gk_nonlinear.NonlinearGKSolver` is
   config-driven 5D δf and intentionally outside the deck-file registry. `gk_online_learner.py` is
   validation/offline workflow support for supervised surrogate refreshes from accepted GK samples; no
   live transport pipeline mutates deployed weights through it.

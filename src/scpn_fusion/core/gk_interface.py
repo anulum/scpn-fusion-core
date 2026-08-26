@@ -121,10 +121,24 @@ class GKLocalParams:
 
 
 @dataclass
+class GKSpeciesFlux:
+    """Ordered signed gyro-Bohm fluxes for one kinetic species."""
+
+    species_index: int
+    name: str
+    charge_e: float
+    particle_gb: float
+    energy_gb: float
+    momentum_gb: float
+    exchange_gb: float
+
+
+@dataclass
 class GKOutput:
     """Gyrokinetic solver output for a single flux surface.
 
-    Fluxes are in physical units [m^2/s].  Growth rate arrays are
+    Effective coefficients are in physical units [m^2/s]. Signed scalar and
+    per-species fluxes are gyro-Bohm normalised. Growth-rate arrays are
     normalised to c_s / a.
     """
 
@@ -137,6 +151,7 @@ class GKOutput:
     particle_flux_i_gb: float = 0.0
     heat_flux_e_gb: float = 0.0
     heat_flux_i_gb: float = 0.0
+    species_fluxes_gb: tuple[GKSpeciesFlux, ...] = ()
 
     gamma: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))
     omega_r: NDArray[np.float64] = field(default_factory=lambda: np.empty(0))

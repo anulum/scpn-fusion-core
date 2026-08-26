@@ -118,6 +118,8 @@ def test_dataset_generator_records_successful_tglf_runs(monkeypatch: pytest.Monk
         assert output_payload["q_i"] == pytest.approx(1.25)
         assert output_payload["q_e"] == pytest.approx(2.5)
         assert output_payload["gamma_max"] == pytest.approx(0.75)
+        assert "species" not in input_payload
+        assert "species_fluxes" not in output_payload
         assert record["seed"] == 7
 
 

@@ -751,6 +751,22 @@ contract establishes dataset identity and integrity only; it does not establish
 surrogate accuracy, uncertainty calibration, experimental validation, or
 cross-solver agreement.
 
+Ordered kinetic-species runs use the separate v2 schema
+`schemas/tglf_gacode_species_dataset_v2.schema.json`. `TGLFSpecies` maps
+GACODE's `MASS_s`, `ZS_s`, `AS_s`, `TAUS_s`, `RLNS_s`, and `RLTS_s` values
+without collapsing impurities or isotope mixtures into one ion. The canonical
+output is an ordered `TGLFSpeciesFlux` array matching the four contiguous
+`out.tglf.gbflux` blocks: particle, energy, momentum, and exchange, each of
+length `NS`. Electron/main-ion scalar values remain a derived compatibility
+view. A one-point signed particle coefficient is explicitly only an effective
+coefficient. `identify_tglf_particle_transport` instead accounts for GACODE's
+species density factor and fits
+`Gamma_hat/AS_s = D_hat (a/L_n) + V_hat` from at least three otherwise identical
+density-gradient runs and reports the residual. The retained v2 reference
+fixture contains a three-point kinetic-carbon group and a D/T isotope case from
+GACODE revision `b49339750a4aa4cf2b089fa9ff3afe098005f0f8`; this is solver I/O
+and identification evidence, not experimental or cross-solver validation.
+
 ### Path B: Native gyrokinetic solvers
 
 The native path has two distinct surfaces. `core/gk_eigenvalue.py` and

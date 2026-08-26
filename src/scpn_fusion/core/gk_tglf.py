@@ -23,6 +23,7 @@ import json
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
@@ -33,11 +34,11 @@ from scpn_fusion.core._tglf_interface_runtime import (
     _resolve_tglf_command,
     render_tglf_input,
 )
-from scpn_fusion.core._tglf_interface_types import TGLFInputDeck
-from scpn_fusion.core.gk_interface import GKLocalParams, GKOutput, GKSolverBase
+from scpn_fusion.core._tglf_interface_types import TGLFInputDeck, TGLFSpecies
+from scpn_fusion.core.gk_interface import GKLocalParams, GKOutput, GKSolverBase, GKSpeciesFlux
 from scpn_fusion.io.safe_loaders import checked_json_load
 
-FloatArray = NDArray[np.float64]
+FloatArray: TypeAlias = NDArray[np.float64]
 
 _DECK_METADATA_NAME = "scpn_fusion_tglf_deck.json"
 
@@ -81,6 +82,13 @@ def _load_deck_metadata(run_dir: Path) -> TGLFInputDeck:
     if not isinstance(payload, dict):
         raise RuntimeError("TGLF deck metadata must be a JSON object.")
     try:
+        raw_species = payload.get("species", ())
+        if raw_species:
+            if not isinstance(raw_species, list) or not all(
+                isinstance(item, dict) for item in raw_species
+            ):
+                raise TypeError("species must be a list of objects")
+            payload["species"] = tuple(TGLFSpecies(**item) for item in raw_species)
         return TGLFInputDeck(**payload)
     except TypeError as exc:
         raise RuntimeError(f"Invalid TGLF deck metadata: {exc}") from exc
@@ -101,6 +109,18 @@ def parse_tglf_output(run_dir: Path) -> GKOutput:
         particle_flux_i_gb=output.particle_i,
         heat_flux_e_gb=output.q_e,
         heat_flux_i_gb=output.q_i,
+        species_fluxes_gb=tuple(
+            GKSpeciesFlux(
+                species_index=item.species_index,
+                name=item.name,
+                charge_e=item.charge_e,
+                particle_gb=item.particle_gb,
+                energy_gb=item.energy_gb,
+                momentum_gb=item.momentum_gb,
+                exchange_gb=item.exchange_gb,
+            )
+            for item in output.species_fluxes
+        ),
         gamma=gamma,
         omega_r=omega_r,
         k_y=k_y,
@@ -158,10 +178,13 @@ class TGLFSolver(GKSolverBase):
 
     def prepare_input(self, params: GKLocalParams) -> Path:
         """Create a TGLF run directory containing ``input.tglf``."""
+        return self.prepare_deck(_deck_from_params(params))
+
+    def prepare_deck(self, deck: TGLFInputDeck) -> Path:
+        """Create a run directory from an explicit ordered-species deck."""
         base = self.work_dir or Path(tempfile.mkdtemp(prefix="tglf_"))
         base.mkdir(parents=True, exist_ok=True)
         input_file = base / "input.tglf"
-        deck = _deck_from_params(params)
         input_file.write_text(render_tglf_input(deck), encoding="utf-8")
         (base / _DECK_METADATA_NAME).write_text(
             json.dumps(asdict(deck), indent=2, sort_keys=True) + "\n",

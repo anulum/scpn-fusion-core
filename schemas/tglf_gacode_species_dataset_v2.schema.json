@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.github.io/scpn-fusion-core/schemas/tglf_gacode_species_dataset_v2.schema.json",
+  "title": "SCPN Fusion Core ordered-species official-GACODE TGLF dataset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "SPDX-License-Identifier", "schema_version", "dataset_id", "source",
+    "split_policy", "output_contract", "records", "claims",
+    "paired_gradient_groups", "samples"
+  ],
+  "properties": {
+    "SPDX-License-Identifier": {"const": "AGPL-3.0-or-later"},
+    "schema_version": {"const": "scpn-fusion.tglf-gacode-dataset.v2"},
+    "dataset_id": {"$ref": "#/$defs/identifier"},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["solver", "repository", "revision", "licence", "executable", "path_resolution_required", "reported_versions"],
+      "properties": {
+        "solver": {"const": "GACODE TGLF"},
+        "repository": {"const": "https://github.com/gafusion/gacode"},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "licence": {"const": "Apache-2.0"},
+        "executable": {"const": "tglf"},
+        "path_resolution_required": {"const": true},
+        "reported_versions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 8}}
+      }
+    },
+    "split_policy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["method", "seed", "group_isolation_required"],
+      "properties": {
+        "method": {"const": "sha256-group-modulo-10000.v1"},
+        "seed": {"type": "integer", "minimum": 0},
+        "group_isolation_required": {"const": true}
+      }
+    },
+    "output_contract": {
+      "type": "object", "additionalProperties": false,
+      "required": ["gbflux_layout", "species_order_preserved", "signed_fluxes_preserved", "legacy_scalar_view_is_derived", "one_point_particle_coefficients_are_effective_only"],
+      "properties": {
+        "gbflux_layout": {"const": "particle[NS],energy[NS],momentum[NS],exchange[NS]"},
+        "species_order_preserved": {"const": true},
+        "signed_fluxes_preserved": {"const": true},
+        "legacy_scalar_view_is_derived": {"const": true},
+        "one_point_particle_coefficients_are_effective_only": {"const": true}
+      }
+    },
+    "records": {"$ref": "#/$defs/fileWithPath"},
+    "claims": {
+      "type": "object", "additionalProperties": false,
+      "required": ["official_gacode_outputs", "surrogate_promoted", "experimental_validation", "cross_solver_parity"],
+      "properties": {
+        "official_gacode_outputs": {"const": true},
+        "surrogate_promoted": {"const": false},
+        "experimental_validation": {"const": false},
+        "cross_solver_parity": {"const": false}
+      }
+    },
+    "paired_gradient_groups": {
+      "type": "array", "items": {"$ref": "#/$defs/pairedGroup"}
+    },
+    "samples": {
+      "type": "array", "minItems": 1, "maxItems": 1000000,
+      "items": {"$ref": "#/$defs/sample"}
+    }
+  },
+  "$defs": {
+    "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "relativePath": {"type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"},
+    "file": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "size_bytes", "sha256"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[^/\\\\]+$"},
+        "size_bytes": {"type": "integer", "minimum": 0, "maximum": 268435456},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "fileWithPath": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "size_bytes", "sha256"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "size_bytes": {"type": "integer", "minimum": 0, "maximum": 268435456},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "species": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "mass_deuterium", "charge_e", "density_e_ratio", "temperature_e_ratio", "R_Ln", "R_LT"],
+      "properties": {
+        "name": {"$ref": "#/$defs/identifier"},
+        "mass_deuterium": {"type": "number", "exclusiveMinimum": 0},
+        "charge_e": {"type": "number"},
+        "density_e_ratio": {"type": "number", "exclusiveMinimum": 0},
+        "temperature_e_ratio": {"type": "number", "exclusiveMinimum": 0},
+        "R_Ln": {"type": "number"},
+        "R_LT": {"type": "number"}
+      }
+    },
+    "input": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rho", "s_hat", "q", "q_prime_loc", "alpha_mhd", "p_prime_loc", "kappa", "delta", "s_kappa", "s_delta", "beta_e", "Z_eff", "xnue", "T_e_keV", "n_e_19", "R_major", "a_minor", "B_toroidal", "use_bper", "use_bpar", "species"],
+      "properties": {
+        "rho": {"type": "number"}, "s_hat": {"type": "number"}, "q": {"type": "number"},
+        "q_prime_loc": {"type": "number"}, "alpha_mhd": {"type": "number"}, "p_prime_loc": {"type": "number"},
+        "kappa": {"type": "number"}, "delta": {"type": "number"}, "s_kappa": {"type": "number"},
+        "s_delta": {"type": "number"}, "beta_e": {"type": "number"}, "Z_eff": {"type": "number"},
+        "xnue": {"type": "number"}, "T_e_keV": {"type": "number"}, "n_e_19": {"type": "number"},
+        "R_major": {"type": "number"}, "a_minor": {"type": "number"}, "B_toroidal": {"type": "number"},
+        "use_bper": {"type": "boolean"}, "use_bpar": {"type": "boolean"},
+        "species": {"type": "array", "minItems": 2, "maxItems": 12, "items": {"$ref": "#/$defs/species"}}
+      }
+    },
+    "flux": {
+      "type": "object", "additionalProperties": false,
+      "required": ["species_index", "name", "charge_e", "particle_gb", "energy_gb", "momentum_gb", "exchange_gb"],
+      "properties": {
+        "species_index": {"type": "integer", "minimum": 0, "maximum": 11},
+        "name": {"$ref": "#/$defs/identifier"}, "charge_e": {"type": "number"},
+        "particle_gb": {"type": "number"}, "energy_gb": {"type": "number"},
+        "momentum_gb": {"type": "number"}, "exchange_gb": {"type": "number"}
+      }
+    },
+    "view": {
+      "type": "object", "additionalProperties": false,
+      "required": ["electron_species_index", "main_ion_species_index", "particle_e_gb", "particle_i_gb", "energy_e_gb", "energy_i_gb", "heat_effective_e_m2_s", "heat_effective_i_m2_s", "particle_effective_e_m2_s", "particle_effective_i_m2_s"],
+      "properties": {
+        "electron_species_index": {"const": 0}, "main_ion_species_index": {"type": "integer", "minimum": 1, "maximum": 11},
+        "particle_e_gb": {"type": "number"}, "particle_i_gb": {"type": "number"},
+        "energy_e_gb": {"type": "number"}, "energy_i_gb": {"type": "number"},
+        "heat_effective_e_m2_s": {"type": "number"}, "heat_effective_i_m2_s": {"type": "number"},
+        "particle_effective_e_m2_s": {"type": "number"}, "particle_effective_i_m2_s": {"type": "number"}
+      }
+    },
+    "output": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rho", "gamma_max", "species_fluxes", "electron_main_ion_view"],
+      "properties": {
+        "rho": {"type": "number"}, "gamma_max": {"type": "number"},
+        "species_fluxes": {"type": "array", "minItems": 2, "maxItems": 12, "items": {"$ref": "#/$defs/flux"}},
+        "electron_main_ion_view": {"$ref": "#/$defs/view"}
+      }
+    },
+    "sample": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sample_index", "sample_id", "group_id", "split", "sampling_stratum", "regime", "reported_version", "run_directory", "input", "output", "raw_files"],
+      "properties": {
+        "sample_index": {"type": "integer", "minimum": 0}, "sample_id": {"$ref": "#/$defs/sha256"},
+        "group_id": {"$ref": "#/$defs/identifier"}, "split": {"enum": ["train", "calibration", "test"]},
+        "sampling_stratum": {"enum": ["interior", "boundary", "threshold"]},
+        "regime": {"enum": ["stable", "ITG", "TEM", "ETG", "mixed", "unclassified"]},
+        "reported_version": {"type": "string", "minLength": 8}, "run_directory": {"$ref": "#/$defs/relativePath"},
+        "input": {"$ref": "#/$defs/input"}, "output": {"$ref": "#/$defs/output"},
+        "raw_files": {"type": "array", "minItems": 6, "items": {"$ref": "#/$defs/file"}}
+      }
+    },
+    "pairedGroup": {
+      "type": "object", "additionalProperties": false,
+      "required": ["group_id", "species_name", "species_index", "sample_indices", "gradients_a_over_l", "method"],
+      "properties": {
+        "group_id": {"$ref": "#/$defs/identifier"}, "species_name": {"$ref": "#/$defs/identifier"},
+        "species_index": {"type": "integer", "minimum": 0, "maximum": 11},
+        "sample_indices": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "integer", "minimum": 0}},
+        "gradients_a_over_l": {"type": "array", "minItems": 3, "items": {"type": "number"}},
+        "method": {"const": "paired-gradient-linear-least-squares.v1"}
+      }
+    }
+  }
+}

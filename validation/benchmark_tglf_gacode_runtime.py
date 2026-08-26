@@ -121,10 +121,17 @@ def run_benchmark(*, command: str, work_dir: Path, timeout_s: float) -> dict[str
         "out.tglf.version",
     ]
     hashes = {name: _sha256(case_dir / name) for name in output_files}
-    scalar_values = np.asarray(list(asdict(output).values()), dtype=np.float64)
+    serialized_output = asdict(output)
+    scalar_values = [
+        value for value in serialized_output.values() if isinstance(value, (int, float))
+    ]
+    for species_flux in serialized_output["species_fluxes"]:
+        scalar_values.extend(
+            value for value in species_flux.values() if isinstance(value, (int, float))
+        )
     gates = {
         "expected_gacode_revision": version.startswith(expected_short),
-        "finite_public_output": bool(np.all(np.isfinite(scalar_values))),
+        "finite_public_output": bool(np.all(np.isfinite(np.asarray(scalar_values)))),
         "nonempty_consistent_spectrum": bool(
             len(k_y) > 0 and len(k_y) == len(gamma) == len(omega_r)
         ),
@@ -151,7 +158,7 @@ def run_benchmark(*, command: str, work_dir: Path, timeout_s: float) -> dict[str
         "case": {
             "name": "Cyclone-like electrostatic two-species activation case",
             "input": asdict(deck),
-            "output": asdict(output),
+            "output": serialized_output,
             "spectrum_points": int(len(k_y)),
             "dominant_ky": float(k_y[int(np.argmax(gamma))]),
             "elapsed_seconds_orientation_only": case_seconds,

@@ -1,0 +1,611 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "claims": {
+    "cross_solver_parity": false,
+    "experimental_validation": false,
+    "official_gacode_outputs": true,
+    "surrogate_promoted": false
+  },
+  "dataset_id": "gacode-b4933975-species-carbon-isotope-v2",
+  "output_contract": {
+    "gbflux_layout": "particle[NS],energy[NS],momentum[NS],exchange[NS]",
+    "legacy_scalar_view_is_derived": true,
+    "one_point_particle_coefficients_are_effective_only": true,
+    "signed_fluxes_preserved": true,
+    "species_order_preserved": true
+  },
+  "paired_gradient_groups": [
+    {
+      "gradients_a_over_l": [
+        0.7999999999999999,
+        1.0,
+        1.2
+      ],
+      "group_id": "official-tglf07-carbon-gradient",
+      "method": "paired-gradient-linear-least-squares.v1",
+      "sample_indices": [
+        0,
+        1,
+        2
+      ],
+      "species_index": 2,
+      "species_name": "carbon"
+    }
+  ],
+  "records": {
+    "path": "dataset.json",
+    "sha256": "18f99e4871d37d85a7dd19516a86a8b1a78f1319b4163f26b20849dbc98fe017",
+    "size_bytes": 10638
+  },
+  "samples": [
+    {
+      "group_id": "official-tglf07-carbon-gradient",
+      "input": {
+        "B_toroidal": 5.3,
+        "R_major": 3.0,
+        "T_e_keV": 10.0,
+        "Z_eff": 1.0,
+        "a_minor": 1.0,
+        "alpha_mhd": 0.0,
+        "beta_e": 0.0,
+        "delta": 0.0,
+        "kappa": 1.0,
+        "n_e_19": 8.0,
+        "p_prime_loc": 0.0,
+        "q": 2.0,
+        "q_prime_loc": 0.0,
+        "rho": 0.5,
+        "s_delta": 0.0,
+        "s_hat": 1.0,
+        "s_kappa": 0.0,
+        "species": [
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.4,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 9.0,
+            "R_Ln": 2.4,
+            "charge_e": 6.0,
+            "density_e_ratio": 0.1,
+            "mass_deuterium": 6.0,
+            "name": "carbon",
+            "temperature_e_ratio": 1.0
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": false,
+        "xnue": 0.0
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 10.752,
+          "energy_i_gb": 3.8001,
+          "heat_effective_e_m2_s": 18.436350464759627,
+          "heat_effective_i_m2_s": 16.289986839921188,
+          "main_ion_species_index": 1,
+          "particle_e_gb": -1.4948,
+          "particle_effective_e_m2_s": -7.68935733111682,
+          "particle_effective_i_m2_s": -25.643193936056566,
+          "particle_i_gb": -1.994
+        },
+        "gamma_max": 0.7600766227445149,
+        "rho": 0.5,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 10.752,
+            "exchange_gb": -0.31221,
+            "momentum_gb": -1.6834e-14,
+            "name": "electron",
+            "particle_gb": -1.4948,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 3.8001,
+            "exchange_gb": -0.2135,
+            "momentum_gb": 5.6635e-13,
+            "name": "deuterium",
+            "particle_gb": -1.994,
+            "species_index": 1
+          },
+          {
+            "charge_e": 6.0,
+            "energy_gb": 3.7765,
+            "exchange_gb": 0.52571,
+            "momentum_gb": 4.3359e-13,
+            "name": "carbon",
+            "particle_gb": 0.083197,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "95f14abd0ff087b1bf026437aac71ff12cd472b0d6ec565b2e87a041837818cd",
+          "size_bytes": 587
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "931d829a74b93f3b281512f3dfc76bc99a5a4d68949c0048f1817d75e231f342",
+          "size_bytes": 2205
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "80cb3446855c898102d9baf132e48786d71f27f5611469e6dbf29aa7712e3b9a",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "6acb7f44a6d5b3becdde875dc4bbec6127894c4828c98d1c03445484cf2806fe",
+          "size_bytes": 494
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "cef66ecaf629d7b9aae55e2cfdec8bfdd688973cf6dae3593c72c205f6d40852",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "6388016cfd0b91b1074e167029f3fcb8eff8becea772d67d7ad7a9081f369c8c",
+          "size_bytes": 64
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000000",
+      "sample_id": "1c88e2365f361312b2ebefbaabe45c03d684015758c4cd5cc11c7114f9dc37c9",
+      "sample_index": 0,
+      "sampling_stratum": "interior",
+      "split": "test"
+    },
+    {
+      "group_id": "official-tglf07-carbon-gradient",
+      "input": {
+        "B_toroidal": 5.3,
+        "R_major": 3.0,
+        "T_e_keV": 10.0,
+        "Z_eff": 1.0,
+        "a_minor": 1.0,
+        "alpha_mhd": 0.0,
+        "beta_e": 0.0,
+        "delta": 0.0,
+        "kappa": 1.0,
+        "n_e_19": 8.0,
+        "p_prime_loc": 0.0,
+        "q": 2.0,
+        "q_prime_loc": 0.0,
+        "rho": 0.5,
+        "s_delta": 0.0,
+        "s_hat": 1.0,
+        "s_kappa": 0.0,
+        "species": [
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.4,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": 6.0,
+            "density_e_ratio": 0.1,
+            "mass_deuterium": 6.0,
+            "name": "carbon",
+            "temperature_e_ratio": 1.0
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": false,
+        "xnue": 0.0
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 17.344,
+          "energy_i_gb": 3.9279,
+          "heat_effective_e_m2_s": 29.739589142558685,
+          "heat_effective_i_m2_s": 16.83783040144376,
+          "main_ion_species_index": 1,
+          "particle_e_gb": 0.32785,
+          "particle_effective_e_m2_s": 1.6864836774194873,
+          "particle_effective_i_m2_s": -19.8676882205686,
+          "particle_i_gb": -1.5449
+        },
+        "gamma_max": 0.7736367489246486,
+        "rho": 0.5,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 17.344,
+            "exchange_gb": -1.1468,
+            "momentum_gb": 4.5456e-15,
+            "name": "electron",
+            "particle_gb": 0.32785,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 3.9279,
+            "exchange_gb": -0.03777,
+            "momentum_gb": -6.9631e-12,
+            "name": "deuterium",
+            "particle_gb": -1.5449,
+            "species_index": 1
+          },
+          {
+            "charge_e": 6.0,
+            "energy_gb": 3.8644,
+            "exchange_gb": 1.1846,
+            "momentum_gb": -1.473e-11,
+            "name": "carbon",
+            "particle_gb": 0.31213,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "ecd03d9565dfc8e4b1006b49716cf349cc6748f34bb02bdcbbe194c29d945255",
+          "size_bytes": 585
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "ae189bdbd67fdd4db3d5f263273296435af0fa42d77d2c25537382c8cd2ffea3",
+          "size_bytes": 2195
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "0d2ed47f21d28f44e1c7b638d0f625b2d58b860ab04b47b2d8020d25862ae15c",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "6acb7f44a6d5b3becdde875dc4bbec6127894c4828c98d1c03445484cf2806fe",
+          "size_bytes": 494
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "cd178d1e85fa16f53acc6d914b25869aa5ed30ded14ac7e134c5abc7c843acfc",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "22b153b6b6f4ac11da5cbc76ba8ab2137720c62f28847ebd371c939f17f96843",
+          "size_bytes": 64
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000001",
+      "sample_id": "c326fb935cba7b3f6e88c9fd0731cc9322548fe281f0041a0cf626766460e319",
+      "sample_index": 1,
+      "sampling_stratum": "interior",
+      "split": "test"
+    },
+    {
+      "group_id": "official-tglf07-carbon-gradient",
+      "input": {
+        "B_toroidal": 5.3,
+        "R_major": 3.0,
+        "T_e_keV": 10.0,
+        "Z_eff": 1.0,
+        "a_minor": 1.0,
+        "alpha_mhd": 0.0,
+        "beta_e": 0.0,
+        "delta": 0.0,
+        "kappa": 1.0,
+        "n_e_19": 8.0,
+        "p_prime_loc": 0.0,
+        "q": 2.0,
+        "q_prime_loc": 0.0,
+        "rho": 0.5,
+        "s_delta": 0.0,
+        "s_hat": 1.0,
+        "s_kappa": 0.0,
+        "species": [
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.4,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.6,
+            "charge_e": 6.0,
+            "density_e_ratio": 0.1,
+            "mass_deuterium": 6.0,
+            "name": "carbon",
+            "temperature_e_ratio": 1.0
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": false,
+        "xnue": 0.0
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 22.301,
+          "energy_i_gb": 4.2427,
+          "heat_effective_e_m2_s": 38.23930912524222,
+          "heat_effective_i_m2_s": 18.187291693832695,
+          "main_ion_species_index": 1,
+          "particle_e_gb": 1.6125,
+          "particle_effective_e_m2_s": 8.294814487841768,
+          "particle_effective_i_m2_s": -19.79181317331547,
+          "particle_i_gb": -1.539
+        },
+        "gamma_max": 0.7872094431254439,
+        "rho": 0.5,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 22.301,
+            "exchange_gb": -1.4074,
+            "momentum_gb": 4.4695e-15,
+            "name": "electron",
+            "particle_gb": 1.6125,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 4.2427,
+            "exchange_gb": 0.041934,
+            "momentum_gb": -6.0691e-12,
+            "name": "deuterium",
+            "particle_gb": -1.539,
+            "species_index": 1
+          },
+          {
+            "charge_e": 6.0,
+            "energy_gb": 4.3075,
+            "exchange_gb": 1.3655,
+            "momentum_gb": -1.1817e-11,
+            "name": "carbon",
+            "particle_gb": 0.52524,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "05496fe82fd56c128b24a6ea4900b65c6bb0638133490e24dd20e7ce7c705594",
+          "size_bytes": 587
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "1130c2076b9c8a4c454d678cc0d95455dd3fd0cd4ca69532f33bbf98e3ab1703",
+          "size_bytes": 2195
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "658bce6606618005f792936526a0eb8e6b8848d02434967947e0e03894dd0370",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "6acb7f44a6d5b3becdde875dc4bbec6127894c4828c98d1c03445484cf2806fe",
+          "size_bytes": 494
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "967f588cf016817d3228a477a6f520dd6dc0bf8936b9fad6dd5ceb01df03ad28",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "f2f0b6ed034cb0a6ed9dcfe2f5c0a822090816a612a1d6409253b0cf8ee33334",
+          "size_bytes": 64
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000002",
+      "sample_id": "c5fc2ce4f25140e6ffa99e94f8cea4f15b1fb45260b710cabbaed278e531268a",
+      "sample_index": 2,
+      "sampling_stratum": "interior",
+      "split": "test"
+    },
+    {
+      "group_id": "pinned-dt-isotope-case",
+      "input": {
+        "B_toroidal": 5.3,
+        "R_major": 3.0,
+        "T_e_keV": 10.0,
+        "Z_eff": 1.0,
+        "a_minor": 1.0,
+        "alpha_mhd": 0.0,
+        "beta_e": 0.0,
+        "delta": 0.0,
+        "kappa": 1.0,
+        "n_e_19": 8.0,
+        "p_prime_loc": 0.0,
+        "q": 2.0,
+        "q_prime_loc": 0.0,
+        "rho": 0.5,
+        "s_delta": 0.0,
+        "s_hat": 1.0,
+        "s_kappa": 0.0,
+        "species": [
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.5,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 9.0,
+            "R_Ln": 3.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.5,
+            "mass_deuterium": 1.5,
+            "name": "tritium",
+            "temperature_e_ratio": 1.0
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": false,
+        "xnue": 0.0
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 16.197,
+          "energy_i_gb": 19.727,
+          "heat_effective_e_m2_s": 27.77283933014431,
+          "heat_effective_i_m2_s": 67.65139241412075,
+          "main_ion_species_index": 1,
+          "particle_e_gb": -2.0804,
+          "particle_effective_e_m2_s": -10.701725308840938,
+          "particle_effective_i_m2_s": -8.009009903069991,
+          "particle_i_gb": -0.77847
+        },
+        "gamma_max": 11.54338908568976,
+        "rho": 0.5,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 16.197,
+            "exchange_gb": 6.525,
+            "momentum_gb": 5.5284e-14,
+            "name": "electron",
+            "particle_gb": -2.0804,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 19.727,
+            "exchange_gb": -3.4985,
+            "momentum_gb": -8.3181e-12,
+            "name": "deuterium",
+            "particle_gb": -0.77847,
+            "species_index": 1
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 17.775,
+            "exchange_gb": -3.0265,
+            "momentum_gb": -9.1468e-12,
+            "name": "tritium",
+            "particle_gb": -1.302,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "a7e7dc04db39fcaed361ed6b07da753429cda98ebee9f88245e60b8c73c4373d",
+          "size_bytes": 585
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "99b1c878421845f38c5cab75dfa5db9a4179634b68d565842bb0862fa733624b",
+          "size_bytes": 2180
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "a3132f7bbc8817e73dcce606414240c04d55dfbb551fe4c3f315bba32f9122c0",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "6acb7f44a6d5b3becdde875dc4bbec6127894c4828c98d1c03445484cf2806fe",
+          "size_bytes": 494
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "5e517975d2ef1f7de61621c59ff27fe3640d9e7c62ca9998d4b6e3ac9b0adc88",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "3b00b7ea55ca805d8633e3ddaefbcffb77c922cfab26f7354d12bd64f3e82a80",
+          "size_bytes": 64
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000003",
+      "sample_id": "5d447b673d7fd49b35c49a487d158bb71dd71aeda7f6486e4855f705de3d69fb",
+      "sample_index": 3,
+      "sampling_stratum": "interior",
+      "split": "train"
+    }
+  ],
+  "schema_version": "scpn-fusion.tglf-gacode-dataset.v2",
+  "source": {
+    "executable": "tglf",
+    "licence": "Apache-2.0",
+    "path_resolution_required": true,
+    "reported_versions": [
+      "b4933975 [2026-08-20]"
+    ],
+    "repository": "https://github.com/gafusion/gacode",
+    "revision": "b49339750a4aa4cf2b089fa9ff3afe098005f0f8",
+    "solver": "GACODE TGLF"
+  },
+  "split_policy": {
+    "group_isolation_required": true,
+    "method": "sha256-group-modulo-10000.v1",
+    "seed": 20260826
+  }
+}
