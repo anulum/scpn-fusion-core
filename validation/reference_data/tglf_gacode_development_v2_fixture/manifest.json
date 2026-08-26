@@ -1,0 +1,2093 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "claims": {
+    "cross_solver_parity": false,
+    "experimental_validation": false,
+    "official_gacode_outputs": true,
+    "surrogate_promoted": false
+  },
+  "dataset_id": "gacode-b4933975-fixture-v2-n9-seed20260826",
+  "development": {
+    "accepted_runs": 9,
+    "base_groups": 3,
+    "command_policy": {
+      "command": "tglf",
+      "max_retries": 2,
+      "timeout_s": 120.0
+    },
+    "composition_counts": {
+      "electron-deuterium": 3,
+      "electron-deuterium-carbon": 3,
+      "electron-deuterium-tritium": 3
+    },
+    "design_method": "seeded-stratified-latin-hypercube-with-frozen-boundary-and-transition-probes.v1",
+    "plan_sha256": "102ba43f1f9a495d99e291bef36cdf6acde8e31809d0ba4a2d03392390080047",
+    "samples_per_group": 3,
+    "sampling_strata_counts": {
+      "boundary": 3,
+      "interior": 3,
+      "threshold": 3
+    },
+    "schema_version": "scpn-fusion.tglf-development-metadata.v1",
+    "storage_contract": {
+      "large_artifact_policy": "owner-controlled-storage-manifest-only-in-git",
+      "local_max_bytes": 268435456,
+      "local_max_runs": 1000,
+      "working_location": "ignored-local-workstation"
+    }
+  },
+  "output_contract": {
+    "gbflux_layout": "particle[NS],energy[NS],momentum[NS],exchange[NS]",
+    "legacy_scalar_view_is_derived": true,
+    "one_point_particle_coefficients_are_effective_only": true,
+    "signed_fluxes_preserved": true,
+    "species_order_preserved": true
+  },
+  "paired_gradient_groups": [
+    {
+      "gradients_a_over_l": [
+        1.071059214070188,
+        1.2189757938413772,
+        1.3668923736125662
+      ],
+      "group_id": "data03-fixture-boundary-electron-deuterium-tritium-001",
+      "method": "paired-gradient-linear-least-squares.v1",
+      "sample_indices": [
+        3,
+        4,
+        5
+      ],
+      "species_index": 2,
+      "species_name": "tritium"
+    },
+    {
+      "gradients_a_over_l": [
+        0.7522118225808958,
+        0.9364060476261895,
+        1.120600272671483
+      ],
+      "group_id": "data03-fixture-interior-electron-deuterium-000",
+      "method": "paired-gradient-linear-least-squares.v1",
+      "sample_indices": [
+        0,
+        1,
+        2
+      ],
+      "species_index": 1,
+      "species_name": "deuterium"
+    },
+    {
+      "gradients_a_over_l": [
+        0.38086370426759597,
+        0.5078182723567946,
+        0.6347728404459931
+      ],
+      "group_id": "data03-fixture-threshold-electron-deuterium-carbon-002",
+      "method": "paired-gradient-linear-least-squares.v1",
+      "sample_indices": [
+        6,
+        7,
+        8
+      ],
+      "species_index": 2,
+      "species_name": "carbon"
+    }
+  ],
+  "plan": {
+    "path": "plan.json",
+    "sha256": "261726b01bc9d6629d8287654f2b4ee73d54b0f1e62e338856c849da516604ca",
+    "size_bytes": 19402
+  },
+  "purpose": "development",
+  "records": {
+    "path": "dataset.json",
+    "sha256": "ca25ece8a6f71bd08d7d14e629d0c396d43ff187933b7e9142285ff8fe0547a8",
+    "size_bytes": 26275
+  },
+  "rejections": {
+    "path": "rejections.json",
+    "sha256": "a5a906b7c690bf03718450cac27dab6154f72c163d21835dd96645cb0f8553e1",
+    "size_bytes": 1169
+  },
+  "samples": [
+    {
+      "composition": "electron-deuterium",
+      "group_id": "data03-fixture-interior-electron-deuterium-000",
+      "input": {
+        "B_toroidal": 3.7776661729401706,
+        "R_major": 2.4498545222103187,
+        "T_e_keV": 17.29223720065712,
+        "Z_eff": 1.0,
+        "a_minor": 0.9024981103844756,
+        "alpha_mhd": 0.5595995943739236,
+        "beta_e": 0.009661369404395754,
+        "delta": 0.3972800584892806,
+        "kappa": 1.157212653322086,
+        "n_e_19": 2.0424154257660376,
+        "p_prime_loc": 0.0,
+        "q": 3.9648111808667137,
+        "q_prime_loc": 0.0,
+        "rho": 0.2845616940575199,
+        "s_delta": 0.7736041249783578,
+        "s_hat": 1.7964462917546007,
+        "s_kappa": -0.6626188108240272,
+        "species": [
+          {
+            "R_LT": 7.945776059455023,
+            "R_Ln": 0.12139039512318184,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 12.233858944477443,
+            "R_Ln": 2.0418984970780865,
+            "charge_e": 1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.9773613557933165
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": false,
+        "xnue": 0.17839058029353205
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 10.204,
+          "energy_i_gb": 71.187,
+          "heat_effective_e_m2_s": 88.93447330763901,
+          "heat_effective_i_m2_s": 203.79202666161117,
+          "main_ion_species_index": 1,
+          "particle_e_gb": -0.45476,
+          "particle_effective_e_m2_s": -259.4382111348159,
+          "particle_effective_i_m2_s": -15.423541867910199,
+          "particle_i_gb": -0.45476
+        },
+        "gamma_max": 16.897581497785936,
+        "rho": 0.2845616940575199,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 10.204,
+            "exchange_gb": 17.478,
+            "momentum_gb": -1.8896e-07,
+            "name": "electron",
+            "particle_gb": -0.45476,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 71.187,
+            "exchange_gb": -17.478,
+            "momentum_gb": 2.9383e-05,
+            "name": "deuterium",
+            "particle_gb": -0.45476,
+            "species_index": 1
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "606b349d9e48bd699850b9f55be9315d16bff8385d83162f8834067164bf41eb",
+          "size_bytes": 708
+        },
+        {
+          "name": "input.tglf.gen",
+          "sha256": "4fd671c52a74af4e1876827ed493dd8c5e9170a77856f95a30f6745419e15b25",
+          "size_bytes": 2768
+        },
+        {
+          "name": "out.tglf.QL_flux_spectrum",
+          "sha256": "93c419eefe560eac8b6dcac9f113ebff99aa8cac8623b92fd7013a3b12c08c08",
+          "size_bytes": 11350
+        },
+        {
+          "name": "out.tglf.QL_intensity_spectrum",
+          "sha256": "85afec35fffb6f7c027833dc5b746f61f05910a9e32c94eeda33c443022e7439",
+          "size_bytes": 9146
+        },
+        {
+          "name": "out.tglf.ave_p0_spectrum",
+          "sha256": "7a07dd66c362aad40923bbfd15a1802a3b319fc62f12d823ad13de77d7d2c765",
+          "size_bytes": 641
+        },
+        {
+          "name": "out.tglf.density_spectrum",
+          "sha256": "c8ec34c0e361c1c6877e16d21aab49bb0a2c71e1134951c8268b28793ea82661",
+          "size_bytes": 1199
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "7918c0e0647739a52dbc76b7293841722a23c7c9a9e06d5b65755ee13f793c4c",
+          "size_bytes": 2280
+        },
+        {
+          "name": "out.tglf.field_spectrum",
+          "sha256": "423ec43bf012496c2c0cf33973bca4cc69313276e5a268c62d1c292cf29a1bca",
+          "size_bytes": 4578
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "0ddcccf96ea93daf81e85f684f7740534b3bc3e71b5ddb835d6cf50157bdd7ec",
+          "size_bytes": 96
+        },
+        {
+          "name": "out.tglf.globaldump",
+          "sha256": "f2d20142479ae7cd6eee691af35f83c0792d42b860ad6bf0147b25ab5ce113e0",
+          "size_bytes": 3642
+        },
+        {
+          "name": "out.tglf.grid",
+          "sha256": "806353dc43860f2c20ab177f3963db19aa5e1d6ff855fd07ebb9f7aea20cf9f3",
+          "size_bytes": 6
+        },
+        {
+          "name": "out.tglf.intensity_spectrum",
+          "sha256": "bfa8c47353a33a96bacd558e5559d0ab8ab35d30445a4f3eb9ef2756b2fc806a",
+          "size_bytes": 9002
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "ec74c7b55e5459f26e62ce64bab2ab11678a47dec4ff14afcacef424c7b28bd0",
+          "size_bytes": 599
+        },
+        {
+          "name": "out.tglf.nete_crossphase_spectrum",
+          "sha256": "033e377a3e3b8054eb5498eb118a0a3bb4482841b349454deb9dae2606756bf4",
+          "size_bytes": 1201
+        },
+        {
+          "name": "out.tglf.nsts_crossphase_spectrum",
+          "sha256": "3c5e6d8b9c8fec05ee44a014adcb516b6bfd59a4788b51c98bb0bd498e781e5a",
+          "size_bytes": 2444
+        },
+        {
+          "name": "out.tglf.prec",
+          "sha256": "ad57f913ba3f043294e7b9e7bf6fcc63f3cdaa46ab220e0cebd4b35d18a2c4f6",
+          "size_bytes": 27
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "aa62811f564fc1275fad76ed0095a92bf1c46e28be823651bbbd8fb2e5a6843e",
+          "size_bytes": 337
+        },
+        {
+          "name": "out.tglf.scalar_saturation_parameters",
+          "sha256": "243f4bd306621bb2ca76be155b5792c6d14cca7b05feb8cc8f11307aed12c1c0",
+          "size_bytes": 797
+        },
+        {
+          "name": "out.tglf.spectral_shift_spectrum",
+          "sha256": "fce07e0a39e16b16f6c5bf6f7cf12af3c1231e531de932523a500798ea69c0d0",
+          "size_bytes": 822
+        },
+        {
+          "name": "out.tglf.sum_flux_spectrum",
+          "sha256": "473309854b6068c6868e0f93ae84b513a43053954f7852622e65ce28abe08392",
+          "size_bytes": 5728
+        },
+        {
+          "name": "out.tglf.temperature_spectrum",
+          "sha256": "83033b3f42c449330f6b2be243c2d31a89157a5d420b0ff83bb26b091a173fb4",
+          "size_bytes": 1207
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "d34045487e71f2a09402fe194c2c271ea2f6108f58cee0d53654fde6176adb74",
+          "size_bytes": 64
+        },
+        {
+          "name": "out.tglf.width_spectrum",
+          "sha256": "b691e05958716bdcb560c196b907af81c9168f6bc1fdd5ffea47a69547e42d5d",
+          "size_bytes": 663
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000000",
+      "sample_id": "5d4eafc1b7afa347ef49975becdacefed4cc03a8b1fd71edc52f5b545f254540",
+      "sample_index": 0,
+      "sampling_stratum": "interior",
+      "split": "train"
+    },
+    {
+      "composition": "electron-deuterium",
+      "group_id": "data03-fixture-interior-electron-deuterium-000",
+      "input": {
+        "B_toroidal": 3.7776661729401706,
+        "R_major": 2.4498545222103187,
+        "T_e_keV": 17.29223720065712,
+        "Z_eff": 1.0,
+        "a_minor": 0.9024981103844756,
+        "alpha_mhd": 0.5595995943739236,
+        "beta_e": 0.009661369404395754,
+        "delta": 0.3972800584892806,
+        "kappa": 1.157212653322086,
+        "n_e_19": 2.0424154257660376,
+        "p_prime_loc": 0.0,
+        "q": 3.9648111808667137,
+        "q_prime_loc": 0.0,
+        "rho": 0.2845616940575199,
+        "s_delta": 0.7736041249783578,
+        "s_hat": 1.7964462917546007,
+        "s_kappa": -0.6626188108240272,
+        "species": [
+          {
+            "R_LT": 7.945776059455023,
+            "R_Ln": 0.12139039512318184,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 12.233858944477443,
+            "R_Ln": 2.5418984970780865,
+            "charge_e": 1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.9773613557933165
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": false,
+        "xnue": 0.17839058029353205
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 10.262,
+          "energy_i_gb": 69.862,
+          "heat_effective_e_m2_s": 89.43998089798035,
+          "heat_effective_i_m2_s": 199.99885606407744,
+          "main_ion_species_index": 1,
+          "particle_e_gb": -0.69225,
+          "particle_effective_e_m2_s": -394.9250190387815,
+          "particle_effective_i_m2_s": -18.859960049645952,
+          "particle_i_gb": -0.69225
+        },
+        "gamma_max": 16.90467282099372,
+        "rho": 0.2845616940575199,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 10.262,
+            "exchange_gb": 16.627,
+            "momentum_gb": -2.0429e-07,
+            "name": "electron",
+            "particle_gb": -0.69225,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 69.862,
+            "exchange_gb": -16.627,
+            "momentum_gb": 0.00011899,
+            "name": "deuterium",
+            "particle_gb": -0.69225,
+            "species_index": 1
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "936d7282ed69c789c7f67cabbf003b255fea5996f92109fe2b0f7751c1f7dd06",
+          "size_bytes": 708
+        },
+        {
+          "name": "input.tglf.gen",
+          "sha256": "4b6424c0dbfccd71451b0b2c540259b6ef2a0de38572622dbcbd9cb4f51e086f",
+          "size_bytes": 2768
+        },
+        {
+          "name": "out.tglf.QL_flux_spectrum",
+          "sha256": "366cc217b6f5615a51f48a7f01bcd8cda94664175af0df24082c009e9a988eef",
+          "size_bytes": 11350
+        },
+        {
+          "name": "out.tglf.QL_intensity_spectrum",
+          "sha256": "3ddfed9b9eb645f5ddb8cd6b56f7fd78ec96d21de9a10fcba4243e91d6b9e32b",
+          "size_bytes": 9146
+        },
+        {
+          "name": "out.tglf.ave_p0_spectrum",
+          "sha256": "7a07dd66c362aad40923bbfd15a1802a3b319fc62f12d823ad13de77d7d2c765",
+          "size_bytes": 641
+        },
+        {
+          "name": "out.tglf.density_spectrum",
+          "sha256": "9fac25f5523ffc08f01195c1cb28d2b6bf7a38598c1f82c4d3d47efc43960a04",
+          "size_bytes": 1199
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "93d63bbf02f0ec0f385f9ab44d294e16951fdae9a298ca3e0c5ed45c9cce7955",
+          "size_bytes": 2280
+        },
+        {
+          "name": "out.tglf.field_spectrum",
+          "sha256": "6d3532061f5f028652754fa17559fc1a3b7e454e7870097ea3c95182138542c2",
+          "size_bytes": 4578
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "f0636a440c3b2044dfc8e37e44da49b43db1dd15dfcd6adfa5ac88a8d66e2e1b",
+          "size_bytes": 96
+        },
+        {
+          "name": "out.tglf.globaldump",
+          "sha256": "583e32ecb361fdfe68c839562b24b82e2b577a6811f9c8e8b4e2a3c2732ae687",
+          "size_bytes": 3642
+        },
+        {
+          "name": "out.tglf.grid",
+          "sha256": "806353dc43860f2c20ab177f3963db19aa5e1d6ff855fd07ebb9f7aea20cf9f3",
+          "size_bytes": 6
+        },
+        {
+          "name": "out.tglf.intensity_spectrum",
+          "sha256": "b93b3a0be1cd214d3a72d76d2435ff37cad49d293b9dc8d5c489ca6a2587e8ff",
+          "size_bytes": 9002
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "ec74c7b55e5459f26e62ce64bab2ab11678a47dec4ff14afcacef424c7b28bd0",
+          "size_bytes": 599
+        },
+        {
+          "name": "out.tglf.nete_crossphase_spectrum",
+          "sha256": "9c513316a2bf6c9da89ac85ea8aa972426072f5bb25e8e8ef38c84ba50a005ae",
+          "size_bytes": 1201
+        },
+        {
+          "name": "out.tglf.nsts_crossphase_spectrum",
+          "sha256": "745e316652018c5ce0663bb3ddc8707c99cc2eaa855a23f7b09f43e3cc050e40",
+          "size_bytes": 2444
+        },
+        {
+          "name": "out.tglf.prec",
+          "sha256": "fe4ed2200a5bf40dbaaddce0ce232f29b3e2e9578866c3839a67ec0abdaa0dce",
+          "size_bytes": 27
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "ab64069e7dd818c385f722b4be53286f70e47397df75f18db3055a01ce31cfb0",
+          "size_bytes": 337
+        },
+        {
+          "name": "out.tglf.scalar_saturation_parameters",
+          "sha256": "243f4bd306621bb2ca76be155b5792c6d14cca7b05feb8cc8f11307aed12c1c0",
+          "size_bytes": 797
+        },
+        {
+          "name": "out.tglf.spectral_shift_spectrum",
+          "sha256": "fce07e0a39e16b16f6c5bf6f7cf12af3c1231e531de932523a500798ea69c0d0",
+          "size_bytes": 822
+        },
+        {
+          "name": "out.tglf.sum_flux_spectrum",
+          "sha256": "2003483aea481603a999d8e531eb7129408c3d28b1ef10f3cf907e0731018ce4",
+          "size_bytes": 5728
+        },
+        {
+          "name": "out.tglf.temperature_spectrum",
+          "sha256": "07c51233a8755ae463bd27c29983ba9fbfca0e3978a6897eac187feb223d153c",
+          "size_bytes": 1207
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "78560c9c27c73a3d5465083ebf8f40036fd6924ff3d322fb7c734ac159a20e9d",
+          "size_bytes": 64
+        },
+        {
+          "name": "out.tglf.width_spectrum",
+          "sha256": "b691e05958716bdcb560c196b907af81c9168f6bc1fdd5ffea47a69547e42d5d",
+          "size_bytes": 663
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000001",
+      "sample_id": "ac57b35b3f81c63f833966ce97b05a597446677c4c1d250f665b6293854cc13e",
+      "sample_index": 1,
+      "sampling_stratum": "interior",
+      "split": "train"
+    },
+    {
+      "composition": "electron-deuterium",
+      "group_id": "data03-fixture-interior-electron-deuterium-000",
+      "input": {
+        "B_toroidal": 3.7776661729401706,
+        "R_major": 2.4498545222103187,
+        "T_e_keV": 17.29223720065712,
+        "Z_eff": 1.0,
+        "a_minor": 0.9024981103844756,
+        "alpha_mhd": 0.5595995943739236,
+        "beta_e": 0.009661369404395754,
+        "delta": 0.3972800584892806,
+        "kappa": 1.157212653322086,
+        "n_e_19": 2.0424154257660376,
+        "p_prime_loc": 0.0,
+        "q": 3.9648111808667137,
+        "q_prime_loc": 0.0,
+        "rho": 0.2845616940575199,
+        "s_delta": 0.7736041249783578,
+        "s_hat": 1.7964462917546007,
+        "s_kappa": -0.6626188108240272,
+        "species": [
+          {
+            "R_LT": 7.945776059455023,
+            "R_Ln": 0.12139039512318184,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 12.233858944477443,
+            "R_Ln": 3.0418984970780865,
+            "charge_e": 1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.9773613557933165
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": false,
+        "xnue": 0.17839058029353205
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 10.175,
+          "energy_i_gb": 67.364,
+          "heat_effective_e_m2_s": 88.68171951246835,
+          "heat_effective_i_m2_s": 192.84765594887799,
+          "main_ion_species_index": 1,
+          "particle_e_gb": -0.9158,
+          "particle_effective_e_m2_s": -522.4591295568307,
+          "particle_effective_i_m2_s": -20.849321643551633,
+          "particle_i_gb": -0.9158
+        },
+        "gamma_max": 16.91172497950477,
+        "rho": 0.2845616940575199,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 10.175,
+            "exchange_gb": 15.64,
+            "momentum_gb": -1.6126e-06,
+            "name": "electron",
+            "particle_gb": -0.9158,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 67.364,
+            "exchange_gb": -15.64,
+            "momentum_gb": 0.00096221,
+            "name": "deuterium",
+            "particle_gb": -0.9158,
+            "species_index": 1
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "299209626107860fbfd28cfa6ef9e44fcf2952c516b0a68e866e8ca96f196624",
+          "size_bytes": 707
+        },
+        {
+          "name": "input.tglf.gen",
+          "sha256": "9386c6bcd99bc9eae7ad0bd9842a280ba0abefd29e49db5e9a638ad5a362b2b3",
+          "size_bytes": 2767
+        },
+        {
+          "name": "out.tglf.QL_flux_spectrum",
+          "sha256": "e8182106c2e2fbfc4b98974f0b4780ab1c093f2b8c0808fdb4add356865bb31a",
+          "size_bytes": 11350
+        },
+        {
+          "name": "out.tglf.QL_intensity_spectrum",
+          "sha256": "5f7a7a0b6d7bc8f4cd0afc02a82e44dae96cf9d131c53e7a6a020e383ebc04ad",
+          "size_bytes": 9146
+        },
+        {
+          "name": "out.tglf.ave_p0_spectrum",
+          "sha256": "7a07dd66c362aad40923bbfd15a1802a3b319fc62f12d823ad13de77d7d2c765",
+          "size_bytes": 641
+        },
+        {
+          "name": "out.tglf.density_spectrum",
+          "sha256": "9690cc0c9d3f29d5a14f2ec00925722420c9ac8d196bd40b47cff48c52be1378",
+          "size_bytes": 1199
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "228df0ab9ae9bb34f913bcbea8bb9b04afa5fbceaa9e975d9f4135d4c75196b4",
+          "size_bytes": 2280
+        },
+        {
+          "name": "out.tglf.field_spectrum",
+          "sha256": "616af5cbbdecbbd3e7af9e6707131a72a8e84c47991491ff7ef2af59bb4e8cc5",
+          "size_bytes": 4578
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "4c9620bb33f5c71b49d01268994eabd061f8929ac3743cf3d9851b1d3b669c1e",
+          "size_bytes": 96
+        },
+        {
+          "name": "out.tglf.globaldump",
+          "sha256": "80646e96d258c64b85aae35a022b5c20fad0ec6bc339b5b8cc2480da91044318",
+          "size_bytes": 3642
+        },
+        {
+          "name": "out.tglf.grid",
+          "sha256": "806353dc43860f2c20ab177f3963db19aa5e1d6ff855fd07ebb9f7aea20cf9f3",
+          "size_bytes": 6
+        },
+        {
+          "name": "out.tglf.intensity_spectrum",
+          "sha256": "6eb5f87e8193c00d0698ba8cc1acd15ea3693762e438650a69e7092d83d63f5e",
+          "size_bytes": 9002
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "ec74c7b55e5459f26e62ce64bab2ab11678a47dec4ff14afcacef424c7b28bd0",
+          "size_bytes": 599
+        },
+        {
+          "name": "out.tglf.nete_crossphase_spectrum",
+          "sha256": "7ca61b024b1ae0b4eeede171a89b1a1ba94dbb6884ee1700a14b6e80c1879abf",
+          "size_bytes": 1201
+        },
+        {
+          "name": "out.tglf.nsts_crossphase_spectrum",
+          "sha256": "e07e33892a63c77a9f170207ed81692b6a36f8ddd995ccd5c25d09b891f10f56",
+          "size_bytes": 2444
+        },
+        {
+          "name": "out.tglf.prec",
+          "sha256": "bd8c22a1990c8e01907544dbacd7a61143c044bc97bbe480c76166d56c3b2534",
+          "size_bytes": 27
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "2310b28a92cd0127e24d6e4bfb385db2a7b28a56938e416771286975428f4c27",
+          "size_bytes": 337
+        },
+        {
+          "name": "out.tglf.scalar_saturation_parameters",
+          "sha256": "243f4bd306621bb2ca76be155b5792c6d14cca7b05feb8cc8f11307aed12c1c0",
+          "size_bytes": 797
+        },
+        {
+          "name": "out.tglf.spectral_shift_spectrum",
+          "sha256": "fce07e0a39e16b16f6c5bf6f7cf12af3c1231e531de932523a500798ea69c0d0",
+          "size_bytes": 822
+        },
+        {
+          "name": "out.tglf.sum_flux_spectrum",
+          "sha256": "4c30b0ccdf15ef5cb78adbb17e00d6241fea3194d3b6a280289c9bab16393898",
+          "size_bytes": 5728
+        },
+        {
+          "name": "out.tglf.temperature_spectrum",
+          "sha256": "c6b2a01d83600689007867a8c829bd6b1492edb8596fba4f6e7bf087178b11ed",
+          "size_bytes": 1207
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "0450bcd9233f799b5b257e0e50387ffce744a3540ab8d10399a8975899bc1df0",
+          "size_bytes": 64
+        },
+        {
+          "name": "out.tglf.width_spectrum",
+          "sha256": "3cdcde1a8f95ce493084219b010175a1f03efded7236e17ea7ecce082399e36a",
+          "size_bytes": 663
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000002",
+      "sample_id": "62741b98971ef247acf67f69de7460e70a2dc40d542c7d9824ff6c8f0c8b7c08",
+      "sample_index": 2,
+      "sampling_stratum": "interior",
+      "split": "train"
+    },
+    {
+      "composition": "electron-deuterium-tritium",
+      "group_id": "data03-fixture-boundary-electron-deuterium-tritium-001",
+      "input": {
+        "B_toroidal": 7.023101090417739,
+        "R_major": 5.410139855997536,
+        "T_e_keV": 11.14624286423676,
+        "Z_eff": 1.0,
+        "a_minor": 1.600498767165898,
+        "alpha_mhd": 1.2697308067122313,
+        "beta_e": 0.015866323922614837,
+        "delta": 0.05465023963047361,
+        "kappa": 2.097261256472196,
+        "n_e_19": 16.54039676240099,
+        "p_prime_loc": 0.0,
+        "q": 2.375237684382979,
+        "q_prime_loc": 0.0,
+        "rho": 0.8149478915513335,
+        "s_delta": -0.5303604042262968,
+        "s_hat": 2.5,
+        "s_kappa": 0.6380579916858777,
+        "species": [
+          {
+            "R_LT": 14.748566680289207,
+            "R_Ln": 5.244463430466945,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 6.842953194871962,
+            "R_Ln": 2.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.39065694799977624,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.1240063570894252
+          },
+          {
+            "R_LT": 6.842953194871962,
+            "R_Ln": 3.6204839772762476,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.6093430520002238,
+            "mass_deuterium": 1.5,
+            "name": "tritium",
+            "temperature_e_ratio": 1.1240063570894252
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": true,
+        "xnue": 0.4667317271386204
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 19.234,
+          "energy_i_gb": 9.0069,
+          "heat_effective_e_m2_s": 9.495355002534405,
+          "heat_effective_i_m2_s": 21.825231644387124,
+          "main_ion_species_index": 1,
+          "particle_e_gb": 2.567,
+          "particle_effective_e_m2_s": 3.563823751381742,
+          "particle_effective_i_m2_s": 4.98758237387649,
+          "particle_i_gb": 0.53521
+        },
+        "gamma_max": 11.218425800453048,
+        "rho": 0.8149478915513335,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 19.234,
+            "exchange_gb": -7.9205,
+            "momentum_gb": 2.4651e-05,
+            "name": "electron",
+            "particle_gb": 2.567,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 9.0069,
+            "exchange_gb": 4.0536,
+            "momentum_gb": 0.00013354,
+            "name": "deuterium",
+            "particle_gb": 0.53521,
+            "species_index": 1
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 14.808,
+            "exchange_gb": 5.8292,
+            "momentum_gb": 0.00026166,
+            "name": "tritium",
+            "particle_gb": 2.0318,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "113709d4ed97c84f24575527398e825cb3b222e35b205d23a2f0dd518a8e89f9",
+          "size_bytes": 838
+        },
+        {
+          "name": "input.tglf.gen",
+          "sha256": "ac64acb3ee4f7506db64f26366403a4d38088998e7082dbbc064acc4fe42c38f",
+          "size_bytes": 2824
+        },
+        {
+          "name": "out.tglf.QL_flux_spectrum",
+          "sha256": "b996eb21dfc4b594f78a6e06b2b7b6e00b312579e5ccc9a5a6347fb1a1f1f9d2",
+          "size_bytes": 33702
+        },
+        {
+          "name": "out.tglf.QL_intensity_spectrum",
+          "sha256": "9b3ca37ce7181c6f2730dce223ba49cbab1659ae5feebb40b7a01e2f662434b2",
+          "size_bytes": 13622
+        },
+        {
+          "name": "out.tglf.ave_p0_spectrum",
+          "sha256": "19d687407981db1abb493895c5b65e42874a4e278de51e47ae1daf0e5f19021c",
+          "size_bytes": 641
+        },
+        {
+          "name": "out.tglf.density_spectrum",
+          "sha256": "c386ba27c3497e3e202836dd70ad9f380a85faa5876e93b4e8e54ef93c4ad7b2",
+          "size_bytes": 1745
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "90b62a65337fe31c0e2473052daea450848c8bff81ee04caebfc35f164008008",
+          "size_bytes": 2280
+        },
+        {
+          "name": "out.tglf.field_spectrum",
+          "sha256": "0911d48c983749d687c277dc719cb06a6e0c3243175ae159346da6f13ac172f9",
+          "size_bytes": 4579
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "c0bce46cde8bc2ca7c48a4b20086bef9aded7f41016202fd31be4b634524a0be",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.globaldump",
+          "sha256": "cc69f492cc07776b2229462589095147082f4c90fcb380151f13df4c0a77a441",
+          "size_bytes": 3864
+        },
+        {
+          "name": "out.tglf.grid",
+          "sha256": "848ec74ff4db45b343c35b621efa69676a0bf76c6ff23d1bf49dae228b4c7ab2",
+          "size_bytes": 6
+        },
+        {
+          "name": "out.tglf.intensity_spectrum",
+          "sha256": "116dc2fca1d1056c2cec8346cd72a51ba4f4d7a2e483bb6bd2dce3ee2813208c",
+          "size_bytes": 13412
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "ab2809f88312be614eedd62f8a1b001f3a99f279c09a6f74e8567112c8ee51a8",
+          "size_bytes": 599
+        },
+        {
+          "name": "out.tglf.nete_crossphase_spectrum",
+          "sha256": "01b52ed0c2d64f8912d34db0df3d68342dc03f3be9f8f4885c8a5f58046aeab4",
+          "size_bytes": 1201
+        },
+        {
+          "name": "out.tglf.nsts_crossphase_spectrum",
+          "sha256": "eb3b2280f83d8befe6a7330217d9d6b3191f4ffa73c40090f75c16f41593ff06",
+          "size_bytes": 3628
+        },
+        {
+          "name": "out.tglf.prec",
+          "sha256": "8db51d7a84e4805d3fd93c549d1f757687113227632bbaec4a4a1c4299e4c712",
+          "size_bytes": 27
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "01606ae18fda494af9bbe6d0c15973a594f3852281fbab405e952b98d3f49513",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.scalar_saturation_parameters",
+          "sha256": "b21f89f4c2a8311d673902e2a4a94ba8d629b27a7fb5b24a1111a28e30139345",
+          "size_bytes": 797
+        },
+        {
+          "name": "out.tglf.spectral_shift_spectrum",
+          "sha256": "fce07e0a39e16b16f6c5bf6f7cf12af3c1231e531de932523a500798ea69c0d0",
+          "size_bytes": 822
+        },
+        {
+          "name": "out.tglf.sum_flux_spectrum",
+          "sha256": "eb57ea020c65dbcb3a6a45c2e4c74b7f8e33d337eee1a0bc2efad3c8244b9b6d",
+          "size_bytes": 17184
+        },
+        {
+          "name": "out.tglf.temperature_spectrum",
+          "sha256": "cfe564a3ca92c5939cde990c9630c452460ce1020eed91c77c03e52d20486d5b",
+          "size_bytes": 1753
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "fac4e8aaad9aeb28d3370de16c43ce5cde20e75bebca69e285068a9bbe0d7135",
+          "size_bytes": 64
+        },
+        {
+          "name": "out.tglf.width_spectrum",
+          "sha256": "6c0fb1b6c63634eca94f228e4eb64b32f39dd369fa8d9355ef32fda92b0d6437",
+          "size_bytes": 663
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000003",
+      "sample_id": "d850057f9560a040223f2f0643d4b11e8cd2942ddca614a715de9416c52c6fba",
+      "sample_index": 3,
+      "sampling_stratum": "boundary",
+      "split": "train"
+    },
+    {
+      "composition": "electron-deuterium-tritium",
+      "group_id": "data03-fixture-boundary-electron-deuterium-tritium-001",
+      "input": {
+        "B_toroidal": 7.023101090417739,
+        "R_major": 5.410139855997536,
+        "T_e_keV": 11.14624286423676,
+        "Z_eff": 1.0,
+        "a_minor": 1.600498767165898,
+        "alpha_mhd": 1.2697308067122313,
+        "beta_e": 0.015866323922614837,
+        "delta": 0.05465023963047361,
+        "kappa": 2.097261256472196,
+        "n_e_19": 16.54039676240099,
+        "p_prime_loc": 0.0,
+        "q": 2.375237684382979,
+        "q_prime_loc": 0.0,
+        "rho": 0.8149478915513335,
+        "s_delta": -0.5303604042262968,
+        "s_hat": 2.5,
+        "s_kappa": 0.6380579916858777,
+        "species": [
+          {
+            "R_LT": 14.748566680289207,
+            "R_Ln": 5.244463430466945,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 6.842953194871962,
+            "R_Ln": 2.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.39065694799977624,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.1240063570894252
+          },
+          {
+            "R_LT": 6.842953194871962,
+            "R_Ln": 4.120483977276248,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.6093430520002238,
+            "mass_deuterium": 1.5,
+            "name": "tritium",
+            "temperature_e_ratio": 1.1240063570894252
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": true,
+        "xnue": 0.4667317271386204
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 30.923,
+          "energy_i_gb": 12.817,
+          "heat_effective_e_m2_s": 15.265928186719945,
+          "heat_effective_i_m2_s": 31.057743950316954,
+          "main_ion_species_index": 1,
+          "particle_e_gb": 4.647,
+          "particle_effective_e_m2_s": 6.451534465395775,
+          "particle_effective_i_m2_s": 7.820349493345439,
+          "particle_i_gb": 0.83919
+        },
+        "gamma_max": 11.22350853321881,
+        "rho": 0.8149478915513335,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 30.923,
+            "exchange_gb": -12.458,
+            "momentum_gb": 2.4409e-05,
+            "name": "electron",
+            "particle_gb": 4.647,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 12.817,
+            "exchange_gb": 6.5001,
+            "momentum_gb": 0.00016883,
+            "name": "deuterium",
+            "particle_gb": 0.83919,
+            "species_index": 1
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 22.304,
+            "exchange_gb": 9.3113,
+            "momentum_gb": 0.0002971,
+            "name": "tritium",
+            "particle_gb": 3.8078,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "b4a601b158e471d3fb870f796b614edcf973bdba585c72c3bcdc112e32b1424f",
+          "size_bytes": 838
+        },
+        {
+          "name": "input.tglf.gen",
+          "sha256": "eafd9203e19f4dfa037b0bededd549ca35abb3a04718c848b16a98e3daa31647",
+          "size_bytes": 2824
+        },
+        {
+          "name": "out.tglf.QL_flux_spectrum",
+          "sha256": "5d3d8a6bde6da59d45b73bab8da98cc452e5b8cd220a8b2e62c962fc65aa2017",
+          "size_bytes": 33702
+        },
+        {
+          "name": "out.tglf.QL_intensity_spectrum",
+          "sha256": "68e5b195ad47aef6644e35c979d53d3436bcc7bc9f05aa43f59e180d6f6b7289",
+          "size_bytes": 13622
+        },
+        {
+          "name": "out.tglf.ave_p0_spectrum",
+          "sha256": "19d687407981db1abb493895c5b65e42874a4e278de51e47ae1daf0e5f19021c",
+          "size_bytes": 641
+        },
+        {
+          "name": "out.tglf.density_spectrum",
+          "sha256": "00b0f03d10603275334f121e8c8423e3f24e26304ea1dee3239d91a34bdc2be5",
+          "size_bytes": 1745
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "c2044bba92adf4fe613011764b3c45d4fa77995dd12671f626402d484965885f",
+          "size_bytes": 2280
+        },
+        {
+          "name": "out.tglf.field_spectrum",
+          "sha256": "ed0607a63f8e0f2ee5a99a682b8c07a28c146f2764b170352eb1ac3cf8fd7d72",
+          "size_bytes": 4579
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "3a3e81c43c51d0689584648bb2449cf41323d58d1264ea2677772861e5152838",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.globaldump",
+          "sha256": "de6c68aca5f9af8e654218cfe6b3fbe255739f7dcbff3ca9d4c1038efc6bca9a",
+          "size_bytes": 3864
+        },
+        {
+          "name": "out.tglf.grid",
+          "sha256": "848ec74ff4db45b343c35b621efa69676a0bf76c6ff23d1bf49dae228b4c7ab2",
+          "size_bytes": 6
+        },
+        {
+          "name": "out.tglf.intensity_spectrum",
+          "sha256": "58b35adf8d2863ba07bf6dfa37b520e0a4ac57e6ac8f728ed07472ccb59ba7f5",
+          "size_bytes": 13412
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "ab2809f88312be614eedd62f8a1b001f3a99f279c09a6f74e8567112c8ee51a8",
+          "size_bytes": 599
+        },
+        {
+          "name": "out.tglf.nete_crossphase_spectrum",
+          "sha256": "c5de0fc4857d36e8654fc4c99d25c76a50cfc9483a3590bf2607077e841f20fb",
+          "size_bytes": 1201
+        },
+        {
+          "name": "out.tglf.nsts_crossphase_spectrum",
+          "sha256": "8ea46366b759a0ca061c5b9c6f0e64a312cba097e6390b65c0608acfc666ec37",
+          "size_bytes": 3628
+        },
+        {
+          "name": "out.tglf.prec",
+          "sha256": "f94fdb8ac024d3d914d8f6dbfaba1f0864135823e636f2e6579ee48daa7806d4",
+          "size_bytes": 27
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "4bd4bb72cf063db1d8211c471756821686ec6862270042390a3d01f39ae61af8",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.scalar_saturation_parameters",
+          "sha256": "b21f89f4c2a8311d673902e2a4a94ba8d629b27a7fb5b24a1111a28e30139345",
+          "size_bytes": 797
+        },
+        {
+          "name": "out.tglf.spectral_shift_spectrum",
+          "sha256": "fce07e0a39e16b16f6c5bf6f7cf12af3c1231e531de932523a500798ea69c0d0",
+          "size_bytes": 822
+        },
+        {
+          "name": "out.tglf.sum_flux_spectrum",
+          "sha256": "6cdc9e3ef65e0685d447289fb27603429238fd238ad9430444bf28f7b4f48ff7",
+          "size_bytes": 17184
+        },
+        {
+          "name": "out.tglf.temperature_spectrum",
+          "sha256": "9550c370a242840beee821439bc98163c6b28f8e092f0e66fbba9031f954e52d",
+          "size_bytes": 1753
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "94482e10c872952b0867ae4840b87f18394fdb13d8ca083e4b66f58a7b86d142",
+          "size_bytes": 64
+        },
+        {
+          "name": "out.tglf.width_spectrum",
+          "sha256": "efb7d77feb9b301b3fc82f1e2ba173469be22f03ca3f617633eeb1cfcbfa7253",
+          "size_bytes": 663
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000004",
+      "sample_id": "fbed300901ff6cd1546647b1a7f093811e99e07ccf4d9f7b0f8ada56ee3898ad",
+      "sample_index": 4,
+      "sampling_stratum": "boundary",
+      "split": "train"
+    },
+    {
+      "composition": "electron-deuterium-tritium",
+      "group_id": "data03-fixture-boundary-electron-deuterium-tritium-001",
+      "input": {
+        "B_toroidal": 7.023101090417739,
+        "R_major": 5.410139855997536,
+        "T_e_keV": 11.14624286423676,
+        "Z_eff": 1.0,
+        "a_minor": 1.600498767165898,
+        "alpha_mhd": 1.2697308067122313,
+        "beta_e": 0.015866323922614837,
+        "delta": 0.05465023963047361,
+        "kappa": 2.097261256472196,
+        "n_e_19": 16.54039676240099,
+        "p_prime_loc": 0.0,
+        "q": 2.375237684382979,
+        "q_prime_loc": 0.0,
+        "rho": 0.8149478915513335,
+        "s_delta": -0.5303604042262968,
+        "s_hat": 2.5,
+        "s_kappa": 0.6380579916858777,
+        "species": [
+          {
+            "R_LT": 14.748566680289207,
+            "R_Ln": 5.244463430466945,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 6.842953194871962,
+            "R_Ln": 2.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.39065694799977624,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 1.1240063570894252
+          },
+          {
+            "R_LT": 6.842953194871962,
+            "R_Ln": 4.620483977276248,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.6093430520002238,
+            "mass_deuterium": 1.5,
+            "name": "tritium",
+            "temperature_e_ratio": 1.1240063570894252
+          }
+        ],
+        "use_bpar": false,
+        "use_bper": true,
+        "xnue": 0.4667317271386204
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 48.169,
+          "energy_i_gb": 17.833,
+          "heat_effective_e_m2_s": 23.779856250238108,
+          "heat_effective_i_m2_s": 43.21235451868628,
+          "main_ion_species_index": 1,
+          "particle_e_gb": 8.1842,
+          "particle_effective_e_m2_s": 11.362308666170025,
+          "particle_effective_i_m2_s": 13.274810058831228,
+          "particle_i_gb": 1.4245
+        },
+        "gamma_max": 11.228590624528973,
+        "rho": 0.8149478915513335,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 48.169,
+            "exchange_gb": -17.623,
+            "momentum_gb": 1.2972e-05,
+            "name": "electron",
+            "particle_gb": 8.1842,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 17.833,
+            "exchange_gb": 9.3005,
+            "momentum_gb": 0.00073809,
+            "name": "deuterium",
+            "particle_gb": 1.4245,
+            "species_index": 1
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 32.643,
+            "exchange_gb": 13.586,
+            "momentum_gb": 0.001391,
+            "name": "tritium",
+            "particle_gb": 6.7597,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "98da14e3337fd2d0d252830cd1a6c2ffc948134077f1844b3d26aff5316feeb5",
+          "size_bytes": 838
+        },
+        {
+          "name": "input.tglf.gen",
+          "sha256": "c1fc9bb3cd6f5b0f0ae41fd6f7a79ca67534b8aad59f84576a2b90897f913d90",
+          "size_bytes": 2824
+        },
+        {
+          "name": "out.tglf.QL_flux_spectrum",
+          "sha256": "b2c46f8f6816b194f89a1001a788662444a8f686d6dbe742d9505b948883742c",
+          "size_bytes": 33702
+        },
+        {
+          "name": "out.tglf.QL_intensity_spectrum",
+          "sha256": "df468340bce89bc102362e35dc494038f7c6079e47359e3a72d6c96d927a2649",
+          "size_bytes": 13622
+        },
+        {
+          "name": "out.tglf.ave_p0_spectrum",
+          "sha256": "19d687407981db1abb493895c5b65e42874a4e278de51e47ae1daf0e5f19021c",
+          "size_bytes": 641
+        },
+        {
+          "name": "out.tglf.density_spectrum",
+          "sha256": "ad3f32f0816fc16c862a9b923ca1cb036bc3512bcbb72d56b8827d26bb03fc2a",
+          "size_bytes": 1745
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "0eae36ac44b7fac155bd7fd888950992f8192604d08b29a244649ef72e1b200e",
+          "size_bytes": 2280
+        },
+        {
+          "name": "out.tglf.field_spectrum",
+          "sha256": "6a11a5635b856bbbbb07f229503299bc9a37b05eb8a9726787fe86e193b4ecc9",
+          "size_bytes": 4579
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "8597b898be1848b39cc7c8fbcad53db95286ad6415a282e0fecb9788b4c312a9",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.globaldump",
+          "sha256": "e3c6108db44449f71974b1c3465c55ac85f180fa81760982df918019bf94027e",
+          "size_bytes": 3864
+        },
+        {
+          "name": "out.tglf.grid",
+          "sha256": "848ec74ff4db45b343c35b621efa69676a0bf76c6ff23d1bf49dae228b4c7ab2",
+          "size_bytes": 6
+        },
+        {
+          "name": "out.tglf.intensity_spectrum",
+          "sha256": "eb01e605974177fde27670143ba85bcb8d99670ff344fb53968646fb17f95000",
+          "size_bytes": 13412
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "ab2809f88312be614eedd62f8a1b001f3a99f279c09a6f74e8567112c8ee51a8",
+          "size_bytes": 599
+        },
+        {
+          "name": "out.tglf.nete_crossphase_spectrum",
+          "sha256": "d6a4952f719df1a8e1ce67d419050d14761875d385396134efb57a1f161fe269",
+          "size_bytes": 1201
+        },
+        {
+          "name": "out.tglf.nsts_crossphase_spectrum",
+          "sha256": "5d39f612ba07446f1d0918aa6b5030b4b465359a9690d90d82fbccfd1e1cc5a1",
+          "size_bytes": 3628
+        },
+        {
+          "name": "out.tglf.prec",
+          "sha256": "129297a5520735a9f1487319f3846ecc6659544dceb904c14b28843eb62193bf",
+          "size_bytes": 27
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "faac3812d53a734ceb934de3e54dff12f56fa00073275b8c512c12f585beac29",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.scalar_saturation_parameters",
+          "sha256": "b21f89f4c2a8311d673902e2a4a94ba8d629b27a7fb5b24a1111a28e30139345",
+          "size_bytes": 797
+        },
+        {
+          "name": "out.tglf.spectral_shift_spectrum",
+          "sha256": "fce07e0a39e16b16f6c5bf6f7cf12af3c1231e531de932523a500798ea69c0d0",
+          "size_bytes": 822
+        },
+        {
+          "name": "out.tglf.sum_flux_spectrum",
+          "sha256": "5dcc250db46788c7befba3bafb8bfc79fc74a876b979b628f9baaa7d1175c414",
+          "size_bytes": 17184
+        },
+        {
+          "name": "out.tglf.temperature_spectrum",
+          "sha256": "6748f6db3a27de4b9b1d677238b46050be3a848b71a7bf59833d17af93c39712",
+          "size_bytes": 1753
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "036f6b0ad840e28b13f8ea60cd139b3f00203ed7d7861af6ac4b5bf61222592c",
+          "size_bytes": 64
+        },
+        {
+          "name": "out.tglf.width_spectrum",
+          "sha256": "9449163b255f7ac9ada62fd70954f1cf95c9a454160b08542424a629f02e352c",
+          "size_bytes": 663
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000005",
+      "sample_id": "65c5879564dad7a7d49d9dbd254c3bad4e30ca74a2ea6ac3f8cef758eb923641",
+      "sample_index": 5,
+      "sampling_stratum": "boundary",
+      "split": "train"
+    },
+    {
+      "composition": "electron-deuterium-carbon",
+      "group_id": "data03-fixture-threshold-electron-deuterium-carbon-002",
+      "input": {
+        "B_toroidal": 3.457720016329751,
+        "R_major": 4.426432832646945,
+        "T_e_keV": 5.187377412831629,
+        "Z_eff": 1.7614620156778207,
+        "a_minor": 1.123911736889082,
+        "alpha_mhd": 0.4646204301612237,
+        "beta_e": 0.0339783856547455,
+        "delta": -0.08986036494678379,
+        "kappa": 1.4500343700080507,
+        "n_e_19": 11.063664092301579,
+        "p_prime_loc": 0.0,
+        "q": 1.8437494370291656,
+        "q_prime_loc": 0.0,
+        "rho": 0.540821929635315,
+        "s_delta": 0.08203207241997856,
+        "s_hat": 0.5065531455732,
+        "s_kappa": -0.21994655417467157,
+        "species": [
+          {
+            "R_LT": 4.0,
+            "R_Ln": 3.2338794593353573,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 4.0,
+            "R_Ln": 2.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.8477075968644359,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 0.46390234585308837
+          },
+          {
+            "R_LT": 4.0,
+            "R_Ln": 1.5,
+            "charge_e": 6.0,
+            "density_e_ratio": 0.025382067189260688,
+            "mass_deuterium": 6.0,
+            "name": "carbon",
+            "temperature_e_ratio": 0.3711218766824707
+          }
+        ],
+        "use_bpar": true,
+        "use_bper": true,
+        "xnue": 0.08977875654973584
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 0.17416,
+          "energy_i_gb": 0.30668,
+          "heat_effective_e_m2_s": 0.6889357246572232,
+          "heat_effective_i_m2_s": 3.0849142761889,
+          "main_ion_species_index": 1,
+          "particle_e_gb": 0.030903,
+          "particle_effective_e_m2_s": 0.15120532812210438,
+          "particle_effective_i_m2_s": 0.43783191571150243,
+          "particle_i_gb": 0.046913
+        },
+        "gamma_max": 0.3139684132193138,
+        "rho": 0.540821929635315,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 0.17416,
+            "exchange_gb": -0.02218,
+            "momentum_gb": 3.6717e-08,
+            "name": "electron",
+            "particle_gb": 0.030903,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 0.30668,
+            "exchange_gb": 0.022216,
+            "momentum_gb": 5.2202e-07,
+            "name": "deuterium",
+            "particle_gb": 0.046913,
+            "species_index": 1
+          },
+          {
+            "charge_e": 6.0,
+            "energy_gb": 0.0044071,
+            "exchange_gb": 0.014323,
+            "momentum_gb": 3.1174e-07,
+            "name": "carbon",
+            "particle_gb": -0.0026683,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "28ee43bdfdb1e0694ebcd2910589ef58e2d151517f74081c52feffc947374fca",
+          "size_bytes": 861
+        },
+        {
+          "name": "input.tglf.gen",
+          "sha256": "c0e0f46523585baa17786e21d138ca9be4410466276d49c8b33727892f67cbf9",
+          "size_bytes": 2847
+        },
+        {
+          "name": "out.tglf.QL_flux_spectrum",
+          "sha256": "6cd56406a4c0940138f0f24341b8d424e10f49ae3c9d3efcf84da50509a0df8f",
+          "size_bytes": 50466
+        },
+        {
+          "name": "out.tglf.QL_intensity_spectrum",
+          "sha256": "06f20443019c1c0665ed7d8cbf2fddd882e41ca65ec40f04913bf253d02abb60",
+          "size_bytes": 13622
+        },
+        {
+          "name": "out.tglf.ave_p0_spectrum",
+          "sha256": "f79e11bcc65551e2b0bf26c9dae5649d879dd30fbbf256d851dc905305b2bd7a",
+          "size_bytes": 641
+        },
+        {
+          "name": "out.tglf.density_spectrum",
+          "sha256": "9255536fa67e2ebce9d62a21044edfcf08457158fea168882f4cacf9bd10c163",
+          "size_bytes": 1745
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "b838db1f5eeb037256cff944d45ec0379e6df92f27f65e79306b819d76f3a386",
+          "size_bytes": 2280
+        },
+        {
+          "name": "out.tglf.field_spectrum",
+          "sha256": "de7cfac980bc2a9bd93a2e2fb2738fec839f441cf940a3be661918c4a1b96237",
+          "size_bytes": 4580
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "802aa4d3acd18d0ce25a328eaea9f1811056e7926c82e773a1698c6b02dc37c0",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.globaldump",
+          "sha256": "9cfd309a06a39502506bd079676f960da5494955bad15115908a6ec2e6e20ecc",
+          "size_bytes": 3864
+        },
+        {
+          "name": "out.tglf.grid",
+          "sha256": "848ec74ff4db45b343c35b621efa69676a0bf76c6ff23d1bf49dae228b4c7ab2",
+          "size_bytes": 6
+        },
+        {
+          "name": "out.tglf.intensity_spectrum",
+          "sha256": "14e31e83683c651da0c1d72e6bf3076837ca3162a38d7fc08e3064ae22863d45",
+          "size_bytes": 13412
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "c4258e8c2129b155434a3b28f7756f9b8f7898274aa315a59fb9e8c074ea924e",
+          "size_bytes": 599
+        },
+        {
+          "name": "out.tglf.nete_crossphase_spectrum",
+          "sha256": "f1010b6cad9f6dc8d16bf715623e0805828b223e52e248aaea9d240b10177e3a",
+          "size_bytes": 1201
+        },
+        {
+          "name": "out.tglf.nsts_crossphase_spectrum",
+          "sha256": "1fbb27f9d2960fa3f430ea5e24ab796baba7b17f8004e01a5372ba0c944d07e5",
+          "size_bytes": 3628
+        },
+        {
+          "name": "out.tglf.prec",
+          "sha256": "d3d1cb28e42b2cda697ea4ed6444948f1a952428faf3378d0f2853b3b930c1ff",
+          "size_bytes": 27
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "20d2bc07eff2a5928cdac1945a03e4a40e0bee00121bdd55cf6eb2fda8cd60e1",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.scalar_saturation_parameters",
+          "sha256": "e306f6acc8ce674b21e40f784b04334d0a7b21a917750751992eb319a8428aa2",
+          "size_bytes": 797
+        },
+        {
+          "name": "out.tglf.spectral_shift_spectrum",
+          "sha256": "fce07e0a39e16b16f6c5bf6f7cf12af3c1231e531de932523a500798ea69c0d0",
+          "size_bytes": 822
+        },
+        {
+          "name": "out.tglf.sum_flux_spectrum",
+          "sha256": "5a5ccf264535e4cceb3eadcdd9c75eab8d590bba66edfeaf896c94557c3363f8",
+          "size_bytes": 25776
+        },
+        {
+          "name": "out.tglf.temperature_spectrum",
+          "sha256": "c6f2af7d6eb729dbb31b666170d7a0b3315a12c00bde822b026bb29ef6cf8fef",
+          "size_bytes": 1753
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "e54b23b8263a4a2632f9719426e6b73329c4df9fdd7608f21d30d2fb3a562c22",
+          "size_bytes": 64
+        },
+        {
+          "name": "out.tglf.width_spectrum",
+          "sha256": "bacd268dc352b474ea7eda5b200d526201437e5b45830fefa962aebac6ea94e7",
+          "size_bytes": 663
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000006",
+      "sample_id": "9d124d0e84765fafe60ce76ed15b210603ee5b59f02e537768155679c60c5d78",
+      "sample_index": 6,
+      "sampling_stratum": "threshold",
+      "split": "test"
+    },
+    {
+      "composition": "electron-deuterium-carbon",
+      "group_id": "data03-fixture-threshold-electron-deuterium-carbon-002",
+      "input": {
+        "B_toroidal": 3.457720016329751,
+        "R_major": 4.426432832646945,
+        "T_e_keV": 5.187377412831629,
+        "Z_eff": 1.7614620156778207,
+        "a_minor": 1.123911736889082,
+        "alpha_mhd": 0.4646204301612237,
+        "beta_e": 0.0339783856547455,
+        "delta": -0.08986036494678379,
+        "kappa": 1.4500343700080507,
+        "n_e_19": 11.063664092301579,
+        "p_prime_loc": 0.0,
+        "q": 1.8437494370291656,
+        "q_prime_loc": 0.0,
+        "rho": 0.540821929635315,
+        "s_delta": 0.08203207241997856,
+        "s_hat": 0.5065531455732,
+        "s_kappa": -0.21994655417467157,
+        "species": [
+          {
+            "R_LT": 4.0,
+            "R_Ln": 3.2338794593353573,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 4.0,
+            "R_Ln": 2.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.8477075968644359,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 0.46390234585308837
+          },
+          {
+            "R_LT": 4.0,
+            "R_Ln": 2.0,
+            "charge_e": 6.0,
+            "density_e_ratio": 0.025382067189260688,
+            "mass_deuterium": 6.0,
+            "name": "carbon",
+            "temperature_e_ratio": 0.3711218766824707
+          }
+        ],
+        "use_bpar": true,
+        "use_bper": true,
+        "xnue": 0.08977875654973584
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 0.3137,
+          "energy_i_gb": 0.38268,
+          "heat_effective_e_m2_s": 1.2409229261883952,
+          "heat_effective_i_m2_s": 3.849403271201149,
+          "main_ion_species_index": 1,
+          "particle_e_gb": 0.076762,
+          "particle_effective_e_m2_s": 0.37558888772316523,
+          "particle_effective_i_m2_s": 0.6871122957480429,
+          "particle_i_gb": 0.073623
+        },
+        "gamma_max": 0.3156875337258898,
+        "rho": 0.540821929635315,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 0.3137,
+            "exchange_gb": -0.019535,
+            "momentum_gb": 5.4849e-08,
+            "name": "electron",
+            "particle_gb": 0.076762,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 0.38268,
+            "exchange_gb": 0.027014,
+            "momentum_gb": 3.3026e-07,
+            "name": "deuterium",
+            "particle_gb": 0.073623,
+            "species_index": 1
+          },
+          {
+            "charge_e": 6.0,
+            "energy_gb": 0.0080257,
+            "exchange_gb": 0.01825,
+            "momentum_gb": 3.3344e-07,
+            "name": "carbon",
+            "particle_gb": 0.00052314,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "8cf5f46bc9742b90ba28eb7ffc3ccd62efecd70080fd7f37f4b233a83c0fa1cd",
+          "size_bytes": 861
+        },
+        {
+          "name": "input.tglf.gen",
+          "sha256": "de14bd3eb5c599b8092f8ea9806938723c1ecdd0b675d20294626405c2c7c9c3",
+          "size_bytes": 2847
+        },
+        {
+          "name": "out.tglf.QL_flux_spectrum",
+          "sha256": "5a1f0f57a4e357ea98379ee441e63d123309deddcee7e35765bc9b7b54c54a1b",
+          "size_bytes": 50466
+        },
+        {
+          "name": "out.tglf.QL_intensity_spectrum",
+          "sha256": "c0d44f660fea0ea73d5bec15035afbb96a69c3ebf03678c4b2043a385e699efc",
+          "size_bytes": 13622
+        },
+        {
+          "name": "out.tglf.ave_p0_spectrum",
+          "sha256": "f79e11bcc65551e2b0bf26c9dae5649d879dd30fbbf256d851dc905305b2bd7a",
+          "size_bytes": 641
+        },
+        {
+          "name": "out.tglf.density_spectrum",
+          "sha256": "1fff255e0cc3b9259d6fe5afe48da92fcf33174312725c7313a99ee5d1b84fa3",
+          "size_bytes": 1745
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "c390dd6b251fc31980956b300b338119e8c5f8f087c1cd53938d50bdc6a00632",
+          "size_bytes": 2280
+        },
+        {
+          "name": "out.tglf.field_spectrum",
+          "sha256": "ef0ab9c1ad7e968fa5bf58dcf1cc7f6d570be7f712e6abe183295c7db9aa3413",
+          "size_bytes": 4580
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "f221568786f97bec691177ac92fbae07c885c4709b4719f9380221dac50bba24",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.globaldump",
+          "sha256": "1c1b7b8863c3b23dad40d2991a1418d8bc02161410e020ff79026d4e9beb196c",
+          "size_bytes": 3864
+        },
+        {
+          "name": "out.tglf.grid",
+          "sha256": "848ec74ff4db45b343c35b621efa69676a0bf76c6ff23d1bf49dae228b4c7ab2",
+          "size_bytes": 6
+        },
+        {
+          "name": "out.tglf.intensity_spectrum",
+          "sha256": "9719eca85b66a3ec2b398b8bc9291bc60357b38cbc92a52948f6178c4d4d667f",
+          "size_bytes": 13412
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "c4258e8c2129b155434a3b28f7756f9b8f7898274aa315a59fb9e8c074ea924e",
+          "size_bytes": 599
+        },
+        {
+          "name": "out.tglf.nete_crossphase_spectrum",
+          "sha256": "80fd962df1b6756cccd0f8256b19124e9042e6ac5491c1b6b29e316b13ee05a7",
+          "size_bytes": 1201
+        },
+        {
+          "name": "out.tglf.nsts_crossphase_spectrum",
+          "sha256": "f4ff92bf0400adcdd08a96f329cf9340a966ad78ffa9880588774798511e81be",
+          "size_bytes": 3628
+        },
+        {
+          "name": "out.tglf.prec",
+          "sha256": "e1eae297513961a64361ab5157f77d918d1caa3b5625317171865a8c7cf00d57",
+          "size_bytes": 27
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "b1a3618d0ed721da6f05b2e3fdf555f314795f41642ed6e8e75ac8c058fb7dfb",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.scalar_saturation_parameters",
+          "sha256": "e306f6acc8ce674b21e40f784b04334d0a7b21a917750751992eb319a8428aa2",
+          "size_bytes": 797
+        },
+        {
+          "name": "out.tglf.spectral_shift_spectrum",
+          "sha256": "fce07e0a39e16b16f6c5bf6f7cf12af3c1231e531de932523a500798ea69c0d0",
+          "size_bytes": 822
+        },
+        {
+          "name": "out.tglf.sum_flux_spectrum",
+          "sha256": "c1085ce389fb453f4a2ee466ee7a96c0fc9b8f3275f56a65b84ebc70d2388004",
+          "size_bytes": 25776
+        },
+        {
+          "name": "out.tglf.temperature_spectrum",
+          "sha256": "1c33c40ba1d66b95b771d933667fd66e4565af5c996821cbe9efa3d10384565b",
+          "size_bytes": 1753
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "b8ce42108d89000aec0f72f43996fadb0a4ea04214e5a70a8aedc6ed1666308e",
+          "size_bytes": 64
+        },
+        {
+          "name": "out.tglf.width_spectrum",
+          "sha256": "7081321f87873e77ecf5c91de611235e131cc0f97ed4e2e131e62f36ae535120",
+          "size_bytes": 663
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000007",
+      "sample_id": "0039a1f583643d21ff98255356ee41265d80b001adfbb64ddf0be42bc4826a7b",
+      "sample_index": 7,
+      "sampling_stratum": "threshold",
+      "split": "test"
+    },
+    {
+      "composition": "electron-deuterium-carbon",
+      "group_id": "data03-fixture-threshold-electron-deuterium-carbon-002",
+      "input": {
+        "B_toroidal": 3.457720016329751,
+        "R_major": 4.426432832646945,
+        "T_e_keV": 5.187377412831629,
+        "Z_eff": 1.7614620156778207,
+        "a_minor": 1.123911736889082,
+        "alpha_mhd": 0.4646204301612237,
+        "beta_e": 0.0339783856547455,
+        "delta": -0.08986036494678379,
+        "kappa": 1.4500343700080507,
+        "n_e_19": 11.063664092301579,
+        "p_prime_loc": 0.0,
+        "q": 1.8437494370291656,
+        "q_prime_loc": 0.0,
+        "rho": 0.540821929635315,
+        "s_delta": 0.08203207241997856,
+        "s_hat": 0.5065531455732,
+        "s_kappa": -0.21994655417467157,
+        "species": [
+          {
+            "R_LT": 4.0,
+            "R_Ln": 3.2338794593353573,
+            "charge_e": -1.0,
+            "density_e_ratio": 1.0,
+            "mass_deuterium": 0.0002723,
+            "name": "electron",
+            "temperature_e_ratio": 1.0
+          },
+          {
+            "R_LT": 4.0,
+            "R_Ln": 2.0,
+            "charge_e": 1.0,
+            "density_e_ratio": 0.8477075968644359,
+            "mass_deuterium": 1.0,
+            "name": "deuterium",
+            "temperature_e_ratio": 0.46390234585308837
+          },
+          {
+            "R_LT": 4.0,
+            "R_Ln": 2.5,
+            "charge_e": 6.0,
+            "density_e_ratio": 0.025382067189260688,
+            "mass_deuterium": 6.0,
+            "name": "carbon",
+            "temperature_e_ratio": 0.3711218766824707
+          }
+        ],
+        "use_bpar": true,
+        "use_bper": true,
+        "xnue": 0.08977875654973584
+      },
+      "output": {
+        "electron_main_ion_view": {
+          "electron_species_index": 0,
+          "energy_e_gb": 0.32399,
+          "energy_i_gb": 0.27815,
+          "heat_effective_e_m2_s": 1.2816277298558436,
+          "heat_effective_i_m2_s": 2.797929131087592,
+          "main_ion_species_index": 1,
+          "particle_e_gb": 0.098587,
+          "particle_effective_e_m2_s": 0.4823764580647155,
+          "particle_effective_i_m2_s": 0.7318353051503306,
+          "particle_i_gb": 0.078415
+        },
+        "gamma_max": 0.3173598827023555,
+        "rho": 0.540821929635315,
+        "species_fluxes": [
+          {
+            "charge_e": -1.0,
+            "energy_gb": 0.32399,
+            "exchange_gb": 0.0026484,
+            "momentum_gb": 5.5367e-08,
+            "name": "electron",
+            "particle_gb": 0.098587,
+            "species_index": 0
+          },
+          {
+            "charge_e": 1.0,
+            "energy_gb": 0.27815,
+            "exchange_gb": 0.0099549,
+            "momentum_gb": -1.1407e-07,
+            "name": "deuterium",
+            "particle_gb": 0.078415,
+            "species_index": 1
+          },
+          {
+            "charge_e": 6.0,
+            "energy_gb": 0.0089999,
+            "exchange_gb": 0.012579,
+            "momentum_gb": 2.5214e-07,
+            "name": "carbon",
+            "particle_gb": 0.0033621,
+            "species_index": 2
+          }
+        ]
+      },
+      "raw_files": [
+        {
+          "name": "input.tglf",
+          "sha256": "eec8737382846399dccaf9e235b1a243145eddd5ec01bb3c8d353d2ca206046d",
+          "size_bytes": 861
+        },
+        {
+          "name": "input.tglf.gen",
+          "sha256": "de416bc252abba5da558f7d219218d89fc4770989bb828a7c8ad58507e6511e7",
+          "size_bytes": 2847
+        },
+        {
+          "name": "out.tglf.QL_flux_spectrum",
+          "sha256": "8ba429bfd1527d3f3897e3de1d6624d4f4ec632fbcf7a872a985a15e7946281d",
+          "size_bytes": 50466
+        },
+        {
+          "name": "out.tglf.QL_intensity_spectrum",
+          "sha256": "100f278dadb0b7453cb08ee5843a5795c5f8cc7b8aedb0260e48cd699c45321b",
+          "size_bytes": 13622
+        },
+        {
+          "name": "out.tglf.ave_p0_spectrum",
+          "sha256": "f79e11bcc65551e2b0bf26c9dae5649d879dd30fbbf256d851dc905305b2bd7a",
+          "size_bytes": 641
+        },
+        {
+          "name": "out.tglf.density_spectrum",
+          "sha256": "e2595251ce51f3cd82cea6714e2aa8a31073ecc536d71e3faf378fc27d2b0b8b",
+          "size_bytes": 1745
+        },
+        {
+          "name": "out.tglf.eigenvalue_spectrum",
+          "sha256": "37dfb7bc8cda46d436dcf4ea6a91f83051920beec2c81d1dd21a493543738418",
+          "size_bytes": 2280
+        },
+        {
+          "name": "out.tglf.field_spectrum",
+          "sha256": "6c058f8895ece5ed837a904ee59ae582412f0528dd7da4cb220edf9c9641103b",
+          "size_bytes": 4580
+        },
+        {
+          "name": "out.tglf.gbflux",
+          "sha256": "0b597d69bc4e767b87a9e9b389285ff1f90cd5c4ba23c73075650ec45d2b7eab",
+          "size_bytes": 144
+        },
+        {
+          "name": "out.tglf.globaldump",
+          "sha256": "29d5e02fe504bd5ff3d1a4c837c45834198f72db5f0ef70809ea989bfb4ebb35",
+          "size_bytes": 3864
+        },
+        {
+          "name": "out.tglf.grid",
+          "sha256": "848ec74ff4db45b343c35b621efa69676a0bf76c6ff23d1bf49dae228b4c7ab2",
+          "size_bytes": 6
+        },
+        {
+          "name": "out.tglf.intensity_spectrum",
+          "sha256": "91c8e6f5ca9572cf4e4ee64496a356bdea53e23509e4e756c70b863c30ea3516",
+          "size_bytes": 13412
+        },
+        {
+          "name": "out.tglf.ky_spectrum",
+          "sha256": "c4258e8c2129b155434a3b28f7756f9b8f7898274aa315a59fb9e8c074ea924e",
+          "size_bytes": 599
+        },
+        {
+          "name": "out.tglf.nete_crossphase_spectrum",
+          "sha256": "cdeb5dd3295715ca3cb7ddf3fff6638109d61ec6158132a5e7459ef5acfa8ac1",
+          "size_bytes": 1201
+        },
+        {
+          "name": "out.tglf.nsts_crossphase_spectrum",
+          "sha256": "86528ab3b77552ddde4c959ffa3266c65efd77336019736023ea63f7676fcbef",
+          "size_bytes": 3628
+        },
+        {
+          "name": "out.tglf.prec",
+          "sha256": "e591e3671be9e3afb483090b2df2642b7c347878b096093710577998e0375602",
+          "size_bytes": 27
+        },
+        {
+          "name": "out.tglf.run",
+          "sha256": "ebca23948d4fc9ec7046c2f9d87afca4a09a576291cc90ebe8f119fb37a6215e",
+          "size_bytes": 402
+        },
+        {
+          "name": "out.tglf.scalar_saturation_parameters",
+          "sha256": "e306f6acc8ce674b21e40f784b04334d0a7b21a917750751992eb319a8428aa2",
+          "size_bytes": 797
+        },
+        {
+          "name": "out.tglf.spectral_shift_spectrum",
+          "sha256": "fce07e0a39e16b16f6c5bf6f7cf12af3c1231e531de932523a500798ea69c0d0",
+          "size_bytes": 822
+        },
+        {
+          "name": "out.tglf.sum_flux_spectrum",
+          "sha256": "f298dc51f4f77f63a0dfaac86f53d55fc16ed34b1ac2e885c6785bb356ccd2cd",
+          "size_bytes": 25776
+        },
+        {
+          "name": "out.tglf.temperature_spectrum",
+          "sha256": "7dc4804ff3253f8ed1419368f5084430d1b759ec498a79c1525470e9a152f621",
+          "size_bytes": 1753
+        },
+        {
+          "name": "out.tglf.version",
+          "sha256": "f2072147db23cc68b6a4f47872e5bff6aa501f5ce1630ee9efac049e53047141",
+          "size_bytes": 64
+        },
+        {
+          "name": "out.tglf.width_spectrum",
+          "sha256": "15e6e81668d26ee58817f8e2dea90a7f4a2516c1a02d51f4d05c6ec7908cfc31",
+          "size_bytes": 663
+        }
+      ],
+      "regime": "unclassified",
+      "reported_version": "b4933975 [2026-08-20]",
+      "run_directory": "runs/sample_000008",
+      "sample_id": "c5cdd87554b955118cc6664067ed6ce24d2c7529f38d6ffb3121b30467beaa86",
+      "sample_index": 8,
+      "sampling_stratum": "threshold",
+      "split": "test"
+    }
+  ],
+  "schema_version": "scpn-fusion.tglf-gacode-dataset.v2",
+  "source": {
+    "executable": "tglf",
+    "licence": "Apache-2.0",
+    "path_resolution_required": true,
+    "reported_versions": [
+      "b4933975 [2026-08-20]"
+    ],
+    "repository": "https://github.com/gafusion/gacode",
+    "revision": "b49339750a4aa4cf2b089fa9ff3afe098005f0f8",
+    "solver": "GACODE TGLF"
+  },
+  "split_policy": {
+    "group_isolation_required": true,
+    "method": "sha256-group-modulo-10000.v1",
+    "seed": 20260826
+  }
+}

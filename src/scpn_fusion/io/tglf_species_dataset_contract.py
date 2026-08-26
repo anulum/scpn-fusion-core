@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict
+import os
 import json
 import math
 from pathlib import Path, PurePosixPath
@@ -39,6 +40,10 @@ from scpn_fusion.io.tglf_dataset_contract import (
 TGLF_SPECIES_DATASET_SCHEMA_VERSION: Final = "scpn-fusion.tglf-gacode-dataset.v2"
 TGLF_GBFLUX_LAYOUT: Final = "particle[NS],energy[NS],momentum[NS],exchange[NS]"
 TGLF_PARTICLE_TRANSPORT_METHOD: Final = "paired-gradient-linear-least-squares.v1"
+TGLF_DEVELOPMENT_METADATA_VERSION: Final = "scpn-fusion.tglf-development-metadata.v1"
+TGLF_DEVELOPMENT_COMPOSITIONS: Final = frozenset(
+    {"electron-deuterium", "electron-deuterium-tritium", "electron-deuterium-carbon"}
+)
 _REVISION_RE: Final = re.compile(r"^[0-9a-f]{40}$")
 _SHA256_RE: Final = re.compile(r"^[0-9a-f]{64}$")
 _IDENTIFIER_RE: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
@@ -242,6 +247,100 @@ def _file_contract(path: Path, *, with_path: str | None = None) -> dict[str, Any
     return result
 
 
+def _strict_json_object(value: Mapping[str, Any], label: str) -> dict[str, Any]:
+    try:
+        encoded = json.dumps(dict(value), allow_nan=False, separators=(",", ":"))
+        decoded = json.loads(encoded)
+    except (TypeError, ValueError, json.JSONDecodeError) as exc:
+        raise ValueError(f"{label} must be finite strict JSON: {exc}") from exc
+    if not isinstance(decoded, dict):
+        raise ValueError(f"{label} must be an object")
+    return cast(dict[str, Any], decoded)
+
+
+def _validate_development_metadata(
+    value: Mapping[str, Any],
+    *,
+    samples: Sequence[Mapping[str, Any]],
+    paired_groups: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    metadata = _strict_json_object(value, "development")
+    expected = {
+        "schema_version",
+        "design_method",
+        "plan_sha256",
+        "accepted_runs",
+        "base_groups",
+        "samples_per_group",
+        "sampling_strata_counts",
+        "composition_counts",
+        "command_policy",
+        "storage_contract",
+    }
+    if set(metadata) != expected:
+        raise ValueError("development metadata fields mismatch")
+    if metadata["schema_version"] != TGLF_DEVELOPMENT_METADATA_VERSION:
+        raise ValueError("development metadata schema version mismatch")
+    if not isinstance(metadata["design_method"], str) or not metadata["design_method"]:
+        raise ValueError("development design_method must be a non-empty string")
+    if (
+        not isinstance(metadata["plan_sha256"], str)
+        or _SHA256_RE.fullmatch(metadata["plan_sha256"]) is None
+    ):
+        raise ValueError("development plan_sha256 is invalid")
+    if metadata["accepted_runs"] != len(samples):
+        raise ValueError("development accepted_runs does not match samples")
+    if metadata["base_groups"] != len(paired_groups):
+        raise ValueError("development base_groups does not match paired groups")
+    if metadata["samples_per_group"] != 3 or any(
+        len(cast(Sequence[Any], group["sample_indices"])) != 3 for group in paired_groups
+    ):
+        raise ValueError("development requires exactly three samples per paired group")
+    strata_counts = {
+        name: sum(sample["sampling_stratum"] == name for sample in samples)
+        for name in sorted(TGLF_SAMPLING_STRATA)
+    }
+    if metadata["sampling_strata_counts"] != strata_counts or any(
+        count == 0 for count in strata_counts.values()
+    ):
+        raise ValueError("development sampling-strata counts do not match samples")
+    composition_counts = {
+        name: sum(sample.get("composition") == name for sample in samples)
+        for name in sorted(TGLF_DEVELOPMENT_COMPOSITIONS)
+    }
+    if metadata["composition_counts"] != composition_counts or any(
+        count == 0 for count in composition_counts.values()
+    ):
+        raise ValueError("development composition counts do not match samples")
+    command_policy = _object(metadata["command_policy"], "development.command_policy")
+    if set(command_policy) != {"command", "timeout_s", "max_retries"}:
+        raise ValueError("development command_policy fields mismatch")
+    if command_policy["command"] != "tglf":
+        raise ValueError("development command must be the PATH name tglf")
+    timeout = _finite_number(command_policy["timeout_s"], "development.timeout_s")
+    retries = command_policy["max_retries"]
+    if timeout <= 0.0 or isinstance(retries, bool) or not isinstance(retries, int) or retries < 0:
+        raise ValueError("development timeout/retry policy is invalid")
+    storage = _object(metadata["storage_contract"], "development.storage_contract")
+    expected_storage = {
+        "working_location",
+        "local_max_bytes",
+        "local_max_runs",
+        "large_artifact_policy",
+    }
+    if set(storage) != expected_storage:
+        raise ValueError("development storage_contract fields mismatch")
+    if storage["working_location"] != "ignored-local-workstation":
+        raise ValueError("development working_location is invalid")
+    for field_name in ("local_max_bytes", "local_max_runs"):
+        field_value = storage[field_name]
+        if isinstance(field_value, bool) or not isinstance(field_value, int) or field_value < 1:
+            raise ValueError(f"development storage_contract.{field_name} is invalid")
+    if storage["large_artifact_policy"] != "owner-controlled-storage-manifest-only-in-git":
+        raise ValueError("development large_artifact_policy is invalid")
+    return metadata
+
+
 def _raw_files(root: Path, sample_index: int, revision: str) -> tuple[str, list[dict[str, Any]]]:
     relative = PurePosixPath("runs") / f"sample_{sample_index:06d}"
     directory = root.joinpath(*relative.parts)
@@ -284,6 +383,9 @@ def build_tglf_species_dataset_manifest(
     gacode_revision: str,
     seed: int,
     records_file: str = "dataset.json",
+    development: Mapping[str, Any] | None = None,
+    plan_file: str | None = None,
+    rejections_file: str | None = None,
 ) -> dict[str, Any]:
     """Build a v2 manifest over retained ordered-species official runs."""
     root = Path(dataset_root)
@@ -324,21 +426,27 @@ def build_tglf_species_dataset_manifest(
             cast(dict[str, object], record["input"]), gacode_revision
         )
         reported_version, files = _raw_files(root, index, gacode_revision)
-        samples.append(
-            {
-                "sample_index": index,
-                "sample_id": sample_id,
-                "group_id": group_id,
-                "split": deterministic_tglf_split(group_id, seed),
-                "sampling_stratum": stratum,
-                "regime": regime,
-                "reported_version": reported_version,
-                "run_directory": f"runs/sample_{index:06d}",
-                "input": record["input"],
-                "output": output,
-                "raw_files": files,
-            }
-        )
+        sample = {
+            "sample_index": index,
+            "sample_id": sample_id,
+            "group_id": group_id,
+            "split": deterministic_tglf_split(group_id, seed),
+            "sampling_stratum": stratum,
+            "regime": regime,
+            "reported_version": reported_version,
+            "run_directory": f"runs/sample_{index:06d}",
+            "input": record["input"],
+            "output": output,
+            "raw_files": files,
+        }
+        composition = record.get("composition")
+        if development is not None:
+            if composition not in TGLF_DEVELOPMENT_COMPOSITIONS:
+                raise ValueError(f"record[{index}].composition is invalid for development")
+            sample["composition"] = composition
+        elif composition is not None:
+            raise ValueError("composition is admitted only for a development dataset")
+        samples.append(sample)
     if len({sample["sample_id"] for sample in samples}) != len(samples):
         raise ValueError("duplicate TGLF input decks are forbidden")
 
@@ -371,7 +479,7 @@ def build_tglf_species_dataset_manifest(
                 "method": TGLF_PARTICLE_TRANSPORT_METHOD,
             }
         )
-    return {
+    manifest = {
         "SPDX-License-Identifier": "AGPL-3.0-or-later",
         "schema_version": TGLF_SPECIES_DATASET_SCHEMA_VERSION,
         "dataset_id": dataset_id,
@@ -406,6 +514,24 @@ def build_tglf_species_dataset_manifest(
         "paired_gradient_groups": paired_groups,
         "samples": samples,
     }
+    if development is not None:
+        if plan_file is None or rejections_file is None:
+            raise ValueError("development datasets require plan_file and rejections_file")
+        plan_relative = _relative(plan_file, "plan_file")
+        rejection_relative = _relative(rejections_file, "rejections_file")
+        manifest["purpose"] = "development"
+        manifest["development"] = _validate_development_metadata(
+            development, samples=samples, paired_groups=paired_groups
+        )
+        manifest["plan"] = _file_contract(
+            root.joinpath(*plan_relative.parts), with_path=plan_relative.as_posix()
+        )
+        manifest["rejections"] = _file_contract(
+            root.joinpath(*rejection_relative.parts), with_path=rejection_relative.as_posix()
+        )
+    elif plan_file is not None or rejections_file is not None:
+        raise ValueError("plan/rejections files require development metadata")
+    return manifest
 
 
 def write_tglf_species_dataset_manifest(
@@ -419,9 +545,12 @@ def write_tglf_species_dataset_manifest(
     if len(payload.encode()) > MAX_TGLF_MANIFEST_BYTES:
         raise ValueError("manifest exceeds the hard byte limit")
     temporary = root / ".manifest.json.tmp"
-    temporary.write_text(payload, encoding="utf-8")
+    with temporary.open("w", encoding="utf-8") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
     destination = root / "manifest.json"
-    temporary.replace(destination)
+    os.replace(temporary, destination)
     return destination
 
 
@@ -478,6 +607,17 @@ def verify_tglf_species_dataset(dataset_root: str | Path) -> dict[str, Any]:
             gacode_revision=cast(str, source.get("revision")),
             seed=cast(int, split.get("seed")),
             records_file=records_relative.as_posix(),
+            development=cast(Mapping[str, Any] | None, manifest.get("development")),
+            plan_file=(
+                cast(str, cast(dict[str, Any], manifest["plan"])["path"])
+                if "development" in manifest and isinstance(manifest.get("plan"), dict)
+                else None
+            ),
+            rejections_file=(
+                cast(str, cast(dict[str, Any], manifest["rejections"])["path"])
+                if "development" in manifest and isinstance(manifest.get("rejections"), dict)
+                else None
+            ),
         )
         if rebuilt != manifest:
             failures.append("manifest differs from canonical rebuild")
@@ -488,7 +628,7 @@ def verify_tglf_species_dataset(dataset_root: str | Path) -> dict[str, Any]:
     split_counts = {role: 0 for role in ("train", "calibration", "test")}
     for sample in samples:
         split_counts[sample["split"]] += 1
-    return {
+    result = {
         "status": "passed",
         "dataset_id": dataset_id,
         "schema_version": TGLF_SPECIES_DATASET_SCHEMA_VERSION,
@@ -498,10 +638,17 @@ def verify_tglf_species_dataset(dataset_root: str | Path) -> dict[str, Any]:
         "split_counts": split_counts,
         "failures": [],
     }
+    if "development" in manifest:
+        result["purpose"] = "development"
+        result["sampling_strata_counts"] = manifest["development"]["sampling_strata_counts"]
+        result["composition_counts"] = manifest["development"]["composition_counts"]
+    return result
 
 
 __all__ = [
     "TGLF_GBFLUX_LAYOUT",
+    "TGLF_DEVELOPMENT_COMPOSITIONS",
+    "TGLF_DEVELOPMENT_METADATA_VERSION",
     "TGLF_PARTICLE_TRANSPORT_METHOD",
     "TGLF_SPECIES_DATASET_SCHEMA_VERSION",
     "build_tglf_species_dataset_manifest",

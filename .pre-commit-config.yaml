@@ -10,9 +10,9 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: end-of-file-fixer
-        exclude: '\.(npz|npy|pkl|pt|onnx|whl|tar\.gz|png|jpg|svg)$'
+        exclude: '(\.(npz|npy|pkl|pt|onnx|whl|tar\.gz|png|jpg|svg)$|^validation/reference_data/tglf_gacode_development_v2_fixture/runs/)'
       - id: trailing-whitespace
-        exclude: '\.(npz|npy|pkl|pt|onnx|whl|tar\.gz|png|jpg|svg)$'
+        exclude: '(\.(npz|npy|pkl|pt|onnx|whl|tar\.gz|png|jpg|svg)$|^validation/reference_data/tglf_gacode_development_v2_fixture/runs/)'
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.6

@@ -1,0 +1,8 @@
+[Parsing data in input.tglf]
+no mpi
+  D(R) = -1.5803E-01  D(I) = -1.5581E-01
+  kinetic species =          3  non-kinetic species =          0
+      Gam/Gam_GB      Q/Q_GB  Q_low/Q_GB    Pi/Pi_GB      S/S_GB
+elec  7.6762E-02  3.1370E-01  2.5849E-01  5.4849E-08 -1.9535E-02
+ion1  7.3623E-02  3.8268E-01  3.3555E-01  3.3026E-07  2.7014E-02
+ion2  5.2314E-04  8.0257E-03  6.5537E-03  3.3344E-07  1.8250E-02

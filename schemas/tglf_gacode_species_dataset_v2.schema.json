@@ -13,6 +13,7 @@
     "SPDX-License-Identifier": {"const": "AGPL-3.0-or-later"},
     "schema_version": {"const": "scpn-fusion.tglf-gacode-dataset.v2"},
     "dataset_id": {"$ref": "#/$defs/identifier"},
+    "purpose": {"const": "development"},
     "source": {
       "type": "object", "additionalProperties": false,
       "required": ["solver", "repository", "revision", "licence", "executable", "path_resolution_required", "reported_versions"],
@@ -47,6 +48,9 @@
       }
     },
     "records": {"$ref": "#/$defs/fileWithPath"},
+    "plan": {"$ref": "#/$defs/fileWithPath"},
+    "rejections": {"$ref": "#/$defs/fileWithPath"},
+    "development": {"$ref": "#/$defs/development"},
     "claims": {
       "type": "object", "additionalProperties": false,
       "required": ["official_gacode_outputs", "surrogate_promoted", "experimental_validation", "cross_solver_parity"],
@@ -65,6 +69,24 @@
       "items": {"$ref": "#/$defs/sample"}
     }
   },
+  "allOf": [
+    {
+      "if": {"required": ["development"]},
+      "then": {
+        "required": ["purpose", "plan", "rejections"],
+        "properties": {
+          "samples": {
+            "type": "array", "minItems": 1, "maxItems": 1000000,
+            "items": {"allOf": [{"$ref": "#/$defs/sample"}, {"required": ["composition"]}]}
+          }
+        }
+      }
+    },
+    {
+      "if": {"required": ["purpose"]},
+      "then": {"required": ["development", "plan", "rejections"]}
+    }
+  ],
   "$defs": {
     "identifier": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"},
     "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
@@ -151,6 +173,7 @@
         "sample_index": {"type": "integer", "minimum": 0}, "sample_id": {"$ref": "#/$defs/sha256"},
         "group_id": {"$ref": "#/$defs/identifier"}, "split": {"enum": ["train", "calibration", "test"]},
         "sampling_stratum": {"enum": ["interior", "boundary", "threshold"]},
+        "composition": {"enum": ["electron-deuterium", "electron-deuterium-tritium", "electron-deuterium-carbon"]},
         "regime": {"enum": ["stable", "ITG", "TEM", "ETG", "mixed", "unclassified"]},
         "reported_version": {"type": "string", "minLength": 8}, "run_directory": {"$ref": "#/$defs/relativePath"},
         "input": {"$ref": "#/$defs/input"}, "output": {"$ref": "#/$defs/output"},
@@ -166,6 +189,55 @@
         "sample_indices": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "integer", "minimum": 0}},
         "gradients_a_over_l": {"type": "array", "minItems": 3, "items": {"type": "number"}},
         "method": {"const": "paired-gradient-linear-least-squares.v1"}
+      }
+    },
+    "development": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema_version", "design_method", "plan_sha256", "accepted_runs", "base_groups", "samples_per_group", "sampling_strata_counts", "composition_counts", "command_policy", "storage_contract"],
+      "properties": {
+        "schema_version": {"const": "scpn-fusion.tglf-development-metadata.v1"},
+        "design_method": {"type": "string", "minLength": 1},
+        "plan_sha256": {"$ref": "#/$defs/sha256"},
+        "accepted_runs": {"type": "integer", "minimum": 1},
+        "base_groups": {"type": "integer", "minimum": 1},
+        "samples_per_group": {"const": 3},
+        "sampling_strata_counts": {
+          "type": "object", "additionalProperties": false,
+          "required": ["boundary", "interior", "threshold"],
+          "properties": {
+            "boundary": {"type": "integer", "minimum": 1},
+            "interior": {"type": "integer", "minimum": 1},
+            "threshold": {"type": "integer", "minimum": 1}
+          }
+        },
+        "composition_counts": {
+          "type": "object", "additionalProperties": false,
+          "required": ["electron-deuterium", "electron-deuterium-carbon", "electron-deuterium-tritium"],
+          "properties": {
+            "electron-deuterium": {"type": "integer", "minimum": 1},
+            "electron-deuterium-carbon": {"type": "integer", "minimum": 1},
+            "electron-deuterium-tritium": {"type": "integer", "minimum": 1}
+          }
+        },
+        "command_policy": {
+          "type": "object", "additionalProperties": false,
+          "required": ["command", "timeout_s", "max_retries"],
+          "properties": {
+            "command": {"const": "tglf"},
+            "timeout_s": {"type": "number", "exclusiveMinimum": 0},
+            "max_retries": {"type": "integer", "minimum": 0}
+          }
+        },
+        "storage_contract": {
+          "type": "object", "additionalProperties": false,
+          "required": ["working_location", "local_max_bytes", "local_max_runs", "large_artifact_policy"],
+          "properties": {
+            "working_location": {"const": "ignored-local-workstation"},
+            "local_max_bytes": {"type": "integer", "minimum": 1},
+            "local_max_runs": {"type": "integer", "minimum": 1},
+            "large_artifact_policy": {"const": "owner-controlled-storage-manifest-only-in-git"}
+          }
+        }
       }
     }
   }

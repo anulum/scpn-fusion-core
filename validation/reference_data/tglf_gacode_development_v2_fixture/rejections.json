@@ -1,0 +1,44 @@
+[
+  {
+    "candidate_index": 0,
+    "payload": {
+      "R_major": 3.0,
+      "a_minor": 1.0,
+      "beta_e": 0.01,
+      "electron_charge_density": 1.0,
+      "ion_charge_density": 0.9,
+      "use_bpar": false,
+      "use_bper": false
+    },
+    "payload_sha256": "ffa087aab8e983f6be2881d46e28b8b8db720ed7ef0dae02afa688cd07eeed2d",
+    "reason": "non_quasineutral_composition"
+  },
+  {
+    "candidate_index": 1,
+    "payload": {
+      "R_major": 3.0,
+      "a_minor": 3.1,
+      "beta_e": 0.01,
+      "electron_charge_density": 1.0,
+      "ion_charge_density": 1.0,
+      "use_bpar": false,
+      "use_bper": false
+    },
+    "payload_sha256": "4f2527d57d1df7e0b90ec599a8ca916907163b1b2695ba60f75a1720e5c56da5",
+    "reason": "minor_radius_not_less_than_major_radius"
+  },
+  {
+    "candidate_index": 2,
+    "payload": {
+      "R_major": 3.0,
+      "a_minor": 1.0,
+      "beta_e": 0.0,
+      "electron_charge_density": 1.0,
+      "ion_charge_density": 1.0,
+      "use_bpar": false,
+      "use_bper": true
+    },
+    "payload_sha256": "59438b0bf98da5d585aa8dfffbccfe5d3c817892895f64fb031222a5c90f9dfc",
+    "reason": "electromagnetic_switch_requires_positive_beta"
+  }
+]
