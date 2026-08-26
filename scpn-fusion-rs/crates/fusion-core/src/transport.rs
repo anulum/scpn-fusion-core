@@ -15,6 +15,9 @@ use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::RadialProfiles;
 use ndarray::Array1;
 
+/// Tridiagonal Crank-Nicolson coefficients and right-hand-side template.
+pub type CnTridiag = (Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>);
+
 /// Number of radial grid points. Python line 21.
 const TRANSPORT_NR: usize = 50;
 
@@ -48,7 +51,7 @@ const HMODE_POWER_THRESHOLD: f64 = 30.0;
 
 /// Edge boundary temperature [keV]. Python line 125.
 const EDGE_TEMPERATURE: f64 = 0.1;
-/// Stability cap for explicit-euler temperature updates [keV].
+/// Stability cap for temperature updates [keV].
 const MAX_TEMPERATURE: f64 = 100.0;
 
 /// Radiation cooling coefficient. Python line 105.
@@ -288,43 +291,181 @@ pub fn sauter_bootstrap_current_profile(
     j_bs
 }
 
-/// Build Crank-Nicolson tridiagonal coefficients for 1D diffusion.
+fn validate_cn_inputs(
+    profile: &Array1<f64>,
+    chi: &Array1<f64>,
+    source: &Array1<f64>,
+    rho: &Array1<f64>,
+    dt: f64,
+    edge_value: f64,
+) -> FusionResult<f64> {
+    let n = rho.len();
+    if n < 3 {
+        return Err(FusionError::ConfigError(
+            "cylindrical transport requires at least 3 radial points".to_string(),
+        ));
+    }
+    for (name, len) in [
+        ("profile", profile.len()),
+        ("chi", chi.len()),
+        ("source", source.len()),
+    ] {
+        if len != n {
+            return Err(FusionError::ConfigError(format!(
+                "cylindrical transport {name} length {len} must match radial grid {n}"
+            )));
+        }
+    }
+    if !dt.is_finite() || dt <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "cylindrical transport requires finite dt > 0, got {dt}"
+        )));
+    }
+    if !edge_value.is_finite() {
+        return Err(FusionError::ConfigError(
+            "cylindrical transport edge value must be finite".to_string(),
+        ));
+    }
+    if rho[0].abs() > 1e-12 {
+        return Err(FusionError::ConfigError(format!(
+            "cylindrical transport grid must start at rho=0, got {}",
+            rho[0]
+        )));
+    }
+    let dr = rho[1] - rho[0];
+    if !dr.is_finite() || dr <= 0.0 {
+        return Err(FusionError::ConfigError(format!(
+            "cylindrical transport requires an increasing radial grid, got dr={dr}"
+        )));
+    }
+    let spacing_tolerance = 1e-10 * dr.abs().max(1.0);
+    for i in 0..n {
+        if !rho[i].is_finite()
+            || !profile[i].is_finite()
+            || !chi[i].is_finite()
+            || chi[i] < 0.0
+            || !source[i].is_finite()
+        {
+            return Err(FusionError::ConfigError(format!(
+                "cylindrical transport inputs are invalid at radial index {i}"
+            )));
+        }
+        if i > 0 {
+            let local_dr = rho[i] - rho[i - 1];
+            if !local_dr.is_finite() || (local_dr - dr).abs() > spacing_tolerance {
+                return Err(FusionError::ConfigError(format!(
+                    "cylindrical transport requires a finite uniform grid; spacing failed at index {i}"
+                )));
+            }
+        }
+    }
+    Ok(dr)
+}
+
+/// Evaluate `L(T) = (1/rho) d/drho(rho * chi * dT/drho)`.
+///
+/// The axis is the finite-volume half-cell limit
+/// `L_0(T) = 4 * chi_(1/2) * (T_1 - T_0) / drho^2`.
+pub fn explicit_diffusion_rhs(
+    profile: &Array1<f64>,
+    chi: &Array1<f64>,
+    rho: &Array1<f64>,
+) -> FusionResult<Array1<f64>> {
+    let source = Array1::zeros(rho.len());
+    let dr = validate_cn_inputs(profile, chi, &source, rho, 1.0, 0.0)?;
+    let n = rho.len();
+    let mut rhs = Array1::zeros(n);
+    let chi_axis_face = 0.5 * (chi[0] + chi[1]);
+    rhs[0] = 4.0 * chi_axis_face * (profile[1] - profile[0]) / (dr * dr);
+
+    for i in 1..(n - 1) {
+        let rho_i = rho[i];
+        let chi_ip = 0.5 * (chi[i] + chi[i + 1]);
+        let chi_im = 0.5 * (chi[i] + chi[i - 1]);
+        let coeff_ip = chi_ip * (rho_i + 0.5 * dr) / (rho_i * dr * dr);
+        let coeff_im = chi_im * (rho_i - 0.5 * dr) / (rho_i * dr * dr);
+        rhs[i] =
+            coeff_ip * (profile[i + 1] - profile[i]) - coeff_im * (profile[i] - profile[i - 1]);
+    }
+    Ok(rhs)
+}
+
+/// Build Crank-Nicolson coefficients for cylindrical diffusion.
 ///
 /// Returns `(a, b, c, d)` where `a/b/c` are sub/main/super diagonals for
 /// `fusion_math::tridiag::thomas_solve` and `d` is a zero-initialized RHS
-/// template that callers may fill with source terms.
-pub fn build_cn_tridiag(
+/// template that callers may fill with source terms. Invalid legacy calls
+/// retain the previous identity-template behavior; runtime callers use
+/// [`try_build_cn_tridiag`] to fail closed.
+pub fn build_cn_tridiag(chi: &Array1<f64>, rho: &Array1<f64>, dt: f64) -> CnTridiag {
+    match try_build_cn_tridiag(chi, rho, dt) {
+        Ok(coefficients) => coefficients,
+        Err(_) => {
+            let n = rho.len();
+            (vec![0.0; n], vec![1.0; n], vec![0.0; n], vec![0.0; n])
+        }
+    }
+}
+
+/// Build fail-closed Crank-Nicolson coefficients for cylindrical diffusion.
+pub fn try_build_cn_tridiag(
     chi: &Array1<f64>,
     rho: &Array1<f64>,
     dt: f64,
-) -> (Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>) {
+) -> FusionResult<CnTridiag> {
     let n = rho.len();
     let mut a = vec![0.0; n];
     let mut b = vec![1.0; n];
     let mut c = vec![0.0; n];
     let mut d = vec![0.0; n];
-    if n < 3 || chi.len() != n || !dt.is_finite() || dt <= 0.0 {
-        return (a, b, c, d);
-    }
+    let profile = Array1::zeros(n);
+    let source = Array1::zeros(n);
+    let dr = validate_cn_inputs(&profile, chi, &source, rho, dt, EDGE_TEMPERATURE)?;
+    let chi_axis_face = 0.5 * (chi[0] + chi[1]);
+    let axis_coeff = 4.0 * chi_axis_face / (dr * dr);
+    b[0] = 1.0 + 0.5 * dt * axis_coeff;
+    c[0] = -0.5 * dt * axis_coeff;
 
-    let dr = (rho[1] - rho[0]).abs().max(1e-12);
     for i in 1..(n - 1) {
-        let r = rho[i].abs().max(1e-6);
-        let chi_i = chi[i].max(0.0);
-        let chi_ip = 0.5 * (chi_i + chi[i + 1].max(0.0));
-        let chi_im = 0.5 * (chi_i + chi[i - 1].max(0.0));
-        let r_ip = r + 0.5 * dr;
-        let r_im = (r - 0.5 * dr).max(1e-6);
-        let coeff_ip = chi_ip * r_ip / (r * dr * dr);
-        let coeff_im = chi_im * r_im / (r * dr * dr);
+        let r = rho[i];
+        let chi_ip = 0.5 * (chi[i] + chi[i + 1]);
+        let chi_im = 0.5 * (chi[i] + chi[i - 1]);
+        let coeff_ip = chi_ip * (r + 0.5 * dr) / (r * dr * dr);
+        let coeff_im = chi_im * (r - 0.5 * dr) / (r * dr * dr);
 
         b[i] = 1.0 + 0.5 * dt * (coeff_ip + coeff_im);
         c[i] = -0.5 * dt * coeff_ip;
         a[i] = -0.5 * dt * coeff_im;
     }
-    d[0] = EDGE_TEMPERATURE;
     d[n - 1] = EDGE_TEMPERATURE;
-    (a, b, c, d)
+    Ok((a, b, c, d))
+}
+
+/// Advance one profile with cylindrical Crank-Nicolson diffusion and net source.
+pub fn crank_nicolson_step(
+    profile: &Array1<f64>,
+    chi: &Array1<f64>,
+    source: &Array1<f64>,
+    rho: &Array1<f64>,
+    dt: f64,
+    edge_value: f64,
+) -> FusionResult<Array1<f64>> {
+    validate_cn_inputs(profile, chi, source, rho, dt, edge_value)?;
+    let diffusion_rhs = explicit_diffusion_rhs(profile, chi, rho)?;
+    let (a, b, c, mut d) = try_build_cn_tridiag(chi, rho, dt)?;
+    let n = rho.len();
+    for i in 0..(n - 1) {
+        d[i] = profile[i] + 0.5 * dt * diffusion_rhs[i] + dt * source[i];
+    }
+    d[n - 1] = edge_value;
+
+    let solved = Array1::from_vec(thomas_solve(&a, &b, &c, &d));
+    if solved.iter().any(|value| !value.is_finite()) {
+        return Err(FusionError::ConfigError(
+            "cylindrical Crank-Nicolson solve produced non-finite output".to_string(),
+        ));
+    }
+    Ok(solved)
 }
 
 /// Single transport timestep helper with explicit dt control.
@@ -344,29 +485,7 @@ pub fn transport_step(solver: &mut TransportSolver, p_aux_mw: f64, dt: f64) -> F
     solver.dt = dt;
     let step_result = (|| -> FusionResult<()> {
         solver.update_transport_model(p_aux_mw)?;
-        let te_before = solver.profiles.te.clone();
         solver.evolve_profiles(p_aux_mw)?;
-
-        // CN smoothing pass using current diffusivity for added robustness.
-        let (a, b, c, mut d) = build_cn_tridiag(&solver.chi, &solver.profiles.rho, dt);
-        let n = solver.profiles.te.len();
-        if n >= 3 {
-            for (i, d_i) in d.iter_mut().enumerate().skip(1).take(n - 2) {
-                *d_i = solver.profiles.te[i];
-            }
-            let solved = thomas_solve(&a, &b, &c, &d);
-            for i in 1..(n - 1) {
-                let val = solved[i];
-                solver.profiles.te[i] = if val.is_finite() {
-                    val.clamp(EDGE_TEMPERATURE, MAX_TEMPERATURE)
-                } else {
-                    te_before[i]
-                };
-                solver.profiles.ti[i] = solver.profiles.te[i];
-            }
-            solver.profiles.te[n - 1] = EDGE_TEMPERATURE;
-            solver.profiles.ti[n - 1] = EDGE_TEMPERATURE;
-        }
 
         if solver.profiles.te.iter().any(|v| !v.is_finite())
             || solver.profiles.ti.iter().any(|v| !v.is_finite())
@@ -649,7 +768,7 @@ impl TransportSolver {
         Ok(max_grad)
     }
 
-    /// Evolve temperature profiles by one time step (explicit Euler).
+    /// Evolve temperature profiles by one cylindrical Crank-Nicolson step.
     ///
     /// ∂T/∂t = (1/r)∂(r χ ∂T/∂r)/∂r + S_heat - S_rad
     pub fn evolve_profiles(&mut self, p_aux_mw: f64) -> FusionResult<()> {
@@ -659,12 +778,11 @@ impl TransportSolver {
             )));
         }
         let n = self.profiles.rho.len();
-        if n < 2 {
+        if n < 3 {
             return Err(FusionError::ConfigError(
-                "transport evolve requires at least 2 radial points".to_string(),
+                "transport evolve requires at least 3 radial points".to_string(),
             ));
         }
-        let dr = if n > 1 { 1.0 / (n as f64 - 1.0) } else { 1.0 };
         let dt = self.dt;
         if !dt.is_finite() || dt <= 0.0 {
             return Err(FusionError::ConfigError(format!(
@@ -672,39 +790,14 @@ impl TransportSolver {
             )));
         }
 
+        if self.profiles.ne.len() != n || self.profiles.n_impurity.len() != n {
+            return Err(FusionError::ConfigError(
+                "transport density profiles must match the radial grid".to_string(),
+            ));
+        }
         let te_old = self.profiles.te.clone();
-
-        for i in 1..n - 1 {
-            let rho_i = self.profiles.rho[i];
-            if !rho_i.is_finite() || rho_i <= 0.0 {
-                return Err(FusionError::ConfigError(format!(
-                    "transport evolve requires finite rho > 0 at interior index {}, got {}",
-                    i, rho_i
-                )));
-            }
-
-            // Diffusion: (1/r)∂(r χ ∂T/∂r)/∂r via central differences
-            let flux_plus =
-                0.5 * (self.chi[i] + self.chi[i + 1]) * (te_old[i + 1] - te_old[i]) / dr;
-            let flux_minus =
-                0.5 * (self.chi[i - 1] + self.chi[i]) * (te_old[i] - te_old[i - 1]) / dr;
-            let rho_plus = rho_i + 0.5 * dr;
-            let rho_minus = rho_i - 0.5 * dr;
-            if rho_plus <= 0.0 || rho_minus <= 0.0 {
-                return Err(FusionError::ConfigError(format!(
-                    "transport evolve requires positive rho +/- dr/2 at index {}",
-                    i
-                )));
-            }
-            let div_flux = (rho_plus * flux_plus - rho_minus * flux_minus) / (rho_i * dr);
-            if !div_flux.is_finite() {
-                return Err(FusionError::ConfigError(format!(
-                    "transport evolve produced non-finite div_flux at index {}",
-                    i
-                )));
-            }
-
-            // Heating source (Gaussian centered at axis)
+        let mut net_source = Array1::zeros(n);
+        for i in 0..n {
             let s_heat = p_aux_mw * (-self.profiles.rho[i].powi(2) / HEATING_WIDTH).exp();
             if !s_heat.is_finite() {
                 return Err(FusionError::ConfigError(format!(
@@ -713,7 +806,6 @@ impl TransportSolver {
                 )));
             }
 
-            // Radiation sink
             let s_rad = COOLING_FACTOR
                 * self.profiles.ne[i]
                 * self.profiles.n_impurity[i]
@@ -725,25 +817,22 @@ impl TransportSolver {
                 )));
             }
 
-            // Euler step
-            let te_new = te_old[i] + dt * (div_flux + s_heat - s_rad);
-            if !te_new.is_finite() {
-                return Err(FusionError::ConfigError(format!(
-                    "transport evolve produced non-finite temperature at index {}",
-                    i
-                )));
-            }
-            self.profiles.te[i] = te_new.clamp(EDGE_TEMPERATURE, MAX_TEMPERATURE);
+            net_source[i] = s_heat - s_rad;
         }
 
-        // Ti tracks Te (simplified)
-        for i in 1..n - 1 {
-            self.profiles.ti[i] = self.profiles.te[i];
+        let solved = crank_nicolson_step(
+            &te_old,
+            &self.chi,
+            &net_source,
+            &self.profiles.rho,
+            dt,
+            EDGE_TEMPERATURE,
+        )?;
+        for i in 0..n {
+            self.profiles.te[i] = solved[i].clamp(EDGE_TEMPERATURE, MAX_TEMPERATURE);
         }
-
-        // Boundary conditions
         self.profiles.te[n - 1] = EDGE_TEMPERATURE;
-        self.profiles.ti[n - 1] = EDGE_TEMPERATURE;
+        self.profiles.ti.assign(&self.profiles.te);
         if self.profiles.te.iter().any(|v| !v.is_finite())
             || self.profiles.ti.iter().any(|v| !v.is_finite())
         {
@@ -768,20 +857,30 @@ impl TransportSolver {
             )));
         }
         let n = self.profiles.rho.len();
-        let dr = if n > 1 { 1.0 / (n as f64 - 1.0) } else { 1.0 };
+        if n < 3 || self.profiles.n_impurity.len() != n {
+            return Err(FusionError::ConfigError(
+                "transport impurity injection requires matching profiles with at least 3 points"
+                    .to_string(),
+            ));
+        }
 
         // Add impurity source at edge
-        if n > 1 {
-            self.profiles.n_impurity[n - 1] += erosion_rate * 1e-18 * self.dt;
+        self.profiles.n_impurity[n - 1] += erosion_rate * 1e-18 * self.dt;
+        let edge_value = self.profiles.n_impurity[n - 1];
+        let diffusivity = Array1::from_elem(n, D_IMPURITY);
+        let source = Array1::zeros(n);
+        let solved = crank_nicolson_step(
+            &self.profiles.n_impurity,
+            &diffusivity,
+            &source,
+            &self.profiles.rho,
+            self.dt,
+            edge_value,
+        )?;
+        for i in 0..n {
+            self.profiles.n_impurity[i] = solved[i].max(0.0);
         }
-
-        // Diffuse inward (explicit Euler on impurity diffusion equation)
-        let n_imp_old = self.profiles.n_impurity.clone();
-        for i in 1..n - 1 {
-            let laplacian = (n_imp_old[i + 1] - 2.0 * n_imp_old[i] + n_imp_old[i - 1]) / (dr * dr);
-            self.profiles.n_impurity[i] =
-                (n_imp_old[i] + D_IMPURITY * self.dt * laplacian).max(0.0);
-        }
+        self.profiles.n_impurity[n - 1] = edge_value;
         if self.profiles.n_impurity.iter().any(|v| !v.is_finite()) {
             return Err(FusionError::ConfigError(
                 "transport impurity injection produced non-finite values".to_string(),
@@ -1000,6 +1099,46 @@ mod tests {
             (ts.profiles.te[last] - EDGE_TEMPERATURE).abs() < 1e-10,
             "Edge temperature should be fixed at {EDGE_TEMPERATURE}"
         );
+    }
+
+    #[test]
+    fn test_transport_step_is_one_cn_advance() {
+        let mut public_step = TransportSolver::new();
+        let mut direct_step = TransportSolver::new();
+        let requested_dt = 2e-3;
+        let original_dt = public_step.dt;
+
+        transport_step(&mut public_step, 15.0, requested_dt).expect("valid public step");
+        direct_step.dt = requested_dt;
+        direct_step
+            .update_transport_model(15.0)
+            .expect("valid transport update");
+        direct_step
+            .evolve_profiles(15.0)
+            .expect("valid direct CN step");
+
+        let max_error = public_step
+            .profiles
+            .te
+            .iter()
+            .zip(direct_step.profiles.te.iter())
+            .map(|(actual, expected)| (actual - expected).abs())
+            .fold(0.0, f64::max);
+        assert!(max_error < 1e-14, "single-step parity error={max_error}");
+        assert_eq!(public_step.dt, original_dt, "explicit dt must be restored");
+    }
+
+    #[test]
+    fn test_impurity_cn_diffusion_reaches_axis_and_preserves_edge_source() {
+        let mut ts = TransportSolver::new();
+        let edge = ts.profiles.n_impurity.len() - 1;
+        ts.inject_impurities(1e18)
+            .expect("valid impurity injection");
+
+        assert!(ts.profiles.n_impurity[0] > 0.0);
+        assert_eq!(ts.profiles.n_impurity[edge], 0.01);
+        assert!(ts.profiles.n_impurity.iter().all(|value| value.is_finite()));
+        assert!(ts.profiles.n_impurity.iter().all(|value| *value >= 0.0));
     }
 
     #[test]
@@ -1245,7 +1384,7 @@ mod tests {
         let chi = Array1::from_elem(n, 0.5);
         let (a, b, c, _) = build_cn_tridiag(&chi, &rho, 0.01);
 
-        for i in 1..(n - 1) {
+        for i in 0..(n - 1) {
             let dominance = b[i].abs() - (a[i].abs() + c[i].abs());
             assert!(
                 dominance > 0.0,
@@ -1255,6 +1394,126 @@ mod tests {
                 c[i]
             );
         }
+    }
+
+    #[test]
+    fn test_cn_axis_row_matches_half_control_volume_limit() {
+        let n = 33;
+        let rho = Array1::linspace(0.0, 1.0, n);
+        let chi = Array1::from_shape_fn(n, |i| 0.5 + 0.25 * rho[i]);
+        let dt = 1e-3;
+        let (_, b, c, _) = build_cn_tridiag(&chi, &rho, dt);
+        let dr = rho[1] - rho[0];
+        let face = 0.5 * (chi[0] + chi[1]);
+        let axis_coeff = 4.0 * face / (dr * dr);
+
+        assert!((b[0] - (1.0 + 0.5 * dt * axis_coeff)).abs() < 1e-12);
+        assert!((c[0] + 0.5 * dt * axis_coeff).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_cn_preserves_constant_profile_including_axis() {
+        let n = 65;
+        let rho = Array1::linspace(0.0, 1.0, n);
+        let profile = Array1::from_elem(n, EDGE_TEMPERATURE);
+        let chi = Array1::from_shape_fn(n, |i| 0.2 + rho[i]);
+        let source = Array1::zeros(n);
+        let solved = crank_nicolson_step(&profile, &chi, &source, &rho, 1e-3, EDGE_TEMPERATURE)
+            .expect("valid CN step");
+        let max_error = solved
+            .iter()
+            .map(|value| (value - EDGE_TEMPERATURE).abs())
+            .fold(0.0, f64::max);
+        assert!(max_error < 1e-13, "constant nullspace error={max_error}");
+    }
+
+    #[test]
+    fn test_cn_applies_source_at_axis() {
+        let n = 33;
+        let rho = Array1::linspace(0.0, 1.0, n);
+        let profile = Array1::from_elem(n, EDGE_TEMPERATURE);
+        let chi = Array1::zeros(n);
+        let mut source = Array1::zeros(n);
+        source[0] = 2.5;
+        let dt = 2e-3;
+        let solved = crank_nicolson_step(&profile, &chi, &source, &rho, dt, EDGE_TEMPERATURE)
+            .expect("valid source step");
+        assert!((solved[0] - (EDGE_TEMPERATURE + dt * source[0])).abs() < 1e-14);
+        assert!((solved[1] - EDGE_TEMPERATURE).abs() < 1e-14);
+        assert_eq!(solved[n - 1], EDGE_TEMPERATURE);
+    }
+
+    #[test]
+    fn test_cn_rejects_invalid_grid_and_coefficients() {
+        let rho = Array1::from_vec(vec![0.0, 0.25, 0.6, 1.0]);
+        let profile = Array1::from_elem(4, 1.0);
+        let source = Array1::zeros(4);
+        let chi = Array1::from_elem(4, 1.0);
+        assert!(crank_nicolson_step(&profile, &chi, &source, &rho, 1e-3, 0.1).is_err());
+
+        let rho = Array1::linspace(0.0, 1.0, 4);
+        let mut invalid_chi = chi;
+        invalid_chi[0] = -1.0;
+        assert!(crank_nicolson_step(&profile, &invalid_chi, &source, &rho, 1e-3, 0.1).is_err());
+    }
+
+    fn bessel_j0(x: f64) -> f64 {
+        let quarter_x_squared = 0.25 * x * x;
+        let mut term = 1.0;
+        let mut sum = 1.0;
+        for k in 1..=32 {
+            let k_f64 = k as f64;
+            term *= -quarter_x_squared / (k_f64 * k_f64);
+            sum += term;
+        }
+        sum
+    }
+
+    fn bessel_case_rmse(n: usize) -> f64 {
+        const J01: f64 = 2.404_825_557_695_773;
+        const AMPLITUDE: f64 = 0.9;
+        const DT: f64 = 1e-3;
+        const STEPS: usize = 10;
+        let rho = Array1::linspace(0.0, 1.0, n);
+        let chi = Array1::from_elem(n, 1.0);
+        let source = Array1::zeros(n);
+        let mut profile = rho.mapv(|r| EDGE_TEMPERATURE + AMPLITUDE * bessel_j0(J01 * r));
+        for _ in 0..STEPS {
+            profile = crank_nicolson_step(&profile, &chi, &source, &rho, DT, EDGE_TEMPERATURE)
+                .expect("valid frozen Bessel step");
+        }
+        let decay = (-J01 * J01 * DT * STEPS as f64).exp();
+        let squared_error = rho
+            .iter()
+            .zip(profile.iter())
+            .map(|(r, actual)| {
+                let exact = EDGE_TEMPERATURE + AMPLITUDE * bessel_j0(J01 * r) * decay;
+                (actual - exact).powi(2)
+            })
+            .sum::<f64>();
+        (squared_error / n as f64).sqrt()
+    }
+
+    #[test]
+    fn test_cn_frozen_bessel_accuracy_and_second_order_convergence() {
+        let errors = [
+            bessel_case_rmse(33),
+            bessel_case_rmse(65),
+            bessel_case_rmse(129),
+        ];
+        let orders = [
+            (errors[0] / errors[1]).log2(),
+            (errors[1] / errors[2]).log2(),
+        ];
+        assert!(
+            errors[2] <= 2.282_930_650_454_154_3e-6,
+            "fine Bessel RMSE={} exceeds frozen TORAX threshold",
+            errors[2]
+        );
+        assert!(
+            orders.iter().all(|order| *order >= 1.9),
+            "observed convergence orders are {orders:?} for errors {errors:?}"
+        );
     }
 
     fn thermal_energy_proxy(ts: &TransportSolver) -> f64 {

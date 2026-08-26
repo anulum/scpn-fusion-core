@@ -103,6 +103,74 @@ class TestSauterBootstrapProfile:
         assert np.mean(j_bs > 0) > 0.8
 
 
+class TestCylindricalTransportParity:
+    """Public PyO3 state and CN operator must match the certified NumPy path."""
+
+    @staticmethod
+    def _frozen_state(n=129):
+        from scipy.special import j0
+
+        rho = np.linspace(0.0, 1.0, n, dtype=np.float64)
+        te = 0.1 + 0.9 * j0(2.4048255576957728 * rho)
+        return (
+            rho,
+            te,
+            te.copy(),
+            np.full(n, 10.0, dtype=np.float64),
+            np.zeros(n, dtype=np.float64),
+            np.ones(n, dtype=np.float64),
+        )
+
+    def test_state_roundtrip_and_numpy_cn_parity(self):
+        from scpn_fusion.core.jax_solvers import crank_nicolson_step
+
+        state = self._frozen_state()
+        rho, te, ti, ne, n_impurity, chi = state
+        dt = 1e-3
+        solver = scpn_fusion_rs.PyTransportSolver()
+        solver.set_transport_state(rho, te, ti, ne, n_impurity, chi, dt)
+
+        expected = te.copy()
+        source = np.zeros_like(rho)
+        for _ in range(10):
+            solver.evolve_profiles(0.0)
+            expected = crank_nicolson_step(
+                expected,
+                chi,
+                source,
+                rho,
+                rho[1] - rho[0],
+                dt,
+                T_edge=0.1,
+                use_jax=False,
+            )
+
+        actual = np.asarray(solver.electron_temperature_profile())
+        np.testing.assert_array_equal(np.asarray(solver.rho_profile()), rho)
+        np.testing.assert_allclose(actual, expected, rtol=0.0, atol=2e-14)
+        np.testing.assert_array_equal(np.asarray(solver.ion_temperature_profile()), actual)
+        np.testing.assert_array_equal(np.asarray(solver.electron_density_profile()), ne)
+        np.testing.assert_array_equal(np.asarray(solver.impurity_density_profile()), n_impurity)
+        np.testing.assert_array_equal(np.asarray(solver.diffusivity_profile()), chi)
+        assert actual[-1] == 0.1
+
+    @pytest.mark.parametrize(
+        "mutation",
+        [
+            lambda values: values.__setitem__(0, 0.01),
+            lambda values: values.__setitem__(3, np.nan),
+        ],
+    )
+    def test_state_setter_fails_closed(self, mutation):
+        state = list(self._frozen_state(n=17))
+        rho = state[0].copy()
+        mutation(rho)
+        state[0] = rho
+        solver = scpn_fusion_rs.PyTransportSolver()
+        with pytest.raises(ValueError):
+            solver.set_transport_state(*state, 1e-3)
+
+
 class TestTransportPerformance:
     """Non-regression guard: the Rust transport path must stay faster than NumPy."""
 

@@ -267,6 +267,112 @@ impl PyTransportSolver {
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
     }
 
+    #[allow(clippy::too_many_arguments)]
+    fn set_transport_state(
+        &mut self,
+        rho: PyReadonlyArray1<'_, f64>,
+        t_e_kev: PyReadonlyArray1<'_, f64>,
+        t_i_kev: PyReadonlyArray1<'_, f64>,
+        n_e_19: PyReadonlyArray1<'_, f64>,
+        n_impurity: PyReadonlyArray1<'_, f64>,
+        chi: PyReadonlyArray1<'_, f64>,
+        dt: f64,
+    ) -> PyResult<()> {
+        let rho = rho.as_array().to_owned();
+        let t_e_kev = t_e_kev.as_array().to_owned();
+        let t_i_kev = t_i_kev.as_array().to_owned();
+        let n_e_19 = n_e_19.as_array().to_owned();
+        let n_impurity = n_impurity.as_array().to_owned();
+        let chi = chi.as_array().to_owned();
+        let n = rho.len();
+        if n < 3 {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "transport state requires at least 3 radial points",
+            ));
+        }
+        for (name, actual) in [
+            ("t_e_kev", t_e_kev.len()),
+            ("t_i_kev", t_i_kev.len()),
+            ("n_e_19", n_e_19.len()),
+            ("n_impurity", n_impurity.len()),
+            ("chi", chi.len()),
+        ] {
+            ensure_matching_length(name, n, actual)?;
+        }
+        if !dt.is_finite() || dt <= 0.0 {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "transport dt must be finite and > 0",
+            ));
+        }
+        if rho[0].abs() > 1e-12 {
+            return Err(pyo3::exceptions::PyValueError::new_err(
+                "transport rho must start at zero",
+            ));
+        }
+        let dr = rho[1] - rho[0];
+        let tolerance = 1e-10 * dr.abs().max(1.0);
+        for i in 0..n {
+            let finite = rho[i].is_finite()
+                && t_e_kev[i].is_finite()
+                && t_i_kev[i].is_finite()
+                && n_e_19[i].is_finite()
+                && n_impurity[i].is_finite()
+                && chi[i].is_finite();
+            if !finite
+                || t_e_kev[i] < 0.0
+                || t_i_kev[i] < 0.0
+                || n_e_19[i] < 0.0
+                || n_impurity[i] < 0.0
+                || chi[i] < 0.0
+            {
+                return Err(pyo3::exceptions::PyValueError::new_err(format!(
+                    "transport state contains invalid values at radial index {i}"
+                )));
+            }
+            if i > 0 {
+                let local_dr = rho[i] - rho[i - 1];
+                if !local_dr.is_finite() || local_dr <= 0.0 || (local_dr - dr).abs() > tolerance {
+                    return Err(pyo3::exceptions::PyValueError::new_err(
+                        "transport rho must be finite, increasing, and uniform",
+                    ));
+                }
+            }
+        }
+
+        self.inner.profiles.rho = rho;
+        self.inner.profiles.te = t_e_kev;
+        self.inner.profiles.ti = t_i_kev;
+        self.inner.profiles.ne = n_e_19;
+        self.inner.profiles.n_impurity = n_impurity;
+        self.inner.chi = chi;
+        self.inner.dt = dt;
+        Ok(())
+    }
+
+    fn rho_profile<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.inner.profiles.rho.clone().into_pyarray(py)
+    }
+
+    fn electron_temperature_profile<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.inner.profiles.te.clone().into_pyarray(py)
+    }
+
+    fn ion_temperature_profile<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.inner.profiles.ti.clone().into_pyarray(py)
+    }
+
+    fn electron_density_profile<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.inner.profiles.ne.clone().into_pyarray(py)
+    }
+
+    fn impurity_density_profile<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.inner.profiles.n_impurity.clone().into_pyarray(py)
+    }
+
+    fn diffusivity_profile<'py>(&self, py: Python<'py>) -> Bound<'py, PyArray1<f64>> {
+        self.inner.chi.clone().into_pyarray(py)
+    }
+
     fn chang_hinton_chi_profile<'py>(
         &self,
         py: Python<'py>,
