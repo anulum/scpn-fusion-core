@@ -945,6 +945,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Skip the hermetic experimental pytest lane.",
     )
     parser.add_argument(
+        "--no-tests",
+        action="store_true",
+        help="Skip every pytest subprocess while retaining non-test preflight checks.",
+    )
+    parser.add_argument(
         "--check-timeout-seconds",
         type=float,
         default=DEFAULT_CHECK_TIMEOUT_SECONDS,
@@ -1010,6 +1015,8 @@ def main(argv: list[str] | None = None) -> int:
         enable_strict_backend_checks=args.enable_strict_backend_checks,
         enable_freegs_strict_backend_check=enable_freegs_strict_backend_check,
     )
+    if args.no_tests:
+        checks = [(name, cmd) for name, cmd in checks if "pytest" not in cmd]
     if not checks:
         print("[preflight] No checks selected.")
         return 0

@@ -11,6 +11,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any
 
@@ -124,6 +125,33 @@ def test_residual_canonicalization_removes_float64_last_bit_drift() -> None:
     canonical_perturbed = module._canonicalize_residuals(perturbed)
     assert np.array_equal(canonical, canonical_perturbed)
     assert module._sha256_array(canonical) == module._sha256_array(canonical_perturbed)
+
+
+def test_cli_reexecutes_with_deterministic_blas_threads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The command-line path fixes BLAS topology before loading the evidence."""
+    module = _load_module()
+    recorded: list[tuple[list[str], dict[str, str]]] = []
+
+    def fake_run(
+        command: list[str], *, check: bool, env: dict[str, str]
+    ) -> subprocess.CompletedProcess[list[str]]:
+        assert check is False
+        recorded.append((command, env))
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.delenv(module.DETERMINISTIC_CHILD_MARKER, raising=False)
+    for name in module.DETERMINISTIC_THREAD_VARIABLES:
+        monkeypatch.setenv(name, "12")
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+
+    assert module._reexec_with_deterministic_blas(["--check"]) == 0
+    assert len(recorded) == 1
+    command, env = recorded[0]
+    assert command[-1] == "--check"
+    assert env[module.DETERMINISTIC_CHILD_MARKER] == "1"
+    assert all(env[name] == "1" for name in module.DETERMINISTIC_THREAD_VARIABLES)
 
 
 def test_model_feature_contracts() -> None:

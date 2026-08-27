@@ -509,6 +509,38 @@ def test_main_honors_skip_flags(monkeypatch: pytest.MonkeyPatch) -> None:
     ]
 
 
+def test_main_honors_no_tests_without_skipping_other_checks(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    module = _load_module()
+    calls: list[RunCall] = []
+
+    def fake_run(
+        cmd: list[str], cwd: Path, check: bool, timeout: float
+    ) -> subprocess.CompletedProcess[list[str]]:
+        calls.append((cmd, cwd, check, timeout))
+        return subprocess.CompletedProcess(cmd, 0)
+
+    monkeypatch.setattr(module.subprocess, "run", fake_run)
+    monkeypatch.setattr(module, "_internal_files_available", lambda *_paths: True)
+    monkeypatch.setattr(module.sys, "argv", ["run_python_preflight.py", "--no-tests"])
+    monkeypatch.setattr(module.sys, "executable", "python-test")
+
+    assert module.main() == 0
+    commands = [cmd for cmd, _, _, _ in calls]
+    assert commands
+    assert all("pytest" not in cmd for cmd in commands)
+    assert ["python-test", "tools/sync_metadata.py", "--check"] in commands
+    assert ["python-test", "tools/run_mypy_strict.py"] in commands
+    assert [
+        "python-test",
+        "tools/run_native_docs.py",
+        "--language",
+        "all",
+        "--skip-unavailable",
+    ] in commands
+
+
 def test_main_enables_strict_backend_checks_when_requested(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

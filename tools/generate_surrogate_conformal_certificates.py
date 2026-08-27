@@ -21,7 +21,9 @@ import argparse
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any, cast
 
@@ -56,8 +58,33 @@ REFERENCE_MAJOR_RADIUS_M = 6.2
 # implementations.  This is far below the precision supported by the source
 # validation data while removing platform-dependent last-bit residual drift.
 RESIDUAL_CANONICAL_DECIMALS = 12
+DETERMINISTIC_THREAD_VARIABLES = (
+    "OPENBLAS_NUM_THREADS",
+    "OMP_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+)
+DETERMINISTIC_CHILD_MARKER = "SCPN_CONFORMAL_DETERMINISTIC_CHILD"
 
 FloatArray = npt.NDArray[np.float64]
+
+
+def _reexec_with_deterministic_blas(argv: list[str]) -> int | None:
+    """Re-execute the CLI once with a fixed BLAS reduction topology."""
+    if os.environ.get(DETERMINISTIC_CHILD_MARKER) == "1" or all(
+        os.environ.get(name) == "1" for name in DETERMINISTIC_THREAD_VARIABLES
+    ):
+        return None
+    env = os.environ.copy()
+    env.update({name: "1" for name in DETERMINISTIC_THREAD_VARIABLES})
+    env[DETERMINISTIC_CHILD_MARKER] = "1"
+    result = subprocess.run(
+        [sys.executable, str(Path(__file__).resolve()), *argv],
+        check=False,
+        env=env,
+    )
+    return int(result.returncode)
 
 
 def _sha256_file(path: Path) -> str:
@@ -235,6 +262,7 @@ def build_certificate(
         "schema": SCHEMA,
         "method": {
             "name": "split_conformal_absolute_residual",
+            "blas_threads": 1,
             "alpha": float(alpha),
             "target_marginal_coverage": float(1.0 - alpha),
             "quantile_rank_formula": "ceil((n_calibration + 1) * (1 - alpha))",
@@ -348,6 +376,11 @@ def _load_json(path: Path) -> Any:
 
 def main(argv: list[str] | None = None) -> int:
     """Write or drift-check the committed split-conformal certificate."""
+    effective_argv = list(sys.argv[1:] if argv is None else argv)
+    if argv is None:
+        deterministic_rc = _reexec_with_deterministic_blas(effective_argv)
+        if deterministic_rc is not None:
+            return deterministic_rc
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--weights", type=Path, default=DEFAULT_WEIGHTS)
     parser.add_argument("--calibration", type=Path, default=DEFAULT_CALIBRATION)
@@ -355,7 +388,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--alpha", type=float, default=0.1)
     parser.add_argument("--check", action="store_true")
-    args = parser.parse_args(argv)
+    args = parser.parse_args(effective_argv)
 
     try:
         if args.check:

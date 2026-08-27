@@ -2,6 +2,7 @@
   "schema": "scpn-fusion-core.surrogate-conformal-certificates.v1",
   "method": {
     "name": "split_conformal_absolute_residual",
+    "blas_threads": 1,
     "alpha": 0.1,
     "target_marginal_coverage": 0.9,
     "quantile_rank_formula": "ceil((n_calibration + 1) * (1 - alpha))",
@@ -48,7 +49,7 @@
           "nonconformity": "absolute_error",
           "interval": "[max(0, prediction - radius), prediction + radius]",
           "radius": 2.915758581324,
-          "calibration_score_sha256": "8301c0ad1016f25cbd18704872f197b8b7cca51f092f566bad352f950bd722ed",
+          "calibration_score_sha256": "905f23cb26657ac04b36cb863b367f12d18c51540a1cf7c543160bfe2538c864",
           "holdout_empirical_coverage": 0.9007485155139249
         },
         {
@@ -57,7 +58,7 @@
           "nonconformity": "absolute_error",
           "interval": "[max(0, prediction - radius), prediction + radius]",
           "radius": 3.302462278593,
-          "calibration_score_sha256": "1c16953702a529ef60e4c05e742141bbd988a77e5f51c1f05fa4c90d989009c5",
+          "calibration_score_sha256": "85f00155c466634c85474814285641b1335ab64b26817495c024dadc7daee8b4",
           "holdout_empirical_coverage": 0.9001839926402944
         },
         {
