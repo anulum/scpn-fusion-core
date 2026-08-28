@@ -4,13 +4,13 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Honest validated-coverage measurement (fleet WS-6)
+# SCPN Fusion Core — Honest validated-coverage measurement
 """Measure FUSION's honest validated-coverage from the claims-to-evidence ledger.
 
-Fleet workstream WS-6 (coverage frontier): honesty without coverage is theatre, so each
-studio reports its *honest-validated answer-rate* — the fraction of claims that are
-reference-validated against real evidence, never a promotion translation laundered into
-``validated`` (the CEO LOCK-4 ruling, 2026-06-24).
+The validated-coverage frontier requires honest measurement: honesty without coverage is
+theatre, so each studio reports its *honest-validated answer-rate* — the fraction of claims
+that are reference-validated against real evidence, never a promotion translation laundered
+into ``validated`` (the CEO LOCK-4 ruling, 2026-06-24).
 
 FUSION's ``validation/claims_manifest.json`` is a *claim-to-evidence linkage* manifest, not
 a graded eight-state ClaimStatus ledger. This module therefore maps each claim conservatively
@@ -192,11 +192,11 @@ def measure_coverage(manifest_path: Path = CLAIMS_MANIFEST) -> dict[str, object]
 
 
 def main() -> int:
-    """Print FUSION's honest validated-coverage report (WS-6)."""
+    """Print FUSION's honest validated-coverage report."""
     result = measure_coverage()
     distribution = cast(dict[str, int], result["distribution"])
     coverage = cast(float, result["honest_validated_coverage"])
-    print("FUSION honest validated-coverage (WS-6) — conservative floor")
+    print("FUSION honest validated-coverage — conservative floor")
     print(f"  total claims: {result['total']}")
     for band, count in sorted(distribution.items()):
         print(f"    {band:22s} {count}")

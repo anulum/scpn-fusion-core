@@ -4,8 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Honest validated-coverage tool tests (WS-6)
-"""Tests for tools/honest_validated_coverage.py (fleet WS-6 coverage measurement)."""
+# SCPN Fusion Core — Honest validated-coverage tool tests
+"""Tests for tools/honest_validated_coverage.py."""
 
 from __future__ import annotations
 
@@ -149,6 +149,6 @@ def test_main_prints_coverage_report(capsys: pytest.CaptureFixture[str]) -> None
     """The CLI prints the band distribution, the coverage percent, and the ledger gap."""
     assert hvc.main() == 0
     out = capsys.readouterr().out
-    assert "honest validated-coverage" in out
+    assert out.splitlines()[0] == "FUSION honest validated-coverage — conservative floor"
     assert "reference-validated" in out
     assert "ledger gap" in out
