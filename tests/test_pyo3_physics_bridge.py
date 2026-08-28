@@ -134,7 +134,7 @@ class TestPyRmfController:
         np.testing.assert_array_equal(strided_result, contiguous_result)
 
 
-# ── WP-PY7: Design Scanner ──────────────────────────────────────────
+# ── Global reactor design-scanner bridge ────────────────────────────
 
 
 class TestDesignScanner:
