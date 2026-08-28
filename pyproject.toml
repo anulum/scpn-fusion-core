@@ -645,7 +645,7 @@ files = [
     "src/scpn_fusion/control/spi_mitigation.py",
     "src/scpn_fusion/control/tokamak_flight_sim.py",
     "src/scpn_fusion/control/torax_hybrid_loop.py",
-    "tests/test_gai_02_torax_hybrid.py",
+    "tests/test_torax_hybrid_realtime_control_benchmark.py",
     "src/scpn_fusion/core/hpc_bridge.py",
     "src/scpn_fusion/core/_surrogate_utils.py",
     "tests/test_surrogate_utils.py",

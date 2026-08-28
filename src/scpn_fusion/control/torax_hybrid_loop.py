@@ -4,7 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — TORAX Hybrid Realtime Loop (GAI-02)
+# SCPN Fusion Core — TORAX Hybrid Realtime Control Loop
 """Synthetic TORAX-hybrid realtime control lane for NSTX-U-like scenarios."""
 
 from __future__ import annotations
@@ -27,6 +27,7 @@ from scpn_fusion.scpn.structure import StochasticPetriNet
 
 _PredictRiskFn = Callable[[list[float], dict[str, float]], float]
 _predict_disruption_risk = cast(_PredictRiskFn, predict_disruption_risk)
+CONTROL_ARTIFACT_NAME = "torax_hybrid_realtime_control"
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,7 @@ class ToraxHybridCampaignResult:
 
     episodes: int
     steps_per_episode: int
+    control_artifact_name: str
     disruption_avoidance_rate: float
     torax_parity_pct: float
     p95_loop_latency_ms: float
@@ -81,7 +83,7 @@ def _build_hybrid_controller() -> NeuroSymbolicController:
         seed=211,
     ).compile(net, firing_mode="binary")
     artifact = compiled.export_artifact(
-        name="gai02_torax_hybrid",
+        name=CONTROL_ARTIFACT_NAME,
         dt_control_s=0.001,
         readout_config={
             "actions": [{"name": "dI_PF3_A", "pos_place": 2, "neg_place": 3}],
@@ -155,6 +157,7 @@ def run_nstxu_torax_hybrid_campaign(
     seed: int = 42,
     episodes: int = 16,
     steps_per_episode: int = 220,
+    risk_predictor: _PredictRiskFn | None = None,
 ) -> ToraxHybridCampaignResult:
     """Run deterministic NSTX-U-like realtime hybrid control campaign."""
     rng = np.random.default_rng(int(seed))
@@ -165,6 +168,7 @@ def run_nstxu_torax_hybrid_campaign(
     steps = int(steps_per_episode)
     if steps < 32:
         raise ValueError("steps_per_episode must be >= 32.")
+    predict_risk = _predict_disruption_risk if risk_predictor is None else risk_predictor
 
     disruptions = 0
     parity_scores = []
@@ -186,7 +190,7 @@ def run_nstxu_torax_hybrid_campaign(
         beta_ref_sq = []
 
         for k in range(steps):
-            phase = k / max(steps - 1, 1)
+            phase = k / (steps - 1)
             disturbance = 0.0
             if 0.35 <= phase <= 0.58:
                 disturbance = float(0.22 + 0.15 * np.sin(np.pi * (phase - 0.35) / 0.23))
@@ -213,7 +217,7 @@ def run_nstxu_torax_hybrid_campaign(
                 "toroidal_asymmetry_index": 0.05 + 0.48 * disturbance,
                 "toroidal_radial_spread": 0.02 + 0.08 * disturbance,
             }
-            risk = float(_predict_disruption_risk(signal_history, toroidal))
+            risk = float(predict_risk(signal_history, toroidal))
             all_risks.append(risk)
 
             if risk > 0.93:
@@ -227,21 +231,21 @@ def run_nstxu_torax_hybrid_campaign(
             beta_delta_sq.append((hybrid_state.beta_n - torax_state.beta_n) ** 2)
             beta_ref_sq.append(torax_state.beta_n**2)
 
-        if beta_ref_sq:
-            rmse = float(np.sqrt(np.mean(beta_delta_sq)))
-            scale = float(np.sqrt(np.mean(beta_ref_sq)))
-            parity = float(np.clip(100.0 * (1.0 - rmse / max(scale, 1e-9)), 0.0, 100.0))
-            parity_scores.append(parity)
+        rmse = float(np.sqrt(np.mean(beta_delta_sq)))
+        scale = float(np.sqrt(np.mean(beta_ref_sq)))
+        parity = float(np.clip(100.0 * (1.0 - rmse / max(scale, 1e-9)), 0.0, 100.0))
+        parity_scores.append(parity)
 
     avoidance_rate = float(1.0 - disruptions / episodes)
-    torax_parity = float(np.mean(parity_scores) if parity_scores else 0.0)
-    p95_latency = float(np.percentile(latencies_ms, 95) if latencies_ms else 0.0)
-    mean_risk = float(np.mean(all_risks) if all_risks else 0.0)
+    torax_parity = float(np.mean(parity_scores))
+    p95_latency = float(np.percentile(latencies_ms, 95))
+    mean_risk = float(np.mean(all_risks))
     passes = bool(avoidance_rate >= 0.90 and torax_parity >= 95.0 and p95_latency <= 1.0)
 
     return ToraxHybridCampaignResult(
         episodes=episodes,
         steps_per_episode=steps,
+        control_artifact_name=CONTROL_ARTIFACT_NAME,
         disruption_avoidance_rate=avoidance_rate,
         torax_parity_pct=torax_parity,
         p95_loop_latency_ms=p95_latency,

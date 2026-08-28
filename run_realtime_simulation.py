@@ -161,9 +161,9 @@ def run_digital_twin_2_0(config_path: Path = DEFAULT_CONFIG_PATH):
 
 
 def run_torax_hybrid_smoke(seed=42, episodes=8, steps_per_episode=180):
-    """Run synthetic TORAX+SNN hybrid loop smoke for realtime path checks."""
+    """Run the synthetic TORAX-hybrid realtime control benchmark smoke."""
     print("==================================================")
-    print("   SCPN TORAX-HYBRID REALTIME LOOP (SMOKE)        ")
+    print("   TORAX-HYBRID REALTIME CONTROL BENCHMARK        ")
     print("==================================================")
     result = run_nstxu_torax_hybrid_campaign(
         seed=seed,
@@ -177,7 +177,7 @@ def run_torax_hybrid_smoke(seed=42, episodes=8, steps_per_episode=180):
         "passes_thresholds": result.passes_thresholds,
     }
     print(
-        f"[GAI-02] avoidance={summary['disruption_avoidance_rate']:.3f}, "
+        f"[TORAX-HYBRID] avoidance={summary['disruption_avoidance_rate']:.3f}, "
         f"parity={summary['torax_parity_pct']:.2f}%, "
         f"p95_latency={summary['p95_loop_latency_ms']:.4f} ms, "
         f"passes={summary['passes_thresholds']}"

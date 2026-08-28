@@ -1788,7 +1788,8 @@ MPI/multi-GPU parity remain fail-closed).
 - Docker image hardened with prod-by-default dependency install and non-root user
 - HPC bridge restricts native solver library loading to trusted package paths with
   explicit `SCPN_SOLVER_LIB` env override
-- Stabilized GAI-02 latency metric with deterministic hardware-normalized proxy
+- Stabilized the TORAX-hybrid realtime control benchmark latency metric with a
+  deterministic hardware-normalized proxy
 - PID/MPC and GNEU benchmark controllers pinned to adaptive non-zero binary margin
 - NumPy 2.4 compatibility restored for blanket TBR integration (trapezoid fallback)
 - GitHub Pages deployment gated behind explicit `DEPLOY_GH_PAGES` repo variable

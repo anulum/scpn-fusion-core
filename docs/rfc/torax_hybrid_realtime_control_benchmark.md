@@ -1,12 +1,12 @@
 <!--
-SCPN Fusion Core — RFC GAI-02
+SCPN Fusion Core — TORAX-Hybrid Realtime Control Benchmark RFC
 © 1998–2026 Miroslav Šotek. All rights reserved.
 Contact: www.anulum.li | protoscience@anulum.li
 ORCID: https://orcid.org/0009-0009-3560-0851
 License: GNU AGPL v3 | Commercial licensing available
 -->
 
-# RFC GAI-02 — TORAX-Hybrid Realtime Loop (Synthetic v1)
+# RFC — TORAX-Hybrid Realtime Control Benchmark (Synthetic v1)
 
 Status: Draft for review
 
@@ -14,10 +14,10 @@ Status: Draft for review
 
 This RFC is a planning contract for an explicit implementation lane in SCPN-FUSION-CORE. It records the intended scope, target modules, metrics, and acceptance path before work is promoted to default behavior or external release claims.
 
-## 1. Task Identity
+## 1. Benchmark identity
 
-- Task ID: `GAI-02`
-- Title: Integrate TORAX-like surrogate with SNN control loop for realtime simulation path
+- Responsibility: integrate a TORAX-like surrogate with the SNN realtime
+  control path
 - Owner: Unassigned
 - Proposed sprint: Phase 2, Sprint S2
 
@@ -31,10 +31,10 @@ The realtime simulation path lacks a deterministic integration lane that combine
   - `src/scpn_fusion/control/torax_hybrid_loop.py`
   - `run_realtime_simulation.py`
 - Validation/reporting path:
-  - `validation/gai_02_torax_hybrid.py`
-  - `validation/reports/gai_02_torax_hybrid.json`
-  - `validation/reports/gai_02_torax_hybrid.md`
-  - `tests/test_gai_02_torax_hybrid.py`
+  - `validation/torax_hybrid_realtime_control_benchmark.py`
+  - `validation/reports/torax_hybrid_realtime_control_benchmark.json`
+  - `validation/reports/torax_hybrid_realtime_control_benchmark.md`
+  - `tests/test_torax_hybrid_realtime_control_benchmark.py`
 - Future external coupling path (deferred):
   - TORAX upstream sync + adapter bridge in a dedicated integration branch.
 
@@ -61,7 +61,8 @@ The realtime simulation path lacks a deterministic integration lane that combine
 ## 6. Regression and Safety Plan
 
 - CI jobs to update:
-  - Add targeted pytest and strict GAI-02 validation invocation in Python lane.
+  - Add targeted pytest and strict TORAX-hybrid benchmark validation invocation
+    in the Python lane.
 - Property/invariant tests:
   - Deterministic campaign under fixed seed.
   - Finite bounded state evolution.

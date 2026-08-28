@@ -48,7 +48,6 @@
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
       "docs/releases/v3.9.9.md",
-      "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
       "docs/rfc/GDEP-01_RFC.md",
       "docs/rfc/GDEP-02_RFC.md",
@@ -64,6 +63,7 @@
       "docs/rfc/GPHY-05_RFC.md",
       "docs/rfc/GPHY-06_RFC.md",
       "docs/rfc/gyro_swin_turbulence_surrogate_benchmark.md",
+      "docs/rfc/torax_hybrid_realtime_control_benchmark.md",
       "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md"
     ],
@@ -2930,7 +2930,6 @@
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
       "docs/releases/v3.9.9.md",
-      "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
       "docs/rfc/GDEP-01_RFC.md",
       "docs/rfc/GDEP-02_RFC.md",
@@ -2946,6 +2945,7 @@
       "docs/rfc/GPHY-05_RFC.md",
       "docs/rfc/GPHY-06_RFC.md",
       "docs/rfc/gyro_swin_turbulence_surrogate_benchmark.md",
+      "docs/rfc/torax_hybrid_realtime_control_benchmark.md",
       "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md"
     ]
@@ -3220,7 +3220,6 @@
       "tests/test_fusion_kernel_solver_runtime.py",
       "tests/test_fusion_optimal_control.py",
       "tests/test_fuzz_harness_entrypoints.py",
-      "tests/test_gai_02_torax_hybrid.py",
       "tests/test_gai_03_heat_ml_shadow.py",
       "tests/test_gain_scheduled_controller.py",
       "tests/test_gdep_01_digital_twin_hook.py",
@@ -3609,6 +3608,7 @@
       "tests/test_tools_pypi_downloads.py",
       "tests/test_tools_run_mypy_strict.py",
       "tests/test_tools_run_python_preflight.py",
+      "tests/test_torax_hybrid_realtime_control_benchmark.py",
       "tests/test_torax_imas_interchange.py",
       "tests/test_torax_real_parity.py",
       "tests/test_torax_same_physics_config_study.py",
