@@ -4,8 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — GNEU-01 Benchmark
-"""GNEU-01: deterministic SNN-vs-RL tearing-mode benchmark with fault campaign."""
+# SCPN Fusion Core — SNN/RL Tearing-Mode Fault Benchmark
+"""Benchmark deterministic SNN/RL tearing-mode decisions and fault recovery."""
 
 from __future__ import annotations
 
@@ -15,14 +15,14 @@ import math
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, TypeAlias, cast
+from typing import Any, Callable, Mapping, TypeAlias, cast
 
 import numpy as np
 from numpy.typing import NDArray
 
 ROOT = Path(__file__).resolve().parents[1]
 
-from scpn_fusion.control.disruption_predictor import (
+from scpn_fusion.control.disruption_risk_runtime import (
     apply_bit_flip_fault,
     build_disruption_feature_vector,
     simulate_tearing_mode,
@@ -37,6 +37,8 @@ from scpn_fusion.scpn.controller import NeuroSymbolicController
 from scpn_fusion.scpn.structure import StochasticPetriNet
 
 FloatArray: TypeAlias = NDArray[np.float64]
+REPORT_SCHEMA_VERSION = 2
+REPORT_KIND = "snn_rl_tearing_mode_fault_benchmark"
 _SimTearingModeFn = Callable[..., tuple[FloatArray, object, object]]
 _BuildFeatureVectorFn = Callable[[FloatArray, dict[str, float]], FloatArray]
 _ApplyBitFlipFn = Callable[[float, int], float]
@@ -49,7 +51,8 @@ def _sigmoid(x: float) -> float:
     return 1.0 / (1.0 + math.exp(-float(x)))
 
 
-def _build_controller() -> NeuroSymbolicController:
+def build_tearing_mode_fault_controller() -> NeuroSymbolicController:
+    """Build the deterministic SCPN controller used by the benchmark."""
     net = StochasticPetriNet()
     net.add_place("x_R_pos", initial_tokens=0.0)
     net.add_place("x_R_neg", initial_tokens=0.0)
@@ -80,7 +83,7 @@ def _build_controller() -> NeuroSymbolicController:
         seed=42,
     ).compile(net, firing_mode="binary")
     artifact = compiled.export_artifact(
-        name="gneu01_controller",
+        name="snn_rl_tearing_mode_fault_controller",
         dt_control_s=0.001,
         readout_config={
             "actions": [
@@ -136,7 +139,7 @@ def _snn_risk(
         "R_axis_m": float(6.2 + 0.22 * (mean - 0.7) + 0.06 * n1),
         "Z_axis_m": float(0.12 * slope + 0.04 * n2 + 0.03 * std),
     }
-    action = controller.step(obs, k)
+    action = controller.step(cast(Mapping[str, float], obs), k)
     control_term = (
         abs(float(action["dI_PF3_A"])) / 5000.0 + abs(float(action["dI_PF_topbot_A"])) / 5000.0
     )
@@ -146,10 +149,17 @@ def _snn_risk(
 
 def _episode_signal(seed: int, window: int) -> FloatArray:
     local_rng = np.random.default_rng(int(seed))
-    sig, _label, _ttd = _simulate_tearing_mode(max(window, 64), rng=local_rng)
-    if sig.size < window:
-        sig = np.pad(sig, (0, window - sig.size), mode="edge")
-    return np.asarray(sig[:window], dtype=float)
+    signal, _label, _ttd = _simulate_tearing_mode(window, rng=local_rng)
+    return np.asarray(signal, dtype=float)
+
+
+def _finite_threshold(name: str, value: float, *, minimum: float, maximum: float) -> float:
+    threshold = float(value)
+    if not np.isfinite(threshold):
+        raise ValueError(f"{name} must be finite.")
+    if threshold < minimum or threshold > maximum:
+        raise ValueError(f"{name} must be between {minimum} and {maximum}.")
+    return threshold
 
 
 def run_benchmark(
@@ -160,11 +170,14 @@ def run_benchmark(
     recovery_epsilon: float = 0.03,
     recovery_window_steps: int = 10,
     dt_ms: float = 0.1,
+    min_decision_agreement: float = 0.95,
+    max_mean_abs_delta: float = 0.08,
+    max_stochastic_float_equivalence_error: float = 0.05,
+    max_oracle_sc_mean_abs_delta: float = 0.05,
+    max_oracle_sc_firing_delta: float = 0.05,
+    max_recovery_ms_p95: float = 1.0,
 ) -> dict[str, Any]:
-    """Run the deterministic GNEU-01 SNN-vs-RL benchmark and return scorecards."""
-    rng = np.random.default_rng(int(seed))
-    controller = _build_controller()
-
+    """Run the deterministic SNN/RL fault campaign and return its scorecard."""
     episodes = int(episodes)
     if episodes < 1:
         raise ValueError("episodes must be >= 1.")
@@ -181,11 +194,44 @@ def run_benchmark(
     if not np.isfinite(dt_ms) or dt_ms <= 0.0:
         raise ValueError("dt_ms must be finite and > 0.")
 
-    agreement_flags = []
-    abs_deltas = []
-    oracle_sc_mark_deltas = []
-    oracle_sc_firing_deltas = []
-    recovery_steps = []
+    thresholds = {
+        "min_decision_agreement": _finite_threshold(
+            "min_decision_agreement", min_decision_agreement, minimum=0.0, maximum=1.0
+        ),
+        "max_mean_abs_delta": _finite_threshold(
+            "max_mean_abs_delta", max_mean_abs_delta, minimum=0.0, maximum=1.0
+        ),
+        "max_stochastic_float_equivalence_error": _finite_threshold(
+            "max_stochastic_float_equivalence_error",
+            max_stochastic_float_equivalence_error,
+            minimum=0.0,
+            maximum=1.0,
+        ),
+        "max_oracle_sc_mean_abs_delta": _finite_threshold(
+            "max_oracle_sc_mean_abs_delta",
+            max_oracle_sc_mean_abs_delta,
+            minimum=0.0,
+            maximum=1.0,
+        ),
+        "max_oracle_sc_firing_delta": _finite_threshold(
+            "max_oracle_sc_firing_delta",
+            max_oracle_sc_firing_delta,
+            minimum=0.0,
+            maximum=1.0,
+        ),
+        "max_recovery_ms_p95": _finite_threshold(
+            "max_recovery_ms_p95", max_recovery_ms_p95, minimum=0.0, maximum=1_000.0
+        ),
+    }
+
+    rng = np.random.default_rng(int(seed))
+    controller = build_tearing_mode_fault_controller()
+
+    agreement_flags: list[bool] = []
+    abs_deltas: list[float] = []
+    oracle_sc_mark_deltas: list[float] = []
+    oracle_sc_firing_deltas: list[float] = []
+    recovery_steps: list[int] = []
 
     for ep in range(episodes):
         signal = _episode_signal(seed + ep, window)
@@ -200,24 +246,20 @@ def run_benchmark(
             "toroidal_radial_spread": float(rng.uniform(0.01, 0.08)),
         }
 
-        rl_seq: list[float] = []
         snn_seq: list[float] = []
         for k in range(window):
             features = _build_disruption_feature_vector(signal[: k + 1], toroidal)
             rl = _rl_baseline_risk(features)
             snn = _snn_risk(controller, features, k, rl)
-            rl_seq.append(rl)
             snn_seq.append(snn)
             agreement_flags.append((rl >= 0.5) == (snn >= 0.5))
             abs_deltas.append(abs(snn - rl))
-            if controller.last_oracle_marking and controller.last_sc_marking:
-                oracle_mark = np.asarray(controller.last_oracle_marking, dtype=float)
-                sc_mark = np.asarray(controller.last_sc_marking, dtype=float)
-                oracle_sc_mark_deltas.append(float(np.mean(np.abs(sc_mark - oracle_mark))))
-            if controller.last_oracle_firing and controller.last_sc_firing:
-                of = np.asarray(controller.last_oracle_firing, dtype=float)
-                sf = np.asarray(controller.last_sc_firing, dtype=float)
-                oracle_sc_firing_deltas.append(float(np.mean(np.abs(sf - of))))
+            oracle_mark = np.asarray(controller.last_oracle_marking, dtype=float)
+            sc_mark = np.asarray(controller.last_sc_marking, dtype=float)
+            oracle_sc_mark_deltas.append(float(np.mean(np.abs(sc_mark - oracle_mark))))
+            oracle_firing = np.asarray(controller.last_oracle_firing, dtype=float)
+            sc_firing = np.asarray(controller.last_sc_firing, dtype=float)
+            oracle_sc_firing_deltas.append(float(np.mean(np.abs(sc_firing - oracle_firing))))
 
         baseline = np.asarray(snn_seq, dtype=float)
         faulted = baseline.copy()
@@ -232,9 +274,11 @@ def run_benchmark(
                 1.0,
             )
         )
+        residual = float(faulted[inject_idx] - baseline[inject_idx])
         for t in range(inject_idx + 1, window):
-            # Fast closed-loop recovery toward nominal trajectory.
-            faulted[t] = float(np.clip(0.35 * faulted[t] + 0.65 * baseline[t], 0.0, 1.0))
+            # Propagate a decaying fault residual toward the nominal trajectory.
+            residual *= 0.35
+            faulted[t] = float(np.clip(baseline[t] + residual, 0.0, 1.0))
 
         rec = recovery_window_steps + 1
         max_check = min(window, inject_idx + recovery_window_steps + 1)
@@ -244,17 +288,11 @@ def run_benchmark(
                 break
         recovery_steps.append(rec)
 
-    agreement = float(np.mean(np.asarray(agreement_flags, dtype=float)))
+    decision_agreement = float(np.mean(np.asarray(agreement_flags, dtype=float)))
     mean_abs_delta = float(np.mean(np.asarray(abs_deltas, dtype=float)))
-    oracle_sc_mean_abs_delta = (
-        float(np.mean(np.asarray(oracle_sc_mark_deltas, dtype=float)))
-        if oracle_sc_mark_deltas
-        else 0.0
-    )
-    oracle_sc_firing_mean_abs_delta = (
-        float(np.mean(np.asarray(oracle_sc_firing_deltas, dtype=float)))
-        if oracle_sc_firing_deltas
-        else 0.0
+    oracle_sc_mean_abs_delta = float(np.mean(np.asarray(oracle_sc_mark_deltas, dtype=float)))
+    oracle_sc_firing_mean_abs_delta = float(
+        np.mean(np.asarray(oracle_sc_firing_deltas, dtype=float))
     )
     stochastic_float_equivalence_error = float(
         max(oracle_sc_mean_abs_delta, oracle_sc_firing_mean_abs_delta)
@@ -262,32 +300,26 @@ def run_benchmark(
     p95_recovery_steps = float(np.percentile(np.asarray(recovery_steps, dtype=float), 95))
     p95_recovery_ms = p95_recovery_steps * float(dt_ms)
 
-    thresholds = {
-        "min_agreement": 0.95,
-        "max_mean_abs_delta": 0.08,
-        "max_stochastic_float_equivalence_error": 0.05,
-        "max_oracle_sc_mean_abs_delta": 0.05,
-        "max_oracle_sc_firing_delta": 0.05,
-        "max_recovery_ms_p95": 1.0,
+    gate_results = {
+        "decision_agreement": decision_agreement >= thresholds["min_decision_agreement"],
+        "mean_abs_delta": mean_abs_delta <= thresholds["max_mean_abs_delta"],
+        "stochastic_float_equivalence_error": stochastic_float_equivalence_error
+        <= thresholds["max_stochastic_float_equivalence_error"],
+        "oracle_sc_mean_abs_delta": oracle_sc_mean_abs_delta
+        <= thresholds["max_oracle_sc_mean_abs_delta"],
+        "oracle_sc_firing_mean_abs_delta": oracle_sc_firing_mean_abs_delta
+        <= thresholds["max_oracle_sc_firing_delta"],
+        "recovery_ms_p95": p95_recovery_ms <= thresholds["max_recovery_ms_p95"],
     }
-    passes = bool(
-        agreement >= thresholds["min_agreement"]
-        and mean_abs_delta <= thresholds["max_mean_abs_delta"]
-        and stochastic_float_equivalence_error
-        <= thresholds["max_stochastic_float_equivalence_error"]
-        and oracle_sc_mean_abs_delta <= thresholds["max_oracle_sc_mean_abs_delta"]
-        and oracle_sc_firing_mean_abs_delta <= thresholds["max_oracle_sc_firing_delta"]
-        and p95_recovery_ms <= thresholds["max_recovery_ms_p95"]
-    )
+    passes = all(gate_results.values())
 
     return {
         "seed": int(seed),
         "episodes": episodes,
         "window": window,
         "dt_ms": float(dt_ms),
-        "agreement": agreement,
-        "agreement_pct": agreement * 100.0,
-        "torax_parity_estimate_pct": agreement * 100.0,
+        "decision_agreement": decision_agreement,
+        "decision_agreement_pct": decision_agreement * 100.0,
         "mean_abs_delta": mean_abs_delta,
         "stochastic_float_equivalence_error": stochastic_float_equivalence_error,
         "stochastic_float_equivalence_error_pct": stochastic_float_equivalence_error * 100.0,
@@ -296,62 +328,99 @@ def run_benchmark(
         "recovery_steps_p95": p95_recovery_steps,
         "recovery_ms_p95": p95_recovery_ms,
         "thresholds": thresholds,
+        "gate_results": gate_results,
         "passes_thresholds": passes,
     }
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
-    """Generate the GNEU-01 benchmark report payload."""
+    """Generate a schema-versioned SNN/RL fault-benchmark report."""
     t0 = time.perf_counter()
     bench = run_benchmark(**kwargs)
     elapsed = time.perf_counter() - t0
     return {
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "report_kind": REPORT_KIND,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "runtime_seconds": elapsed,
-        "gneu_01": bench,
+        REPORT_KIND: bench,
     }
 
 
+def validate_report(report: dict[str, Any]) -> dict[str, Any]:
+    """Return a validated benchmark payload and refuse stale report schemas."""
+    expected = {
+        "schema_version",
+        "report_kind",
+        "generated_at_utc",
+        "runtime_seconds",
+        REPORT_KIND,
+    }
+    if set(report) != expected:
+        raise ValueError("report keys do not match the current descriptive contract")
+    if report["schema_version"] != REPORT_SCHEMA_VERSION:
+        raise ValueError(f"unsupported report schema_version: {report['schema_version']!r}")
+    if report["report_kind"] != REPORT_KIND:
+        raise ValueError(f"unsupported report_kind: {report['report_kind']!r}")
+    generated_at = report["generated_at_utc"]
+    if not isinstance(generated_at, str):
+        raise ValueError("generated_at_utc must be a non-empty string")
+    if not generated_at:
+        raise ValueError("generated_at_utc must be a non-empty string")
+    runtime_seconds = report["runtime_seconds"]
+    if not isinstance(runtime_seconds, (int, float)):
+        raise ValueError("runtime_seconds must be a finite non-negative number")
+    if not np.isfinite(runtime_seconds) or runtime_seconds < 0.0:
+        raise ValueError("runtime_seconds must be a finite non-negative number")
+    payload = report[REPORT_KIND]
+    if not isinstance(payload, dict):
+        raise ValueError(f"{REPORT_KIND} payload must be an object")
+    return cast(dict[str, Any], payload)
+
+
 def render_markdown(report: dict[str, Any]) -> str:
-    """Render the GNEU-01 benchmark output into a compact markdown report."""
-    b = report["gneu_01"]
+    """Render a validated benchmark report into compact Markdown."""
+    benchmark = validate_report(report)
     lines = [
-        "# GNEU-01 Benchmark",
+        "# SNN/RL Tearing-Mode Fault Benchmark",
         "",
+        f"- Report schema: `{report['schema_version']}`",
+        f"- Report kind: `{report['report_kind']}`",
         f"- Generated: `{report['generated_at_utc']}`",
         f"- Runtime: `{report['runtime_seconds']:.3f} s`",
-        f"- Episodes: `{b['episodes']}`",
-        f"- Window: `{b['window']}`",
+        f"- Episodes: `{benchmark['episodes']}`",
+        f"- Window: `{benchmark['window']}`",
         "",
         "## Metrics",
         "",
-        f"- Agreement: `{b['agreement_pct']:.2f}%`",
-        f"- TORAX parity estimate: `{b['torax_parity_estimate_pct']:.2f}%`",
-        f"- Mean absolute risk delta: `{b['mean_abs_delta']:.6f}`",
+        f"- SNN/RL decision agreement: `{benchmark['decision_agreement_pct']:.2f}%`",
+        f"- Mean absolute risk delta: `{benchmark['mean_abs_delta']:.6f}`",
         "- Stochastic-vs-float equivalence error: "
-        f"`{b['stochastic_float_equivalence_error']:.6f}` "
-        f"(`{b['stochastic_float_equivalence_error_pct']:.2f}%`)",
-        f"- Mean oracle-vs-SC marking delta: `{b['oracle_sc_mean_abs_delta']:.6f}`",
-        f"- Mean oracle-vs-SC firing delta: `{b['oracle_sc_firing_mean_abs_delta']:.6f}`",
-        f"- P95 recovery: `{b['recovery_ms_p95']:.3f} ms`",
-        f"- Threshold pass: `{'YES' if b['passes_thresholds'] else 'NO'}`",
+        f"`{benchmark['stochastic_float_equivalence_error']:.6f}` "
+        f"(`{benchmark['stochastic_float_equivalence_error_pct']:.2f}%`)",
+        f"- Mean oracle-vs-SC marking delta: `{benchmark['oracle_sc_mean_abs_delta']:.6f}`",
+        f"- Mean oracle-vs-SC firing delta: `{benchmark['oracle_sc_firing_mean_abs_delta']:.6f}`",
+        f"- P95 recovery: `{benchmark['recovery_ms_p95']:.3f} ms`",
+        f"- Threshold pass: `{'YES' if benchmark['passes_thresholds'] else 'NO'}`",
         "",
         "## Thresholds",
         "",
-        f"- Min agreement: `{b['thresholds']['min_agreement']}`",
-        f"- Max mean abs delta: `{b['thresholds']['max_mean_abs_delta']}`",
+        f"- Min decision agreement: `{benchmark['thresholds']['min_decision_agreement']}`",
+        f"- Max mean abs delta: `{benchmark['thresholds']['max_mean_abs_delta']}`",
         "- Max stochastic-vs-float equivalence error: "
-        f"`{b['thresholds']['max_stochastic_float_equivalence_error']}`",
-        f"- Max oracle-vs-SC marking delta: `{b['thresholds']['max_oracle_sc_mean_abs_delta']}`",
-        f"- Max oracle-vs-SC firing delta: `{b['thresholds']['max_oracle_sc_firing_delta']}`",
-        f"- Max P95 recovery ms: `{b['thresholds']['max_recovery_ms_p95']}`",
+        f"`{benchmark['thresholds']['max_stochastic_float_equivalence_error']}`",
+        "- Max oracle-vs-SC marking delta: "
+        f"`{benchmark['thresholds']['max_oracle_sc_mean_abs_delta']}`",
+        "- Max oracle-vs-SC firing delta: "
+        f"`{benchmark['thresholds']['max_oracle_sc_firing_delta']}`",
+        f"- Max P95 recovery ms: `{benchmark['thresholds']['max_recovery_ms_p95']}`",
         "",
     ]
     return "\n".join(lines)
 
 
-def main(argv: list[str] | None = None) -> int:
-    """CLI entry point for running GNEU-01 and exporting JSON/Markdown outputs."""
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse command-line arguments for the fault benchmark."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--episodes", type=int, default=64)
@@ -359,16 +428,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--recovery-epsilon", type=float, default=0.03)
     parser.add_argument("--recovery-window-steps", type=int, default=10)
     parser.add_argument("--dt-ms", type=float, default=0.1)
+    parser.add_argument("--min-decision-agreement", type=float, default=0.95)
+    parser.add_argument("--max-mean-abs-delta", type=float, default=0.08)
+    parser.add_argument("--max-stochastic-float-equivalence-error", type=float, default=0.05)
+    parser.add_argument("--max-oracle-sc-mean-abs-delta", type=float, default=0.05)
+    parser.add_argument("--max-oracle-sc-firing-delta", type=float, default=0.05)
+    parser.add_argument("--max-recovery-ms-p95", type=float, default=1.0)
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "gneu_01_benchmark.json"),
+        default=str(ROOT / "validation" / "reports" / f"{REPORT_KIND}.json"),
     )
     parser.add_argument(
         "--output-md",
-        default=str(ROOT / "validation" / "reports" / "gneu_01_benchmark.md"),
+        default=str(ROOT / "validation" / "reports" / f"{REPORT_KIND}.md"),
     )
     parser.add_argument("--strict", action="store_true")
-    args = parser.parse_args(argv)
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Run the fault benchmark CLI and export schema-versioned reports."""
+    args = parse_args(argv)
 
     report = generate_report(
         seed=args.seed,
@@ -377,24 +457,32 @@ def main(argv: list[str] | None = None) -> int:
         recovery_epsilon=args.recovery_epsilon,
         recovery_window_steps=args.recovery_window_steps,
         dt_ms=args.dt_ms,
+        min_decision_agreement=args.min_decision_agreement,
+        max_mean_abs_delta=args.max_mean_abs_delta,
+        max_stochastic_float_equivalence_error=args.max_stochastic_float_equivalence_error,
+        max_oracle_sc_mean_abs_delta=args.max_oracle_sc_mean_abs_delta,
+        max_oracle_sc_firing_delta=args.max_oracle_sc_firing_delta,
+        max_recovery_ms_p95=args.max_recovery_ms_p95,
     )
     out_json = Path(args.output_json)
     out_md = Path(args.output_md)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    out_json.write_text(f"{json.dumps(report, indent=2)}\n", encoding="utf-8")
     out_md.write_text(render_markdown(report), encoding="utf-8")
 
-    b = report["gneu_01"]
-    print("GNEU-01 benchmark complete.")
+    benchmark = validate_report(report)
+    print("SNN/RL tearing-mode fault benchmark complete.")
     print(
-        "agreement_pct="
-        f"{b['agreement_pct']:.2f}, mean_abs_delta={b['mean_abs_delta']:.6f}, "
+        "decision_agreement_pct="
+        f"{benchmark['decision_agreement_pct']:.2f}, "
+        f"mean_abs_delta={benchmark['mean_abs_delta']:.6f}, "
         "stochastic_float_equivalence_error="
-        f"{b['stochastic_float_equivalence_error']:.6f}, "
-        f"recovery_ms_p95={b['recovery_ms_p95']:.3f}, passes_thresholds={b['passes_thresholds']}"
+        f"{benchmark['stochastic_float_equivalence_error']:.6f}, "
+        f"recovery_ms_p95={benchmark['recovery_ms_p95']:.3f}, "
+        f"passes_thresholds={benchmark['passes_thresholds']}"
     )
-    if args.strict and not b["passes_thresholds"]:
+    if args.strict and not benchmark["passes_thresholds"]:
         return 2
     return 0
 

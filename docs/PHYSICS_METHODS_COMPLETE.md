@@ -1234,7 +1234,7 @@ The D-T reactivity $\langle\sigma v\rangle_{\rm DT}$ uses the parameterisation f
 
 **Key files:** `nuclear/blanket_neutronics.py` (`BreedingBlanket`, `MultiGroupBlanket`), `core/fusion_ignition_sim.py` (`FusionBurnPhysics`).
 
-**Validation:** `tests/test_blanket_neutronics.py`, `tests/test_heating_neutronics_q10.py`, `validation/gneu_01_benchmark.py`, `validation/task6_heating_neutronics_realism.py`.
+**Validation:** `tests/test_blanket_neutronics.py`, `tests/test_heating_neutronics_q10.py`, `validation/snn_rl_tearing_mode_fault_benchmark.py`, `validation/task6_heating_neutronics_realism.py`.
 
 ---
 

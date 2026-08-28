@@ -71,7 +71,7 @@ The following high-impact instruction packs have been normalized to existing rep
 | Control + simulation enhancement pack | `src/scpn_fusion/control/neural_surrogate_mpc.py`, `src/scpn_fusion/control/neuro_cybernetic_controller.py`, `src/scpn_fusion/control/spi_mitigation.py`, `src/scpn_fusion/control/tokamak_digital_twin.py`, `src/scpn_fusion/control/tokamak_flight_sim.py`, `src/scpn_fusion/control/advanced_soc_fusion_learning.py`, `src/scpn_fusion/control/analytic_solver.py`, `src/scpn_fusion/control/director_interface.py`, `src/scpn_fusion/control/disruption_predictor.py`, `src/scpn_fusion/control/fusion_control_room.py`, `src/scpn_fusion/control/fusion_optimal_control.py` |
 | HPC solver enhancement pack | `src/scpn_fusion/hpc/types.h`, `src/scpn_fusion/hpc/solver.cpp`, `src/scpn_fusion/hpc/hpc_bridge.py`, `tests/test_hpc_bridge.py` |
 | Nuclear enhancement pack | `src/scpn_fusion/nuclear/blanket_neutronics.py`, `src/scpn_fusion/nuclear/nuclear_wall_interaction.py`, `src/scpn_fusion/nuclear/pwi_erosion.py`, `src/scpn_fusion/nuclear/temhd_peltier.py`, `src/scpn_fusion/nuclear/__init__.py`, `tests/test_blanket_neutronics.py`, `tests/test_pwi_erosion.py`, `tests/test_temhd_peltier.py` |
-| SCPN compiler enhancement pack | `src/scpn_fusion/scpn/structure.py`, `src/scpn_fusion/scpn/compiler.py`, `src/scpn_fusion/scpn/contracts.py`, `src/scpn_fusion/scpn/controller.py`, `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py`, `tests/test_gneu_01_benchmark.py`, `validation/gneu_01_benchmark.py` |
+| SCPN compiler enhancement pack | `src/scpn_fusion/scpn/structure.py`, `src/scpn_fusion/scpn/compiler.py`, `src/scpn_fusion/scpn/contracts.py`, `src/scpn_fusion/scpn/controller.py`, `src/scpn_fusion/scpn/artifact.py`, `tests/test_controller.py`, `tests/test_snn_rl_tearing_mode_fault_benchmark.py`, `validation/snn_rl_tearing_mode_fault_benchmark.py` |
 
 Notes:
 - Source instruction documents under `src/scpn_fusion/*/Enhancement Plan*.md` are local coordination inputs and are not mirrored to GitHub.
@@ -99,7 +99,8 @@ Notes:
 
 - Includes the GyroSwin-like turbulence surrogate benchmark, the TORAX-hybrid
   realtime control benchmark, the HEAT-ML magnetic-shadow design-scanner
-  benchmark, `GNEU-01..03`, the compact-reactor engineering-constraint
+  benchmark, the SNN/RL tearing-mode fault benchmark, `GNEU-02..03`, the
+  compact-reactor engineering-constraint
   validation, the liquid-metal TEMHD divertor validation, the stellarator SNN
   stability-control validation, the NSTX-U/SPARC digital-twin
   ingestion campaign, the deterministic CPU/GPU-sim runtime benchmark, the
@@ -118,7 +119,8 @@ Notes:
 - Needs RFC before coding: none.
 - Delivered advanced v1 lanes (synthetic scope): the GyroSwin-like turbulence
   surrogate benchmark, the TORAX-hybrid realtime control benchmark, the
-  HEAT-ML magnetic-shadow design-scanner benchmark, `GNEU-01..03`, the
+  HEAT-ML magnetic-shadow design-scanner benchmark, the SNN/RL tearing-mode
+  fault benchmark, `GNEU-02..03`, the
   compact-reactor engineering-constraint validation, the liquid-metal TEMHD
   divertor validation, the stellarator SNN stability-control validation, the
   NSTX-U/SPARC digital-twin ingestion campaign, the

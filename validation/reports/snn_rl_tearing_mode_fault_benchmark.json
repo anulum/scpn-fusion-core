@@ -1,0 +1,38 @@
+{
+  "schema_version": 2,
+  "report_kind": "snn_rl_tearing_mode_fault_benchmark",
+  "generated_at_utc": "2026-08-28T08:08:50.638635+00:00",
+  "runtime_seconds": 1.1531953369267285,
+  "snn_rl_tearing_mode_fault_benchmark": {
+    "seed": 42,
+    "episodes": 64,
+    "window": 128,
+    "dt_ms": 0.1,
+    "decision_agreement": 1.0,
+    "decision_agreement_pct": 100.0,
+    "mean_abs_delta": 0.0033695594102679744,
+    "stochastic_float_equivalence_error": 0.023159027099609375,
+    "stochastic_float_equivalence_error_pct": 2.3159027099609375,
+    "oracle_sc_mean_abs_delta": 0.0017742246186981973,
+    "oracle_sc_firing_mean_abs_delta": 0.023159027099609375,
+    "recovery_steps_p95": 0.0,
+    "recovery_ms_p95": 0.0,
+    "thresholds": {
+      "min_decision_agreement": 0.95,
+      "max_mean_abs_delta": 0.08,
+      "max_stochastic_float_equivalence_error": 0.05,
+      "max_oracle_sc_mean_abs_delta": 0.05,
+      "max_oracle_sc_firing_delta": 0.05,
+      "max_recovery_ms_p95": 1.0
+    },
+    "gate_results": {
+      "decision_agreement": true,
+      "mean_abs_delta": true,
+      "stochastic_float_equivalence_error": true,
+      "oracle_sc_mean_abs_delta": true,
+      "oracle_sc_firing_mean_abs_delta": true,
+      "recovery_ms_p95": true
+    },
+    "passes_thresholds": true
+  }
+}

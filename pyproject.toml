@@ -836,6 +836,8 @@ files = [
     "tests/test_liquid_metal_temhd_divertor_validation.py",
     "validation/stellarator_snn_stability_control_validation.py",
     "tests/test_stellarator_snn_stability_control_validation.py",
+    "validation/snn_rl_tearing_mode_fault_benchmark.py",
+    "tests/test_snn_rl_tearing_mode_fault_benchmark.py",
     "src/scpn_fusion/core/stellarator_geometry.py",
     "src/scpn_fusion/core/tilt_mode_frc.py",
     "src/scpn_fusion/core/hall_mhd_pulsed.py",
