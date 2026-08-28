@@ -12,7 +12,7 @@ import SNNReachabilityPreservation
 namespace SCPNFusionSolvers
 
 /-!
-Petri-to-SNN interlock and replay contract (M-1 compiler+runtime contracts):
+Petri-to-SNN interlock and replay contract (compiler and runtime):
 
 `SNNReachabilityPreservation` proves the *static* graph contract — every Petri
 adjacency edge survives compilation, so reachability is preserved and reflected.

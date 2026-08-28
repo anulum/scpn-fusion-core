@@ -254,7 +254,7 @@ MPI/multi-GPU parity remain fail-closed).
 
 - Safety-shield composition with a real constrained-PPO control policy.
 - Real TGLF transport surrogate fit.
-- Petri→SNN interlock with proven replay invariance and an exported proof hash (M-1).
+- Petri→SNN interlock with proven replay invariance and an exported proof hash.
 - Rust design evaluator brought to Python parity and dispatched (design-scan).
 - Fastest-first dispatch tiers wired for `PyFnoController` (FNO turbulence),
   `PyMpcController` (surrogate-MPC), and `PyFokkerPlanckSolver` (runaway-electron

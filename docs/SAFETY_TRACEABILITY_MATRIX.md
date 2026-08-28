@@ -107,7 +107,7 @@ Evidence artifacts:
 
 Declared gaps:
 
-- Interlock-semantics preservation through Petri-to-SNN compilation is the declared M-1 Lean proof target; today the guarantee is test- and replay-based.
+- Interlock-semantics preservation through Petri-to-SNN compilation is the declared Lean proof target; today the guarantee is test- and replay-based.
 
 ### `SR-3`
 
@@ -290,4 +290,4 @@ Evidence artifacts:
 
 Declared gaps:
 
-- Cross-machine bit-identity of transcendental components is environment-conditional: numpy dispatches SIMD exp/sin kernels per CPU microarchitecture (first two-machine comparison, CI run 28841804121). Replay-invariance formalisation is the declared M-1 proof target.
+- Cross-machine bit-identity of transcendental components is environment-conditional: numpy dispatches SIMD exp/sin kernels per CPU microarchitecture (first two-machine comparison, CI run 28841804121). Replay-invariance formalisation is the declared Lean proof target.

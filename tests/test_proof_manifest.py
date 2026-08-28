@@ -122,7 +122,7 @@ def test_manifest_structure() -> None:
     assert manifest["files"] == list(CONTRACT_FILES)
     assert manifest["theorems"] == list(CONTRACT_THEOREMS)
     assert _HEX64.match(manifest["checksum"])
-    # The dynamic interlock + replay theorems are the M-1 additions.
+    # The dynamic interlock and replay theorems are required manifest members.
     for theorem in (
         "compile_preserves_interlock_block",
         "compile_replay_commutes",
