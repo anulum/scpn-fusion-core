@@ -6,7 +6,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Deterministic Replay Certificate
-"""Generate and verify the deterministic replay certificate (M-2).
+"""Generate and verify the deterministic replay certificate.
 
 The certificate proves that a seeded control episode — an equilibrium
 multigrid solve, a batched multi-layer UPDE phase-control segment, and a
@@ -166,6 +166,78 @@ def _combined_hash(component_hashes: dict[str, str]) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+def _require_sha256(name: str, value: object) -> str:
+    """Return a canonical lowercase SHA-256 digest or fail closed."""
+    if not isinstance(value, str) or len(value) != 64:
+        raise ValueError(f"{name} must be a 64-character lowercase SHA-256 digest")
+    if any(character not in "0123456789abcdef" for character in value):
+        raise ValueError(f"{name} must be a 64-character lowercase SHA-256 digest")
+    return value
+
+
+def validate_certificate(certificate: object) -> dict[str, Any]:
+    """Validate the complete current certificate contract and digest closure."""
+    if not isinstance(certificate, dict):
+        raise ValueError("certificate must be an object")
+    expected_keys = {
+        "schema",
+        "episode_seed",
+        "numpy_floor",
+        "fastest_tier",
+        "environment",
+    }
+    if set(certificate) != expected_keys:
+        raise ValueError("certificate keys do not match the current contract")
+    if certificate["schema"] != SCHEMA:
+        raise ValueError(f"unexpected certificate schema: {certificate['schema']!r}")
+    seed = certificate["episode_seed"]
+    if isinstance(seed, bool) or not isinstance(seed, int) or seed != EPISODE_SEED:
+        raise ValueError(f"episode_seed must equal {EPISODE_SEED}")
+
+    component_names = set(_COMPONENTS)
+    for section_name in ("numpy_floor", "fastest_tier"):
+        section = certificate[section_name]
+        if not isinstance(section, dict):
+            raise ValueError(f"{section_name} must be an object")
+        if set(section) != {"component_hashes", "combined_hash", "claim"}:
+            raise ValueError(f"{section_name} keys do not match the current contract")
+        hashes = section["component_hashes"]
+        if not isinstance(hashes, dict) or set(hashes) != component_names:
+            raise ValueError(f"{section_name}.component_hashes has unexpected components")
+        checked_hashes = {
+            name: _require_sha256(f"{section_name}.component_hashes.{name}", digest)
+            for name, digest in hashes.items()
+        }
+        combined = _require_sha256(f"{section_name}.combined_hash", section["combined_hash"])
+        if combined != _combined_hash(checked_hashes):
+            raise ValueError(f"{section_name}.combined_hash does not match component hashes")
+        claim = section["claim"]
+        if not isinstance(claim, str) or not claim.strip():
+            raise ValueError(f"{section_name}.claim must be a non-empty string")
+
+    environment = certificate["environment"]
+    environment_keys = {
+        "python",
+        "numpy",
+        "platform",
+        "machine",
+        "fastest_tier_selection",
+    }
+    if not isinstance(environment, dict) or set(environment) != environment_keys:
+        raise ValueError("environment keys do not match the current contract")
+    for key in ("python", "numpy", "platform", "machine"):
+        value = environment[key]
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"environment.{key} must be a non-empty string")
+    selection = environment["fastest_tier_selection"]
+    tier_operation_names = {"multigrid_solve", "upde_run", "simulate_tearing_mode"}
+    if not isinstance(selection, dict) or set(selection) != tier_operation_names:
+        raise ValueError("environment.fastest_tier_selection has unexpected components")
+    if any(not isinstance(tier, str) or not tier.strip() for tier in selection.values()):
+        raise ValueError("environment.fastest_tier_selection values must be non-empty strings")
+    return cast(dict[str, Any], certificate)
+
+
 def _environment_manifest() -> dict[str, Any]:
     """Record the environment the certificate was generated in."""
     from scpn_fusion.core import _multi_compat as multi
@@ -194,7 +266,7 @@ def build_certificate() -> dict[str, Any]:
     if fastest_first != fastest_second:
         raise RuntimeError("fastest tier failed same-process replay - tier is not deterministic")
 
-    return {
+    certificate = {
         "schema": SCHEMA,
         "episode_seed": EPISODE_SEED,
         "numpy_floor": {
@@ -217,13 +289,12 @@ def build_certificate() -> dict[str, Any]:
         },
         "environment": _environment_manifest(),
     }
+    return validate_certificate(certificate)
 
 
 def verify_certificate(path: Path) -> dict[str, Any]:
     """Re-run the episode and compare against a committed certificate."""
-    committed = cast("dict[str, Any]", json.loads(path.read_text(encoding="utf-8")))
-    if committed.get("schema") != SCHEMA:
-        raise ValueError(f"unexpected certificate schema: {committed.get('schema')!r}")
+    committed = validate_certificate(json.loads(path.read_text(encoding="utf-8")))
 
     numpy_now = run_episode("numpy")
     committed_numpy = committed["numpy_floor"]["component_hashes"]

@@ -636,6 +636,8 @@ files = [
     "tests/test_disruption_risk_runtime.py",
     "validation/disruption_anomaly_alarm_validation.py",
     "tests/test_disruption_anomaly_alarm.py",
+    "validation/replay_certificate.py",
+    "tests/test_replay_certificate.py",
     "src/scpn_fusion/control/_free_boundary_tracking_base.py",
     "src/scpn_fusion/control/_free_boundary_tracking_config.py",
     "src/scpn_fusion/control/_free_boundary_tracking_control.py",
