@@ -1,0 +1,197 @@
+{
+  "claim_boundary": "The evidence covers only the frozen circular prescribed-coefficient coupled model intersection and a synthetic production-perturbation recovery target. The TORAX row is its pinned nominal cold baseline, not a TORAX optimiser comparison. Loaded-host timings establish cost completeness for this case only, not portable performance superiority or differentiability of other production transport models.",
+  "determinism": {
+    "control_history_byte_identical": true,
+    "objective_history_byte_identical": true
+  },
+  "forward_replay": {
+    "maximum_absolute_error": 7.105427357601002e-15,
+    "state_maximum_absolute_errors": {
+      "electron_density": 1.3322676295501878e-15,
+      "electron_temperature": 8.881784197001252e-16,
+      "ion_temperature": 1.7763568394002505e-15,
+      "poloidal_flux": 7.105427357601002e-15
+    }
+  },
+  "gates": {
+    "central_finite_difference": true,
+    "deterministic_optimisation": true,
+    "finite_full_chain_gradients": true,
+    "optimisation_quality": true,
+    "perturbation_replay": true,
+    "production_forward_replay": true,
+    "same_case_cost": true
+  },
+  "general_transport_differentiability_claimed": false,
+  "gradient_metrics": {
+    "autodiff": [
+      -4.919503409904568e-05,
+      3.6255360798844666e-09,
+      3.148265418847124e-10
+    ],
+    "central_finite_difference": [
+      -4.9195034100010744e-05,
+      3.6255361590648927e-09,
+      3.148265399123703e-10
+    ],
+    "maximum_relative_error": 2.1839645947308954e-08,
+    "relative_error": [
+      1.9617059402674402e-11,
+      2.1839645947308954e-08,
+      6.264853360098301e-09
+    ]
+  },
+  "optimisation": {
+    "control_history": [
+      [
+        1.0,
+        1.0,
+        1.0
+      ],
+      [
+        1.0799837415009532,
+        0.9787132862376732,
+        0.9975582601172686
+      ],
+      [
+        1.1577725714498805,
+        0.9590617985340384,
+        0.9956335428629431
+      ],
+      [
+        1.2301994623698453,
+        0.9413438988255876,
+        0.9942377244566774
+      ],
+      [
+        1.2923180934783152,
+        0.9258423487674223,
+        0.9933691731321247
+      ],
+      [
+        1.3385696539310896,
+        0.9127533604893106,
+        0.993004770775694
+      ],
+      [
+        1.36580136752152,
+        0.9021023389936947,
+        0.9930954765298399
+      ],
+      [
+        1.3748645553838676,
+        0.8937083523090062,
+        0.993570892533678
+      ],
+      [
+        1.3690772068028303,
+        0.8872269725018319,
+        0.9943496524862062
+      ],
+      [
+        1.3522587498724636,
+        0.8822291577207364,
+        0.9953487970300381
+      ],
+      [
+        1.3279156517763644,
+        0.8782696793029402,
+        0.9964896286939253
+      ],
+      [
+        1.299178593242501,
+        0.8749320199143604,
+        0.9977008779479778
+      ],
+      [
+        1.268942543667951,
+        0.8718548810593608,
+        0.9989205229719686
+      ]
+    ],
+    "final_controls": [
+      1.268942543667951,
+      0.8718548810593608,
+      0.9989205229719686
+    ],
+    "final_gradient": [
+      3.727257236945875e-06,
+      4.6156630995712696e-10,
+      -1.1409896098278137e-10
+    ],
+    "final_objective": 3.533573111480274e-08,
+    "final_over_initial": 0.0057458904086650185,
+    "initial_objective": 6.149739831709134e-06,
+    "iterations": 12,
+    "objective_history": [
+      6.149739831709134e-06,
+      2.844295082405151e-06,
+      8.370912884005708e-07,
+      3.869221187464689e-08,
+      1.762498270205471e-07,
+      7.718323829089345e-07,
+      1.319384652589006e-06,
+      1.5339875184305584e-06,
+      1.3950902848257941e-06,
+      1.0288444075410385e-06,
+      5.97320654590956e-07,
+      2.3798233270626084e-07,
+      3.533573111480274e-08
+    ],
+    "torax_nominal_baseline_objective": 0.00038062515298528784
+  },
+  "passes_thresholds": true,
+  "performance_superiority_claimed": false,
+  "perturbation_replay": {
+    "actual_objective_change": -2.4353182534985935e-07,
+    "control_delta": [
+      0.005,
+      -0.005,
+      0.005
+    ],
+    "linear_prediction": -2.4599172404291847e-07,
+    "relative_error": 0.009999924601650185
+  },
+  "reference_projection_sha256": "5b19e0924695932449be3b7a38f5797c83a8df46e6540c3114cb333f580503a1",
+  "runtime_seconds": {
+    "differentiation_cold": 1.822266228031367,
+    "native_optimisation_cold": 1.581369973020628,
+    "torax_nominal_cold": 7.3187609179876745
+  },
+  "schema": "scpn-fusion-core.differentiable-coupled-transport.v1",
+  "scientific_projection_sha256": "28c0ee5515839a6e33acad327b5216f12aef3434e9618169443736b64b0681e1",
+  "source_provenance": {
+    "benchmark_sha256": "10753c5f9d89de66ed2e870e718557797334b30f3b3cee571497c9214a46e6b7",
+    "contracts_sha256": "6c0503edffa82f0de99bae5818d6c2ded36a52cd39c3355e0f0842fe0e65ec7f",
+    "numerics_sha256": "d66a181c9634dfb44823af2231fbb2d021106fc3d116fb8f56cd4e4266582fd2",
+    "reference_sha256": "c8053ec92f346832c9ad77620325d07e772eaf4171baaa23e9f7cf8b835ebba9",
+    "runtime_sha256": "0ccbc2fc22b5190db7162ecf3d200246f82177e9ba6826a2429418719cd551c9"
+  },
+  "status": "differentiable_model_intersection_evaluated",
+  "target_contract": {
+    "control_order": [
+      "heat_power_scale",
+      "particle_rate_scale",
+      "driven_current_scale"
+    ],
+    "finite_difference_step": 0.0001,
+    "initial_controls": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "kind": "production perturbation recovery",
+    "target_controls": [
+      1.25,
+      0.8,
+      1.3
+    ],
+    "thresholds": {
+      "forward_maximum_absolute_error": 1e-12,
+      "gradient_relative_error": 0.01,
+      "minimum_gradient_magnitude": 1e-12,
+      "optimised_over_initial_objective": 0.02,
+      "perturbation_linearisation_relative_error": 0.05
+    }
+  }
+}

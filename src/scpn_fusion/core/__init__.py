@@ -131,6 +131,23 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         ".integrated_transport_solver_coupled",
         "CoupledTransportStepResult",
     ),
+    # Differentiable coupled-transport controls and evidence
+    "CoupledTransportControls": (
+        ".integrated_transport_solver_differentiable_contracts",
+        "CoupledTransportControls",
+    ),
+    "CoupledTransportOptimisationResult": (
+        ".integrated_transport_solver_differentiable_contracts",
+        "CoupledTransportOptimisationResult",
+    ),
+    "CoupledTransportTarget": (
+        ".integrated_transport_solver_differentiable_contracts",
+        "CoupledTransportTarget",
+    ),
+    "DifferentiableCoupledTransportResult": (
+        ".integrated_transport_solver_differentiable_contracts",
+        "DifferentiableCoupledTransportResult",
+    ),
     # FRC rigid-rotor equilibrium — Steinhauer no-rotation analytical limit
     "RigidRotorFRCInputs": (".frc_rigid_rotor", "RigidRotorFRCInputs"),
     "FRCEquilibriumState": (".frc_rigid_rotor", "FRCEquilibriumState"),

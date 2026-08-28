@@ -47,6 +47,9 @@ from scpn_fusion.core._integrated_transport_solver_init import (
 from scpn_fusion.core.integrated_transport_solver_coupled import (
     CoupledTransportRuntimeMixin,
 )
+from scpn_fusion.core.integrated_transport_solver_differentiable import (
+    CoupledTransportDifferentiableMixin,
+)
 from scpn_fusion.core.integrated_transport_solver_model import (
     TransportSolverModelMixin,
 )
@@ -503,6 +506,7 @@ class TransportSolver(
     TransportSolverInitializationMixin,
     TransportSolverModelMixin,
     CoupledTransportRuntimeMixin,
+    CoupledTransportDifferentiableMixin,
     TransportSolverRuntimeMixin,
     FusionKernel,
 ):
