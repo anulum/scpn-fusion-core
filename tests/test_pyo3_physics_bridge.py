@@ -79,7 +79,7 @@ class TestPyHallMHD:
         assert mhd.grid_size == 16
 
 
-# ── WP-PY2: FNO Controller ──────────────────────────────────────────
+# ── FNO turbulence-controller bridge ────────────────────────────────
 
 
 class TestPyFnoController:
