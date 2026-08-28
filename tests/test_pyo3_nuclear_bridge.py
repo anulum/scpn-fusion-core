@@ -7,7 +7,7 @@
 # SCPN Fusion Core — PyO3 Nuclear Bridge Tests
 """Tests for PyO3 bindings: fusion-diagnostics + fusion-nuclear → Python.
 
-Covers: Tomography (WP-PY4), Breeding Blanket (WP-PY5).
+Covers the regularised plasma-tomography bridge and Breeding Blanket (WP-PY5).
 """
 
 import numpy as np
@@ -23,7 +23,7 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="scpn_fusion_rs not compiled")
 
 
-# ── WP-PY4: Tomography ──────────────────────────────────────────────
+# ── Regularised plasma tomography bridge ───────────────────────────
 
 
 class TestPyTomography:
