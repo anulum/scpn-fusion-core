@@ -4,7 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-"""Cross-tier parity and dispatch tests for the phase-dynamics kernels (M-3)."""
+"""Cross-tier parity and dispatch tests for phase-dynamics kernels."""
 
 from __future__ import annotations
 
@@ -31,9 +31,9 @@ def _kuramoto_state(n: int = 257) -> tuple[npt.NDArray[np.float64], npt.NDArray[
 
 
 def test_phase_kernels_are_registered_with_rust_and_numpy_tiers() -> None:
-    """Both M-3 kernels carry RUST + NUMPY registrations."""
+    """Every phase step/run kernel carries ordered Rust and NumPy tiers."""
     kernels = multi.registered_kernels()
-    for name in ("kuramoto_step", "kuramoto_run", "upde_tick"):
+    for name in ("kuramoto_step", "kuramoto_run", "upde_tick", "upde_run"):
         assert name in kernels
         tier_names = [entry.rstrip("*") for entry in kernels[name]]
         assert tier_names == ["rust", "numpy"]

@@ -967,12 +967,11 @@ def _bootstrap_existing_backends() -> None:
     register_kernel("gs_rb_sor_smooth", BackendTier.GPU, _gpu_gs_rb_sor_smooth)
     register_kernel("gs_rb_sor_smooth", BackendTier.NUMPY, _numpy_gs_rb_sor_smooth)
 
-    # kuramoto_step / upde_tick — the SCPN phase-dynamics lane (M-3 kernels).
-    # Both are deterministic (no RNG), so cross-tier agreement is bounded
-    # only by floating-point summation order (~1e-14 relative). Driver
-    # (Psi) resolution policy stays in the phase package; the kernels take
-    # the resolved value. The NumPy tier guarantees dispatch resolves
-    # everywhere.
+    # Kuramoto-Sakaguchi and UPDE step/run phase-dynamics kernels. All four are
+    # deterministic (no RNG), so cross-tier agreement is bounded only by
+    # floating-point summation order (~1e-14 relative). Driver (Psi) resolution
+    # policy stays in the phase package; the kernels take the resolved value.
+    # The NumPy tier guarantees dispatch resolves everywhere.
     register_kernel("kuramoto_step", BackendTier.RUST, _rust_kuramoto_step)
     register_kernel("kuramoto_step", BackendTier.NUMPY, _numpy_kuramoto_step)
     register_kernel("kuramoto_run", BackendTier.RUST, _rust_kuramoto_run)
