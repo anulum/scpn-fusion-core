@@ -4,7 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Digital Twin Ingest Hook (GDEP-01)
+# SCPN Fusion Core — Realtime Digital-Twin Ingestion
 """Realtime digital-twin ingestion hook with SNN scenario planning."""
 
 from __future__ import annotations
@@ -71,7 +71,7 @@ def _build_snn_planner() -> NeuroSymbolicController:
         )
         .compile(net, firing_mode="binary")
         .export_artifact(
-            name="gdep01_digital_twin",
+            name="realtime_digital_twin_scenario_planner",
             dt_control_s=0.001,
             readout_config={
                 "actions": [{"name": "dI_PF3_A", "pos_place": 2, "neg_place": 3}],

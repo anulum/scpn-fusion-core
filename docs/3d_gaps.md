@@ -99,7 +99,8 @@ Notes:
 
 - Includes the GyroSwin-like turbulence surrogate benchmark, the TORAX-hybrid
   realtime control benchmark, the HEAT-ML magnetic-shadow design-scanner
-  benchmark, `GNEU-01..03`, `GMVR-01..03`, `GDEP-01..05`, and `GPHY-01..06`.
+  benchmark, `GNEU-01..03`, `GMVR-01..03`, the NSTX-U/SPARC digital-twin
+  ingestion campaign, `GDEP-02..05`, and `GPHY-01..06`.
 - Each item requires an RFC with:
   - data source and license confirmation,
   - benchmark protocol,
@@ -114,7 +115,8 @@ Notes:
 - Delivered advanced v1 lanes (synthetic scope): the GyroSwin-like turbulence
   surrogate benchmark, the TORAX-hybrid realtime control benchmark, the
   HEAT-ML magnetic-shadow design-scanner benchmark, `GNEU-01..03`,
-  `GMVR-01..03`, `GDEP-01..05`, and `GPHY-01..06`.
+  `GMVR-01..03`, the NSTX-U/SPARC digital-twin ingestion campaign,
+  `GDEP-02..05`, and `GPHY-01..06`.
 - Blocked by external dependency readiness: tasks requiring TORAX fork sync, large external gyrokinetic datasets, or ADAS data ingestion.
 
 ## Next Sprint Queue
