@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Psi Gate Attribution Page Tests
-"""Tests for the ψ_N gate per-file attribution page generator (F-1)."""
+"""Tests for the ψ_N gate per-file attribution page generator."""
 
 from __future__ import annotations
 

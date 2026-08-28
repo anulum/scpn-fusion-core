@@ -8,7 +8,7 @@
 """Generate docs/PSI_GATE_ATTRIBUTION.md from the ψ_N EFIT-NRMSE gate report.
 
 Publishes the per-file attribution of the intentionally failing 18-file ψ_N
-reconstruction gate as the honest public boundary (master-plan F-1): which
+reconstruction gate as the honest public boundary: which
 files fail, why (source-domain residual class), what solver each file requires,
 and the shared free-boundary input blocker. Only stable attribution fields are
 rendered — per-run timings never reach the document.

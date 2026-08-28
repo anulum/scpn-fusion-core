@@ -10,7 +10,7 @@ It covers local pack readiness only; DOI publication remains owner-gated.
 - Output directory: `artifacts/fair_validation_packs`
 - Packs: `3`
 - Files: `15`
-- Total bytes: `180253`
+- Total bytes: `180205`
 
 ## Publication blockers
 
@@ -23,4 +23,4 @@ It covers local pack readiness only; DOI publication remains owner-gated.
 |---|---|---:|---:|---|
 | `safety_traceability` | `ready_local` | 4 | 51889 | `AGPL-3.0-or-later` |
 | `surrogate_uq_cards` | `ready_local` | 4 | 61470 | `AGPL-3.0-or-later` |
-| `inverse_equilibrium_attribution` | `ready_local` | 7 | 66894 | `AGPL-3.0-or-later` |
+| `inverse_equilibrium_attribution` | `ready_local` | 7 | 66846 | `AGPL-3.0-or-later` |

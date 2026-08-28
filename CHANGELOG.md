@@ -264,7 +264,7 @@ MPI/multi-GPU parity remain fail-closed).
   EPED1 references; benchmark reports documented divergence and makes no
   parity claim.
 - Solov'ev exact equilibrium suite with a published psi_N gate and per-file
-  attribution (F-1).
+  attribution.
 - Safety traceability matrix generator with a fail-closed drift guard.
 
 ### Changed

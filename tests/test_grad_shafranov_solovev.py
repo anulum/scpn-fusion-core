@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Grad-Shafranov Solov'ev Validation Tests
-"""Tests for the Solov'ev analytic-equilibrium validation lane (F-1)."""
+"""Tests for the Solov'ev analytic-equilibrium validation lane."""
 
 from __future__ import annotations
 

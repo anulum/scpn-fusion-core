@@ -6,7 +6,7 @@
   "minimum_pack_count": 3,
   "pack_count": 3,
   "total_files": 15,
-  "total_bytes": 180253,
+  "total_bytes": 180205,
   "output_dir": "artifacts/fair_validation_packs",
   "publication_blockers": [
     "owner approval for DOI publication and final data-license posture",
@@ -83,12 +83,12 @@
       "description": "Solov'ev exact-suite evidence and psi reconstruction attribution documents for the inverse-equilibrium credibility boundary.",
       "license": "AGPL-3.0-or-later",
       "file_count": 7,
-      "total_bytes": 66894,
+      "total_bytes": 66846,
       "files": [
         {
           "path": "validation/validate_grad_shafranov_solovev.py",
-          "sha256": "e64b2709ab9aa630ff08e08c7bd3f95b35b8412f9b627a06b2920514229d320d",
-          "size_bytes": 32088
+          "sha256": "789c4302c4dac1e1e3a70a50841babfb8b7d5225f02c61e2f4912f31f89edd64",
+          "size_bytes": 32070
         },
         {
           "path": "validation/reports/grad_shafranov_solovev.json",
@@ -107,18 +107,18 @@
         },
         {
           "path": "tools/generate_psi_gate_attribution.py",
-          "sha256": "d6886bee0cc625ccda6ea3bb9f8ef2d8e17e3d5ec3f1dbfd264b907cfbb82527",
-          "size_bytes": 9407
+          "sha256": "3a6b772c76679eb448b8a6c1057c7ac170e7015cac1913a71b0bc988397e8e61",
+          "size_bytes": 9389
         },
         {
           "path": "tests/test_grad_shafranov_solovev.py",
-          "sha256": "ea7b2ff822cd5b681ac7837fabc33b871cd3e5464cc4a5010e787343a1ca76cd",
-          "size_bytes": 8654
+          "sha256": "3cefb4029dd95e29f1ca496c4fc89e429ee41c360c1a57eff5222d0cd77c0a6e",
+          "size_bytes": 8648
         },
         {
           "path": "tests/test_psi_gate_attribution.py",
-          "sha256": "9edbf2ba514dbdd4953a14beb65ed8eaeed0bb099b7694942f3ea1c40a601851",
-          "size_bytes": 6034
+          "sha256": "3bed635c575cc2cb711a3886bfc6aa98226a805b6fab270210bd8ed411306408",
+          "size_bytes": 6028
         }
       ]
     }

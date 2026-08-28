@@ -8,7 +8,7 @@
 # SCPN Fusion Core — Grad-Shafranov Solov'ev analytic-equilibrium validation
 """Validate the production Grad-Shafranov solver stack against Solov'ev.
 
-Ported from SCPN-CONTROL's exact-equilibrium suite (master-plan F-1): the
+Ported from SCPN-CONTROL's exact-equilibrium suite: the
 Solov'ev family admits an exact polynomial solution of the Grad-Shafranov
 equation, making it the canonical analytic benchmark for the equilibrium
 discretisation — credibility evidence independent of any bundled GEQDSK file.
