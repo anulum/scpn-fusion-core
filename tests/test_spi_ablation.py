@@ -41,7 +41,7 @@ def test_spi_ablation_step():
     assert solver.fragments[0].pos[0] < 10.0
 
 
-# S2-002: Parks SPI Ablation negative density guard
+# Parks SPI ablation negative-density guard
 
 
 def test_ablation_survives_negative_density_interpolation():

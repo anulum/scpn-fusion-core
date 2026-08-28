@@ -46,7 +46,7 @@ def test_fokker_planck_step_conserves_positivity() -> None:
     assert state.current_re > 0.0
 
 
-# S2-001: Fokker-Planck 1/p² divergence guard
+# Fokker-Planck near-zero-momentum divergence guard
 
 
 def test_drag_finite_near_zero_momentum() -> None:

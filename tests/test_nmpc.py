@@ -31,7 +31,7 @@ def test_nmpc_plan_returns_correct_shape():
     assert np.all(np.isfinite(action))
 
 
-# S2-004: NMPC adaptive early stopping
+# NMPC adaptive early stopping
 
 
 def test_nmpc_converges_before_max_iterations():

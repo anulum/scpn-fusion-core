@@ -247,7 +247,7 @@ def test_load_or_train_predictor_rejects_invalid_seq_len(tmp_path: Path, seq_len
         )
 
 
-# S2-004: Disruption predictor fallback/raise-path coverage
+# Disruption predictor fallback and raise-path coverage
 
 
 def test_load_or_train_fallback_torch_unavailable(

@@ -1148,7 +1148,7 @@ class TestBootstrapFloor:
         assert np.all(np.isfinite(j_bs)), "j_bs has non-finite values with flat profile"
 
 
-# S2-003: Impurity transport Z_eff coupling
+# Impurity transport effective-charge coupling
 
 
 class TestImpurityEvolution:

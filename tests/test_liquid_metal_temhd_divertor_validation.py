@@ -265,7 +265,7 @@ def test_script_entry_point_runs_real_cli(
     assert output_md.is_file()
 
 
-# S2-005: Divertor relaxation parameter
+# Divertor relaxation-parameter convergence and validation
 
 
 def test_relaxation_parameter_affects_convergence() -> None:
