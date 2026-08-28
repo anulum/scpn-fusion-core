@@ -24,7 +24,7 @@ linkage = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = linkage
 SPEC.loader.exec_module(linkage)
 
-ROUND4_AUDIT_18_MODULES = frozenset(
+DIRECT_OR_COMPOSITE_LINKAGE_MODULES = frozenset(
     {
         "src/scpn_fusion/io/imas_connector_equilibrium.py",
         "src/scpn_fusion/io/imas_connector_transport.py",
@@ -56,15 +56,15 @@ def test_collect_unlinked_modules_returns_known_paths() -> None:
     assert "src/scpn_fusion/core/force_balance.py" not in unlinked
 
 
-def test_round4_audit_18_modules_have_live_test_linkage() -> None:
-    """The Round 4 AUDIT-18 module list has direct or composite test linkage."""
+def test_direct_or_composite_modules_have_live_test_linkage() -> None:
+    """The named module cohort has direct or composite live test linkage."""
     unlinked = set(
         linkage.collect_unlinked_modules(
             source_root=ROOT / "src" / "scpn_fusion",
             test_root=ROOT / "tests",
         )
     )
-    assert sorted(ROUND4_AUDIT_18_MODULES & unlinked) == []
+    assert sorted(DIRECT_OR_COMPOSITE_LINKAGE_MODULES & unlinked) == []
 
 
 def test_main_passes_with_repo_allowlist() -> None:
