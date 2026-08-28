@@ -4,15 +4,15 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Exactness-class reproduction comparator (fleet WS-2)
-"""The exactness-class reproduction comparator — FUSION's WS-2 reference implementation.
+# SCPN Fusion Core — Exactness-class reproduction comparator
+"""The exactness-class reproduction comparator — FUSION's reference implementation.
 
 The fleet honesty model says an in-browser recompute "matches" a committed claim, but its two
 pins are in tension for floating-point kernels: H2 (digest equality) and H3 (tolerance-aware).
 Float kernels are not bit-reproducible across toolchains (x86 / ARM / WASM-SIMD, FMA contraction,
 compiler flags, libm), so a *correct* recompute yields a different digest and a naive digest check
-fires a false drift alarm. WS-2 resolves this with a per-claim **exactness class** that decides how
-the verifier compares:
+fires a false drift alarm. The per-claim **exactness class** resolves this by deciding how the
+verifier compares:
 
 * ``bit-exact`` — the recomputed value's content digest must equal the committed digest. For
   integer / fixed-point / genuinely bit-reproducible kernels (the producer asserts toolchain
@@ -25,9 +25,10 @@ the verifier compares:
   ``bit-exact`` or ``tolerance``. (This module compares the reduced form; seeding is the caller's.)
 
 This is a pure comparison function over (recomputed, committed, exactness-class) — no I/O, no
-signing (signing is WS-1). It returns an honest verdict, including ``unverifiable`` when the
-exactness class is absent, never silently defaulting (a default would false-drift floats or mask a
-bit-exact regression). The browser ``@anulum/verify`` lib mirrors this verdict-for-verdict.
+signing (claim signing belongs to the evidence-envelope layer). It returns an honest verdict,
+including ``unverifiable`` when the exactness class is absent, never silently defaulting (a default
+would false-drift floats or mask a bit-exact regression). The browser ``@anulum/verify`` lib mirrors
+this verdict-for-verdict.
 """
 
 from __future__ import annotations

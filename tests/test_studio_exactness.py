@@ -4,8 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Exactness-class reproduction comparator tests (WS-2)
-"""Tests for the exactness-class reproduction comparator (fleet WS-2)."""
+# SCPN Fusion Core — Exactness-class reproduction comparator tests
+"""Tests for the exactness-class reproduction comparator."""
 
 from __future__ import annotations
 
