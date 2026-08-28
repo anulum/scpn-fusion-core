@@ -611,6 +611,7 @@ jobs:
         run: |
           python validation/benchmark_torax_real_parity.py --check
           python validation/benchmark_torax_real_parity.py --output artifacts/torax_benchmark.json
+          python validation/benchmark_torax_coupled_transport_parity.py --check
           python validation/benchmark_sparc_geqdsk_rmse.py
           python validation/benchmark_vs_freegs.py --force-solovev
           python validation/benchmark_disruption_transfer_generalization.py \

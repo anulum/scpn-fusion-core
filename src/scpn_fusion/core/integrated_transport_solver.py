@@ -44,6 +44,9 @@ from scpn_fusion.core.integrated_transport_solver_contracts import (
 from scpn_fusion.core._integrated_transport_solver_init import (
     TransportSolverInitializationMixin,
 )
+from scpn_fusion.core.integrated_transport_solver_coupled import (
+    CoupledTransportRuntimeMixin,
+)
 from scpn_fusion.core.integrated_transport_solver_model import (
     TransportSolverModelMixin,
 )
@@ -499,6 +502,7 @@ def calculate_sauter_bootstrap_current_full(
 class TransportSolver(
     TransportSolverInitializationMixin,
     TransportSolverModelMixin,
+    CoupledTransportRuntimeMixin,
     TransportSolverRuntimeMixin,
     FusionKernel,
 ):

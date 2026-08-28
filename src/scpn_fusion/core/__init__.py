@@ -110,12 +110,26 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "UQResult": (".uncertainty", "UQResult"),
     "WholeDeviceModel": (".wdm_engine", "WholeDeviceModel"),
     # Current diffusion — Sauter neoclassical resistivity, Crank-Nicolson solver
+    "CurrentDiffusionBudget": (".current_diffusion", "CurrentDiffusionBudget"),
     "CurrentDiffusionSolver": (".current_diffusion", "CurrentDiffusionSolver"),
     "FluxEvolutionTrajectory": (".current_diffusion", "FluxEvolutionTrajectory"),
     "neoclassical_resistivity": (".current_diffusion", "neoclassical_resistivity"),
     "solve_flux_evolution_nonadiabatic": (
         ".current_diffusion",
         "solve_flux_evolution_nonadiabatic",
+    ),
+    # Coupled prescribed-coefficient transport comparison surface
+    "CoupledTransportBudget": (
+        ".integrated_transport_solver_coupled",
+        "CoupledTransportBudget",
+    ),
+    "CoupledTransportInputs": (
+        ".integrated_transport_solver_coupled",
+        "CoupledTransportInputs",
+    ),
+    "CoupledTransportStepResult": (
+        ".integrated_transport_solver_coupled",
+        "CoupledTransportStepResult",
     ),
     # FRC rigid-rotor equilibrium — Steinhauer no-rotation analytical limit
     "RigidRotorFRCInputs": (".frc_rigid_rotor", "RigidRotorFRCInputs"),

@@ -389,6 +389,26 @@
         "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
       },
       {
+        "name": "CoupledTransportBudget",
+        "path": "src/scpn_fusion/core/integrated_transport_solver_coupled_contracts.py"
+      },
+      {
+        "name": "CoupledTransportInputs",
+        "path": "src/scpn_fusion/core/integrated_transport_solver_coupled_contracts.py"
+      },
+      {
+        "name": "CoupledTransportRuntimeMixin",
+        "path": "src/scpn_fusion/core/integrated_transport_solver_coupled.py"
+      },
+      {
+        "name": "CoupledTransportStepResult",
+        "path": "src/scpn_fusion/core/integrated_transport_solver_coupled_contracts.py"
+      },
+      {
+        "name": "CurrentDiffusionBudget",
+        "path": "src/scpn_fusion/core/current_diffusion.py"
+      },
+      {
         "name": "CurrentDiffusionSolver",
         "path": "src/scpn_fusion/core/current_diffusion.py"
       },
@@ -2557,6 +2577,7 @@
       "src/scpn_fusion/core/_gk_nonlinear_time.py",
       "src/scpn_fusion/core/_gk_nonlinear_types.py",
       "src/scpn_fusion/core/_integrated_transport_solver_base.py",
+      "src/scpn_fusion/core/_integrated_transport_solver_coupled_numerics.py",
       "src/scpn_fusion/core/_integrated_transport_solver_init.py",
       "src/scpn_fusion/core/_integrated_transport_solver_model_backend.py",
       "src/scpn_fusion/core/_integrated_transport_solver_model_common.py",
@@ -2666,6 +2687,8 @@
       "src/scpn_fusion/core/integrated_transport_solver.py",
       "src/scpn_fusion/core/integrated_transport_solver_adaptive.py",
       "src/scpn_fusion/core/integrated_transport_solver_contracts.py",
+      "src/scpn_fusion/core/integrated_transport_solver_coupled.py",
+      "src/scpn_fusion/core/integrated_transport_solver_coupled_contracts.py",
       "src/scpn_fusion/core/integrated_transport_solver_coupling.py",
       "src/scpn_fusion/core/integrated_transport_solver_model.py",
       "src/scpn_fusion/core/integrated_transport_solver_runtime.py",
@@ -2881,10 +2904,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 601,
-    "python_capability_source_modules": 345,
+    "python_capability_classes": 606,
+    "python_capability_source_modules": 348,
     "rust_workspace_crates": 13,
-    "test_files": 623
+    "test_files": 625
   },
   "documentation": {
     "public_pages": [
@@ -3349,6 +3372,7 @@
       "tests/test_integrated_transport_solver_adaptive.py",
       "tests/test_integrated_transport_solver_base.py",
       "tests/test_integrated_transport_solver_contracts.py",
+      "tests/test_integrated_transport_solver_coupled.py",
       "tests/test_integrated_transport_solver_coupling_confinement.py",
       "tests/test_integrated_transport_solver_init.py",
       "tests/test_integrated_transport_solver_model_backend.py",
@@ -3612,6 +3636,7 @@
       "tests/test_tools_pypi_downloads.py",
       "tests/test_tools_run_mypy_strict.py",
       "tests/test_tools_run_python_preflight.py",
+      "tests/test_torax_coupled_transport_parity.py",
       "tests/test_torax_hybrid_realtime_control_benchmark.py",
       "tests/test_torax_imas_interchange.py",
       "tests/test_torax_real_parity.py",

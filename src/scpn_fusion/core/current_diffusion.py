@@ -52,6 +52,19 @@ class FluxEvolutionTrajectory:
     dt_s: float
 
 
+@dataclass(frozen=True)
+class CurrentDiffusionBudget:
+    """Numerical accounting for one accepted current-diffusion step."""
+
+    dt_s: float
+    resistivity_multiplier: float
+    source_density_l1: float
+    flux_l2_before: float
+    flux_l2_after: float
+    linear_residual_linf: float
+    edge_constraint_residual: float
+
+
 def solve_flux_evolution_nonadiabatic(
     rho: FloatArray,
     psi0: FloatArray,
@@ -260,12 +273,16 @@ class CurrentDiffusionSolver:
     """Implicit Crank-Nicolson solver for 1D poloidal flux diffusion."""
 
     def __init__(self, rho: FloatArray, R0: float, a: float, B0: float):
-        self.rho = rho
+        self.rho = _validate_radial_grid(rho)
         self.R0 = R0
         self.a = a
         self.B0 = B0
-        self.nr = len(rho)
-        self.drho = rho[1] - rho[0]
+        self.nr = len(self.rho)
+        spacing = np.diff(self.rho)
+        if not np.allclose(spacing, spacing[0], rtol=0.0, atol=1e-12):
+            raise ValueError("CurrentDiffusionSolver requires a uniform rho grid")
+        self.drho = float(spacing[0])
+        self.last_step_budget: CurrentDiffusionBudget | None = None
         self.psi = np.zeros(self.nr)
         for i in range(1, self.nr):
             r = self.rho[i]
@@ -283,26 +300,45 @@ class CurrentDiffusionSolver:
         j_bs: FloatArray,
         j_cd: FloatArray,
         j_ext: FloatArray | None = None,
+        *,
+        resistivity_multiplier: float = 1.0,
     ) -> FloatArray:
         """Advance poloidal flux psi by one timestep dt."""
+        if not np.isfinite(dt) or dt <= 0.0:
+            raise ValueError("dt must be finite and > 0")
+        if not np.isfinite(resistivity_multiplier) or resistivity_multiplier <= 0.0:
+            raise ValueError("resistivity_multiplier must be finite and > 0")
         if j_ext is None:
             j_ext = np.zeros(self.nr)
 
-        j_tot_source = j_bs + j_cd + j_ext
+        profiles = {
+            "Te": np.asarray(Te, dtype=np.float64),
+            "ne": np.asarray(ne, dtype=np.float64),
+            "j_bs": np.asarray(j_bs, dtype=np.float64),
+            "j_cd": np.asarray(j_cd, dtype=np.float64),
+            "j_ext": np.asarray(j_ext, dtype=np.float64),
+        }
+        for name, profile in profiles.items():
+            if profile.shape != (self.nr,) or not np.all(np.isfinite(profile)):
+                raise ValueError(f"{name} must be finite and match rho")
+
+        j_tot_source = profiles["j_bs"] + profiles["j_cd"] + profiles["j_ext"]
+        psi_before = self.psi.copy()
 
         q_prof = q_from_psi(self.rho, self.psi, self.R0, self.a, self.B0)
         eta_prof = np.zeros(self.nr)
         for i in range(self.nr):
             epsilon = self.rho[i] * self.a / self.R0
             eta_prof[i] = neoclassical_resistivity(
-                float(Te[i]),
-                float(ne[i]),
+                float(profiles["Te"][i]),
+                float(profiles["ne"][i]),
                 Z_eff,
                 epsilon,
                 float(q_prof[i]),
                 self.R0,
             )
 
+        eta_prof *= float(resistivity_multiplier)
         D = eta_prof / (MU_0 * self.a**2)
 
         alpha = dt / 2.0
@@ -350,4 +386,17 @@ class CurrentDiffusionSolver:
         ab[2, :-1] = sub[1:]
 
         self.psi = cast(FloatArray, solve_banded((1, 1), ab, rhs))
+        matrix = np.diag(diag)
+        matrix += np.diag(sup[:-1], k=1)
+        matrix += np.diag(sub[1:], k=-1)
+        residual = matrix @ self.psi - rhs
+        self.last_step_budget = CurrentDiffusionBudget(
+            dt_s=float(dt),
+            resistivity_multiplier=float(resistivity_multiplier),
+            source_density_l1=float(np.trapz(np.abs(j_tot_source), self.rho)),
+            flux_l2_before=float(np.linalg.norm(psi_before)),
+            flux_l2_after=float(np.linalg.norm(self.psi)),
+            linear_residual_linf=float(np.max(np.abs(residual))),
+            edge_constraint_residual=float(abs(self.psi[-1] - psi_before[-1])),
+        )
         return self.psi
