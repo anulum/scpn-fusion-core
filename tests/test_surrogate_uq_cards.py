@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Surrogate UQ Cards Tests
-"""Tests for the per-surrogate UQ-card generator and guard (master-plan T-4)."""
+"""Tests for the per-surrogate UQ-card generator and fail-closed drift guard."""
 
 from __future__ import annotations
 

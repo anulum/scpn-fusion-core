@@ -259,7 +259,7 @@ MPI/multi-GPU parity remain fail-closed).
 - Fastest-first dispatch tiers wired for `PyFnoController` (FNO turbulence),
   `PyMpcController` (surrogate-MPC), and `PyFokkerPlanckSolver` (runaway-electron
   Fokker-Planck).
-- Per-surrogate UQ/OOD cards with a fail-closed drift guard (T-4).
+- Per-surrogate UQ/OOD cards with a fail-closed drift guard.
 - PB-KBM pedestal constraint-loop tier with a tier benchmark against digitised
   EPED1 references (F-5); benchmark reports documented divergence and makes no
   parity claim.
