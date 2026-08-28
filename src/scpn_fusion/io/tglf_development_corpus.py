@@ -333,8 +333,9 @@ def generate_tglf_development_corpus(
         Final output directory. Work is isolated in a sibling ``.partial`` tree.
     seed : int, optional
         Frozen deterministic plan seed.
-    profile : {"development", "fixture"}, optional
-        Full 72-run corpus or nine-run authentic contract fixture.
+    profile : {"development", "expanded", "fixture"}, optional
+        Full 72-run development corpus, 216-run expanded selection corpus, or
+        nine-run authentic contract fixture.
     command : str, optional
         PATH-resolved executable name; only ``tglf`` is admitted by the manifest.
     timeout_s : float, optional

@@ -28,20 +28,25 @@ from scpn_fusion.io.tglf_development_corpus import (
     generate_tglf_development_corpus,
     verify_tglf_development_corpus,
 )
+from scpn_fusion.io.tglf_development_plan import TGLF_EXPANDED_SELECTION_SEED
 
 
 def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="operation", required=True)
     plan = subparsers.add_parser("plan", help="Write or print the frozen plan without solving")
-    plan.add_argument("--seed", type=int, default=TGLF_DEVELOPMENT_SEED)
-    plan.add_argument("--profile", choices=("development", "fixture"), default="development")
+    plan.add_argument("--seed", type=int)
+    plan.add_argument(
+        "--profile", choices=("development", "expanded", "fixture"), default="development"
+    )
     plan.add_argument("--output", type=Path)
 
     generate = subparsers.add_parser("generate", help="Generate a new recoverable corpus")
     generate.add_argument("--output-dir", type=Path, required=True)
-    generate.add_argument("--seed", type=int, default=TGLF_DEVELOPMENT_SEED)
-    generate.add_argument("--profile", choices=("development", "fixture"), default="development")
+    generate.add_argument("--seed", type=int)
+    generate.add_argument(
+        "--profile", choices=("development", "expanded", "fixture"), default="development"
+    )
     generate.add_argument("--command", default="tglf")
     generate.add_argument("--timeout-s", type=float, default=120.0)
     generate.add_argument("--max-retries", type=int, default=2)
@@ -70,7 +75,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         if args.operation == "plan":
-            result = build_tglf_development_plan(seed=args.seed, profile=args.profile)
+            seed = args.seed
+            if seed is None:
+                seed = (
+                    TGLF_EXPANDED_SELECTION_SEED
+                    if args.profile == "expanded"
+                    else TGLF_DEVELOPMENT_SEED
+                )
+            result = build_tglf_development_plan(seed=seed, profile=args.profile)
             if args.output is not None:
                 output = cast(Path, args.output)
                 output.parent.mkdir(parents=True, exist_ok=True)
@@ -79,9 +91,16 @@ def main(argv: Sequence[str] | None = None) -> int:
                     encoding="utf-8",
                 )
         elif args.operation == "generate":
+            seed = args.seed
+            if seed is None:
+                seed = (
+                    TGLF_EXPANDED_SELECTION_SEED
+                    if args.profile == "expanded"
+                    else TGLF_DEVELOPMENT_SEED
+                )
             result = generate_tglf_development_corpus(
                 cast(Path, args.output_dir),
-                seed=cast(int, args.seed),
+                seed=cast(int, seed),
                 profile=cast(str, args.profile),
                 command=cast(str, args.command),
                 timeout_s=cast(float, args.timeout_s),

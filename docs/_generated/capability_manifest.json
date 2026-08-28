@@ -2748,6 +2748,7 @@
       "src/scpn_fusion/engineering/thermal_hydraulics.py",
       "src/scpn_fusion/hpc/_hpc_native_trust.py",
       "src/scpn_fusion/hpc/hpc_bridge.py",
+      "src/scpn_fusion/io/_tglf_constrained_targets.py",
       "src/scpn_fusion/io/_tglf_model_selection_data.py",
       "src/scpn_fusion/io/_tglf_model_selection_metrics.py",
       "src/scpn_fusion/io/_tokamak_archive_shots.py",
@@ -2771,6 +2772,7 @@
       "src/scpn_fusion/io/omas_free_boundary_inputs.py",
       "src/scpn_fusion/io/recoverable_npy_dataset.py",
       "src/scpn_fusion/io/safe_loaders.py",
+      "src/scpn_fusion/io/tglf_constrained_model_selection.py",
       "src/scpn_fusion/io/tglf_dataset_contract.py",
       "src/scpn_fusion/io/tglf_development_corpus.py",
       "src/scpn_fusion/io/tglf_development_plan.py",
@@ -2876,9 +2878,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 64,
     "python_capability_classes": 600,
-    "python_capability_source_modules": 343,
+    "python_capability_source_modules": 345,
     "rust_workspace_crates": 13,
-    "test_files": 622
+    "test_files": 623
   },
   "documentation": {
     "public_pages": [
@@ -3579,6 +3581,7 @@
       "tests/test_tearing_mode_theory.py",
       "tests/test_temhd_peltier.py",
       "tests/test_temhd_peltier_runtime.py",
+      "tests/test_tglf_constrained_model_selection.py",
       "tests/test_tglf_dataset_contract.py",
       "tests/test_tglf_development_corpus.py",
       "tests/test_tglf_development_plan.py",

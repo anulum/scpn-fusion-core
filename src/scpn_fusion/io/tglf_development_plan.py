@@ -28,6 +28,7 @@ TGLF_DEVELOPMENT_DESIGN_METHOD: Final = (
 )
 TGLF_DEVELOPMENT_GACODE_REVISION: Final = "b49339750a4aa4cf2b089fa9ff3afe098005f0f8"
 TGLF_DEVELOPMENT_SEED: Final = 20260826
+TGLF_EXPANDED_SELECTION_SEED: Final = 20260828
 _FLOAT_RANGES: Final[dict[str, tuple[float, float]]] = {
     "rho": (0.20, 0.85),
     "s_hat": (0.10, 2.50),
@@ -96,7 +97,15 @@ def _allocation(profile: str) -> list[tuple[str, str]]:
         ]
     if profile == "fixture":
         return list(zip(("interior", "boundary", "threshold"), _COMPOSITIONS, strict=True))
-    raise ValueError("profile must be 'development' or 'fixture'")
+    if profile == "expanded":
+        repetitions = {"interior": 12, "boundary": 6, "threshold": 6}
+        return [
+            (stratum, composition)
+            for stratum, count in repetitions.items()
+            for _ in range(count)
+            for composition in _COMPOSITIONS
+        ]
+    raise ValueError("profile must be 'development', 'expanded' or 'fixture'")
 
 
 def _sampled_rows(groups: int, seed: int) -> list[dict[str, float]]:
@@ -285,8 +294,9 @@ def build_tglf_development_plan(
     ----------
     seed : int, optional
         Non-negative deterministic sampling seed.
-    profile : {"development", "fixture"}, optional
-        Frozen 72-run development design or a nine-run authentic contract fixture.
+    profile : {"development", "expanded", "fixture"}, optional
+        Frozen 72-run development design, 216-run expanded selection design,
+        or a nine-run authentic contract fixture.
 
     Returns
     -------
@@ -305,7 +315,8 @@ def build_tglf_development_plan(
         _pin_stratum(row, stratum, group_index)
         species, target = _species_for_group(composition, row)
         base = _base_deck(row, species, group_index)
-        group_id = f"data03-{profile}-{stratum}-{composition}-{group_index:03d}"
+        group_prefix = "expanded-official" if profile == "expanded" else f"data03-{profile}"
+        group_id = f"{group_prefix}-{stratum}-{composition}-{group_index:03d}"
         for gradient in (
             row["target_R_Ln_center"] - 0.5,
             row["target_R_Ln_center"],
@@ -369,6 +380,7 @@ __all__ = [
     "TGLF_DEVELOPMENT_GACODE_REVISION",
     "TGLF_DEVELOPMENT_PLAN_VERSION",
     "TGLF_DEVELOPMENT_SEED",
+    "TGLF_EXPANDED_SELECTION_SEED",
     "build_tglf_development_plan",
     "canonical_tglf_development_digest",
     "validate_tglf_development_plan",

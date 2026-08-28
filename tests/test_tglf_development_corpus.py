@@ -25,6 +25,7 @@ from scpn_fusion.io.tglf_development_corpus import (
     generate_tglf_development_corpus,
     verify_tglf_development_corpus,
 )
+from scpn_fusion.io.tglf_development_plan import build_tglf_development_plan
 from scpn_fusion.io.tglf_dataset_contract import sha256_file
 from scpn_fusion.io.tglf_species_dataset_contract import (
     build_tglf_species_dataset_manifest,
@@ -113,6 +114,21 @@ def test_cli_plan_and_verify_cross_real_file_boundaries(tmp_path: Path) -> None:
     )
     assert verified.returncode == 0, verified.stderr
     assert json.loads(verified.stdout)["tree_sha256"] == FIXTURE_TREE_SHA256
+
+
+def test_expanded_plan_freezes_new_groups_and_fresh_split_roles() -> None:
+    """The follow-up plan triples group coverage without reusing old identities."""
+    expanded = build_tglf_development_plan(profile="expanded", seed=20260828)
+    development = build_tglf_development_plan()
+    assert expanded["plan_sha256"] == (
+        "9acbe7db76abf04b6a23f7b96e48faf79304e134881e7e01f0c452498b5302fb"
+    )
+    assert expanded["base_groups"] == 72
+    assert expanded["accepted_runs"] == 216
+    expanded_groups = {run["group_id"] for run in expanded["runs"]}
+    development_groups = {run["group_id"] for run in development["runs"]}
+    assert expanded_groups.isdisjoint(development_groups)
+    assert all(group.startswith("expanded-official-") for group in expanded_groups)
 
 
 def test_verifier_rejects_plan_and_raw_output_tamper(tmp_path: Path) -> None:
