@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Official TGLF Development Plan Tests
-"""Public-surface tests for the deterministic TGLF-DATA-03 sampling plan."""
+"""Test the public deterministic TGLF development sampling plan."""
 
 from __future__ import annotations
 

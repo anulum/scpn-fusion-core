@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Official TGLF Development Corpus Tests
-"""Real-plan, retained-output, recovery and CLI tests for TGLF-DATA-03."""
+"""Test real plans, retained outputs, recovery, and the development-corpus CLI."""
 
 from __future__ import annotations
 
