@@ -97,7 +97,8 @@ Notes:
 
 ### Track D: Advanced Research (incubation only until gates are met)
 
-- Includes `GNEU-*`, `GAI-*`, `GMVR-*`, `GDEP-*`, `GPHY-*`.
+- Includes the GyroSwin-like turbulence surrogate benchmark plus `GNEU-01..03`,
+  `GAI-02..03`, `GMVR-01..03`, `GDEP-01..05`, and `GPHY-01..06`.
 - Each item requires an RFC with:
   - data source and license confirmation,
   - benchmark protocol,
@@ -109,7 +110,9 @@ Notes:
 - Ready now (execution lane): none.
 - Delivered in current sprint: `GDEP-04` baseline via `validation/control_resilience_campaign.py` and control-path hooks in Python/Rust modules.
 - Needs RFC before coding: none.
-- Delivered advanced v1 lanes (synthetic scope): `GNEU-01..03`, `GAI-01..03`, `GMVR-01..03`, `GDEP-01..05`, `GPHY-01..06`.
+- Delivered advanced v1 lanes (synthetic scope): the GyroSwin-like turbulence
+  surrogate benchmark, `GNEU-01..03`, `GAI-02..03`, `GMVR-01..03`,
+  `GDEP-01..05`, and `GPHY-01..06`.
 - Blocked by external dependency readiness: tasks requiring TORAX fork sync, large external gyrokinetic datasets, or ADAS data ingestion.
 
 ## Next Sprint Queue

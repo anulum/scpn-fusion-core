@@ -4,8 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — GAI-01 Turbulence Surrogate Validation
-"""GAI-01: deterministic GyroSwin-like surrogate benchmark (synthetic v1)."""
+# SCPN Fusion Core — GyroSwin-Like Turbulence Surrogate Benchmark
+"""Deterministic GyroSwin-like turbulence surrogate benchmark."""
 
 from __future__ import annotations
 
@@ -17,6 +17,9 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
+REPORT_SCHEMA_VERSION = 2
+REPORT_KIND = "gyro_swin_turbulence_surrogate_benchmark"
+REPORT_PAYLOAD_KEY = "turbulence_surrogate_benchmark"
 
 from scpn_fusion.core.gyro_swin_surrogate import (
     GyroSwinLikeSurrogate,
@@ -32,6 +35,8 @@ def run_campaign(
     train_samples: int = 2048,
     eval_samples: int = 384,
     benchmark_samples: int = 96,
+    rmse_threshold_pct: float = 10.0,
+    speedup_threshold: float = 1000.0,
 ) -> dict[str, Any]:
     """Run the synthetic turbulence surrogate campaign and return RMSE/speedup metrics."""
     t0 = time.perf_counter()
@@ -48,8 +53,6 @@ def run_campaign(
     speed = benchmark_speedup(eval_set.features[:bench_count], surrogate)
 
     elapsed = time.perf_counter() - t0
-    rmse_threshold_pct = 10.0
-    speedup_threshold = 1000.0
     return {
         "seed": int(seed),
         "train_samples": int(train_samples),
@@ -69,50 +72,83 @@ def run_campaign(
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
-    """Generate the full GAI-01 report payload from a campaign run."""
+    """Generate the versioned benchmark report payload from a campaign run."""
     campaign = run_campaign(**kwargs)
     return {
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "report_kind": REPORT_KIND,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "gai_01": campaign,
+        REPORT_PAYLOAD_KEY: campaign,
     }
 
 
+def validate_report(report: dict[str, Any]) -> dict[str, Any]:
+    """Validate the current serialized report contract and return its payload."""
+    expected_keys = {
+        "schema_version",
+        "report_kind",
+        "generated_at_utc",
+        REPORT_PAYLOAD_KEY,
+    }
+    if set(report) != expected_keys:
+        raise ValueError("report keys do not match the current descriptive contract")
+    if report["schema_version"] != REPORT_SCHEMA_VERSION:
+        raise ValueError(f"unsupported report schema_version: {report['schema_version']!r}")
+    if report["report_kind"] != REPORT_KIND:
+        raise ValueError(f"unsupported report_kind: {report['report_kind']!r}")
+    generated_at = report["generated_at_utc"]
+    if not isinstance(generated_at, str) or not generated_at:
+        raise ValueError("generated_at_utc must be a non-empty string")
+    payload = report[REPORT_PAYLOAD_KEY]
+    if not isinstance(payload, dict):
+        raise ValueError(f"{REPORT_PAYLOAD_KEY} must be an object")
+    return payload
+
+
 def render_markdown(report: dict[str, Any]) -> str:
-    """Render the GAI-01 campaign results as a compact markdown summary."""
-    g = report["gai_01"]
+    """Render benchmark results from the current report contract as Markdown."""
+    benchmark = validate_report(report)
     lines = [
-        "# GAI-01 Turbulence Surrogate Validation",
+        "# GyroSwin-Like Turbulence Surrogate Benchmark",
         "",
         f"- Generated: `{report['generated_at_utc']}`",
-        f"- Runtime: `{g['runtime_seconds']:.3f} s`",
-        f"- Seed: `{g['seed']}`",
+        f"- Runtime: `{benchmark['runtime_seconds']:.3f} s`",
+        f"- Seed: `{benchmark['seed']}`",
         "",
         "## Metrics",
         "",
-        f"- RMSE (% of mean target): `{g['rmse_pct']:.3f}%` (threshold `{g['rmse_threshold_pct']:.1f}%`)",
-        f"- Speedup vs GENE-like proxy: `{g['speedup_vs_gene_proxy']:.1f}x` (threshold `{g['speedup_threshold']:.1f}x`)",
-        f"- Baseline time/sample: `{g['gene_proxy_s_per_sample']:.3e} s`",
-        f"- Surrogate time/sample: `{g['surrogate_s_per_sample']:.3e} s`",
-        f"- Threshold pass: `{'YES' if g['passes_thresholds'] else 'NO'}`",
+        f"- RMSE (% of mean target): `{benchmark['rmse_pct']:.3f}%` "
+        f"(threshold `{benchmark['rmse_threshold_pct']:.1f}%`)",
+        f"- Speedup vs GENE-like proxy: `{benchmark['speedup_vs_gene_proxy']:.1f}x` "
+        f"(threshold `{benchmark['speedup_threshold']:.1f}x`)",
+        f"- Baseline time/sample: `{benchmark['gene_proxy_s_per_sample']:.3e} s`",
+        f"- Surrogate time/sample: `{benchmark['surrogate_s_per_sample']:.3e} s`",
+        f"- Threshold pass: `{'YES' if benchmark['passes_thresholds'] else 'NO'}`",
         "",
     ]
     return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point for running GAI-01 and writing JSON/Markdown outputs."""
+    """Run the benchmark CLI and write versioned JSON and Markdown outputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--train-samples", type=int, default=2048)
     parser.add_argument("--eval-samples", type=int, default=384)
     parser.add_argument("--benchmark-samples", type=int, default=96)
+    parser.add_argument("--rmse-threshold-pct", type=float, default=10.0)
+    parser.add_argument("--speedup-threshold", type=float, default=1000.0)
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "gai_01_turbulence_surrogate.json"),
+        default=str(
+            ROOT / "validation" / "reports" / "gyro_swin_turbulence_surrogate_benchmark.json"
+        ),
     )
     parser.add_argument(
         "--output-md",
-        default=str(ROOT / "validation" / "reports" / "gai_01_turbulence_surrogate.md"),
+        default=str(
+            ROOT / "validation" / "reports" / "gyro_swin_turbulence_surrogate_benchmark.md"
+        ),
     )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)
@@ -122,6 +158,8 @@ def main(argv: list[str] | None = None) -> int:
         train_samples=args.train_samples,
         eval_samples=args.eval_samples,
         benchmark_samples=args.benchmark_samples,
+        rmse_threshold_pct=args.rmse_threshold_pct,
+        speedup_threshold=args.speedup_threshold,
     )
 
     out_json = Path(args.output_json)
@@ -131,15 +169,15 @@ def main(argv: list[str] | None = None) -> int:
     out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
     out_md.write_text(render_markdown(report), encoding="utf-8")
 
-    g = report["gai_01"]
-    print("GAI-01 turbulence surrogate validation complete.")
+    benchmark = validate_report(report)
+    print("GyroSwin-like turbulence surrogate benchmark complete.")
     print(
-        f"rmse_pct={g['rmse_pct']:.3f}, "
-        f"speedup_vs_gene_proxy={g['speedup_vs_gene_proxy']:.1f}x, "
-        f"passes_thresholds={g['passes_thresholds']}"
+        f"rmse_pct={benchmark['rmse_pct']:.3f}, "
+        f"speedup_vs_gene_proxy={benchmark['speedup_vs_gene_proxy']:.1f}x, "
+        f"passes_thresholds={benchmark['passes_thresholds']}"
     )
 
-    if args.strict and not g["passes_thresholds"]:
+    if args.strict and not benchmark["passes_thresholds"]:
         return 2
     return 0
 

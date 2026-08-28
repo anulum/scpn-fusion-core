@@ -48,7 +48,6 @@
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
       "docs/releases/v3.9.9.md",
-      "docs/rfc/GAI-01_RFC.md",
       "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
       "docs/rfc/GDEP-01_RFC.md",
@@ -64,6 +63,7 @@
       "docs/rfc/GPHY-04_RFC.md",
       "docs/rfc/GPHY-05_RFC.md",
       "docs/rfc/GPHY-06_RFC.md",
+      "docs/rfc/gyro_swin_turbulence_surrogate_benchmark.md",
       "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md"
     ],
@@ -2930,7 +2930,6 @@
       "docs/releases/v3.9.7.md",
       "docs/releases/v3.9.8.md",
       "docs/releases/v3.9.9.md",
-      "docs/rfc/GAI-01_RFC.md",
       "docs/rfc/GAI-02_RFC.md",
       "docs/rfc/GAI-03_RFC.md",
       "docs/rfc/GDEP-01_RFC.md",
@@ -2946,6 +2945,7 @@
       "docs/rfc/GPHY-04_RFC.md",
       "docs/rfc/GPHY-05_RFC.md",
       "docs/rfc/GPHY-06_RFC.md",
+      "docs/rfc/gyro_swin_turbulence_surrogate_benchmark.md",
       "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md"
     ]
@@ -3220,7 +3220,6 @@
       "tests/test_fusion_kernel_solver_runtime.py",
       "tests/test_fusion_optimal_control.py",
       "tests/test_fuzz_harness_entrypoints.py",
-      "tests/test_gai_01_turbulence_surrogate.py",
       "tests/test_gai_02_torax_hybrid.py",
       "tests/test_gai_03_heat_ml_shadow.py",
       "tests/test_gain_scheduled_controller.py",
@@ -3285,6 +3284,7 @@
       "tests/test_gs_transport_surrogate.py",
       "tests/test_gs_transport_surrogate_training.py",
       "tests/test_gym_tokamak_env.py",
+      "tests/test_gyro_swin_turbulence_surrogate_benchmark.py",
       "tests/test_gyrokinetic_transport.py",
       "tests/test_h_infinity_closed_loop.py",
       "tests/test_h_infinity_controller.py",

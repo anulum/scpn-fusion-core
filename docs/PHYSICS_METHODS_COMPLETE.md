@@ -836,13 +836,14 @@ The `SpectralTurbulenceGenerator` drives an ITG-like spectral drift-wave simulat
 
 **References:** Li, Z. et al. "Fourier Neural Operator for Parametric Partial Differential Equations." *ICLR* (2021). arXiv:[2010.08895](https://arxiv.org/abs/2010.08895).
 
-### 5.3 GyroSwin-Like Surrogate (GAI-01)
+### 5.3 GyroSwin-Like Turbulence Surrogate
 
 A deterministic NumPy-only surrogate for CI benchmarking of core-turbulence transport. Uses a synthetic reference law with drive/shear/shape factors calibrated to JET/ITPA-like plasma regimes. Provides speed benchmarks against a "GENE-like proxy" baseline.
 
 **Key file:** `core/gyro_swin_surrogate.py`.
 
-**Validation:** `tests/test_gai_01_turbulence_surrogate.py`, `validation/gai_01_turbulence_surrogate.py`.
+**Validation:** `tests/test_gyro_swin_turbulence_surrogate_benchmark.py`,
+`validation/gyro_swin_turbulence_surrogate_benchmark.py`.
 
 ---
 

@@ -1,12 +1,12 @@
 <!--
-SCPN Fusion Core — RFC GAI-01
+SCPN Fusion Core — GyroSwin-Like Turbulence Surrogate Benchmark RFC
 © 1998–2026 Miroslav Šotek. All rights reserved.
 Contact: www.anulum.li | protoscience@anulum.li
 ORCID: https://orcid.org/0009-0009-3560-0851
 License: GNU AGPL v3 | Commercial licensing available
 -->
 
-# RFC GAI-01 — GyroSwin-Like Turbulence Surrogate Benchmark Lane
+# RFC — GyroSwin-Like Turbulence Surrogate Benchmark
 
 Status: Draft for review
 
@@ -14,10 +14,9 @@ Status: Draft for review
 
 This RFC is a planning contract for an explicit implementation lane in SCPN-FUSION-CORE. It records the intended scope, target modules, metrics, and acceptance path before work is promoted to default behavior or external release claims.
 
-## 1. Task Identity
+## 1. Benchmark identity
 
-- Task ID: `GAI-01`
-- Title: Add deterministic GyroSwin-like turbulence surrogate benchmark lane
+- Responsibility: deterministic GyroSwin-like turbulence surrogate benchmark
 - Owner: Unassigned
 - Proposed sprint: Phase 2, Sprint S2
 
@@ -31,10 +30,10 @@ Current transport stack includes analytic and neural surrogate paths, but there 
   - `src/scpn_fusion/core/gyro_swin_surrogate.py`
   - `src/scpn_fusion/core/neural_transport.py` (consumer context only; no hard dependency changes required)
 - Validation/reporting path:
-  - `validation/gai_01_turbulence_surrogate.py`
-  - `validation/reports/gai_01_turbulence_surrogate.json`
-  - `validation/reports/gai_01_turbulence_surrogate.md`
-  - `tests/test_gai_01_turbulence_surrogate.py`
+  - `validation/gyro_swin_turbulence_surrogate_benchmark.py`
+  - `validation/reports/gyro_swin_turbulence_surrogate_benchmark.json`
+  - `validation/reports/gyro_swin_turbulence_surrogate_benchmark.md`
+  - `tests/test_gyro_swin_turbulence_surrogate_benchmark.py`
 - Rust path mapping for later phase:
   - `scpn-fusion-rs/crates/fusion-core/src/transport.rs`
   - `scpn-fusion-rs/crates/fusion-physics/src/turbulence.rs`
@@ -60,7 +59,8 @@ Current transport stack includes analytic and neural surrogate paths, but there 
 ## 6. Regression and Safety Plan
 
 - CI jobs to update:
-  - Add a `GAI-01` smoke invocation in existing Python test lane (targeted pytest + strict validation CLI).
+  - Add a GyroSwin turbulence benchmark smoke invocation in the existing Python
+    test lane (targeted pytest plus strict validation CLI).
 - Property/invariant tests:
   - Deterministic dataset generation for fixed seed.
   - Finite positive surrogate outputs.

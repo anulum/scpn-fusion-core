@@ -4,7 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — GyroSwin-Like Turbulence Surrogate (GAI-01)
+# SCPN Fusion Core — GyroSwin-Like Turbulence Surrogate
 """Deterministic GyroSwin-like surrogate for core-turbulence benchmarking.
 
 This module intentionally uses synthetic data and an offline, zero-dependency
