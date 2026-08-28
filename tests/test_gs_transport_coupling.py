@@ -56,7 +56,7 @@ def solver(tmp_path: Path) -> TransportSolver:
 # ── run_self_consistent() tests ─────────────────────────────────────
 
 
-def test_self_consistent_returns_expected_keys(solver: TransportSolver):
+def test_self_consistent_returns_expected_keys(solver: TransportSolver) -> None:
     """run_self_consistent() must return all documented keys."""
     result = solver.run_self_consistent(
         P_aux=30.0,
@@ -80,7 +80,7 @@ def test_self_consistent_returns_expected_keys(solver: TransportSolver):
     )
 
 
-def test_self_consistent_psi_residuals_recorded(solver: TransportSolver):
+def test_self_consistent_psi_residuals_recorded(solver: TransportSolver) -> None:
     """Each outer iteration should record a psi residual.
 
     The number of recorded residuals equals n_outer_converged (the loop
@@ -102,7 +102,7 @@ def test_self_consistent_psi_residuals_recorded(solver: TransportSolver):
     assert n_done <= n_outer, "Should not exceed n_outer"
 
 
-def test_self_consistent_residuals_finite(solver: TransportSolver):
+def test_self_consistent_residuals_finite(solver: TransportSolver) -> None:
     """All psi residuals should be finite and non-negative."""
     result = solver.run_self_consistent(
         P_aux=30.0,
@@ -116,7 +116,7 @@ def test_self_consistent_residuals_finite(solver: TransportSolver):
         assert r >= 0, f"Negative psi residual: {r}"
 
 
-def test_self_consistent_profiles_finite(solver: TransportSolver):
+def test_self_consistent_profiles_finite(solver: TransportSolver) -> None:
     """Output Ti and ne profiles must contain no NaN/Inf."""
     result = solver.run_self_consistent(
         P_aux=30.0,
@@ -128,7 +128,7 @@ def test_self_consistent_profiles_finite(solver: TransportSolver):
     assert np.all(np.isfinite(result["ne_profile"])), "ne has NaN/Inf"
 
 
-def test_self_consistent_positive_temperatures(solver: TransportSolver):
+def test_self_consistent_positive_temperatures(solver: TransportSolver) -> None:
     """Core temperature and average must be positive after coupling."""
     result = solver.run_self_consistent(
         P_aux=30.0,
@@ -140,7 +140,7 @@ def test_self_consistent_positive_temperatures(solver: TransportSolver):
     assert result["T_core"] > 0, f"T_core={result['T_core']}"
 
 
-def test_self_consistent_convergence_flag(solver: TransportSolver):
+def test_self_consistent_convergence_flag(solver: TransportSolver) -> None:
     """With a very loose tolerance the loop should converge."""
     result = solver.run_self_consistent(
         P_aux=30.0,
@@ -153,7 +153,7 @@ def test_self_consistent_convergence_flag(solver: TransportSolver):
     assert result["n_outer_converged"] == 1, "Should converge on first iter"
 
 
-def test_self_consistent_psi_residual_trend(solver: TransportSolver):
+def test_self_consistent_psi_residual_trend(solver: TransportSolver) -> None:
     """Psi residuals should generally decrease (or at least not blow up).
 
     We check that the last residual is no larger than 10x the first.
@@ -178,7 +178,7 @@ def test_self_consistent_psi_residual_trend(solver: TransportSolver):
 # ── map_profiles_to_2d() is actually called ─────────────────────────
 
 
-def test_map_profiles_called_during_self_consistent(solver: TransportSolver):
+def test_map_profiles_called_during_self_consistent(solver: TransportSolver) -> None:
     """map_profiles_to_2d() must be called once per outer iteration.
 
     The count should equal n_outer_converged (the loop may converge early).
@@ -198,7 +198,7 @@ def test_map_profiles_called_during_self_consistent(solver: TransportSolver):
         assert mock_map.call_count >= 1, "Should call map_profiles_to_2d at least once"
 
 
-def test_map_profiles_updates_jphi(solver: TransportSolver):
+def test_map_profiles_updates_jphi(solver: TransportSolver) -> None:
     """map_profiles_to_2d() should change J_phi from its initial state."""
     J_phi_before = solver.J_phi.copy()
     # Run some transport to change profiles
@@ -216,7 +216,7 @@ def test_map_profiles_updates_jphi(solver: TransportSolver):
 
 def test_solve_equilibrium_called_during_self_consistent(
     solver: TransportSolver,
-):
+) -> None:
     """solve_equilibrium() must be called once per outer iteration."""
     with patch.object(solver, "solve_equilibrium", wraps=solver.solve_equilibrium) as mock_eq:
         solver.run_self_consistent(
@@ -234,7 +234,7 @@ def test_solve_equilibrium_called_during_self_consistent(
 # ── Backward compatibility ──────────────────────────────────────────
 
 
-def test_run_to_steady_state_default_unchanged(solver: TransportSolver):
+def test_run_to_steady_state_default_unchanged(solver: TransportSolver) -> None:
     """run_to_steady_state() without self_consistent keeps old behaviour."""
     result = solver.run_to_steady_state(P_aux=30.0, n_steps=20, dt=0.1)
     assert "T_avg" in result
@@ -250,7 +250,7 @@ def test_run_to_steady_state_default_unchanged(solver: TransportSolver):
 
 def test_run_to_steady_state_self_consistent_delegates(
     solver: TransportSolver,
-):
+) -> None:
     """self_consistent=True should delegate to run_self_consistent()."""
     with patch.object(solver, "run_self_consistent", wraps=solver.run_self_consistent) as mock_sc:
         result = solver.run_to_steady_state(
@@ -275,7 +275,7 @@ def test_run_to_steady_state_self_consistent_delegates(
     assert "converged" in result
 
 
-def test_run_to_steady_state_adaptive_still_works(solver: TransportSolver):
+def test_run_to_steady_state_adaptive_still_works(solver: TransportSolver) -> None:
     """adaptive=True should still work (not broken by new parameter)."""
     result = solver.run_to_steady_state(
         P_aux=30.0,
@@ -292,49 +292,42 @@ def test_run_to_steady_state_adaptive_still_works(solver: TransportSolver):
 # ── external_profile_mode correctness ───────────────────────────────
 
 
-def test_external_profile_mode_is_true(solver: TransportSolver):
+def test_external_profile_mode_is_true(solver: TransportSolver) -> None:
     """TransportSolver must have external_profile_mode=True so that
     solve_equilibrium uses the J_phi set by map_profiles_to_2d()."""
     assert solver.external_profile_mode is True
 
 
-# ── GS→transport surrogate smoke (C-H5) ─────────────────────────────
+# ── End-to-end equilibrium/transport coupling ───────────────────────
 
 
-def test_gs_transport_surrogate_coupling_smoke(tmp_path: Path) -> None:
-    """Solve small equilibrium, feed psi-derived profiles to NeuralTransportModel."""
-    from scpn_fusion.core.fusion_kernel import FusionKernel
-    from scpn_fusion.core.neural_transport import NeuralTransportModel
+def test_self_consistent_run_updates_equilibrium_and_transport(solver: TransportSolver) -> None:
+    """The public coupled run updates flux, profiles, coefficients and current density."""
+    psi_before = solver.Psi.copy()
+    ti_before = solver.Ti.copy()
 
-    cfg = {
-        "reactor_name": "GS-Smoke",
-        "grid_resolution": [8, 8],
-        "dimensions": {"R_min": 4.0, "R_max": 8.0, "Z_min": -3.0, "Z_max": 3.0},
-        "physics": {"plasma_current_target": 1.0, "vacuum_permeability": 1.0},
-        "coils": [],
-        "solver": {
-            "max_iterations": 5,
-            "convergence_threshold": 1e-4,
-            "relaxation_factor": 0.3,
-        },
-    }
-    cfg_path = tmp_path / "gs_smoke.json"
-    cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
-    kernel = FusionKernel(cfg_path)
-    kernel.solve_equilibrium()
+    result = solver.run_self_consistent(
+        P_aux=30.0,
+        n_inner=5,
+        n_outer=2,
+        dt=0.01,
+        psi_tol=1e-10,
+    )
 
-    n = 20
-    rho = np.linspace(0.01, 0.99, n)
-    te = 10.0 * (1.0 - rho**2) + 0.2
-    ti = 9.0 * (1.0 - rho**2) + 0.2
-    ne = 8.0 * (1.0 - rho**2) + 0.5
-    q_prof = 1.0 + 2.5 * rho**2
-    s_hat = 5.0 * rho
+    assert result["n_outer_converged"] == 2
+    assert len(result["psi_residuals"]) == 2
+    assert result["psi_residuals"][0] > 0.0
+    assert not np.allclose(solver.Psi, psi_before)
+    assert not np.allclose(solver.Ti, ti_before)
+    np.testing.assert_array_equal(result["Ti_profile"], solver.Ti)
+    np.testing.assert_array_equal(result["ne_profile"], solver.ne)
 
-    model = NeuralTransportModel("/tmp/no_weights.npz")
-    chi_e, chi_i, d_e = model.predict_profile(rho, te, ti, ne, q_prof, s_hat)
+    for profile in (solver.Ti, solver.Te, solver.ne, solver.chi_e, solver.chi_i, solver.D_n):
+        assert profile.shape == solver.rho.shape
+        assert np.all(np.isfinite(profile))
+    assert solver.J_phi.shape == solver.Psi.shape
+    assert np.all(np.isfinite(solver.J_phi))
 
-    assert chi_e.shape == (n,)
-    assert np.all(np.isfinite(chi_e))
-    assert np.all(np.isfinite(chi_i))
-    assert np.all(np.isfinite(d_e))
+    target_current = float(solver.cfg["physics"]["plasma_current_target"])
+    integrated_current = float(np.sum(solver.J_phi) * solver.dR * solver.dZ)
+    assert integrated_current == pytest.approx(target_current, rel=1e-12, abs=1e-12)
