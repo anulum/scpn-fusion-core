@@ -6,7 +6,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Phase Kernel Benchmark
-"""Benchmark the ``kuramoto_step`` and ``upde_tick`` dispatcher tiers (M-3).
+"""Benchmark the Kuramoto and UPDE step/run dispatcher tiers.
 
 Times the Rust ``fusion-phase`` tier against the NumPy floor on identical
 seeded workloads (single-population Kuramoto-Sakaguchi stepping and the

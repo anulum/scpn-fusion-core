@@ -871,7 +871,7 @@ jobs:
           source .venv/bin/activate
           pytest tests/test_pyo3_physics_bridge.py tests/test_pyo3_control_bridge.py \
                  tests/test_pyo3_nuclear_bridge.py tests/test_pyo3_transport_bridge.py -v --tb=short
-      - name: Measure phase-kernel benchmark (M-3, isolated runner)
+      - name: Measure phase-kernel cross-tier benchmark (isolated runner)
         run: |
           source .venv/bin/activate
           mkdir -p artifacts
