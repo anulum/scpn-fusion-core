@@ -387,7 +387,7 @@ class TestMultigridSolverParity:
         assert np.all(np.isfinite(psi_py)), "Python multigrid equilibrium produced NaN"
         assert np.all(np.isfinite(psi_rs)), "Rust multigrid equilibrium produced NaN"
 
-        # The HI-02 restriction boundary fix has landed: the top/bottom and
+        # The full-weighting restriction boundary correction is in place: the top/bottom and
         # left/right edge rows now match the Rust V-cycle to rtol=1e-3, so the
         # boundary parity is enforced (this test previously xfailed on it). The
         # interior still relaxes with a different smoothing stencil than Rust, so
