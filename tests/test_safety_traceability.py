@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Safety Traceability Matrix Tests
-"""Tests for the safety traceability matrix generator and guard (T-2)."""
+"""Tests for the safety traceability matrix generator and fail-closed drift guard."""
 
 from __future__ import annotations
 

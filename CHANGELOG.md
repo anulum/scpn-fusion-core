@@ -265,7 +265,7 @@ MPI/multi-GPU parity remain fail-closed).
   parity claim.
 - Solov'ev exact equilibrium suite with a published psi_N gate and per-file
   attribution (F-1).
-- Safety traceability matrix generator with a fail-closed drift guard (T-2).
+- Safety traceability matrix generator with a fail-closed drift guard.
 
 ### Changed
 

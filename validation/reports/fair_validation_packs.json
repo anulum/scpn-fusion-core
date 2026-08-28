@@ -6,7 +6,7 @@
   "minimum_pack_count": 3,
   "pack_count": 3,
   "total_files": 15,
-  "total_bytes": 180241,
+  "total_bytes": 180253,
   "output_dir": "artifacts/fair_validation_packs",
   "publication_blockers": [
     "owner approval for DOI publication and final data-license posture",
@@ -21,7 +21,7 @@
       "description": "Requirement, hazard, implementation, proof, test, and generated matrix evidence for the control-safety traceability gate.",
       "license": "AGPL-3.0-or-later",
       "file_count": 4,
-      "total_bytes": 51877,
+      "total_bytes": 51889,
       "files": [
         {
           "path": "validation/safety_traceability.json",
@@ -40,8 +40,8 @@
         },
         {
           "path": "tests/test_safety_traceability.py",
-          "sha256": "cc61733201defdec8a1b5319f2b363b2f1f49d475b4b78f7f6135aabb2d8311d",
-          "size_bytes": 14591
+          "sha256": "43c1fbd54706d88559544a8a4d23a0b89fd1c18fc9f165238df1aa4632efbacf",
+          "size_bytes": 14603
         }
       ]
     },
