@@ -7,7 +7,7 @@
 // SCPN Fusion Core — Fusion Physics
 //! Standalone physics modules for SCPN Fusion Core.
 //!
-//! Stage 5: sandpile, sawtooth, FNO, turbulence, Hall-MHD,
+//! Sandpile, sawtooth, FNO, turbulence, Hall-MHD,
 //! compact optimizer, design scanner, FRC analytical contracts,
 //! pulsed Hall-MHD flux-carrier contracts, MRTI growth-spectrum contracts,
 //! Faraday recovery contracts,
