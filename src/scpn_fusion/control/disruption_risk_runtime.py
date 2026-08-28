@@ -498,14 +498,24 @@ def run_anomaly_alarm_campaign(
     episodes: int = 128,
     window: int = 64,
     threshold: float = DEFAULT_DISRUPTION_RISK_THRESHOLD,
+    min_true_positive_rate: float = 0.90,
+    max_false_positive_rate: float = 0.10,
+    max_p95_alarm_latency_steps: int = 24,
 ) -> dict[str, float | int | bool]:
-    """Evaluate alarm true/false-positive behavior on deterministic synthetic episodes."""
+    """Evaluate alarm quality against public synthetic-campaign thresholds."""
     seed_i = _require_int("seed", seed, 0)
     episodes_i = _require_int("episodes", episodes, 1)
     window_i = _require_int("window", window, 16)
     threshold_f = float(threshold)
     if not np.isfinite(threshold_f) or threshold_f <= 0.0 or threshold_f >= 1.0:
         raise ValueError("threshold must be finite and in (0, 1).")
+    min_tpr = float(min_true_positive_rate)
+    max_fpr = float(max_false_positive_rate)
+    if not np.isfinite(min_tpr) or min_tpr < 0.0 or min_tpr > 1.0:
+        raise ValueError("min_true_positive_rate must be finite and in [0, 1].")
+    if not np.isfinite(max_fpr) or max_fpr < 0.0 or max_fpr > 1.0:
+        raise ValueError("max_false_positive_rate must be finite and in [0, 1].")
+    max_latency = _require_int("max_p95_alarm_latency_steps", max_p95_alarm_latency_steps, 0)
 
     rng = np.random.default_rng(seed_i)
     detector = HybridAnomalyDetector(threshold=threshold_f, ema=0.12)
@@ -542,7 +552,7 @@ def run_anomaly_alarm_campaign(
     tpr = float(tp / positives) if positives > 0 else 0.0
     fpr = float(fp / negatives) if negatives > 0 else 0.0
     p95_latency = int(np.percentile(alarm_latency_steps, 95)) if alarm_latency_steps else -1
-    passes = bool(tpr >= 0.90 and fpr <= 0.10)
+    passes = bool(tpr >= min_tpr and fpr <= max_fpr and 0 <= p95_latency <= max_latency)
 
     return {
         "seed": seed_i,
@@ -552,5 +562,8 @@ def run_anomaly_alarm_campaign(
         "true_positive_rate": tpr,
         "false_positive_rate": fpr,
         "p95_alarm_latency_steps": p95_latency,
+        "min_true_positive_rate": min_tpr,
+        "max_false_positive_rate": max_fpr,
+        "max_p95_alarm_latency_steps": max_latency,
         "passes_thresholds": passes,
     }

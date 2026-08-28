@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "report_kind": "disruption_anomaly_alarm_validation",
+  "generated_at_utc": "2026-08-28T08:48:02.507235+00:00",
+  "runtime_seconds": 0.3981074970215559,
+  "disruption_anomaly_alarm_validation": {
+    "seed": 0,
+    "episodes": 128,
+    "window": 64,
+    "threshold": 0.5,
+    "true_positive_rate": 0.0,
+    "false_positive_rate": 0.0,
+    "p95_alarm_latency_steps": -1,
+    "min_true_positive_rate": 0.9,
+    "max_false_positive_rate": 0.1,
+    "max_p95_alarm_latency_steps": 24,
+    "passes_thresholds": false
+  }
+}

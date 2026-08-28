@@ -100,7 +100,8 @@ Notes:
 - Includes the GyroSwin-like turbulence surrogate benchmark, the TORAX-hybrid
   realtime control benchmark, the HEAT-ML magnetic-shadow design-scanner
   benchmark, the SNN/RL tearing-mode fault benchmark, the ice-pellet density-
-  control validation, `GNEU-02`, the
+  control validation, the synthetic disruption anomaly-alarm campaign (default
+  threshold gate not met), the
   compact-reactor engineering-constraint
   validation, the liquid-metal TEMHD divertor validation, the stellarator SNN
   stability-control validation, the NSTX-U/SPARC digital-twin
@@ -121,7 +122,8 @@ Notes:
 - Delivered advanced v1 lanes (synthetic scope): the GyroSwin-like turbulence
   surrogate benchmark, the TORAX-hybrid realtime control benchmark, the
   HEAT-ML magnetic-shadow design-scanner benchmark, the SNN/RL tearing-mode
-  fault benchmark, the ice-pellet density-control validation, `GNEU-02`, the
+  fault benchmark, the ice-pellet density-control validation, the synthetic
+  disruption anomaly-alarm campaign (default threshold gate not met), the
   compact-reactor engineering-constraint validation, the liquid-metal TEMHD
   divertor validation, the stellarator SNN stability-control validation, the
   NSTX-U/SPARC digital-twin ingestion campaign, the
