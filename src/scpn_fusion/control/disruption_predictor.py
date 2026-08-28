@@ -31,6 +31,7 @@ from scpn_fusion.control.disruption_risk_runtime import (
     DEFAULT_DISRUPTION_RISK_BIAS,
     DEFAULT_DISRUPTION_RISK_THRESHOLD,
     DISRUPTION_RISK_LINEAR_WEIGHTS,
+    DisruptionRiskWindowScan,
     HybridAnomalyDetector,
     _require_int,
     apply_bit_flip_fault,
@@ -39,6 +40,7 @@ from scpn_fusion.control.disruption_risk_runtime import (
     predict_disruption_risk,
     run_anomaly_alarm_campaign,
     run_fault_noise_campaign,
+    scan_disruption_risk_windows,
     simulate_tearing_mode,
 )
 
@@ -46,6 +48,7 @@ __all__ = [
     "DEFAULT_DISRUPTION_RISK_BIAS",
     "DEFAULT_DISRUPTION_RISK_THRESHOLD",
     "DISRUPTION_RISK_LINEAR_WEIGHTS",
+    "DisruptionRiskWindowScan",
     "HybridAnomalyDetector",
     "apply_bit_flip_fault",
     "apply_disruption_logit_bias",
@@ -53,6 +56,7 @@ __all__ = [
     "predict_disruption_risk",
     "run_anomaly_alarm_campaign",
     "run_fault_noise_campaign",
+    "scan_disruption_risk_windows",
     "DisruptionTransformer",
     "train_predictor",
     "load_or_train_predictor",

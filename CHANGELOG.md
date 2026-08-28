@@ -4,6 +4,10 @@
 
 ### Added
 
+- Add a typed public sliding-window disruption-risk scan with exact window-end
+  indices, deterministic first-alarm reporting, final-sample coverage,
+  fail-closed configuration validation, and stable disruption/control facade
+  exports.
 - Add a leakage-safe four-way machine-conditioned surrogate contract with
   training-only transforms, validation-only selection, post-selection
   calibration, untouched final testing, field-aligned PCA loss, finite-sample

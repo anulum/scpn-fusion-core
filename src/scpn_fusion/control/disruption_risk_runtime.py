@@ -9,9 +9,11 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Any, Optional
+
 import numpy as np
 from numpy.typing import NDArray
-from typing import Any, Optional
 
 FloatArray = NDArray[np.float64]
 
@@ -31,6 +33,28 @@ DISRUPTION_RISK_LINEAR_WEIGHTS: dict[str, float] = {
     "asym": 0.50,
     "spread": 0.15,
 }
+
+
+@dataclass(frozen=True)
+class DisruptionRiskWindowScan:
+    """Risk scores and first-alarm location from a sliding-window signal scan.
+
+    ``window_end_indices`` uses exclusive signal indices, matching normal
+    Python slice bounds. ``first_alarm_index`` is ``None`` when every score is
+    at or below the configured threshold.
+    """
+
+    window_size: int
+    stride: int
+    threshold: float
+    window_end_indices: NDArray[np.int64]
+    risk_scores: FloatArray
+    first_alarm_index: int | None
+
+    @property
+    def detected(self) -> bool:
+        """Return whether any scanned window exceeded the risk threshold."""
+        return self.first_alarm_index is not None
 
 
 def _require_int(name: str, value: object, minimum: int | None = None) -> int:
@@ -239,6 +263,93 @@ def predict_disruption_risk(
         raise ValueError("bias_delta must be finite.")
     logits = _compute_disruption_logit_from_features(features) + bias_f
     return float(1.0 / (1.0 + np.exp(-logits)))
+
+
+def scan_disruption_risk_windows(
+    signal: Any,
+    *,
+    window_size: int = 100,
+    stride: int | None = None,
+    threshold: float = DEFAULT_DISRUPTION_RISK_THRESHOLD,
+    toroidal_observables: dict[str, float] | None = None,
+    bias_delta: float = 0.0,
+) -> DisruptionRiskWindowScan:
+    """Score a signal over overlapping windows and locate the first alarm.
+
+    Signals shorter than ``window_size`` are evaluated once in full. For
+    longer signals, the final sample is always included even when ``stride``
+    does not land exactly on the last possible window.
+
+    Parameters
+    ----------
+    signal : Any
+        One-dimensional finite signal samples.
+    window_size : int, optional
+        Requested samples per risk window, by default 100.
+    stride : int or None, optional
+        Samples between window starts. ``None`` selects half-window overlap.
+    threshold : float, optional
+        Alarm threshold in ``[0, 1]``. A score must exceed it to alarm.
+    toroidal_observables : dict[str, float] or None, optional
+        Constant toroidal observables applied to every window.
+    bias_delta : float, optional
+        Additive calibration shift in logit space.
+
+    Returns
+    -------
+    DisruptionRiskWindowScan
+        Immutable scan metadata, exclusive end indices, scores and first alarm.
+
+    Raises
+    ------
+    ValueError
+        If the signal or scan configuration is invalid.
+    """
+    samples = np.asarray(signal, dtype=np.float64).reshape(-1)
+    if samples.size == 0:
+        raise ValueError("signal must contain at least one sample")
+    if not np.all(np.isfinite(samples)):
+        raise ValueError("signal must be finite.")
+
+    requested_window = _require_int("window_size", window_size, 1)
+    effective_window = min(requested_window, int(samples.size))
+    stride_i = (
+        max(effective_window // 2, 1) if stride is None else _require_int("stride", stride, 1)
+    )
+    threshold_f = float(threshold)
+    if not np.isfinite(threshold_f) or threshold_f < 0.0 or threshold_f > 1.0:
+        raise ValueError("threshold must be finite and in [0, 1].")
+
+    final_start = int(samples.size) - effective_window
+    starts = list(range(0, final_start + 1, stride_i))
+    if starts[-1] != final_start:
+        starts.append(final_start)
+
+    end_indices = np.asarray(
+        [start + effective_window for start in starts],
+        dtype=np.int64,
+    )
+    risk_scores = np.asarray(
+        [
+            predict_disruption_risk(
+                samples[start : start + effective_window],
+                toroidal_observables,
+                bias_delta=bias_delta,
+            )
+            for start in starts
+        ],
+        dtype=np.float64,
+    )
+    alarm_positions = np.flatnonzero(risk_scores > threshold_f)
+    first_alarm_index = int(end_indices[int(alarm_positions[0])]) if alarm_positions.size else None
+    return DisruptionRiskWindowScan(
+        window_size=effective_window,
+        stride=stride_i,
+        threshold=threshold_f,
+        window_end_indices=end_indices,
+        risk_scores=risk_scores,
+        first_alarm_index=first_alarm_index,
+    )
 
 
 def apply_bit_flip_fault(value: float, bit_index: int) -> float:

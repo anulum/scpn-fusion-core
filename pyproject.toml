@@ -634,6 +634,7 @@ files = [
     "src/scpn_fusion/control/advanced_soc_fusion_learning.py",
     "src/scpn_fusion/control/disruption_risk_runtime.py",
     "tests/test_disruption_risk_runtime.py",
+    "tests/test_disruption_sliding_window.py",
     "validation/disruption_anomaly_alarm_validation.py",
     "tests/test_disruption_anomaly_alarm.py",
     "validation/replay_certificate.py",

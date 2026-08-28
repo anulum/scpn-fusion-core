@@ -8,7 +8,7 @@
 | Package version | 4.0.0 |
 | Public API exports | 2 |
 | Python capability source modules | 345 |
-| Python capability classes | 600 |
+| Python capability classes | 601 |
 | Capability documentation pages | 64 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |

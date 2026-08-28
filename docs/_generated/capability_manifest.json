@@ -521,6 +521,10 @@
         "path": "src/scpn_fusion/core/disruption_sequence.py"
       },
       {
+        "name": "DisruptionRiskWindowScan",
+        "path": "src/scpn_fusion/control/disruption_risk_runtime.py"
+      },
+      {
         "name": "DisruptionSequence",
         "path": "src/scpn_fusion/core/disruption_sequence.py"
       },
@@ -2877,7 +2881,7 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 600,
+    "python_capability_classes": 601,
     "python_capability_source_modules": 345,
     "rust_workspace_crates": 13,
     "test_files": 623
