@@ -190,7 +190,7 @@ class kernel; the Monte Carlo `py_run_design_scan` driver stays a Rust-only conv
 rejection sampler uses a language-native RNG stream, so it is not point-for-point identical
 to the Python scan — both are valid Monte Carlo draws). The GPU solver (`PyGpuSolver`) is feature-gated (`gpu`) and not compiled into
 the default extension; when built with `--features gpu` on a machine with a physical
-adapter, it backs the `gs_rb_sor_smooth` dispatcher kernel (GPU tier, W-2) with the
+adapter, it backs the `gs_rb_sor_smooth` GPU dispatcher tier with the
 NumPy `mg_smooth` floor. Reconciliation of these pairs is tracked internally and follows the
 same pattern used for the Hall-MHD and tomography lanes.
 

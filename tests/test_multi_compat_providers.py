@@ -397,7 +397,7 @@ def test_rust_simulate_tearing_mode_provider_is_seed_reproducible() -> None:
 
 
 def test_gs_rb_sor_smooth_registered_with_gpu_and_numpy_tiers() -> None:
-    """The W-2 smoother kernel carries GPU and NumPy tier registrations."""
+    """The Red-Black SOR smoother carries GPU and NumPy tier registrations."""
     kernels = multi.registered_kernels()
     assert "gs_rb_sor_smooth" in kernels
     tier_names = [name.rstrip("*") for name in kernels["gs_rb_sor_smooth"]]

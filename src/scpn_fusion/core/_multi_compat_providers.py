@@ -958,7 +958,7 @@ def _bootstrap_existing_backends() -> None:
     register_kernel("simulate_tearing_mode", BackendTier.NUMPY, _numpy_simulate_tearing_mode)
 
     # gs_rb_sor_smooth — fixed-sweep Red-Black SOR smoothing of the toroidal
-    # GS* operator (W-2 kernel). The GPU tier runs the identical stencil as
+    # GS* operator. The GPU tier runs the identical stencil as
     # wgpu compute shaders in f32; the NumPy tier is the float64 reference
     # (`multigrid_solve.mg_smooth`). Agreement is f32-round-off bounded, not
     # bit-exact. The GPU tier only exists when the extension is built with
