@@ -6,7 +6,7 @@
 // Contact: www.anulum.li | protoscience@anulum.li
 //! PyO3 Python bindings for SCPN Fusion Core.
 //!
-//! Stage 10: Exposes Grad-Shafranov solver, thermodynamics, control,
+//! Exposes Grad-Shafranov solver, thermodynamics, control,
 //! diagnostics, and ML modules to Python via PyO3 + numpy.
 #![deny(missing_docs)]
 

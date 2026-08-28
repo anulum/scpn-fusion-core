@@ -7,7 +7,7 @@
 # SCPN Fusion Core — PyO3 GPU Bridge Tests
 """Tests for PyO3 bindings: fusion-gpu crate → Python.
 
-Covers: WP-GPU1 (GpuGsSolver, gpu_available, gpu_info).
+Exercises the GPU Grad-Shafranov solver and adapter availability/info probes.
 
 These tests require the Rust extension built with --features gpu:
     cd scpn-fusion-rs/crates/fusion-python && maturin develop --release --features gpu
