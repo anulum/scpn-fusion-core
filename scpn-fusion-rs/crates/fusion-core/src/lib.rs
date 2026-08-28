@@ -7,7 +7,7 @@
 //! Grad-Shafranov kernel and equilibrium solver.
 //!
 //! Stage 3: core kernel modules
-//! Stage 4: ignition, transport, stability, RF heating
+//! Ignition, transport, stability, and RF-heating modules.
 
 #![deny(missing_docs)]
 #![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]

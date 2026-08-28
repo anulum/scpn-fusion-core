@@ -7,7 +7,7 @@
 # SCPN Fusion Core — PyO3 Transport Bridge Tests
 """Tests for PyO3 bindings: Rust transport solver → Python.
 
-Covers: WP-TR2 (Chang-Hinton chi, Sauter bootstrap, transport step).
+Covers Chang-Hinton diffusivity, Sauter bootstrap current, and transport stepping.
 """
 
 import time
