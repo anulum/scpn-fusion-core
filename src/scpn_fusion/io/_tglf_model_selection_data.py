@@ -185,13 +185,12 @@ def load_tglf_model_study_data(dataset_root: str | Path) -> TGLFModelStudyData:
     verification = verify_tglf_development_corpus(root)
     if verification.get("status") != "passed" or verification.get("plan_replay") is not True:
         raise ValueError(f"TGLF development corpus verification failed: {verification}")
-    records_raw = checked_json_load(root / "dataset.json")
-    manifest_raw = checked_json_load(root / "manifest.json")
-    if not isinstance(records_raw, list) or not isinstance(manifest_raw, dict):
-        raise ValueError("TGLF records/manifest roots are invalid")
-    samples_raw = manifest_raw.get("samples")
-    if not isinstance(samples_raw, list) or len(samples_raw) != len(records_raw):
-        raise ValueError("TGLF manifest samples differ from records")
+    # The verifier canonically rebuilds the manifest from these records and
+    # validates record order, metadata, species, fluxes, splits, and hashes.
+    # Keep that authenticated loader as the single corpus-validation boundary.
+    records_raw = cast(list[dict[str, Any]], checked_json_load(root / "dataset.json"))
+    manifest = cast(dict[str, Any], checked_json_load(root / "manifest.json"))
+    samples_raw = cast(list[dict[str, Any]], manifest["samples"])
 
     rows_x: list[list[float]] = []
     rows_y: list[list[float]] = []
@@ -201,28 +200,15 @@ def load_tglf_model_study_data(dataset_root: str | Path) -> TGLFModelStudyData:
     strata: list[str] = []
     compositions: list[str] = []
     groups: list[str] = []
-    group_splits: dict[str, str] = {}
     for row_index, (record_raw, sample_raw) in enumerate(
         zip(records_raw, samples_raw, strict=True)
     ):
         record = object_value(record_raw, f"record[{row_index}]")
         sample = object_value(sample_raw, f"manifest.samples[{row_index}]")
-        if sample.get("sample_index") != row_index or record.get("sample_index") != row_index:
-            raise ValueError("TGLF sample indices are not canonical and contiguous")
-        for field in ("group_id", "sampling_stratum", "composition"):
-            if record.get(field) != sample.get(field):
-                raise ValueError(f"TGLF record/manifest {field} differs at row {row_index}")
-        split = sample.get("split")
-        stratum = sample.get("sampling_stratum")
-        composition = sample.get("composition")
-        group = sample.get("group_id")
-        if split not in SPLITS or stratum not in STRATA or composition not in COMPOSITIONS:
-            raise ValueError(f"TGLF categorical metadata is invalid at row {row_index}")
-        if not isinstance(group, str) or not group:
-            raise ValueError(f"TGLF group_id is invalid at row {row_index}")
-        prior = group_splits.setdefault(group, split)
-        if prior != split:
-            raise ValueError(f"TGLF group {group} crosses split roles")
+        split = cast(str, sample["split"])
+        stratum = cast(str, sample["sampling_stratum"])
+        composition = cast(str, sample["composition"])
+        group = cast(str, sample["group_id"])
         row_x, row_y, active, row_charges = record_row(record, row_index=row_index)
         rows_x.append(row_x)
         rows_y.append(row_y)
@@ -233,24 +219,15 @@ def load_tglf_model_study_data(dataset_root: str | Path) -> TGLFModelStudyData:
         compositions.append(composition)
         groups.append(group)
 
+    features = np.asarray(rows_x, dtype=np.float64)
+    targets = np.asarray(rows_y, dtype=np.float64)
+    active_targets = np.asarray(active_rows, dtype=np.bool_)
+    charge_matrix = np.asarray(charge_rows, dtype=np.float64)
     split_counts = {name: splits.count(name) for name in SPLITS}
     if any(count == 0 for count in split_counts.values()):
         raise ValueError(
             f"TGLF model selection requires non-empty train/calibration/test splits: {split_counts}"
         )
-    features = np.asarray(rows_x, dtype=np.float64)
-    targets = np.asarray(rows_y, dtype=np.float64)
-    active_targets = np.asarray(active_rows, dtype=np.bool_)
-    charge_matrix = np.asarray(charge_rows, dtype=np.float64)
-    expected_shape = (len(records_raw), len(feature_names()))
-    if features.shape != expected_shape:
-        raise ValueError(f"TGLF feature matrix shape {features.shape} != {expected_shape}")
-    if targets.shape != active_targets.shape or targets.shape[1] != len(target_names()):
-        raise ValueError("TGLF target/mask matrix shape mismatch")
-    if charge_matrix.shape != (len(records_raw), SPECIES_SLOTS):
-        raise ValueError("TGLF charge matrix shape mismatch")
-    if not np.all(np.isfinite(features)) or not np.all(np.isfinite(targets)):
-        raise ValueError("TGLF study matrices contain non-finite values")
     return TGLFModelStudyData(
         features=features,
         targets=targets,
