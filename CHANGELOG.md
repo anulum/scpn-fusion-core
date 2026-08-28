@@ -252,7 +252,7 @@ MPI/multi-GPU parity remain fail-closed).
 
 ### Added
 
-- Safety-shield composition with a real constrained-PPO control policy (M-4).
+- Safety-shield composition with a real constrained-PPO control policy.
 - Real TGLF transport surrogate fit (F-7).
 - Petri→SNN interlock with proven replay invariance and an exported proof hash (M-1).
 - Rust design evaluator brought to Python parity and dispatched (design-scan).

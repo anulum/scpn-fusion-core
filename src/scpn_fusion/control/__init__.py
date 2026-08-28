@@ -55,7 +55,7 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     "LagrangianPPO": (".safe_rl_controller", "LagrangianPPO"),
     "ConstrainedGymTokamakEnv": (".safe_rl_controller", "ConstrainedGymTokamakEnv"),
     "LinearGaussianPolicy": (".constrained_policy", "LinearGaussianPolicy"),
-    # M-4 safety shield — interlock veto/clamp + Lyapunov halt
+    # Safety shield — interlock veto/clamp + Lyapunov halt
     "ShieldedTokamakEnv": (".shielded_tokamak_env", "ShieldedTokamakEnv"),
     # Feedforward scenario scheduler
     "ScenarioSchedule": (".scenario_scheduler", "ScenarioSchedule"),
