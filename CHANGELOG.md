@@ -1754,16 +1754,16 @@ MPI/multi-GPU parity remain fail-closed).
 - Security policy (SECURITY.md) expanded with version table, hardening summary, known limitations
 - Coverage badge, Docker quickstart, pure-Python install, and data licensing in README
 
-#### Reactor Engineering Elevation (H6 wave, 9 tasks)
-- VMEC IO bridge for non-axisymmetric equilibrium interoperability (`H6-001`)
-- Hybrid kinetic-fluid alpha/runaway test-particle tracker with orbit/energy statistics (`H6-002`)
-- Synthetic forward diagnostics (interferometer phase, neutron count channels) (`H6-003`)
-- IMAS/IDS adapter pattern for Digital Twin state interchange (`H6-004`)
-- CAD geometry integration lane (STEP/STL mesh ingestion for heat/neutron load tracing) (`H6-005`)
-- Explicit actuator transfer-function dynamics in flight simulation/control path (`H6-006`)
-- Domain-randomization chaos monkey for deterministic sensor dropout/noise injection (`H6-007`)
-- Multi-node MPI domain-decomposition scaffolding for core grid solves (`H6-008`)
-- Traceable control-loop runtime lane to reduce Python interpreter overhead (`H6-009`)
+#### Reactor Engineering Elevation (nine capabilities)
+- VMEC IO bridge for non-axisymmetric equilibrium interoperability
+- Hybrid kinetic-fluid alpha/runaway test-particle tracker with orbit/energy statistics
+- Synthetic forward diagnostics (interferometer phase, neutron count channels)
+- IMAS/IDS adapter pattern for Digital Twin state interchange
+- CAD geometry integration lane (STEP/STL mesh ingestion for heat/neutron load tracing)
+- Explicit actuator transfer-function dynamics in flight simulation/control path
+- Domain-randomization chaos monkey for deterministic sensor dropout/noise injection
+- Multi-node MPI domain-decomposition scaffolding for core grid solves
+- Traceable control-loop runtime lane to reduce Python interpreter overhead
 
 ### Changed
 
@@ -1827,7 +1827,7 @@ bounds (zip-bomb prevention); solver fail-fast on divergence; Docker hardening (
 CI `sc-neurocore` pinning; strict py312 mypy typing; adaptive margin regression locks;
 `sys.path` removal across 20+ modules.
 
-**H6 (9 tasks):** Reactor engineering elevation -- VMEC IO, particle tracker, forward
+**Reactor engineering elevation (nine capabilities):** VMEC IO, particle tracker, forward
 diagnostics, IMAS/IDS adapter, CAD raytrace, actuator dynamics, chaos monkey, MPI
 scaffolding, traceable control loop.
 
