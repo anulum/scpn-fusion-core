@@ -115,7 +115,7 @@ class GlobalDesignExplorer:
         expansion_factor = 12.0 + 0.6 * B_field
         Div_Load = (P_sol / (2.0 * np.pi * R_maj * lambda_q * 1e-3) / expansion_factor) * 1e-4
 
-        # HEAT-ML magnetic-shadow attenuation (GAI-03).
+        # HEAT-ML magnetic-shadow attenuation.
         b_pol_equiv = max(0.4, 0.22 * B_field)
         shadow_features = np.array([R_maj, b_pol_equiv, P_sol, 10.0, 1.65, 0.35, -1.8])
         shadow_fraction = float(self.heat_ml_shadow.predict_shadow_fraction(shadow_features)[0])

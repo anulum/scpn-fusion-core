@@ -200,7 +200,7 @@ pub fn evaluate_design_with_caps(
     let expansion_factor = 12.0 + 0.6 * b;
     let div_load_baseline = (p_sol / (2.0 * PI * r * lambda_q * 1e-3) / expansion_factor) * 1e-4;
 
-    // HEAT-ML magnetic-shadow attenuation (GAI-03).
+    // HEAT-ML magnetic-shadow attenuation.
     let b_pol_equiv = (0.22 * b).max(0.4);
     let features = shadow_feature_map(r, b_pol_equiv, p_sol, 10.0, 1.65, 0.35, -1.8);
     let shadow_fraction = predict_shadow_fraction(&features);

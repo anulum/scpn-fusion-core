@@ -4,10 +4,10 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — HEAT-ML Shadow Surrogate (GAI-03)
+# SCPN Fusion Core — HEAT-ML Magnetic-Shadow Surrogate
 """Unit guards and fit/predict sanity for the HEAT-ML shadow surrogate.
 
-The GAI-03 campaign test exercises the surrogate through the design scanner;
+The design-scanner benchmark exercises the surrogate through the scanner;
 these tests pin the surrogate's own validation branches and the deterministic
 ridge fit/predict contract directly.
 """

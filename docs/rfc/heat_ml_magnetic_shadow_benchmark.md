@@ -1,12 +1,12 @@
 <!--
-SCPN Fusion Core — RFC GAI-03
+SCPN Fusion Core — HEAT-ML Magnetic-Shadow Benchmark RFC
 © 1998–2026 Miroslav Šotek. All rights reserved.
 Contact: www.anulum.li | protoscience@anulum.li
 ORCID: https://orcid.org/0009-0009-3560-0851
 License: GNU AGPL v3 | Commercial licensing available
 -->
 
-# RFC GAI-03 — HEAT-ML Magnetic-Shadow Surrogate for MVR Scanner
+# RFC — HEAT-ML Magnetic-Shadow Surrogate for the Design Scanner
 
 Status: Draft for review
 
@@ -14,10 +14,10 @@ Status: Draft for review
 
 This RFC is a planning contract for an explicit implementation lane in SCPN-FUSION-CORE. It records the intended scope, target modules, metrics, and acceptance path before work is promoted to default behavior or external release claims.
 
-## 1. Task Identity
+## 1. Benchmark identity
 
-- Task ID: `GAI-03`
-- Title: Add HEAT-ML magnetic-shadow surrogate and integrate into global MVR scanner
+- Responsibility: integrate the HEAT-ML magnetic-shadow surrogate into the
+  global design scanner
 - Owner: Unassigned
 - Proposed sprint: Phase 2, Sprint S2
 
@@ -31,10 +31,10 @@ Current divertor load estimation in the global design scanner uses a static scal
   - `src/scpn_fusion/core/heat_ml_shadow_surrogate.py`
   - `src/scpn_fusion/core/global_design_scanner.py`
 - Validation/reporting path:
-  - `validation/gai_03_heat_ml_shadow.py`
-  - `validation/reports/gai_03_heat_ml_shadow.json`
-  - `validation/reports/gai_03_heat_ml_shadow.md`
-  - `tests/test_gai_03_heat_ml_shadow.py`
+  - `validation/heat_ml_magnetic_shadow_benchmark.py`
+  - `validation/reports/heat_ml_magnetic_shadow_benchmark.json`
+  - `validation/reports/heat_ml_magnetic_shadow_benchmark.md`
+  - `tests/test_heat_ml_magnetic_shadow_benchmark.py`
 
 ## 4. Data and Dependency Readiness
 
@@ -59,7 +59,7 @@ Current divertor load estimation in the global design scanner uses a static scal
 ## 6. Regression and Safety Plan
 
 - CI jobs to update:
-  - Add targeted pytest and strict GAI-03 validation CLI invocation.
+  - Add targeted pytest and strict HEAT-ML benchmark CLI invocation.
 - Property/invariant tests:
   - Deterministic synthetic datasets for fixed seed.
   - Shadow fraction remains bounded.
