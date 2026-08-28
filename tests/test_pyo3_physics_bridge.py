@@ -164,7 +164,7 @@ class TestDesignScanner:
         assert len(r50) == 50
 
 
-# ── WP-PY8: Drift-Wave Turbulence ───────────────────────────────────
+# ── Drift-wave turbulence bridge ────────────────────────────────────
 
 
 class TestPyDriftWave:
