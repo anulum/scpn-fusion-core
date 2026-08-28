@@ -199,6 +199,24 @@ def test_equal_depth_disconnected_basin_is_not_independently_seeded() -> None:
     assert float(soft[rejected_i, centre_j]) < 1.0e-6
 
 
+def test_stronger_divertor_extremum_does_not_seed_plasma_support() -> None:
+    nz = nr = 65
+    z = jnp.linspace(-1.4, 1.4, nz)
+    r = jnp.linspace(0.5, 2.0, nr)
+    zz, rr = jnp.meshgrid(z, r, indexing="ij")
+    core = jnp.exp(-(((rr - 1.25) / 0.35) ** 2 + ((zz - 0.05) / 0.45) ** 2))
+    divertor_coil = 1.6 * jnp.exp(-(((rr - 0.9) / 0.12) ** 2 + ((zz + 1.05) / 0.12) ** 2))
+    psi = core + divertor_coil
+    raw = normalised_flux_unclipped(psi, jnp.asarray(1.0), jnp.asarray(0.2))
+    support = soft_axis_connected_support(psi, raw, 0.03)
+    core_i = int(jnp.argmin(jnp.abs(z - 0.05)))
+    core_j = int(jnp.argmin(jnp.abs(r - 1.25)))
+    coil_i = int(jnp.argmin(jnp.abs(z + 1.05)))
+    coil_j = int(jnp.argmin(jnp.abs(r - 0.9)))
+    assert float(support[core_i, core_j]) > 0.5
+    assert float(support[coil_i, coil_j]) < 0.05
+
+
 def test_default_soft_fill_budget_is_capped() -> None:
     assert _default_soft_fill_steps((33, 33)) == 32
     assert _default_soft_fill_steps((257, 257)) == 96

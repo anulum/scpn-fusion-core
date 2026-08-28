@@ -39,6 +39,8 @@ import jax.numpy as jnp
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.jax_o_point import _smooth_axis_vertex
+
 # Softmax temperature and half-width for the local axis seed (depth |ψ − ψ_wall|).
 DEFAULT_SEED_BETA = 8.0
 DEFAULT_SEED_RADIUS = 2
@@ -159,9 +161,36 @@ def soft_axis_seed(psi: jnp.ndarray, *, beta: float = DEFAULT_SEED_BETA) -> jnp.
     )
     depth = jnp.abs(psi - wall)
     rms = jnp.sqrt(jnp.mean(depth**2)) + jnp.asarray(1.0e-30, dtype=psi.dtype)
-    flat_axis = jnp.argmax(depth.reshape(-1))
-    axis_i = flat_axis // psi.shape[1]
-    axis_j = flat_axis % psi.shape[1]
+    # Use the same central-chamber O-point assignment as the production axis
+    # flux. A global depth argmax can select a stronger divertor/PF-coil
+    # extremum and seed a disconnected component; on the accepted FreeGS
+    # TestTokamak field that made the entire real plasma support exactly zero.
+    nz, nr = psi.shape
+    z_margin = max(DEFAULT_SEED_RADIUS, nz // 4)
+    r_margin = max(DEFAULT_SEED_RADIUS, nr // 10)
+    chamber_depth = (
+        jnp.full_like(depth, -jnp.inf)
+        .at[z_margin : nz - z_margin, r_margin : nr - r_margin]
+        .set(depth[z_margin : nz - z_margin, r_margin : nr - r_margin])
+    )
+    flat_axis = jnp.argmax(chamber_depth.reshape(-1))
+    chamber_axis_i = flat_axis // nr
+    chamber_axis_j = flat_axis % nr
+    global_axis = jnp.argmax(depth.reshape(-1))
+    global_axis_i = global_axis // nr
+    global_axis_j = global_axis % nr
+    _axis_flux, smooth_axis_i, smooth_axis_j = _smooth_axis_vertex(psi)
+    fitted_axis_i = jnp.clip(jnp.round(smooth_axis_i).astype(int), 0, nz - 1)
+    fitted_axis_j = jnp.clip(jnp.round(smooth_axis_j).astype(int), 0, nr - 1)
+    fitted_depth = depth[fitted_axis_i, fitted_axis_j]
+    chamber_peak = jnp.max(chamber_depth)
+    global_peak = jnp.max(depth)
+    chamber_has_core = chamber_peak >= 0.05 * global_peak
+    hard_axis_i = jnp.where(chamber_has_core, chamber_axis_i, global_axis_i)
+    hard_axis_j = jnp.where(chamber_has_core, chamber_axis_j, global_axis_j)
+    fitted_is_local_extremum = fitted_depth >= 0.5 * chamber_peak
+    axis_i = jnp.where(fitted_is_local_extremum, fitted_axis_i, hard_axis_i)
+    axis_j = jnp.where(fitted_is_local_extremum, fitted_axis_j, hard_axis_j)
     rows = jnp.arange(psi.shape[0])[:, jnp.newaxis]
     columns = jnp.arange(psi.shape[1])[jnp.newaxis, :]
     window = (jnp.abs(rows - axis_i) <= DEFAULT_SEED_RADIUS) & (

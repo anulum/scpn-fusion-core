@@ -72,7 +72,7 @@ DEFAULT_PATCH = 5
 
 
 @partial(jax.jit, static_argnames=("lower_frac", "edge", "search_below", "patch"))
-def smooth_xpoint_flux(
+def _smooth_xpoint_vertex(
     psi: jnp.ndarray,
     R_grid: jnp.ndarray,
     Z_grid: jnp.ndarray,
@@ -85,8 +85,8 @@ def smooth_xpoint_flux(
     patch: int = DEFAULT_PATCH,
     search_below: bool = True,
     refinement: float | jnp.ndarray = 1.0,
-) -> jnp.ndarray:
-    """Smooth, differentiable X-point (separatrix) flux ``ψ_bndry`` [same units as ``ψ``].
+) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    """Return ``(flux, Z-index, R-index)`` for the smooth X-point vertex.
 
     Parameters
     ----------
@@ -107,8 +107,9 @@ def smooth_xpoint_flux(
 
     Returns
     -------
-    Scalar ``ψ_bndry`` — the flux at the sub-cell quadratic saddle vertex, locally
-    differentiable in ``psi``. Falls back to the smooth weighted flux if no saddle exists.
+    ``ψ_bndry`` and its sub-cell index coordinates are locally differentiable
+    in ``psi``. All three values fall back to the same smooth weighted seed if
+    no saddle exists.
     """
     nz, nr = psi.shape
     centre = (patch - 1) // 2
@@ -170,6 +171,8 @@ def smooth_xpoint_flux(
     score = jnp.where(region, grad2 / ref, big)
     weights = jax.nn.softmax((-beta * score).reshape(-1))
     fallback = jnp.sum(weights * psi.reshape(-1))
+    fallback_i = jnp.sum(weights * i_grid.reshape(-1))
+    fallback_j = jnp.sum(weights * j_grid.reshape(-1))
 
     distance2 = ((ii - i_axis) / nz) ** 2 + ((jj - j_axis) / nr) ** 2
     saddle_region = region & saddle & (distance2 <= search_radius**2)
@@ -199,5 +202,86 @@ def smooth_xpoint_flux(
     vertex = a + b * x_star + c * y_star + d * x_star**2 + e * y_star**2 + f * x_star * y_star
     valid = jnp.any(saddle_region) & (determinant < 0.0) & jnp.isfinite(vertex)
     refined = jnp.where(valid, vertex, fallback)
+    refined_i = jnp.where(valid, i0 + x_star, fallback_i)
+    refined_j = jnp.where(valid, j0 + y_star, fallback_j)
     blend = jnp.clip(jnp.asarray(refinement), 0.0, 1.0)
-    return cast(jnp.ndarray, fallback + blend * (refined - fallback))
+    return cast(
+        tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray],
+        (
+            fallback + blend * (refined - fallback),
+            fallback_i + blend * (refined_i - fallback_i),
+            fallback_j + blend * (refined_j - fallback_j),
+        ),
+    )
+
+
+@partial(jax.jit, static_argnames=("lower_frac", "edge", "search_below", "patch"))
+def smooth_xpoint_flux(
+    psi: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    beta: float = DEFAULT_BETA,
+    lower_frac: float = DEFAULT_LOWER_FRAC,
+    edge: int = DEFAULT_EDGE,
+    axis_margin: float = DEFAULT_AXIS_MARGIN,
+    axis_beta: float = DEFAULT_AXIS_BETA,
+    search_radius: float = DEFAULT_SEARCH_RADIUS,
+    patch: int = DEFAULT_PATCH,
+    search_below: bool = True,
+    refinement: float | jnp.ndarray = 1.0,
+) -> jnp.ndarray:
+    """Return the smooth differentiable X-point flux ``ψ_bndry``."""
+    flux, _z_index, _r_index = _smooth_xpoint_vertex(
+        psi,
+        R_grid,
+        Z_grid,
+        beta,
+        lower_frac,
+        edge,
+        axis_margin,
+        axis_beta,
+        search_radius,
+        patch,
+        search_below,
+        refinement,
+    )
+    return cast(jnp.ndarray, flux)
+
+
+@partial(jax.jit, static_argnames=("lower_frac", "edge", "search_below", "patch"))
+def smooth_xpoint_coordinates(
+    psi: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    beta: float = DEFAULT_BETA,
+    lower_frac: float = DEFAULT_LOWER_FRAC,
+    edge: int = DEFAULT_EDGE,
+    axis_margin: float = DEFAULT_AXIS_MARGIN,
+    axis_beta: float = DEFAULT_AXIS_BETA,
+    search_radius: float = DEFAULT_SEARCH_RADIUS,
+    patch: int = DEFAULT_PATCH,
+    search_below: bool = True,
+    refinement: float | jnp.ndarray = 1.0,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    """Return the direct sub-cell X-point assignment ``(R, Z)`` [m].
+
+    The position shares the exact saddle classification, continuation, and
+    fitted vertex used by :func:`smooth_xpoint_flux`.
+    """
+    _flux, z_index, r_index = _smooth_xpoint_vertex(
+        psi,
+        R_grid,
+        Z_grid,
+        beta,
+        lower_frac,
+        edge,
+        axis_margin,
+        axis_beta,
+        search_radius,
+        patch,
+        search_below,
+        refinement,
+    )
+    r_xpoint = jnp.interp(r_index, jnp.arange(R_grid.size), R_grid)
+    z_xpoint = jnp.interp(z_index, jnp.arange(Z_grid.size), Z_grid)
+    return r_xpoint, z_xpoint

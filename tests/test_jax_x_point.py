@@ -23,7 +23,11 @@ import numpy as np
 
 jax.config.update("jax_enable_x64", True)
 
-from scpn_fusion.core.jax_x_point import DEFAULT_LOWER_FRAC, smooth_xpoint_flux
+from scpn_fusion.core.jax_x_point import (
+    DEFAULT_LOWER_FRAC,
+    smooth_xpoint_coordinates,
+    smooth_xpoint_flux,
+)
 
 
 def _grids(nz: int = 65, nr: int = 65) -> tuple[jnp.ndarray, jnp.ndarray]:
@@ -64,6 +68,24 @@ def _reference_saddle_flux(
     return float(np.min(o + x + 0.05))
 
 
+def _reference_saddle_position(
+    *,
+    o_rz: tuple[float, float] = (1.7, 0.4),
+    x_rz: tuple[float, float] = (1.5, -0.9),
+    o_amp: float = 1.0,
+    x_amp: float = 0.6,
+    width: float = 0.18,
+) -> np.ndarray:
+    """High-resolution inter-peak saddle position ``(R, Z)``."""
+    t = np.linspace(0.05, 0.95, 100_001)
+    r = o_rz[0] + t * (x_rz[0] - o_rz[0])
+    z = o_rz[1] + t * (x_rz[1] - o_rz[1])
+    o = o_amp * np.exp(-((r - o_rz[0]) ** 2 + (z - o_rz[1]) ** 2) / width)
+    x = x_amp * np.exp(-((r - x_rz[0]) ** 2 + (z - x_rz[1]) ** 2) / width)
+    index = int(np.argmin(o + x))
+    return np.asarray([r[index], z[index]])
+
+
 def test_matches_analytic_saddle_flux() -> None:
     """The sub-cell estimator agrees with the analytic inter-peak saddle flux."""
     R, Z = _grids()
@@ -81,6 +103,23 @@ def test_estimate_sits_below_the_axis() -> None:
     est = float(smooth_xpoint_flux(psi, R, Z))
     span = float(jnp.max(psi) - jnp.min(psi))
     assert (float(jnp.max(psi)) - est) / span > 0.3
+
+
+def test_reports_direct_subcell_xpoint_coordinates() -> None:
+    R, Z = _grids()
+    psi = _saddle_field(R, Z)
+    r_xpoint, z_xpoint = smooth_xpoint_coordinates(psi, R, Z)
+    expected = _reference_saddle_position()
+    spacing = max(float(R[1] - R[0]), float(Z[1] - Z[0]))
+    assert np.linalg.norm(np.asarray([r_xpoint, z_xpoint]) - expected) < spacing
+
+
+def test_coordinate_gradients_are_finite() -> None:
+    R, Z = _grids(49, 49)
+    psi = _saddle_field(R, Z)
+    gradient = jax.jacrev(lambda value: jnp.stack(smooth_xpoint_coordinates(value, R, Z)))(psi)
+    assert bool(jnp.all(jnp.isfinite(gradient)))
+    assert float(jnp.max(jnp.abs(gradient))) > 0.0
 
 
 def test_axis_exclusion_makes_it_band_robust() -> None:

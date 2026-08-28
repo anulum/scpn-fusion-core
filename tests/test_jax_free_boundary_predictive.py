@@ -32,12 +32,15 @@ from scpn_fusion.core.jax_free_boundary_predictive import (
     DEFAULT_SEPARATRIX_RAMP,
     DEFAULT_SEPARATRIX_START,
     PredictiveIterationSnapshot,
+    PredictiveNewtonResult,
     _laplacian_star,
     _plasma_current,
     build_response_matrix,
+    differentiate_predictive_equilibrium_root,
     predictive_gs_residual,
     solve_predictive_equilibrium,
     solve_predictive_equilibrium_diff,
+    solve_predictive_equilibrium_newton,
 )
 from scpn_fusion.core.jax_o_point import smooth_axis_flux
 from scpn_fusion.core.jax_x_point import smooth_xpoint_flux
@@ -60,6 +63,113 @@ SolvedEquilibrium: TypeAlias = tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.
 def test_default_iteration_budget_completes_separatrix_continuation() -> None:
     """The cold-start default leaves a settling window after the homotopy reaches one."""
     assert DEFAULT_N_ITER > DEFAULT_SEPARATRIX_START + DEFAULT_SEPARATRIX_RAMP
+
+
+@pytest.mark.parametrize(
+    "keyword,value",
+    [
+        ("seed_picard_iterations", 0),
+        ("fixed_support_newton_iterations", 0),
+        ("dynamic_support_newton_iterations", 0),
+    ],
+)
+def test_predictive_newton_iteration_guards_fail_closed(keyword: str, value: int) -> None:
+    seed_iterations = value if keyword == "seed_picard_iterations" else 1
+    fixed_iterations = value if keyword == "fixed_support_newton_iterations" else 1
+    dynamic_iterations = value if keyword == "dynamic_support_newton_iterations" else 1
+    with pytest.raises(ValueError, match=">= 1"):
+        solve_predictive_equilibrium_newton(
+            _COIL_I,
+            _PPRIME,
+            _FFPRIME,
+            _R,
+            _Z,
+            _COIL_R,
+            _COIL_Z,
+            _PSIN,
+            _IP,
+            jnp.empty((0, 0)),
+            jnp.empty((0,), dtype=int),
+            jnp.empty((0,), dtype=int),
+            seed_picard_iterations=seed_iterations,
+            fixed_support_newton_iterations=fixed_iterations,
+            dynamic_support_newton_iterations=dynamic_iterations,
+        )
+
+
+@pytest.mark.parametrize("value", [0.0, -1.0, float("nan"), float("inf")])
+def test_predictive_newton_tolerance_guard_fails_closed(value: float) -> None:
+    with pytest.raises(ValueError, match="finite and > 0"):
+        solve_predictive_equilibrium_newton(
+            _COIL_I,
+            _PPRIME,
+            _FFPRIME,
+            _R,
+            _Z,
+            _COIL_R,
+            _COIL_Z,
+            _PSIN,
+            _IP,
+            jnp.empty((0, 0)),
+            jnp.empty((0,), dtype=int),
+            jnp.empty((0,), dtype=int),
+            newton_f_tol=value,
+        )
+
+
+def test_predictive_newton_warm_start_shape_guard_fails_closed() -> None:
+    with pytest.raises(ValueError, match="psi_init shape"):
+        solve_predictive_equilibrium_newton(
+            _COIL_I,
+            _PPRIME,
+            _FFPRIME,
+            _R,
+            _Z,
+            _COIL_R,
+            _COIL_Z,
+            _PSIN,
+            _IP,
+            jnp.empty((0, 0)),
+            jnp.empty((0,), dtype=int),
+            jnp.empty((0,), dtype=int),
+            psi_init=jnp.zeros((5, 7)),
+        )
+
+
+def test_predictive_newton_warm_start_linearization_guard_fails_closed() -> None:
+    with pytest.raises(ValueError, match="warm_start_linearization"):
+        solve_predictive_equilibrium_newton(
+            _COIL_I,
+            _PPRIME,
+            _FFPRIME,
+            _R,
+            _Z,
+            _COIL_R,
+            _COIL_Z,
+            _PSIN,
+            _IP,
+            jnp.empty((0, 0)),
+            jnp.empty((0,), dtype=int),
+            jnp.empty((0,), dtype=int),
+            warm_start_linearization="dense_lu",
+        )
+
+
+def test_predictive_newton_result_is_an_explicit_fail_closed_contract() -> None:
+    names = tuple(PredictiveNewtonResult.__dataclass_fields__)
+    assert names == (
+        "equilibrium",
+        "fixed_support_max_scaled_residual",
+        "dynamic_support_max_scaled_residual",
+        "relative_nonlinear_residual_rms",
+        "fixed_support_converged",
+        "dynamic_support_converged",
+        "finite",
+        "seed_source",
+        "newton_linearization",
+        "fixed_support_iterations",
+        "dynamic_support_iterations",
+    )
 
 
 @pytest.fixture(scope="module")
@@ -344,6 +454,52 @@ def test_adjoint_gradient_shapes_and_finite(response: Response) -> None:
     assert bool(
         jnp.all(jnp.isfinite(g_ci)) & jnp.all(jnp.isfinite(g_pp)) & jnp.all(jnp.isfinite(g_ff))
     )
+
+
+def test_converged_root_adjoint_preserves_forward_and_is_finite(
+    solved: SolvedEquilibrium,
+) -> None:
+    """The Newton companion differentiates a supplied native root without re-solving it."""
+    psi, m, b, s = solved
+
+    def loss(ci: jnp.ndarray, pp: jnp.ndarray, ff: jnp.ndarray) -> jnp.ndarray:
+        root = differentiate_predictive_equilibrium_root(
+            ci,
+            pp,
+            ff,
+            _R,
+            _Z,
+            _COIL_R,
+            _COIL_Z,
+            _PSIN,
+            _IP,
+            m,
+            b,
+            s,
+            psi,
+            decompose_coil_field=False,
+        )
+        return cast(jnp.ndarray, smooth_axis_flux(root))
+
+    returned = differentiate_predictive_equilibrium_root(
+        _COIL_I,
+        _PPRIME,
+        _FFPRIME,
+        _R,
+        _Z,
+        _COIL_R,
+        _COIL_Z,
+        _PSIN,
+        _IP,
+        m,
+        b,
+        s,
+        psi,
+        decompose_coil_field=False,
+    )
+    assert np.array_equal(np.asarray(returned), np.asarray(psi))
+    gradients = jax.grad(loss, argnums=(0, 1, 2))(_COIL_I, _PPRIME, _FFPRIME)
+    assert all(bool(jnp.all(jnp.isfinite(gradient))) for gradient in gradients)
 
 
 def test_coil_gradient_matches_finite_difference(response: Response) -> None:

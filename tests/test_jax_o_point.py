@@ -26,6 +26,7 @@ from scpn_fusion.core.jax_o_point import (
     DEFAULT_BETA,
     DEFAULT_PATCH,
     _quadratic_pinv,
+    smooth_axis_coordinates,
     smooth_axis_flux,
 )
 
@@ -73,6 +74,29 @@ def test_beats_grid_cell_readout_for_subcell_axis():
     grid_cell = float(jnp.max(psi))  # best on-grid value (hard-argmax readout)
     smooth = float(smooth_axis_flux(psi))
     assert abs(smooth - true_peak) < abs(grid_cell - true_peak)
+
+
+def test_reports_direct_subcell_axis_coordinates():
+    psi, R, Z, expected = _domed(n=65, r0=1.613, z0=0.087)
+    r_axis, z_axis = smooth_axis_coordinates(psi, R, Z)
+    spacing = max(float(R[1] - R[0]), float(Z[1] - Z[0]))
+    assert np.linalg.norm(np.asarray([r_axis, z_axis]) - np.asarray(expected)) < spacing
+
+
+def test_coordinate_gradients_are_finite():
+    psi, R, Z, _expected = _domed(n=49)
+    gradient = jax.jacrev(lambda value: jnp.stack(smooth_axis_coordinates(value, R, Z)))(psi)
+    assert bool(jnp.all(jnp.isfinite(gradient)))
+    assert float(jnp.max(jnp.abs(gradient))) > 0.0
+
+
+def test_divertor_coil_extremum_does_not_replace_plasma_axis():
+    psi, R, Z, expected = _domed(n=65, r0=1.62, z0=0.08)
+    rr, zz = jnp.meshgrid(R, Z, indexing="xy")
+    lower_coil = 1.5 * jnp.exp(-(((rr - 1.15) / 0.12) ** 2 + ((zz + 1.05) / 0.12) ** 2))
+    r_axis, z_axis = smooth_axis_coordinates(psi + lower_coil, R, Z)
+    spacing = max(float(R[1] - R[0]), float(Z[1] - Z[0]))
+    assert np.linalg.norm(np.asarray([r_axis, z_axis]) - np.asarray(expected)) < spacing
 
 
 def test_close_to_hard_argmax_on_grid_aligned_axis():

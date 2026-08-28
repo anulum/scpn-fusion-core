@@ -1617,6 +1617,10 @@
         "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py"
       },
       {
+        "name": "PredictiveNewtonResult",
+        "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py"
+      },
+      {
         "name": "PreparedTraining",
         "path": "src/scpn_fusion/core/deeponet_training_contracts.py"
       },
@@ -2871,7 +2875,7 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 599,
+    "python_capability_classes": 600,
     "python_capability_source_modules": 343,
     "rust_workspace_crates": 13,
     "test_files": 622

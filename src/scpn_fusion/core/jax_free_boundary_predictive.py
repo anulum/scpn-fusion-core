@@ -68,7 +68,10 @@ from typing import Callable, cast
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from jax.scipy.sparse.linalg import bicgstab, gmres
+from numpy.typing import NDArray
+from scipy.optimize import NoConvergence, newton_krylov
 
 from scpn_fusion.core.jax_free_boundary_gs import (
     MU0_SI,
@@ -82,7 +85,7 @@ from scpn_fusion.core.jax_continuation_history import (
     continuation_history_requires_reset,
 )
 from scpn_fusion.core.jax_multigrid_precond import build_gs_mg_preconditioner
-from scpn_fusion.core.jax_o_point import smooth_axis_flux
+from scpn_fusion.core.jax_o_point import smooth_axis_coordinates, smooth_axis_flux
 from scpn_fusion.core.jax_x_point import smooth_xpoint_flux
 
 _bicgstab = cast(
@@ -110,8 +113,8 @@ _BICGSTAB_MAXITER = 700
 # physical residual; `lambda = D^-1 y` then recovers the original adjoint variable.  A left
 # preconditioner is forbidden here because it can report convergence with an O(1) physical
 # residual and silently bias coil gradients.
-_ADJOINT_MAXITER = 100
-_ADJOINT_RESTART = 100
+_ADJOINT_MAXITER = 500
+_ADJOINT_RESTART = 200
 _ADJOINT_TOL = 1.0e-9
 _ADJOINT_RESIDUAL_FACTOR = 10.0
 
@@ -158,6 +161,23 @@ class PredictiveIterationSnapshot:
 
 
 PredictiveIterationObserver = Callable[[PredictiveIterationSnapshot], None]
+
+
+@dataclass(frozen=True)
+class PredictiveNewtonResult:
+    """Causal two-stage Newton solution and fail-closed convergence evidence."""
+
+    equilibrium: jnp.ndarray
+    fixed_support_max_scaled_residual: float
+    dynamic_support_max_scaled_residual: float
+    relative_nonlinear_residual_rms: float
+    fixed_support_converged: bool
+    dynamic_support_converged: bool
+    finite: bool
+    seed_source: str
+    newton_linearization: str
+    fixed_support_iterations: int
+    dynamic_support_iterations: int
 
 
 # ── Geometry: von Hagenow response matrix ─────────────────────────
@@ -692,6 +712,363 @@ def solve_predictive_equilibrium(
     return cast(jnp.ndarray, x.reshape(shape))
 
 
+def solve_predictive_equilibrium_newton(
+    coil_I: jnp.ndarray,
+    pprime_vals: jnp.ndarray,
+    ffprime_vals: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    coil_R: jnp.ndarray,
+    coil_Z: jnp.ndarray,
+    psin_knots: jnp.ndarray,
+    ip_target: float,
+    response_matrix: jnp.ndarray,
+    wall_idx: jnp.ndarray,
+    source_idx: jnp.ndarray,
+    *,
+    psi_init: jnp.ndarray | None = None,
+    warm_start_linearization: str = "exact_jvp_gmres",
+    seed_picard_iterations: int = 80,
+    fixed_support_newton_iterations: int = 100,
+    dynamic_support_newton_iterations: int = 100,
+    newton_f_tol: float = 1.0e-8,
+    cutoff_width: float = DEFAULT_CUTOFF_WIDTH,
+    mu0: float = MU0_SI,
+) -> PredictiveNewtonResult:
+    """Solve the predictive equilibrium through a causal two-stage Newton path.
+
+    With no explicit warm start, a coil-boundary implicit solve and the
+    established total-field predictive solve supply two causal seed fields. A
+    geometry-neutral selector rejects axis assignments outside the central
+    chamber, then chooses the lower corrected-residual seed. ``psi_init`` may
+    instead carry a prior native equilibrium for continuation or local finite
+    differences. Support is frozen for the first Newton-Krylov stage and
+    released for a second dynamic-support stage. The established total-field
+    seed uses exact JAX linearisations; the coil-boundary seed uses SciPy's
+    finite-difference Krylov path. For local continuation, pass the base
+    result's ``newton_linearization`` back as ``warm_start_linearization`` so
+    perturbations retain its numerical branch. No reference field, mask,
+    machine name, or geometry-specific threshold enters.
+
+    The returned status remains fail closed: a stalled line search retains its
+    best finite field but leaves the corresponding convergence boolean false.
+    """
+    from scpn_fusion.core.jax_free_boundary_gs_implicit import (
+        solve_free_boundary_gs_implicit,
+    )
+
+    if (
+        min(
+            seed_picard_iterations,
+            fixed_support_newton_iterations,
+            dynamic_support_newton_iterations,
+        )
+        < 1
+    ):
+        raise ValueError("all predictive Newton iteration counts must be >= 1")
+    if not np.isfinite(newton_f_tol) or newton_f_tol <= 0.0:
+        raise ValueError("newton_f_tol must be finite and > 0")
+    if warm_start_linearization not in ("exact_jvp_gmres", "finite_difference_krylov"):
+        raise ValueError(
+            "warm_start_linearization must be 'exact_jvp_gmres' or 'finite_difference_krylov'"
+        )
+    try:
+        jax_version = tuple(int(part) for part in jax.__version__.split("+", 1)[0].split(".")[:2])
+    except ValueError as exc:
+        raise RuntimeError(f"unsupported JAX version string {jax.__version__!r}") from exc
+    if jax_version < (0, 7):
+        raise RuntimeError(
+            "predictive Newton requires JAX >= 0.7; older solver trajectories are not "
+            "admitted by the multi-geometry evidence contract"
+        )
+
+    shape = (int(Z_grid.size), int(R_grid.size))
+    if psi_init is not None and psi_init.shape != shape:
+        raise ValueError(f"psi_init shape {psi_init.shape} != grid shape {shape}")
+
+    seed = (
+        solve_free_boundary_gs_implicit(
+            coil_I,
+            pprime_vals,
+            ffprime_vals,
+            R_grid,
+            Z_grid,
+            coil_R,
+            coil_Z,
+            psin_knots,
+            n_picard=seed_picard_iterations,
+            mu0=mu0,
+            use_smooth_axis=True,
+        )
+        if psi_init is None
+        else jnp.asarray(psi_init)
+    )
+    d_r = R_grid[1] - R_grid[0]
+    d_z = Z_grid[1] - Z_grid[0]
+    row_scale = (
+        jnp.full(seed.size, 2.0 / d_r**2 + 2.0 / d_z**2).at[wall_idx].set(1.0).reshape(shape)
+    )
+
+    @jax.jit
+    def dynamic_scaled_residual(psi: jnp.ndarray) -> jnp.ndarray:
+        return (
+            predictive_gs_residual(
+                psi,
+                coil_I,
+                pprime_vals,
+                ffprime_vals,
+                R_grid,
+                Z_grid,
+                coil_R,
+                coil_Z,
+                psin_knots,
+                jnp.asarray(ip_target),
+                response_matrix,
+                wall_idx,
+                source_idx,
+                cutoff_width,
+                mu0,
+                decompose_coil_field=True,
+            )
+            / row_scale
+        )
+
+    # Seed admission is intentionally stricter than the O-point search window:
+    # a cold predictive field can assign a vacuum/divertor extremum just inside
+    # the middle-half boundary. Requiring the central vertical third rejects
+    # that off-midplane branch while retaining vertically shifted plasma axes.
+    z_margin = max(3, shape[0] // 3)
+    r_margin = max(3, shape[1] // 10)
+
+    def seed_score(candidate: jnp.ndarray) -> float:
+        axis_r, axis_z = smooth_axis_coordinates(candidate, R_grid, Z_grid)
+        axis_in_chamber = bool(
+            (axis_z >= Z_grid[z_margin])
+            & (axis_z <= Z_grid[-1 - z_margin])
+            & (axis_r >= R_grid[r_margin])
+            & (axis_r <= R_grid[-1 - r_margin])
+        )
+        if not (bool(jnp.all(jnp.isfinite(candidate))) and axis_in_chamber):
+            return float("inf")
+        return float(jnp.linalg.norm(dynamic_scaled_residual(candidate)))
+
+    if psi_init is None:
+        from scpn_fusion.core.jax_predictive_forward_compiled import (
+            solve_predictive_equilibrium_compiled,
+        )
+
+        total_field_seed = cast(
+            jnp.ndarray,
+            solve_predictive_equilibrium_compiled(
+                coil_I,
+                pprime_vals,
+                ffprime_vals,
+                R_grid,
+                Z_grid,
+                coil_R,
+                coil_Z,
+                psin_knots,
+                ip_target,
+                response_matrix,
+                wall_idx,
+                source_idx,
+            ),
+        )
+        fixed_boundary_score = seed_score(seed)
+        total_field_score = seed_score(total_field_seed)
+        if not np.isfinite(fixed_boundary_score) and not np.isfinite(total_field_score):
+            raise RuntimeError(
+                "predictive Newton seed selection found no finite central-axis field"
+            )
+        use_finite_difference = fixed_boundary_score <= total_field_score
+        seed = seed if use_finite_difference else total_field_seed
+        seed_source = (
+            "fixed_boundary_implicit" if use_finite_difference else "total_field_predictive"
+        )
+    else:
+        if not np.isfinite(seed_score(seed)):
+            raise ValueError("psi_init must be finite and place the magnetic axis in the chamber")
+        use_finite_difference = warm_start_linearization == "finite_difference_krylov"
+        seed_source = "explicit_warm_start"
+    newton_linearization = (
+        "finite_difference_krylov" if use_finite_difference else "exact_jvp_gmres"
+    )
+    seed_axis = smooth_axis_flux(seed)
+    seed_boundary = smooth_xpoint_flux(seed, R_grid, Z_grid)
+    seed_support = soft_axis_connected_support(
+        seed,
+        normalised_flux_unclipped(seed, seed_axis, seed_boundary),
+        cutoff_width,
+    )
+
+    def solve_stage(
+        initial: jnp.ndarray,
+        fixed_support_weights: jnp.ndarray | None,
+        max_iterations: int,
+    ) -> tuple[jnp.ndarray, bool, float, int]:
+        @jax.jit
+        def scaled_residual(psi: jnp.ndarray) -> jnp.ndarray:
+            return (
+                predictive_gs_residual(
+                    psi,
+                    coil_I,
+                    pprime_vals,
+                    ffprime_vals,
+                    R_grid,
+                    Z_grid,
+                    coil_R,
+                    coil_Z,
+                    psin_knots,
+                    jnp.asarray(ip_target),
+                    response_matrix,
+                    wall_idx,
+                    source_idx,
+                    cutoff_width,
+                    mu0,
+                    fixed_support_weights=fixed_support_weights,
+                    decompose_coil_field=True,
+                )
+                / row_scale
+            )
+
+        if use_finite_difference:
+            iteration_count = 0
+
+            def host_residual(flat_psi: NDArray[np.float64]) -> NDArray[np.float64]:
+                value = scaled_residual(jnp.asarray(flat_psi.reshape(shape)))
+                return np.asarray(value, dtype=np.float64).reshape(-1)
+
+            def count_iteration(
+                _state: NDArray[np.float64], _residual: NDArray[np.float64]
+            ) -> None:
+                nonlocal iteration_count
+                iteration_count += 1
+
+            converged = True
+            try:
+                solved = newton_krylov(
+                    host_residual,
+                    np.asarray(initial, dtype=np.float64).reshape(-1),
+                    f_tol=newton_f_tol,
+                    maxiter=max_iterations,
+                    verbose=False,
+                    callback=count_iteration,
+                )
+            except NoConvergence as exc:
+                converged = False
+                solved = np.asarray(exc.args[0], dtype=np.float64)
+            equilibrium = jnp.asarray(np.asarray(solved, dtype=np.float64).reshape(shape))
+            maximum = float(jnp.max(jnp.abs(scaled_residual(equilibrium))))
+            converged = bool(np.isfinite(maximum) and maximum <= newton_f_tol)
+            return equilibrium, converged, maximum, iteration_count
+
+        equilibrium = initial
+        converged = False
+        line_search_factors = (1.0, 0.5, 0.25, 0.125, 0.0625, 0.03125, 0.015625)
+        iteration_count = 0
+        for _iteration in range(max_iterations):
+            iteration_count = _iteration + 1
+            residual, linearised = jax.linearize(scaled_residual, equilibrium)
+            residual_norm = float(jnp.linalg.norm(residual))
+            if residual_norm <= newton_f_tol:
+                converged = True
+                break
+
+            def operator(vector: jnp.ndarray) -> jnp.ndarray:
+                return cast(jnp.ndarray, linearised(vector.reshape(shape)).reshape(-1))
+
+            direction, _info = _gmres(
+                operator,
+                -residual.reshape(-1),
+                tol=1.0e-8,
+                atol=0.0,
+                restart=60,
+                maxiter=60,
+                solve_method="incremental",
+            )
+            direction = direction.reshape(shape)
+            best = equilibrium
+            best_norm = residual_norm
+            for factor in line_search_factors:
+                candidate = equilibrium + factor * direction
+                candidate_norm = float(jnp.linalg.norm(scaled_residual(candidate)))
+                if np.isfinite(candidate_norm) and candidate_norm < best_norm:
+                    best = candidate
+                    best_norm = candidate_norm
+            if best_norm >= residual_norm:
+                break
+            equilibrium = best
+        maximum = float(jnp.max(jnp.abs(scaled_residual(equilibrium))))
+        converged = bool(np.isfinite(maximum) and maximum <= newton_f_tol)
+        return equilibrium, converged, maximum, iteration_count
+
+    fixed_equilibrium, fixed_converged, fixed_maximum, fixed_iterations = solve_stage(
+        seed,
+        seed_support,
+        fixed_support_newton_iterations,
+    )
+    equilibrium, dynamic_converged, dynamic_maximum, dynamic_iterations = solve_stage(
+        fixed_equilibrium,
+        None,
+        dynamic_support_newton_iterations,
+    )
+    axis = smooth_axis_flux(equilibrium)
+    boundary = smooth_xpoint_flux(equilibrium, R_grid, Z_grid)
+    d_area = d_r * d_z
+    current = _plasma_current(
+        equilibrium,
+        R_grid,
+        axis,
+        boundary,
+        psin_knots,
+        pprime_vals,
+        ffprime_vals,
+        jnp.asarray(ip_target),
+        d_area,
+        cutoff_width,
+        mu0,
+    )
+    raw_residual = predictive_gs_residual(
+        equilibrium,
+        coil_I,
+        pprime_vals,
+        ffprime_vals,
+        R_grid,
+        Z_grid,
+        coil_R,
+        coil_Z,
+        psin_knots,
+        jnp.asarray(ip_target),
+        response_matrix,
+        wall_idx,
+        source_idx,
+        cutoff_width,
+        mu0,
+        decompose_coil_field=True,
+    )
+    source = -(mu0 * R_grid[jnp.newaxis, :] * current)
+    interior_residual = raw_residual[1:-1, 1:-1]
+    interior_source = source[1:-1, 1:-1]
+    relative_residual = float(
+        jnp.sqrt(jnp.mean(interior_residual**2))
+        / jnp.maximum(jnp.sqrt(jnp.mean(interior_source**2)), 1.0e-30)
+    )
+    finite = bool(jnp.all(jnp.isfinite(equilibrium)) & jnp.isfinite(jnp.asarray(relative_residual)))
+    return PredictiveNewtonResult(
+        equilibrium=equilibrium,
+        fixed_support_max_scaled_residual=fixed_maximum,
+        dynamic_support_max_scaled_residual=dynamic_maximum,
+        relative_nonlinear_residual_rms=relative_residual,
+        fixed_support_converged=fixed_converged,
+        dynamic_support_converged=dynamic_converged,
+        finite=finite,
+        seed_source=seed_source,
+        newton_linearization=newton_linearization,
+        fixed_support_iterations=fixed_iterations,
+        dynamic_support_iterations=dynamic_iterations,
+    )
+
+
 # ── Implicit-differentiation adjoint (∂ψ*/∂θ for the IDA loop) ─────
 
 
@@ -957,3 +1334,66 @@ def _solve_diff_bwd(
 
 
 solve_predictive_equilibrium_diff.defvjp(_solve_diff_fwd, _solve_diff_bwd)
+
+
+def differentiate_predictive_equilibrium_root(
+    coil_I: jnp.ndarray,
+    pprime_vals: jnp.ndarray,
+    ffprime_vals: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    coil_R: jnp.ndarray,
+    coil_Z: jnp.ndarray,
+    psin_knots: jnp.ndarray,
+    ip_target: float,
+    response_matrix: jnp.ndarray,
+    wall_idx: jnp.ndarray,
+    source_idx: jnp.ndarray,
+    equilibrium: jnp.ndarray,
+    *,
+    cutoff_width: float = DEFAULT_CUTOFF_WIDTH,
+    mu0: float = MU0_SI,
+    fixed_psi_axis: jnp.ndarray | None = None,
+    fixed_psi_boundary: jnp.ndarray | None = None,
+    fixed_support_weights: jnp.ndarray | None = None,
+    decompose_coil_field: bool = True,
+) -> jnp.ndarray:
+    """Attach the implicit equilibrium adjoint to an already converged root.
+
+    The forward returns ``equilibrium`` without another fixed-point iteration;
+    reverse mode differentiates the production residual with respect to coil
+    currents, p-prime, and FF-prime. This is the differentiable companion to
+    :func:`solve_predictive_equilibrium_newton`: the nonlinear root is obtained
+    once, while each VJP pays only for the implicit adjoint. Callers remain
+    responsible for checking the Newton result's fail-closed convergence and
+    residual fields before admitting its gradient.
+    """
+    expected_shape = (int(Z_grid.size), int(R_grid.size))
+    if equilibrium.shape != expected_shape:
+        raise ValueError(f"equilibrium shape {equilibrium.shape} != grid shape {expected_shape}")
+    return solve_predictive_equilibrium_diff(
+        coil_I,
+        pprime_vals,
+        ffprime_vals,
+        R_grid,
+        Z_grid,
+        coil_R,
+        coil_Z,
+        psin_knots,
+        ip_target,
+        response_matrix,
+        wall_idx,
+        source_idx,
+        equilibrium,
+        0,
+        DEFAULT_ANDERSON_DEPTH,
+        DEFAULT_MIXING,
+        1,
+        cutoff_width,
+        DEFAULT_TOL,
+        mu0,
+        fixed_psi_axis,
+        fixed_psi_boundary,
+        fixed_support_weights,
+        decompose_coil_field,
+    )

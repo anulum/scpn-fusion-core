@@ -83,6 +83,52 @@ def _quadratic_pinv(patch: int) -> NDArray[np.float64]:
 
 
 @partial(jax.jit, static_argnames=("patch",))
+def _smooth_axis_vertex(
+    psi: jnp.ndarray, patch: int = DEFAULT_PATCH, beta: float = DEFAULT_BETA
+) -> tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+    """Return ``(flux, Z-index, R-index)`` for the fitted magnetic-axis vertex."""
+
+    pinv = jnp.asarray(_quadratic_pinv(patch))
+    centre = (patch - 1) // 2
+
+    wall = _boundary_flux_level(psi)
+    depth = jnp.abs(psi - wall)
+    rms = jnp.sqrt(jnp.mean(depth**2)) + 1e-30
+    nz, nr = psi.shape
+    # A tokamak magnetic axis belongs to the central plasma chamber, not the
+    # divertor/PF-coil bands. A border-only search can lock onto the strongest
+    # vacuum-field extremum before plasma topology forms (TestTokamak exposes
+    # this at the lower inboard coil). Keep a machine-independent central
+    # chamber: middle half vertically and middle four-fifths radially. The
+    # quadratic patch margin remains the stricter bound on small grids.
+    z_margin = max(centre, nz // 4)
+    r_margin = max(centre, nr // 10)
+    search_depth = (
+        jnp.full_like(depth, -jnp.inf)
+        .at[z_margin : nz - z_margin, r_margin : nr - r_margin]
+        .set(depth[z_margin : nz - z_margin, r_margin : nr - r_margin])
+    )
+    weights = jax.nn.softmax((beta * search_depth / rms).reshape(-1))
+
+    ii, jj = jnp.meshgrid(jnp.arange(nz), jnp.arange(nr), indexing="ij")
+    i_soft = jnp.sum(weights * ii.reshape(-1))
+    j_soft = jnp.sum(weights * jj.reshape(-1))
+    i0 = jnp.clip(jnp.round(i_soft).astype(int), centre, nz - 1 - centre)
+    j0 = jnp.clip(jnp.round(j_soft).astype(int), centre, nr - 1 - centre)
+
+    stencil = jax.lax.dynamic_slice(psi, (i0 - centre, j0 - centre), (patch, patch))
+    a, b, c, d, e, f = pinv @ stencil.reshape(-1)
+
+    # vertex of a + b·x + c·y + d·x² + e·y² + f·xy : solve [[2d, f], [f, 2e]]·[x;y] = [−b;−c]
+    det = 4.0 * d * e - f * f
+    det = jnp.where(jnp.abs(det) < 1e-30, 1e-30, det)
+    x_star = jnp.clip((-2.0 * e * b + f * c) / det, -float(centre), float(centre))
+    y_star = jnp.clip((f * b - 2.0 * d * c) / det, -float(centre), float(centre))
+    vertex = a + b * x_star + c * y_star + d * x_star**2 + e * y_star**2 + f * x_star * y_star
+    return cast(tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray], (vertex, i0 + x_star, j0 + y_star))
+
+
+@partial(jax.jit, static_argnames=("patch",))
 def smooth_axis_flux(
     psi: jnp.ndarray, patch: int = DEFAULT_PATCH, beta: float = DEFAULT_BETA
 ) -> jnp.ndarray:
@@ -99,34 +145,25 @@ def smooth_axis_flux(
     Scalar ``ψ_axis`` — the flux at the quadratic-fit vertex (the O-point to sub-cell
     accuracy). Smooth in ``psi`` (exact reverse-mode gradient), value-accurate to < 0.5 %.
     """
-    pinv = jnp.asarray(_quadratic_pinv(patch))
-    centre = (patch - 1) // 2
-
-    wall = _boundary_flux_level(psi)
-    depth = jnp.abs(psi - wall)
-    rms = jnp.sqrt(jnp.mean(depth**2)) + 1e-30
-    # zero the border band so the soft position (and stencil) stay interior
-    interior = (
-        jnp.zeros_like(psi)
-        .at[centre:-centre, centre:-centre]
-        .set(depth[centre:-centre, centre:-centre])
-    )
-    weights = jax.nn.softmax((beta * interior / rms).reshape(-1))
-
-    nz, nr = psi.shape
-    ii, jj = jnp.meshgrid(jnp.arange(nz), jnp.arange(nr), indexing="ij")
-    i_soft = jnp.sum(weights * ii.reshape(-1))
-    j_soft = jnp.sum(weights * jj.reshape(-1))
-    i0 = jnp.clip(jnp.round(i_soft).astype(int), centre, nz - 1 - centre)
-    j0 = jnp.clip(jnp.round(j_soft).astype(int), centre, nr - 1 - centre)
-
-    stencil = jax.lax.dynamic_slice(psi, (i0 - centre, j0 - centre), (patch, patch))
-    a, b, c, d, e, f = pinv @ stencil.reshape(-1)
-
-    # vertex of a + b·x + c·y + d·x² + e·y² + f·xy : solve [[2d, f], [f, 2e]]·[x;y] = [−b;−c]
-    det = 4.0 * d * e - f * f
-    det = jnp.where(jnp.abs(det) < 1e-30, 1e-30, det)
-    x_star = jnp.clip((-2.0 * e * b + f * c) / det, -float(centre), float(centre))
-    y_star = jnp.clip((f * b - 2.0 * d * c) / det, -float(centre), float(centre))
-    vertex = a + b * x_star + c * y_star + d * x_star**2 + e * y_star**2 + f * x_star * y_star
+    vertex, _z_index, _r_index = _smooth_axis_vertex(psi, patch=patch, beta=beta)
     return cast(jnp.ndarray, vertex)
+
+
+@partial(jax.jit, static_argnames=("patch",))
+def smooth_axis_coordinates(
+    psi: jnp.ndarray,
+    R_grid: jnp.ndarray,
+    Z_grid: jnp.ndarray,
+    patch: int = DEFAULT_PATCH,
+    beta: float = DEFAULT_BETA,
+) -> tuple[jnp.ndarray, jnp.ndarray]:
+    """Return the differentiable sub-cell magnetic-axis position ``(R, Z)`` [m].
+
+    The coordinates come from the same fitted quadratic vertex as
+    :func:`smooth_axis_flux`; they are therefore a direct assignment from the
+    production field rather than a separate hard-extremum diagnostic.
+    """
+    _vertex, z_index, r_index = _smooth_axis_vertex(psi, patch=patch, beta=beta)
+    r_axis = jnp.interp(r_index, jnp.arange(R_grid.size), R_grid)
+    z_axis = jnp.interp(z_index, jnp.arange(Z_grid.size), Z_grid)
+    return r_axis, z_axis
