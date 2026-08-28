@@ -828,6 +828,8 @@ files = [
     "src/scpn_fusion/core/gpu_runtime.py",
     "validation/deterministic_cpu_gpu_sim_runtime_benchmark.py",
     "tests/test_deterministic_cpu_gpu_sim_runtime_benchmark.py",
+    "validation/eu_demo_k_demo_synthetic_holdout_validation.py",
+    "tests/test_eu_demo_k_demo_synthetic_holdout_validation.py",
     "src/scpn_fusion/core/stellarator_geometry.py",
     "src/scpn_fusion/core/tilt_mode_frc.py",
     "src/scpn_fusion/core/hall_mhd_pulsed.py",

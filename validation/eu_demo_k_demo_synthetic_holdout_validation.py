@@ -4,8 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — GDEP-03 Blind Validation Dashboard
-"""GDEP-03: deterministic blind validation on EU-DEMO/K-DEMO synthetic holdout."""
+# SCPN Fusion Core — EU-DEMO/K-DEMO Synthetic Holdout Validation
+"""Validate confinement proxies against bundled EU-DEMO/K-DEMO synthetic holdouts."""
 
 from __future__ import annotations
 
@@ -15,29 +15,55 @@ import json
 import math
 import statistics
 import time
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, cast
 
+import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 BLIND_REFERENCE_DIR = ROOT / "validation" / "reference_data" / "blind"
 BLIND_REFERENCE_FILES = ("eu_demo_reference.json", "k_demo_reference.json")
+REPORT_SCHEMA_VERSION = 2
+REPORT_KIND = "eu_demo_k_demo_synthetic_holdout_validation"
+REPORT_PAYLOAD_KEY = "eu_demo_k_demo_synthetic_holdout_validation"
 
 
-def _load_rmse_dashboard_module() -> Any:
-    module_path = ROOT / "validation" / "rmse_dashboard.py"
+class ConfinementTimeModel(Protocol):
+    """Callable contract for the repository confinement-time implementation."""
+
+    def __call__(
+        self,
+        *,
+        ip_ma: float,
+        b_t: float,
+        n_e19: float,
+        p_loss_mw: float,
+        r_m: float,
+        kappa: float,
+        epsilon: float,
+        a_eff_amu: float,
+    ) -> float:
+        """Return a predicted confinement time in seconds."""
+        ...
+
+
+def load_rmse_dashboard_functions(
+    module_path: Path,
+) -> tuple[ConfinementTimeModel, Callable[[list[float], list[float]], float]]:
+    """Load typed confinement and RMSE callables from a dashboard module path."""
     spec = importlib.util.spec_from_file_location("rmse_dashboard", module_path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"Unable to load RMSE dashboard module from {module_path}")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    return module
+    confinement_model = cast(ConfinementTimeModel, module.ipb98_tau_e)
+    metric = cast(Callable[[list[float], list[float]], float], module.rmse)
+    return confinement_model, metric
 
 
-_RMSE_DASHBOARD = _load_rmse_dashboard_module()
-ipb98_tau_e = _RMSE_DASHBOARD.ipb98_tau_e
-rmse = _RMSE_DASHBOARD.rmse
+ipb98_tau_e, rmse = load_rmse_dashboard_functions(ROOT / "validation" / "rmse_dashboard.py")
 
 
 def load_blind_references(reference_dir: Path) -> list[dict[str, Any]]:
@@ -60,7 +86,7 @@ def load_blind_references(reference_dir: Path) -> list[dict[str, Any]]:
 
 def estimate_beta_n_proxy(row: dict[str, Any], tau_pred_s: float) -> float:
     """Estimate βN from a deterministic proxy model for blind-validation diagnostics."""
-    return (
+    return float(
         10.0
         * 0.18
         * float(row["n_e_1e19"])
@@ -74,12 +100,11 @@ def estimate_beta_n_proxy(row: dict[str, Any], tau_pred_s: float) -> float:
 
 def estimate_core_edge_match_proxy(tau_pred_s: float, beta_pred: float) -> float:
     """Compute a stable core-edge match proxy from predicted confinement and βN."""
-    raw = (
+    return (
         0.90
         + 0.04 * math.tanh((tau_pred_s - 3.5) / 2.0)
         + 0.03 * math.tanh((beta_pred - 1.6) / 0.8)
     )
-    return min(0.995, max(0.82, raw))
 
 
 def _mean_abs_relative_pct(y_true: list[float], y_pred: list[float]) -> float:
@@ -88,9 +113,6 @@ def _mean_abs_relative_pct(y_true: list[float], y_pred: list[float]) -> float:
 
 
 def _evaluate_rows(rows: list[dict[str, Any]], thresholds: dict[str, float]) -> dict[str, Any]:
-    if not rows:
-        raise ValueError("Evaluation requires non-empty rows.")
-
     tau_true: list[float] = []
     tau_pred: list[float] = []
     beta_true: list[float] = []
@@ -172,17 +194,68 @@ def _evaluate_rows(rows: list[dict[str, Any]], thresholds: dict[str, float]) -> 
     }
 
 
-def run_campaign(*, reference_dir: Path | None = None) -> dict[str, Any]:
-    """Run blind-validation aggregation and compute threshold + parity diagnostics."""
+def _nonnegative_finite(value: float, *, name: str) -> float:
+    checked = float(value)
+    if not np.isfinite(checked) or checked < 0.0:
+        raise ValueError(f"{name} must be finite and >= 0.")
+    return checked
+
+
+def _percentage(value: float, *, name: str) -> float:
+    checked = float(value)
+    if not np.isfinite(checked) or checked < 0.0 or checked > 100.0:
+        raise ValueError(f"{name} must be finite and in [0, 100].")
+    return checked
+
+
+def run_campaign(
+    *,
+    reference_dir: Path | None = None,
+    max_tau_rmse_s: float = 0.35,
+    max_beta_rmse: float = 0.15,
+    max_core_edge_rmse: float = 0.02,
+    min_parity_pct: float = 95.0,
+) -> dict[str, Any]:
+    """Evaluate bundled synthetic holdouts against configured acceptance gates.
+
+    Parameters
+    ----------
+    reference_dir : pathlib.Path or None
+        Directory containing the EU-DEMO and K-DEMO synthetic reference files.
+    max_tau_rmse_s : float
+        Maximum accepted confinement-time root mean square error in seconds.
+    max_beta_rmse : float
+        Maximum accepted normalised-beta root mean square error.
+    max_core_edge_rmse : float
+        Maximum accepted core-edge proxy root mean square error.
+    min_parity_pct : float
+        Minimum accepted aggregate parity score in percent.
+
+    Returns
+    -------
+    dict[str, Any]
+        Per-machine and aggregate errors, thresholds, provenance path and gate
+        status.
+
+    Raises
+    ------
+    ValueError
+        If an acceptance threshold is invalid or the reference rows are empty.
+    FileNotFoundError
+        If either required synthetic reference file is absent.
+    """
     t0 = time.perf_counter()
     ref_dir = reference_dir or BLIND_REFERENCE_DIR
     rows = load_blind_references(ref_dir)
 
     thresholds = {
-        "max_tau_rmse_s": 0.35,
-        "max_beta_rmse": 0.15,
-        "max_core_edge_rmse": 0.02,
-        "min_parity_pct": 95.0,
+        "max_tau_rmse_s": _nonnegative_finite(max_tau_rmse_s, name="max_tau_rmse_s"),
+        "max_beta_rmse": _nonnegative_finite(max_beta_rmse, name="max_beta_rmse"),
+        "max_core_edge_rmse": _nonnegative_finite(
+            max_core_edge_rmse,
+            name="max_core_edge_rmse",
+        ),
+        "min_parity_pct": _percentage(min_parity_pct, name="min_parity_pct"),
     }
 
     by_machine: dict[str, list[dict[str, Any]]] = {}
@@ -210,21 +283,46 @@ def run_campaign(*, reference_dir: Path | None = None) -> dict[str, Any]:
 
 
 def generate_report(**kwargs: Any) -> dict[str, Any]:
-    """Generate the full GDEP-03 report payload from a campaign run."""
+    """Generate the versioned EU-DEMO/K-DEMO synthetic holdout report."""
     return {
+        "schema_version": REPORT_SCHEMA_VERSION,
+        "report_kind": REPORT_KIND,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "gdep_03": run_campaign(**kwargs),
+        REPORT_PAYLOAD_KEY: run_campaign(**kwargs),
     }
 
 
+def validate_report(report: dict[str, Any]) -> dict[str, Any]:
+    """Validate the current serialized report contract and return its payload."""
+    expected_keys = {
+        "schema_version",
+        "report_kind",
+        "generated_at_utc",
+        REPORT_PAYLOAD_KEY,
+    }
+    if set(report) != expected_keys:
+        raise ValueError("report keys do not match the current descriptive contract")
+    if report["schema_version"] != REPORT_SCHEMA_VERSION:
+        raise ValueError(f"unsupported report schema_version: {report['schema_version']!r}")
+    if report["report_kind"] != REPORT_KIND:
+        raise ValueError(f"unsupported report_kind: {report['report_kind']!r}")
+    generated_at = report["generated_at_utc"]
+    if not isinstance(generated_at, str) or not generated_at:
+        raise ValueError("generated_at_utc must be a non-empty string")
+    payload = report[REPORT_PAYLOAD_KEY]
+    if not isinstance(payload, dict):
+        raise ValueError(f"{REPORT_PAYLOAD_KEY} must be an object")
+    return payload
+
+
 def render_markdown(report: dict[str, Any]) -> str:
-    """Render the GDEP-03 blind-validation report to markdown."""
-    g = report["gdep_03"]
+    """Render the EU-DEMO/K-DEMO synthetic holdout report as Markdown."""
+    g = validate_report(report)
     th = g["thresholds"]
     agg = g["aggregate"]
 
     lines = [
-        "# GDEP-03 Blind Validation Dashboard",
+        "# EU-DEMO/K-DEMO Synthetic Holdout Validation",
         "",
         f"- Generated: `{report['generated_at_utc']}`",
         f"- Runtime: `{g['runtime_seconds']:.3f} s`",
@@ -268,29 +366,43 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    """Parse CLI arguments for GDEP-03 blind-validation execution."""
+    """Parse command-line arguments for synthetic holdout validation."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--reference-dir",
         default=str(BLIND_REFERENCE_DIR),
         help="Directory containing blind reference JSON files.",
     )
+    parser.add_argument("--max-tau-rmse-s", type=float, default=0.35)
+    parser.add_argument("--max-beta-rmse", type=float, default=0.15)
+    parser.add_argument("--max-core-edge-rmse", type=float, default=0.02)
+    parser.add_argument("--min-parity-pct", type=float, default=95.0)
     parser.add_argument(
         "--output-json",
-        default=str(ROOT / "validation" / "reports" / "gdep_03_blind_validation.json"),
+        default=str(
+            ROOT / "validation" / "reports" / "eu_demo_k_demo_synthetic_holdout_validation.json"
+        ),
     )
     parser.add_argument(
         "--output-md",
-        default=str(ROOT / "validation" / "reports" / "gdep_03_blind_validation.md"),
+        default=str(
+            ROOT / "validation" / "reports" / "eu_demo_k_demo_synthetic_holdout_validation.md"
+        ),
     )
     parser.add_argument("--strict", action="store_true")
     return parser.parse_args(argv)
 
 
 def main(argv: list[str] | None = None) -> int:
-    """CLI entry point for running GDEP-03 and exporting JSON/Markdown outputs."""
+    """Run synthetic holdout validation and write JSON and Markdown reports."""
     args = parse_args(argv)
-    report = generate_report(reference_dir=Path(args.reference_dir))
+    report = generate_report(
+        reference_dir=Path(args.reference_dir),
+        max_tau_rmse_s=args.max_tau_rmse_s,
+        max_beta_rmse=args.max_beta_rmse,
+        max_core_edge_rmse=args.max_core_edge_rmse,
+        min_parity_pct=args.min_parity_pct,
+    )
 
     out_json = Path(args.output_json)
     out_md = Path(args.output_md)
@@ -299,9 +411,9 @@ def main(argv: list[str] | None = None) -> int:
     out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
     out_md.write_text(render_markdown(report), encoding="utf-8")
 
-    g = report["gdep_03"]
+    g = validate_report(report)
     agg = g["aggregate"]
-    print("GDEP-03 blind validation complete.")
+    print("EU-DEMO/K-DEMO synthetic holdout validation complete.")
     print(f"passes_thresholds={g['passes_thresholds']}")
     print(
         "Summary -> "
