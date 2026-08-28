@@ -7,7 +7,7 @@
 // SCPN Fusion Core — Fusion Nuclear
 //! Nuclear engineering modules.
 //!
-//! Stage 6: TEMHD, neutronics, sputtering, wall interaction, divertor, BOP.
+//! TEMHD, neutronics, sputtering, wall interaction, divertor, and balance of plant.
 #![deny(missing_docs)]
 #![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 

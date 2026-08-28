@@ -7,7 +7,7 @@
 # SCPN Fusion Core — PyO3 Nuclear Bridge Tests
 """Tests for PyO3 bindings: fusion-diagnostics + fusion-nuclear → Python.
 
-Covers the regularised plasma-tomography bridge and Breeding Blanket (WP-PY5).
+Covers the regularised plasma-tomography and tritium-breeding blanket bridges.
 """
 
 import numpy as np
@@ -64,7 +64,7 @@ class TestPyTomography:
             tomo.reconstruct([1.0] * 19)
 
 
-# ── WP-PY5: Breeding Blanket ────────────────────────────────────────
+# ── Tritium-breeding blanket transport bridge ──────────────────────
 
 
 class TestPyBreedingBlanket:
