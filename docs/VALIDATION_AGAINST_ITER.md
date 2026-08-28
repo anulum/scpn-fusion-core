@@ -6,7 +6,7 @@
 This document defines the ITER and reference-machine validation baseline and its role in regression control. It distinguishes reproducible baseline checks from full external parity obligations.
 
 **Date**: 2026-02-12
-**Version**: v1.0.2 preparation (WP-E1)
+**Version**: v1.0.2 uncertainty-band preparation
 **Scope**: Regression-grade confinement validation using published reference scenarios
 
 ---
@@ -246,7 +246,7 @@ detection, not full-fidelity discharge reconstruction.
 
 ## 11. Next Validation Extensions
 
-Follow-up after WP-E1:
+Follow-up after the regression-grade confinement baseline:
 
 1. Add machine-specific uncertainty bands in reference JSON.
 2. Include JET and DIII-D published points as explicit files.
