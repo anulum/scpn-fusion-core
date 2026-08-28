@@ -104,7 +104,7 @@ class TestPyFnoController:
         assert suppressed.shape == (64, 64)
 
 
-# ── WP-PY3: RMF Controller ──────────────────────────────────────────
+# ── Rotating-magnetic-field controller bridge ──────────────────────
 
 
 class TestPyRmfController:

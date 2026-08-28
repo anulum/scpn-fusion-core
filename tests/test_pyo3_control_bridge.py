@@ -23,7 +23,7 @@ except ImportError:
 pytestmark = pytest.mark.skipif(not HAS_RUST, reason="scpn_fusion_rs not compiled")
 
 
-# ── WP-PY3: MPC Controller ──────────────────────────────────────────
+# ── Model-predictive controller bridge ──────────────────────────────
 
 
 class TestPyMpcController:
