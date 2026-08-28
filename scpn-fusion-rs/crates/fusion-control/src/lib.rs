@@ -7,7 +7,7 @@
 // SCPN Fusion Core — Fusion Control
 //! Control systems modules.
 //!
-//! Stage 7: PID, optimal, MPC, SNN, digital twin, SPI, SOC-learning, analytic.
+//! Includes PID, optimal, MPC, SNN, digital-twin, SPI, SOC-learning and analytic control.
 
 #![deny(missing_docs)]
 #![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]

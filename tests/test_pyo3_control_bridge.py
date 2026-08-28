@@ -68,7 +68,7 @@ class TestPyMpcController:
             mpc.plan(state)
 
 
-# ── WP-PY6: Digital Twin (Plasma2D) ─────────────────────────────────
+# ── Plasma2D digital-twin bridge ────────────────────────────────────
 
 
 class TestPyPlasma2D:
