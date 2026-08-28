@@ -261,7 +261,7 @@ MPI/multi-GPU parity remain fail-closed).
   Fokker-Planck).
 - Per-surrogate UQ/OOD cards with a fail-closed drift guard.
 - PB-KBM pedestal constraint-loop tier with a tier benchmark against digitised
-  EPED1 references (F-5); benchmark reports documented divergence and makes no
+  EPED1 references; benchmark reports documented divergence and makes no
   parity claim.
 - Solov'ev exact equilibrium suite with a published psi_N gate and per-file
   attribution (F-1).

@@ -25,9 +25,9 @@ v3.11.0
 -------
 
 - Minor feature release adding control, transport, surrogate, and equilibrium capabilities on top of v3.10.1, with no public API removed (backward compatible).
-- Adds the safety-shield + constrained-PPO policy, the TGLF transport surrogate, the M-1 Petri→SNN interlock with proof hash, fastest-first FNO/surrogate-MPC/Fokker-Planck dispatch tiers, the per-surrogate UQ/OOD cards and safety traceability matrix (fail-closed drift guards), the F-5 PB-KBM pedestal tier, and the F-1 Solov'ev exact suite.
+- Adds the safety-shield + constrained-PPO policy, the TGLF transport surrogate, the M-1 Petri→SNN interlock with proof hash, fastest-first FNO/surrogate-MPC/Fokker-Planck dispatch tiers, the per-surrogate UQ/OOD cards and safety traceability matrix (fail-closed drift guards), the PB-KBM pedestal tier, and the F-1 Solov'ev exact suite.
 - Lands a modular-decomposition pass over oversized modules and a validation-evidence pass; security-bumps ``pillow``/``click`` across the hash-pinned locks.
-- Keeps full-fidelity solver parity gates fail-closed; no blocked claim is promoted, and the F-5 pedestal tier is reported as documented divergence with no parity claim.
+- Keeps full-fidelity solver parity gates fail-closed; no blocked claim is promoted, and the PB-KBM pedestal tier is reported as documented divergence with no parity claim.
 
 v3.10.1
 -------------------
