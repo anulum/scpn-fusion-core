@@ -4,7 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Fueling Mode (GNEU-03)
+# SCPN Fusion Core — Ice-Pellet Density Control
 """Ice-pellet fueling mode via Petri-to-SNN control path."""
 
 from __future__ import annotations
@@ -36,7 +36,8 @@ class FuelingSimResult:
     history_command: list[float]
 
 
-def _build_fueling_controller() -> NeuroSymbolicController:
+def build_ice_pellet_fueling_controller() -> NeuroSymbolicController:
+    """Build the deterministic SCPN controller for ice-pellet fueling."""
     net = StochasticPetriNet()
     net.add_place("x_R_pos", initial_tokens=0.0)
     net.add_place("x_R_neg", initial_tokens=0.0)
@@ -67,7 +68,7 @@ def _build_fueling_controller() -> NeuroSymbolicController:
         seed=77,
     ).compile(net, firing_mode="binary")
     artifact = compiled.export_artifact(
-        name="gneu03_fueling",
+        name="ice_pellet_fueling_controller",
         dt_control_s=0.001,
         readout_config={
             "actions": [
@@ -102,7 +103,7 @@ class IcePelletFuelingController:
         if not np.isfinite(td) or td <= 0.0:
             raise ValueError("target_density must be finite and > 0.")
         self.target_density = td
-        self.controller = _build_fueling_controller()
+        self.controller = build_ice_pellet_fueling_controller()
         self.integrator = 0.0
 
     def step(self, density: float, k: int, dt_s: float) -> tuple[float, float]:
@@ -210,8 +211,8 @@ def run_fueling_mode(
         "final_density": float(result.final_density),
         "final_abs_error": float(result.final_abs_error),
         "rmse": float(result.rmse),
-        "max_abs_command": float(np.max(np.abs(cmd))) if cmd.size else 0.0,
-        "min_density": float(np.min(dens)) if dens.size else 0.0,
-        "max_density": float(np.max(dens)) if dens.size else 0.0,
+        "max_abs_command": float(np.max(np.abs(cmd))),
+        "min_density": float(np.min(dens)),
+        "max_density": float(np.max(dens)),
         "passes_thresholds": bool(result.final_abs_error <= 1e-3),
     }

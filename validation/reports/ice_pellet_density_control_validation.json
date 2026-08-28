@@ -1,0 +1,17 @@
+{
+  "schema_version": 2,
+  "report_kind": "ice_pellet_density_control_validation",
+  "generated_at_utc": "2026-08-28T08:27:45.449004+00:00",
+  "runtime_seconds": 0.20393405808135867,
+  "ice_pellet_density_control_validation": {
+    "target_density": 1.0,
+    "initial_density": 0.82,
+    "steps": 3000,
+    "dt_s": 0.001,
+    "final_density": 0.9992085576031839,
+    "final_abs_error": 0.0007914423968160555,
+    "rmse": 0.039940784561304274,
+    "max_final_abs_error": 0.001,
+    "passes_thresholds": true
+  }
+}
