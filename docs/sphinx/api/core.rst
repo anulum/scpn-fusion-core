@@ -171,6 +171,37 @@ Runaway Electron Dynamics
    :undoc-members:
    :show-inheritance:
 
+Full Runaway Kinetic Grid and Coefficients
+------------------------------------------
+
+.. automodule:: scpn_fusion.core.runaway_kinetic_grid
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scpn_fusion.core.runaway_kinetic_coefficients
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Full Runaway Kinetic Operator and Solver
+----------------------------------------
+
+.. automodule:: scpn_fusion.core.runaway_kinetic_operator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scpn_fusion.core.runaway_kinetic_solver
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scpn_fusion.core.runaway_kinetic_diagnostics
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Neural Equilibrium
 --------------------
 

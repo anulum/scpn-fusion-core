@@ -31,6 +31,7 @@ pub mod mrti;
 pub mod precision_pacer;
 /// Rotating-magnetic-field control models.
 pub mod rmf_control;
+pub mod runaway_kinetic;
 pub mod sandpile;
 pub mod sawtooth;
 pub mod tilt_mode_frc;

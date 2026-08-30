@@ -40,6 +40,7 @@ use bindings::particles::{
 use bindings::phase::{py_kuramoto_run, py_kuramoto_step, py_upde_run, py_upde_tick};
 use bindings::plant::PyPlantModel;
 use bindings::rmf::{PyPacingMode, PyRmfAotCertificate, PyRmfConfig, PyRmfController};
+use bindings::runaway_kinetic::py_runaway_kinetic_solve;
 use bindings::transport::{
     py_evaluate_design, py_run_design_scan, PyDriftWave, PyFokkerPlanckSolver, PyPlasma2D,
     PySpiAblationSolver, PyTransportSolver,
@@ -113,5 +114,6 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyRmfController>()?;
     m.add_class::<PyPacingMode>()?;
     m.add_class::<PyRmfAotCertificate>()?;
+    m.add_function(wrap_pyfunction!(py_runaway_kinetic_solve, m)?)?;
     Ok(())
 }

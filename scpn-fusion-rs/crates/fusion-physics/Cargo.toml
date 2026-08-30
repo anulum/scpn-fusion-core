@@ -60,3 +60,7 @@ harness = false
 [[bench]]
 name = "rmf_control_bench"
 harness = false
+
+[[bench]]
+name = "runaway_kinetic"
+harness = false

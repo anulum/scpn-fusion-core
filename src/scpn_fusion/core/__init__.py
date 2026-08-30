@@ -516,6 +516,48 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # Checkpoint/resume
     "save_checkpoint": (".checkpoint", "save_checkpoint"),
     "load_checkpoint": (".checkpoint", "load_checkpoint"),
+    # Full runaway-electron kinetic evolution on physical r-p-xi axes
+    "RunawayKineticGrid": (".runaway_kinetic_grid", "RunawayKineticGrid"),
+    "RunawayKineticCoefficients": (
+        ".runaway_kinetic_coefficients",
+        "RunawayKineticCoefficients",
+    ),
+    "RunawayKineticGeometry": (
+        ".runaway_kinetic_operator",
+        "RunawayKineticGeometry",
+    ),
+    "RunawayKineticOperator": (
+        ".runaway_kinetic_operator",
+        "RunawayKineticOperator",
+    ),
+    "RunawayKineticTendencies": (
+        ".runaway_kinetic_operator",
+        "RunawayKineticTendencies",
+    ),
+    "RunawayKineticMoments": (
+        ".runaway_kinetic_solver",
+        "RunawayKineticMoments",
+    ),
+    "RunawayKineticSolver": (
+        ".runaway_kinetic_solver",
+        "RunawayKineticSolver",
+    ),
+    "RunawayKineticTrajectory": (
+        ".runaway_kinetic_solver",
+        "RunawayKineticTrajectory",
+    ),
+    "RunawayKineticBudget": (
+        ".runaway_kinetic_diagnostics",
+        "RunawayKineticBudget",
+    ),
+    "integrated_runaway_kinetic_budget": (
+        ".runaway_kinetic_diagnostics",
+        "integrated_budget",
+    ),
+    "runaway_kinetic_interval_residual": (
+        ".runaway_kinetic_diagnostics",
+        "interval_residual",
+    ),
 }
 
 

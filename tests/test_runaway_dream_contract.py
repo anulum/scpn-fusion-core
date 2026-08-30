@@ -98,7 +98,10 @@ def test_dream_reference_request_declares_fail_closed_output_contract() -> None:
     report = build_dream_reference_execution_report(write=False, execute_backend=False)
 
     assert report["accepted_full_fidelity_ready"] is False
-    assert report["reference_output_ready"] is False
+    assert report["reference_output_ready"] is True
+    assert report["reference_output"]["output_ready"] is True
+    assert report["status"] == "reference_output_generated_not_converted"
+    assert report["comparison_status"] == "blocked_reference_output_not_converted"
     assert report["same_case_comparison_ready"] is False
     assert report["required_output_contract"]["schema"] == "dream-output-contract.v1"
     assert report["required_output_contract"]["coordinate_axes"] == [
