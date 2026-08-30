@@ -3,13 +3,13 @@
 - Grid: `[8, 16, 32]` in radius-pitch-momentum order
 - Requested outputs: `3`
 - Internal SSPRK3 steps: `4`
-- NumPy median: `0.012024127 s`
-- Rust median: `0.005894273 s`
-- Rust speedup on this host/problem: `2.040x`
+- NumPy median: `0.018411425 s`
+- Rust median: `0.009335502 s`
+- Rust speedup on this host/problem: `1.972x`
 - Maximum component relative L2 error: `5.311e-14`
-- Host load averages: `[4.28076171875, 4.919921875, 5.06201171875]`
-- Source revision: `4590a3270a0263a2d86b7beb13af68525a26a6b9`
-- Scientific projection SHA-256: `7f6482aa79dbc3f49113fa5cc4d898a19a9846ab39834f01ea0450ed069c9c7b`
+- Host load averages: `[8.51025390625, 7.76708984375, 8.7255859375]`
+- Source revision: `e64bcd3d0bafaabcfc8b057881112379cea3a89d`
+- Scientific projection SHA-256: `e71f76467da9c8cc17de9e4053de8ba8ebacd1fc0b3f8f43be9bf86a380b2b73`
 - Compiled extension SHA-256: `89d46d7c10eecdee4a5c317c74fe472eeec5692b17cb50b011711bd27d17c335`
 
 The timing is host-conditioned: a pinned DREAM reference run was active concurrently.
