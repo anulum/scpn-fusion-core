@@ -14,6 +14,7 @@ import argparse
 import importlib
 import json
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any, Protocol, cast
 
@@ -125,12 +126,53 @@ def _top_level_tool_files(repo_root: Path) -> list[str]:
     return sorted(path.relative_to(repo_root).as_posix() for path in tools_dir.glob("*.py"))
 
 
+def _committed_repo_files(repo_root: Path) -> frozenset[str] | None:
+    """Return paths in ``HEAD``, or ``None`` outside a committed Git checkout."""
+    try:
+        top_level = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if top_level.returncode != 0 or Path(top_level.stdout.strip()).resolve() != repo_root.resolve():
+        return None
+
+    try:
+        committed = subprocess.run(
+            ["git", "-C", str(repo_root), "ls-tree", "-r", "--name-only", "-z", "HEAD"],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if committed.returncode != 0:
+        return None
+    return frozenset(path for path in committed.stdout.split("\0") if path)
+
+
+def _configured_repo_path(path_value: str, *, repo_root: Path) -> str | None:
+    """Normalize a configured file to a repository-relative path when possible."""
+    path = Path(path_value)
+    candidate = path if path.is_absolute() else repo_root / path
+    try:
+        return candidate.resolve().relative_to(repo_root.resolve()).as_posix()
+    except ValueError:
+        return None
+
+
 def evaluate(*, pyproject_path: Path, baseline_path: Path) -> dict[str, Any]:
     """Evaluate current MyPy policy against the pinned expansion baseline."""
     baseline = _load_json_object(baseline_path)
     mypy = _load_mypy_config(pyproject_path)
     files = _typed_files(mypy)
     file_set = set(files)
+    repo_root = pyproject_path.parent.resolve()
     required_files = set(_string_list(baseline.get("required_typed_files"), label="required"))
     min_count = int(baseline.get("min_typed_file_count", len(required_files)))
 
@@ -151,9 +193,22 @@ def evaluate(*, pyproject_path: Path, baseline_path: Path) -> dict[str, Any]:
     if missing_required:
         failures.append("required typed files removed: " + ", ".join(missing_required))
 
-    missing_paths = sorted(path for path in files if not (REPO_ROOT / path).exists())
+    missing_paths = sorted(path for path in files if not (repo_root / path).exists())
     if missing_paths:
         failures.append("configured typed files do not exist: " + ", ".join(missing_paths))
+
+    committed_files = _committed_repo_files(repo_root)
+    uncommitted_paths = sorted(
+        path
+        for path in files
+        if committed_files is not None
+        and (relative := _configured_repo_path(path, repo_root=repo_root)) is not None
+        and relative not in committed_files
+    )
+    if uncommitted_paths:
+        failures.append(
+            "configured typed files are not committed in HEAD: " + ", ".join(uncommitted_paths)
+        )
 
     top_level_tool_files = _top_level_tool_files(pyproject_path.parent)
     missing_top_level_tool_files = sorted(set(top_level_tool_files) - file_set)
@@ -177,6 +232,7 @@ def evaluate(*, pyproject_path: Path, baseline_path: Path) -> dict[str, Any]:
         "min_typed_file_count": min_count,
         "missing_required_typed_files": missing_required,
         "missing_configured_typed_files": missing_paths,
+        "uncommitted_configured_typed_files": uncommitted_paths,
         "top_level_tool_file_count": len(top_level_tool_files),
         "missing_top_level_tool_files": missing_top_level_tool_files,
         "allowed_missing_import_overrides": [list(row) for row in sorted(allowed_ignored)],

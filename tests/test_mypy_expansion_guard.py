@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -94,6 +95,96 @@ files = ["{enrolled_relative}"]
     assert summary["top_level_tool_file_count"] == 2
     assert summary["missing_top_level_tool_files"] == ["tools/missing.py"]
     assert "top-level Python tools missing" in " ".join(summary["failures"])
+
+
+def test_guard_rejects_uncommitted_typed_files_in_git_checkout(tmp_path: Path) -> None:
+    """Verify local WIP cannot make a clean-checkout MyPy policy appear valid."""
+    typed = tmp_path / "typed.py"
+    typed.write_text("", encoding="utf-8")
+    pyproject = tmp_path / "pyproject.toml"
+    baseline = tmp_path / "baseline.json"
+    _write_baseline(baseline, required=["typed.py"])
+    _write(
+        pyproject,
+        """
+[tool.mypy]
+strict = true
+ignore_missing_imports = false
+files = ["typed.py"]
+""",
+    )
+    initialized = subprocess.run(
+        ["git", "init", "--quiet", str(tmp_path)],
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=20,
+    )
+    assert initialized.returncode == 0, initialized.stderr
+    committed = subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=MyPy Guard Test",
+            "-c",
+            "user.email=mypy-guard@example.invalid",
+            "-C",
+            str(tmp_path),
+            "add",
+            ".",
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=20,
+    )
+    assert committed.returncode == 0, committed.stderr
+    committed = subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=MyPy Guard Test",
+            "-c",
+            "user.email=mypy-guard@example.invalid",
+            "-C",
+            str(tmp_path),
+            "commit",
+            "--quiet",
+            "-m",
+            "fixture",
+        ],
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=20,
+    )
+    assert committed.returncode == 0, committed.stderr
+
+    (tmp_path / "uncommitted.py").write_text("", encoding="utf-8")
+    staged = subprocess.run(
+        ["git", "-C", str(tmp_path), "add", "uncommitted.py"],
+        capture_output=True,
+        check=False,
+        text=True,
+        timeout=20,
+    )
+    assert staged.returncode == 0, staged.stderr
+    _write(
+        pyproject,
+        """
+[tool.mypy]
+strict = true
+ignore_missing_imports = false
+files = ["typed.py", "uncommitted.py"]
+""",
+    )
+
+    summary = guard.evaluate(pyproject_path=pyproject, baseline_path=baseline)
+
+    assert summary["overall_pass"] is False
+    assert summary["missing_configured_typed_files"] == []
+    assert summary["uncommitted_configured_typed_files"] == ["uncommitted.py"]
+    assert "not committed in HEAD" in " ".join(summary["failures"])
 
 
 def test_guard_fails_when_required_typed_file_is_removed(tmp_path: Path) -> None:
