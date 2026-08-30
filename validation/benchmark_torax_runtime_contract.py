@@ -764,10 +764,10 @@ def _render_markdown(report: Mapping[str, object]) -> str:
     lines.extend(
         [
             "",
-            "The public runtime executed real TORAX 1.4.3 through the isolated CLI. ",
-            "The typed projection contains only Ti, Te, ne, poloidal flux, source totals, ",
-            "state budgets, and numerical status. The checksummed NetCDF DataTree sidecar ",
-            "retains every backend variable. No actuation, experimental-validation, full-physics ",
+            "The public runtime executed real TORAX 1.4.3 through the isolated CLI.",
+            "The typed projection contains only Ti, Te, ne, poloidal flux, source totals,",
+            "state budgets, and numerical status. The checksummed NetCDF DataTree sidecar",
+            "retains every backend variable. No actuation, experimental-validation, full-physics",
             "equivalence, or portable-performance claim is made.",
             "",
         ]
