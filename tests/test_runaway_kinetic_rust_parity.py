@@ -187,7 +187,7 @@ def test_tracked_rust_benchmark_preserves_parity_and_language_boundaries() -> No
         "minimum_distribution",
     }.issubset(report["parity"])
     assert report["gates"]["internal_ssprk3_steps_exact"] is True
-    assert report["source_revision"] == "0e40075d505daa2250accb0c287a69856ba61fd3"
+    assert report["source_revision"] == "4590a3270a0263a2d86b7beb13af68525a26a6b9"
     assert report["source_provenance"] == _source_provenance()
     assert report["scientific_projection_sha256"] == _checksum(scientific_projection(report))
     extension = report["runtime_provenance"]["extension"]

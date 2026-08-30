@@ -3,14 +3,14 @@
 - Grid: `[8, 16, 32]` in radius-pitch-momentum order
 - Requested outputs: `3`
 - Internal SSPRK3 steps: `4`
-- NumPy median: `0.014342346 s`
-- Rust median: `0.006977463 s`
-- Rust speedup on this host/problem: `2.056x`
-- Maximum component relative L2 error: `5.272e-14`
-- Host load averages: `[4.15478515625, 4.3359375, 5.40966796875]`
-- Source revision: `0e40075d505daa2250accb0c287a69856ba61fd3`
-- Scientific projection SHA-256: `cbd218dbe4f15b4735f5e5d740c11b71f7b30fc72479a312d91d056268941cd6`
-- Compiled extension SHA-256: `e800a355b2045611027d1b7a7d08b10b4b8ad9db8533ff42cd41b6b6f22de7b4`
+- NumPy median: `0.012024127 s`
+- Rust median: `0.005894273 s`
+- Rust speedup on this host/problem: `2.040x`
+- Maximum component relative L2 error: `5.311e-14`
+- Host load averages: `[4.28076171875, 4.919921875, 5.06201171875]`
+- Source revision: `4590a3270a0263a2d86b7beb13af68525a26a6b9`
+- Scientific projection SHA-256: `7f6482aa79dbc3f49113fa5cc4d898a19a9846ab39834f01ea0450ed069c9c7b`
+- Compiled extension SHA-256: `89d46d7c10eecdee4a5c317c74fe472eeec5692b17cb50b011711bd27d17c335`
 
 The timing is host-conditioned: a pinned DREAM reference run was active concurrently.
 Rust is selected for the explicit production kernel because it preserves all outputs

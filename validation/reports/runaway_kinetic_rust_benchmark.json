@@ -6,13 +6,13 @@
     "internal_ssprk3_steps_exact": true,
     "rust_measured_faster_on_this_host_problem": true
   },
-  "generated_at_utc": "2026-08-30T08:50:45.259306+00:00",
+  "generated_at_utc": "2026-08-30T09:11:01.870619+00:00",
   "host": {
     "conditioning": "Local shared host; a concurrent pinned DREAM reference run was active. Timings are evidence for this host and problem only.",
     "load_average_1m_5m_15m": [
-      4.15478515625,
-      4.3359375,
-      5.40966796875
+      4.28076171875,
+      4.919921875,
+      5.06201171875
     ],
     "logical_cpu_count": 12,
     "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
@@ -59,15 +59,15 @@
     },
     "moments.current_density_a_m2": {
       "maximum_absolute_error": 7.105427357601002e-12,
-      "relative_l2_error": 5.2723886163501825e-14
+      "relative_l2_error": 5.310828007432797e-14
     },
     "moments.density_m3": {
-      "maximum_absolute_error": 0.75,
-      "relative_l2_error": 7.909277898520916e-16
+      "maximum_absolute_error": 0.6875,
+      "relative_l2_error": 8.014239731214405e-16
     },
     "moments.kinetic_energy_density_j_m3": {
       "maximum_absolute_error": 6.252776074688882e-13,
-      "relative_l2_error": 5.239701786687444e-16
+      "relative_l2_error": 5.490679084616978e-16
     },
     "pitch_scattering": {
       "maximum_absolute_error": 0.0,
@@ -91,11 +91,11 @@
     },
     "runaway_density_radial_transport_m3_s": {
       "maximum_absolute_error": 0.0029296875,
-      "relative_l2_error": 5.91086737234356e-16
+      "relative_l2_error": 5.16006276282664e-16
     },
     "runaway_density_tendency_m3_s": {
       "maximum_absolute_error": 0.0029296875,
-      "relative_l2_error": 2.6794576952443364e-16
+      "relative_l2_error": 2.421579132883209e-16
     },
     "synchrotron_loss": {
       "maximum_absolute_error": 0.0,
@@ -123,60 +123,60 @@
   "runtime_provenance": {
     "extension": {
       "artifact_name": "scpn_fusion_rs.cpython-312-x86_64-linux-gnu.so",
-      "artifact_sha256": "e800a355b2045611027d1b7a7d08b10b4b8ad9db8533ff42cd41b6b6f22de7b4"
+      "artifact_sha256": "89d46d7c10eecdee4a5c317c74fe472eeec5692b17cb50b011711bd27d17c335"
     },
     "numpy_version": "1.26.4",
     "python_version": "3.12.3"
   },
   "schema": "runaway-kinetic-rust-benchmark.v1",
   "schema_version": 1,
-  "scientific_projection_sha256": "cbd218dbe4f15b4735f5e5d740c11b71f7b30fc72479a312d91d056268941cd6",
+  "scientific_projection_sha256": "7f6482aa79dbc3f49113fa5cc4d898a19a9846ab39834f01ea0450ed069c9c7b",
   "source_provenance": {
     "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/coefficients.rs": "9151bbd823368f14cfa0e3fc4575bfcd15f5c168fa6c9b1cab1d1b9aaf930dfd",
     "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/grid.rs": "5f36fd096f56e0d8c22b3aeac6f240df2776818a3047d62f45a985f8404cb7f3",
     "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/mod.rs": "7a0ca2f0cf7cb50255b25cc70b9ba46a9c8aafbc31b0051df8b29fcf081a6f8b",
-    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/operator.rs": "7d93f7cf2fb4471d85e903e29ada6da811813d01a2ebeef1de0aedd55b134f84",
-    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/solver.rs": "efb02852dee2a2628d4cff23b3fa1468b923dca4689520e4b134587240849a1f",
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/operator.rs": "baee9e75ea89fff01d873a968a198905605372ba37e1290ec14259312207aeda",
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/solver.rs": "d87fbbcf113c86262e2fbd695be2c183c4d4d003d8d71358599dbb17ed2218b4",
     "scpn-fusion-rs/crates/fusion-python/src/bindings/runaway_kinetic.rs": "c3c46a6257780774fb6108d317c396ff27f13a1e9b00d31fdde600cdbdc30d2a",
     "src/scpn_fusion/core/runaway_kinetic_coefficients.py": "c82731ebabe7204f409e8e228d8af42032e26521991d13d292ed84dacfea7099",
     "src/scpn_fusion/core/runaway_kinetic_diagnostics.py": "67ed27c4d842d5378a9a7434cf3e6db055eb3c621e269d96273832b017c7e784",
     "src/scpn_fusion/core/runaway_kinetic_grid.py": "0b82a423606f771de6c0bbd32e902eb0c76543e4f96fa4617278cdf25914400a",
-    "src/scpn_fusion/core/runaway_kinetic_operator.py": "3110994c2099791c8425b252c1d0f75e54d6ae8985ab43a4142def8d75040cef",
-    "src/scpn_fusion/core/runaway_kinetic_solver.py": "fcf9967c0031c4d81712e53b78c81846390ef6a48c76d0162221da8518ed5788",
+    "src/scpn_fusion/core/runaway_kinetic_operator.py": "e3136d4898f200ab10a4bc4b39ba249ea849ec7fdd540b503bc75ddb89a2d443",
+    "src/scpn_fusion/core/runaway_kinetic_solver.py": "6b898f16867ea5ab7855ebf0a0927ad94ed46a7425a6865042d3abea6ff1b7b0",
     "validation/benchmark_runaway_kinetic_rust.py": "248e58bbf4afcb7e10288c9b17a93a0444a91d94387a57d724ed94e970aa9cc8"
   },
-  "source_revision": "0e40075d505daa2250accb0c287a69856ba61fd3",
+  "source_revision": "4590a3270a0263a2d86b7beb13af68525a26a6b9",
   "status": "accepted_full_kinetic_rust_backend_parity",
   "timing_seconds": {
-    "numpy_median": 0.01434234599582851,
+    "numpy_median": 0.012024127063341439,
     "numpy_samples": [
-      0.018492696923203766,
-      0.01978096505627036,
-      0.014242795063182712,
-      0.014559863950125873,
-      0.013556911959312856,
-      0.01434234599582851,
-      0.013469858095049858,
-      0.013988357968628407,
-      0.014387189992703497,
-      0.015138446004129946,
-      0.013854342978447676
+      0.01185857702512294,
+      0.011944330995902419,
+      0.011330721084959805,
+      0.01239194895606488,
+      0.011360371019691229,
+      0.01137718791142106,
+      0.013098829076625407,
+      0.012024127063341439,
+      0.013815136975608766,
+      0.012886538985185325,
+      0.012440872029401362
     ],
     "repeats": 11,
-    "rust_median": 0.0069774630246683955,
+    "rust_median": 0.005894273053854704,
     "rust_samples": [
-      0.009610737906768918,
-      0.007692060084082186,
-      0.00661455700173974,
-      0.0069774630246683955,
-      0.006582602043636143,
-      0.006522932089865208,
-      0.006706234999001026,
-      0.0071522620273754,
-      0.007094778004102409,
-      0.008167669991962612,
-      0.006456518894992769
+      0.007669235928915441,
+      0.0056684460723772645,
+      0.005853057955391705,
+      0.005894273053854704,
+      0.005785304005257785,
+      0.005974625004455447,
+      0.005757282022386789,
+      0.0057214919943362474,
+      0.006357806967571378,
+      0.0060602190205827355,
+      0.006513766013085842
     ],
-    "rust_speedup_over_numpy": 2.0555244714478627
+    "rust_speedup_over_numpy": 2.0399677710006947
   }
 }
