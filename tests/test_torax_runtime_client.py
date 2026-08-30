@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import copy
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -39,7 +40,7 @@ def test_missing_and_non_torax_python_fail_through_public_process_boundary(tmp_p
     )
     assert missing.failure_code is ToraxFailureCode.BACKEND_UNAVAILABLE
 
-    ordinary = ToraxRuntimeClient(ROOT / ".venv/bin/python", working_directory=ROOT).run(
+    ordinary = ToraxRuntimeClient(Path(sys.executable), working_directory=ROOT).run(
         request,
         request_path=tmp_path / "ordinary.request.json",
         result_path=tmp_path / "ordinary.result.json",
@@ -58,7 +59,7 @@ def test_cli_invalid_request_writes_typed_failure_record(tmp_path: Path) -> None
     request_path.write_text('{"request_id":"bad","event_id":"event-bad"}\n', encoding="utf-8")
     process = subprocess.run(
         [
-            str(ROOT / ".venv/bin/python"),
+            sys.executable,
             "-m",
             "scpn_fusion.integrations.torax",
             "--request",
@@ -102,7 +103,7 @@ def test_tracked_fixture_verification_detects_post_run_sidecar_corruption(tmp_pa
     artifact["manifest_sha256"] = file_sha256(manifest_path)
     result_path = tmp_path / "result.json"
     write_json_atomic(result_path, result)
-    client = ToraxRuntimeClient(ROOT / ".venv/bin/python", working_directory=ROOT)
+    client = ToraxRuntimeClient(Path(sys.executable), working_directory=ROOT)
     assert client.load_verified_outcome(
         result_path=result_path,
         expected_sidecar_path=sidecar,
@@ -131,7 +132,7 @@ from scpn_fusion.integrations.torax import ToraxRunRequest, ToraxRuntimeClient
 print(ToraxRunRequest.__name__, ToraxRuntimeClient.__name__)
 """
     process = subprocess.run(
-        [str(ROOT / ".venv/bin/python"), "-c", code],
+        [sys.executable, "-c", code],
         cwd=ROOT,
         check=True,
         capture_output=True,

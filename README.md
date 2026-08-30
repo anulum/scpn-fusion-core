@@ -380,6 +380,9 @@ native-only source-term budget evidence for avalanche growth, synchrotron loss,
 partial-screening drag, and bremsstrahlung loss channels; DREAM same-case
 source-budget parity remains blocked until compiled `iface/dreami` output is
 available.
+Until the FCE-15 full-kinetic acceptance artifact is complete, the public
+release does not claim parity with DREAM's kinetic momentum-space distribution
+solver.
 
 The public `RunawayKineticSolver` is a separate full three-axis finite-volume
 surface: radius, pitch and momentum are evolved rather than projected. It

@@ -17,7 +17,10 @@ import pytest
 
 from scpn_fusion.core.jax_free_boundary_predictive import build_response_matrix
 from scpn_fusion.core.jax_predictive_checkpoint_trace import CompiledPredictiveTrace
-from scpn_fusion.core.jax_predictive_forward_compiled import solve_predictive_equilibrium_compiled
+from scpn_fusion.core.jax_predictive_forward_compiled import (
+    COMPILED_DEFAULT_MIXING,
+    solve_predictive_equilibrium_compiled,
+)
 
 _jax_config_update = cast(Callable[[str, bool], None], jax.config.update)
 _jax_config_update("jax_enable_x64", True)
@@ -104,7 +107,7 @@ def test_compiled_trace_preserves_and_exposes_the_exact_loop(response: Response)
     )
     assert np.allclose(
         np.asarray(trace.psi_after[:2]),
-        np.asarray(trace.psi_before[:2] + 0.5 * trace.fixed_point_residual[:2]),
+        np.asarray(trace.psi_before[:2] + COMPILED_DEFAULT_MIXING * trace.fixed_point_residual[:2]),
     )
     assert np.array_equal(np.asarray(trace.psi_after[-1]), np.asarray(trace.equilibrium))
     assert np.allclose(np.asarray(trace.ip_now), [_IP / 2.0, _IP, _IP, _IP])

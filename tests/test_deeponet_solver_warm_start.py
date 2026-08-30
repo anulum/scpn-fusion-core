@@ -26,7 +26,12 @@ from scpn_fusion.core.deeponet_solver_warm_start import (
     DeepONetPredictiveWarmStarter,
     DeepONetWarmStartResult,
 )
-from scpn_fusion.core.jax_free_boundary_predictive import DEFAULT_TOL, build_response_matrix
+from scpn_fusion.core.jax_free_boundary_predictive import (
+    DEFAULT_ANDERSON_DEPTH,
+    DEFAULT_MIXING,
+    DEFAULT_TOL,
+    build_response_matrix,
+)
 from scpn_fusion.core.jax_predictive_forward_compiled import (
     solve_predictive_equilibrium_compiled,
 )
@@ -67,6 +72,8 @@ def solver_case() -> dict[str, Any]:
         wall_idx,
         source_idx,
         n_iter=150,
+        anderson_depth=DEFAULT_ANDERSON_DEPTH,
+        mixing=DEFAULT_MIXING,
         return_iterations=True,
     )
     equilibrium, iterations = cast(tuple[jnp.ndarray, int], solved)
