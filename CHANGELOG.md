@@ -148,7 +148,7 @@
   and the RWM wall-time growth magnitude instead of qualitative signs alone.
 - Rebind the tracked predictive-forward and real-DIII-D evidence to the current
   axis-connected plasma-support implementation. Current reproducible CPU evidence
-  records 1.91 % full-domain and 0.070 % shell-pinned DIII-D ψ RMS, 3.244e-06
+  records 1.91 % full-domain and 0.070 % shell-pinned DIII-D ψ RMS, 2.253e-06
   adjoint/finite-difference agreement, and fail-closes the non-converged 65²
   warm-start comparison instead of presenting iteration-capped fields as a
   fixed-point equivalence. Every bound artifact now verifies its executable

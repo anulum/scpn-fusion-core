@@ -1141,8 +1141,8 @@ $$\frac{dn_{\rm RE}}{dt} = S_{\rm Dreicer} + \gamma_{\rm aval} n_{\rm RE} - \fra
 
 The native contract validates the scalar density balance used by DREAM fluid
 runs, including subcritical avalanche suppression, mitigation loss accounting,
-and density-cap enforcement. It is a fluid benchmark contract and does not
-claim parity with DREAM's kinetic momentum-space distribution solver.
+and density-cap enforcement. This fluid benchmark remains distinct from both
+the native multidimensional solver below and DREAM kinetic-distribution parity.
 
 ### 13.5 Hot-tail seed
 
@@ -1160,9 +1160,30 @@ $$\frac{\partial f}{\partial t} + \frac{\partial}{\partial p}\!\left[(F_{\rm acc
 
 Ref: Hesslow et al., *J. Plasma Phys.* 85, 475850601 (2019).
 
-**Key files:** `core/runaway_electrons.py` (fluid source terms and density balance), `control/fokker_planck_re.py` (`FokkerPlanckSolver`), `control/halo_re_physics.py` (`RunawayElectronModel`), `control/runaway_electron_model.py`.
+### 13.7 Full radius-pitch-momentum solver
 
-**Validation:** `tests/test_runaway_electrons.py`, `tests/test_fokker_planck.py`, `tests/test_halo_re_physics.py`, `validation/benchmark_runaway_dream_contract.py`.
+The public `RunawayKineticSolver` evolves the complete cell-centred
+$f(\rho,\xi,p,t)$ distribution. Its finite-volume operator retains radial
+advection and diffusion, electric acceleration, collisional drag and momentum
+diffusion, pitch scattering, momentum-pitch cross diffusion, synchrotron and
+bremsstrahlung losses, kinetic avalanche generation, and an external source as
+separate auditable tendencies. A coupled radial density balance reports the
+radial-transport, avalanche, external-source, and total budgets independently.
+
+Time integration uses deterministic SSPRK3 with a declared maximum internal
+step. Radius, pitch, momentum, and output-time grids therefore all participate
+in convergence studies; no hidden adaptive step may substitute for one of
+those refinements. NumPy and explicit fail-closed Rust/PyO3 backends return the
+same full distribution history, every named tendency, the density balance, and
+radially resolved density, current-density, and kinetic-energy moments.
+Negative or non-finite evolved states fail closed. This native Python/Rust
+parity is not a claim of DREAM kinetic-distribution parity: that independent
+claim remains false until every frozen DREAM grid, diagnostic, provenance, and
+multi-observable convergence gate passes.
+
+**Key files:** `core/runaway_electrons.py` (fluid source terms and density balance), `core/runaway_kinetic_grid.py`, `core/runaway_kinetic_operator.py`, `core/runaway_kinetic_solver.py`, `control/fokker_planck_re.py` (`FokkerPlanckSolver`), `control/halo_re_physics.py` (`RunawayElectronModel`), `control/runaway_electron_model.py`, and `scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic.rs`.
+
+**Validation:** `tests/test_runaway_electrons.py`, `tests/test_fokker_planck.py`, `tests/test_halo_re_physics.py`, `tests/test_runaway_kinetic.py`, `tests/test_runaway_kinetic_rust.py`, `tests/test_dream_full_kinetic_parity.py`, `validation/benchmark_runaway_dream_contract.py`, and `validation/benchmark_dream_full_kinetic_parity.py`.
 
 ---
 

@@ -254,7 +254,7 @@
     {
       "id": "readme_runaway_scope_boundary",
       "source_file": "README.md",
-      "source_pattern": "Runaway electron dynamics \\| DREAM-style fluid balance, 1D momentum Fokker-Planck, multidimensional artifact-export contract, fail-closed kinetic-operator evidence, and native-only source-term budget diagnostics; no public DREAM kinetic-distribution parity or coupled momentum-pitch-radius operator parity",
+      "source_pattern": "Runaway electron dynamics \\| DREAM-style fluid balance and legacy 1D momentum Fokker-Planck/multidimensional artifact-export contract, plus a full radius-pitch-momentum finite-volume solver with named transport, collision, radiation, avalanche, density-balance, moment, and Python/Rust full-output parity surfaces; no public DREAM kinetic-distribution parity until every frozen independent-reference gate passes",
       "evidence_files": [
         "docs/PHYSICS_METHODS_COMPLETE.md"
       ],
@@ -265,7 +265,7 @@
         },
         {
           "file": "docs/PHYSICS_METHODS_COMPLETE.md",
-          "pattern": "does not\\s+claim parity with DREAM's kinetic momentum-space distribution solver"
+          "pattern": "This native Python/Rust\\s+parity is not a claim of DREAM kinetic-distribution parity"
         }
       ]
     },
@@ -421,56 +421,56 @@
     {
       "id": "results_predictive_forward_equivalence",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Compiled vs eager fixed point \\(33\u00b2, span-rel\\) \\| 1\\.5e-9",
+      "source_pattern": "\\| Compiled vs eager fixed point \\(33\u00b2, span-rel\\) \\| 1\\.988e-9",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
-          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.494330"
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.987756"
         }
       ]
     },
     {
       "id": "results_predictive_forward_warm_equivalence",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Warm vs cold fixed point \\(129\u00b2, warm\\+MG-Richardson, span-rel\\) \\| 2\\.9e-9",
+      "source_pattern": "\\| Warm vs cold fixed point \\(129\u00b2, warm\\+MG-Richardson, span-rel\\) \\| 3\\.952e-9",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/warm_start_forward.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/warm_start_forward.json",
-          "pattern": "\"129x129_warm_mg_richardson2\"\\s*:\\s*2\\.82105"
+          "pattern": "\"129x129_warm_mg_richardson2\"\\s*:\\s*3\\.951544"
         }
       ]
     },
     {
       "id": "results_predictive_forward_batched_equivalence",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Batched element \u2261 single solve \\(span-rel\\) \\| \u2264 5\\.1e-15",
+      "source_pattern": "\\| Batched element \u2261 single solve \\(span-rel\\) \\| \u2264 7\\.830e-15",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json",
-          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*3\\.527328"
+          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*7\\.829847"
         }
       ]
     },
     {
       "id": "results_predictive_forward_adjoint",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 3\\.244e-06 relative",
+      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.253e-06 relative",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "3\\.242180"
+          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.253e-06 relative"
         }
       ]
     },
@@ -533,42 +533,42 @@
     {
       "id": "readme_predictive_forward_equivalence_current",
       "source_file": "README.md",
-      "source_pattern": "\\| Compiled vs eager fixed-point equivalence \\(span-rel\\) \\| 1\\.5e-9 \\|",
+      "source_pattern": "\\| Compiled vs eager fixed-point equivalence \\(span-rel\\) \\| 1\\.988e-9 \\|",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
-          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.494330"
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.987756"
         }
       ]
     },
     {
       "id": "readme_predictive_forward_adjoint_current",
       "source_file": "README.md",
-      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 3\\.244e-06 relative \\|",
+      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.253e-06 relative \\|",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "3\\.242180"
+          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.253e-06 relative"
         }
       ]
     },
     {
       "id": "validation_real_diiid_adjoint_current",
       "source_file": "docs/VALIDATION_REAL_DIIID_145419.md",
-      "source_pattern": "\\| coil-current gradients \\| \\*\\*\u2264 3\\.244 \u00d7 10\u207b\u2076 relative\\*\\* at 100\u2013300 A steps",
+      "source_pattern": "\\| coil-current gradients \\| \\*\\*\u2264 2\\.253 \u00d7 10\u207b\u2076 relative\\*\\* at 100\u2013300 A steps",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "3\\.242180"
+          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.253e-06 relative"
         }
       ]
     },

@@ -145,13 +145,13 @@ provenance-bound generators; `*_h100.json` files are dedicated-hardware snapshot
 
 | Metric | Value | Evidence |
 |--------|-------|----------|
-| Compiled vs eager fixed point (33², span-rel) | 1.5e-9 | `artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json` |
-| Warm vs cold fixed point (129², warm+MG-Richardson, span-rel) | 2.9e-9 | `artifacts/rung2_mg_preconditioner/warm_start_forward.json` |
+| Compiled vs eager fixed point (33², span-rel) | 1.988e-9 | `artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json` |
+| Warm vs cold fixed point (129², warm+MG-Richardson, span-rel) | 3.952e-9 | `artifacts/rung2_mg_preconditioner/warm_start_forward.json` |
 | H100 FP64 129² cold / warm / warm+MG-Richardson(2) | 164.8 / 26.3 / 13.0 ms | `artifacts/rung2_mg_preconditioner/warm_start_forward_h100.json` |
 | H100 replication on the public head (single, warm+MG-Richardson) | 13.44 ms | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json` |
 | H100 batched per-solve (warm, B=16/64/256) | 13.6 / 13.0 / 14.6 ms | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation_h100.json` |
-| Batched element ≡ single solve (span-rel) | ≤ 5.1e-15 | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json` |
-| Adjoint coil gradient vs warm finite difference | ≤ 3.244e-06 relative (100–300 A steps) | `artifacts/coilgrad_adjoint_fd_evidence.json` |
+| Batched element ≡ single solve (span-rel) | ≤ 7.830e-15 | `artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json` |
+| Adjoint coil gradient vs warm finite difference | ≤ 2.253e-06 relative (100–300 A steps) | `artifacts/coilgrad_adjoint_fd_evidence.json` |
 
 Real-data reproduction (DIII-D shot 145419, EFIT g-file, 129×129):
 
