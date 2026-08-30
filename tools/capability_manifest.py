@@ -20,6 +20,7 @@ import argparse
 import ast
 import importlib
 import json
+import subprocess
 import sys
 from collections.abc import Iterable
 from dataclasses import dataclass
@@ -205,20 +206,33 @@ def build_capability_manifest(
     repo = repo.resolve()
     config = config or load_config(repo)
     paths = capability_paths(repo, config)
+    tracked_files = _committed_repo_files(repo)
     pyproject = _load_pyproject(paths.pyproject)
     public_exports = _public_exports(paths.package_root / "__init__.py")
-    python_sources = _python_capability_sources(paths.capability_roots, repo=repo)
-    python_classes = _python_capability_classes(paths.capability_roots, repo=repo)
-    rust_crates = _rust_workspace_crates(paths.rust_workspace_root, repo=repo)
+    python_sources = _python_capability_sources(
+        paths.capability_roots, repo=repo, tracked_files=tracked_files
+    )
+    python_classes = _python_capability_classes(
+        paths.capability_roots, repo=repo, tracked_files=tracked_files
+    )
+    rust_crates = _rust_workspace_crates(
+        paths.rust_workspace_root, repo=repo, tracked_files=tracked_files
+    )
     extras = _project_extras(pyproject)
     package_data_key = paths.package_root.name
-    workflows = _workflow_files(paths.workflows_root, repo=repo)
-    tests = _python_files(paths.tests_root, repo=repo)
-    docs_pages = _markdown_docs(paths.docs_root, repo=repo, exclude_parts=config.exclude_doc_parts)
+    workflows = _workflow_files(paths.workflows_root, repo=repo, tracked_files=tracked_files)
+    tests = _python_files(paths.tests_root, repo=repo, tracked_files=tracked_files)
+    docs_pages = _markdown_docs(
+        paths.docs_root,
+        repo=repo,
+        exclude_parts=config.exclude_doc_parts,
+        tracked_files=tracked_files,
+    )
     capability_docs = _markdown_docs(
         paths.capability_docs_root,
         repo=repo,
         exclude_parts=config.exclude_doc_parts,
+        tracked_files=tracked_files,
     )
 
     return {
@@ -273,7 +287,7 @@ def build_capability_manifest(
             "public_pages": docs_pages,
         },
         "evidence_boundary": (
-            "Counts are file-system and static-source inventory only; benchmark, "
+            "Counts are version-controlled static-source inventory only; benchmark, "
             "coverage, hardware, and scientific-fidelity claims remain governed by "
             "their dedicated evidence artifacts."
         ),
@@ -476,6 +490,51 @@ def _load_pyproject(path: Path) -> dict[str, Any]:
     return tomllib.loads(path.read_text(encoding="utf-8"))
 
 
+def _committed_repo_files(repo: Path) -> frozenset[str] | None:
+    """Return paths in the current Git commit, or ``None`` without one.
+
+    Generated public inventory must not change merely because a developer has
+    staged or untracked work in the checkout. Source archives and repositories
+    without a commit retain the filesystem-based fallback.
+    """
+    try:
+        top_level = subprocess.run(
+            ["git", "-C", str(repo), "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if top_level.returncode != 0 or Path(top_level.stdout.strip()).resolve() != repo.resolve():
+        return None
+
+    try:
+        committed = subprocess.run(
+            ["git", "-C", str(repo), "ls-tree", "-r", "--name-only", "-z", "HEAD"],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if committed.returncode != 0:
+        return None
+    return frozenset(path for path in committed.stdout.split("\0") if path)
+
+
+def _is_inventory_file(
+    path: Path,
+    *,
+    repo: Path,
+    tracked_files: frozenset[str] | None,
+) -> bool:
+    """Return whether a discovered file belongs in public inventory."""
+    return tracked_files is None or _rel(path, repo) in tracked_files
+
+
 def _public_exports(init_path: Path) -> list[str]:
     if not init_path.exists():
         return []
@@ -498,18 +557,31 @@ def _literal_string_list(node: ast.AST) -> list[str]:
     return values
 
 
-def _python_capability_sources(roots: tuple[Path, ...], *, repo: Path) -> list[str]:
+def _python_capability_sources(
+    roots: tuple[Path, ...],
+    *,
+    repo: Path,
+    tracked_files: frozenset[str] | None = None,
+) -> list[str]:
     rows: set[str] = set()
     for root in roots:
         if not root.exists():
             continue
         rows.update(
-            _rel(path, repo) for path in sorted(root.rglob("*.py")) if path.name != "__init__.py"
+            _rel(path, repo)
+            for path in sorted(root.rglob("*.py"))
+            if path.name != "__init__.py"
+            and _is_inventory_file(path, repo=repo, tracked_files=tracked_files)
         )
     return sorted(rows)
 
 
-def _python_capability_classes(roots: tuple[Path, ...], *, repo: Path) -> list[dict[str, str]]:
+def _python_capability_classes(
+    roots: tuple[Path, ...],
+    *,
+    repo: Path,
+    tracked_files: frozenset[str] | None = None,
+) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     seen_paths: set[Path] = set()
     for root in roots:
@@ -517,7 +589,11 @@ def _python_capability_classes(roots: tuple[Path, ...], *, repo: Path) -> list[d
             continue
         for path in sorted(root.rglob("*.py")):
             resolved = path.resolve()
-            if path.name == "__init__.py" or resolved in seen_paths:
+            if (
+                path.name == "__init__.py"
+                or resolved in seen_paths
+                or not _is_inventory_file(path, repo=repo, tracked_files=tracked_files)
+            ):
                 continue
             seen_paths.add(resolved)
             tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -527,11 +603,16 @@ def _python_capability_classes(roots: tuple[Path, ...], *, repo: Path) -> list[d
     return sorted(rows, key=lambda row: (row["name"], row["path"]))
 
 
-def _rust_workspace_crates(root: Path, *, repo: Path) -> list[dict[str, str]]:
+def _rust_workspace_crates(
+    root: Path,
+    *,
+    repo: Path,
+    tracked_files: frozenset[str] | None = None,
+) -> list[dict[str, str]]:
     if not root.exists():
         return []
     crates: list[dict[str, str]] = []
-    for manifest in _rust_workspace_member_manifests(root):
+    for manifest in _rust_workspace_member_manifests(root, repo=repo, tracked_files=tracked_files):
         payload = tomllib.loads(manifest.read_text(encoding="utf-8"))
         package = payload.get("package", {})
         name = package.get("name")
@@ -540,10 +621,17 @@ def _rust_workspace_crates(root: Path, *, repo: Path) -> list[dict[str, str]]:
     return sorted(crates, key=lambda row: (row["name"], row["path"]))
 
 
-def _rust_workspace_member_manifests(root: Path) -> list[Path]:
+def _rust_workspace_member_manifests(
+    root: Path,
+    *,
+    repo: Path,
+    tracked_files: frozenset[str] | None,
+) -> list[Path]:
     """Return Cargo manifests declared as workspace members."""
     workspace_manifest = root / "Cargo.toml"
-    if not workspace_manifest.exists():
+    if not workspace_manifest.exists() or not _is_inventory_file(
+        workspace_manifest, repo=repo, tracked_files=tracked_files
+    ):
         return []
 
     payload = tomllib.loads(workspace_manifest.read_text(encoding="utf-8"))
@@ -554,6 +642,7 @@ def _rust_workspace_member_manifests(root: Path) -> list[Path]:
             manifest
             for manifest in sorted(root.rglob("Cargo.toml"))
             if manifest != workspace_manifest
+            and _is_inventory_file(manifest, repo=repo, tracked_files=tracked_files)
         ]
 
     manifests: set[Path] = set()
@@ -562,7 +651,11 @@ def _rust_workspace_member_manifests(root: Path) -> list[Path]:
             continue
         for candidate in root.glob(member):
             manifest = candidate / "Cargo.toml" if candidate.is_dir() else candidate
-            if manifest.exists() and manifest.name == "Cargo.toml":
+            if (
+                manifest.exists()
+                and manifest.name == "Cargo.toml"
+                and _is_inventory_file(manifest, repo=repo, tracked_files=tracked_files)
+            ):
                 manifests.add(manifest)
     return sorted(manifests)
 
@@ -574,19 +667,34 @@ def _project_extras(pyproject: dict[str, Any]) -> list[str]:
     return sorted(str(name) for name in extras)
 
 
-def _workflow_files(workflows_root: Path, *, repo: Path) -> list[str]:
+def _workflow_files(
+    workflows_root: Path,
+    *,
+    repo: Path,
+    tracked_files: frozenset[str] | None = None,
+) -> list[str]:
     if not workflows_root.exists():
         return []
     return [
         _rel(path, repo)
         for path in sorted(list(workflows_root.glob("*.yml")) + list(workflows_root.glob("*.yaml")))
+        if _is_inventory_file(path, repo=repo, tracked_files=tracked_files)
     ]
 
 
-def _python_files(root: Path, *, repo: Path) -> list[str]:
+def _python_files(
+    root: Path,
+    *,
+    repo: Path,
+    tracked_files: frozenset[str] | None = None,
+) -> list[str]:
     if not root.exists():
         return []
-    return [_rel(path, repo) for path in sorted(root.rglob("*.py"))]
+    return [
+        _rel(path, repo)
+        for path in sorted(root.rglob("*.py"))
+        if _is_inventory_file(path, repo=repo, tracked_files=tracked_files)
+    ]
 
 
 def _markdown_docs(
@@ -595,6 +703,7 @@ def _markdown_docs(
     repo: Path,
     exclude_parts: tuple[str, ...],
     display_root: Path | None = None,
+    tracked_files: frozenset[str] | None = None,
 ) -> list[str]:
     if not root.exists():
         return []
@@ -603,6 +712,7 @@ def _markdown_docs(
         _rel(path, relative_root)
         for path in sorted(root.rglob("*.md"))
         if not set(path.relative_to(root).parts).intersection(exclude_parts)
+        and _is_inventory_file(path, repo=repo, tracked_files=tracked_files)
     ]
 
 

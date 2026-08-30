@@ -97,6 +97,72 @@ def test_manifest_scans_fusion_core_capability_surfaces() -> None:
     assert "docs/internal/AUDIT_INDEX.md" not in manifest["documentation"]["public_pages"]
 
 
+def test_manifest_ignores_untracked_files_in_git_checkout() -> None:
+    """Verify staged and untracked work cannot contaminate committed inventory."""
+    tool = _load_tool()
+    with _tempdir() as repo:
+        _write_portable_fixture(repo)
+        initialized = subprocess.run(
+            ["git", "init", "--quiet", str(repo)],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=20,
+        )
+        assert initialized.returncode == 0, initialized.stderr
+        indexed = subprocess.run(
+            ["git", "-C", str(repo), "add", "."],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=20,
+        )
+        assert indexed.returncode == 0, indexed.stderr
+        committed = subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=Capability Test",
+                "-c",
+                "user.email=capability@example.invalid",
+                "-C",
+                str(repo),
+                "commit",
+                "--quiet",
+                "-m",
+                "fixture",
+            ],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=20,
+        )
+        assert committed.returncode == 0, committed.stderr
+        baseline = tool.build_capability_manifest(repo)
+
+        _write_file(repo / "tests/test_untracked.py", "raise RuntimeError('must not load')\n")
+        _write_file(repo / "src/portable_fusion/core/untracked.py", "not valid python !\n")
+        _write_file(repo / "docs/untracked.md", "# Untracked\n")
+        _write_file(repo / ".github/workflows/untracked.yml", "not: tracked\n")
+        staged = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(repo),
+                "add",
+                "docs/untracked.md",
+                ".github/workflows/untracked.yml",
+            ],
+            capture_output=True,
+            check=False,
+            text=True,
+            timeout=20,
+        )
+        assert staged.returncode == 0, staged.stderr
+
+        assert tool.build_capability_manifest(repo) == baseline
+
+
 def test_manifest_validation_rejects_count_drift() -> None:
     """Verify manifest validation rejects mismatched capability counts."""
     tool = _load_tool()

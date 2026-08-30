@@ -2971,7 +2971,7 @@
     "python_capability_classes": 620,
     "python_capability_source_modules": 356,
     "rust_workspace_crates": 13,
-    "test_files": 638
+    "test_files": 637
   },
   "documentation": {
     "public_pages": [
@@ -3041,7 +3041,7 @@
       "docs/security/FUZZING.md"
     ]
   },
-  "evidence_boundary": "Counts are file-system and static-source inventory only; benchmark, coverage, hardware, and scientific-fidelity claims remain governed by their dedicated evidence artifacts.",
+  "evidence_boundary": "Counts are version-controlled static-source inventory only; benchmark, coverage, hardware, and scientific-fidelity claims remain governed by their dedicated evidence artifacts.",
   "generated_from": {
     "config": "tools/capability_manifest.toml",
     "generator": "tools/capability_manifest.py",
@@ -3232,7 +3232,6 @@
       "tests/test_download_efit_geqdsk.py",
       "tests/test_download_mast_labelled_shots.py",
       "tests/test_dream_fluid_parity.py",
-      "tests/test_dream_full_kinetic_parity.py",
       "tests/test_dream_reference_execution_request.py",
       "tests/test_dynamic_burn_model.py",
       "tests/test_elm_model.py",
