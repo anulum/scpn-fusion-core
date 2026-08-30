@@ -15,10 +15,20 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core import CoupledTransportInputs
+from scpn_fusion.core import _integrated_transport_solver_coupled_numerics as numerics
+from scpn_fusion.core import integrated_transport_solver_coupled_contracts as contracts
 from scpn_fusion.core.integrated_transport_solver import TransportSolver
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "validation" / "iter_config.json"
+
+
+def test_extracted_coupled_modules_are_directly_exercised() -> None:
+    """Bind the extracted contracts and numerics to the public runtime suite."""
+    assert contracts.CoupledTransportInputs is CoupledTransportInputs
+    rho, spacing = numerics.validate_uniform_rho(np.linspace(0.0, 1.0, 5))
+    np.testing.assert_array_equal(rho, np.linspace(0.0, 1.0, 5))
+    assert spacing == pytest.approx(0.25)
 
 
 def _inputs(**overrides: float) -> CoupledTransportInputs:

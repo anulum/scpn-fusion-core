@@ -117,7 +117,10 @@ def test_predictive_newton_tolerance_guard_fails_closed(value: float) -> None:
         )
 
 
-def test_predictive_newton_warm_start_shape_guard_fails_closed() -> None:
+def test_predictive_newton_warm_start_shape_guard_fails_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(jax, "__version__", "0.4.20")
     with pytest.raises(ValueError, match="psi_init shape"):
         solve_predictive_equilibrium_newton(
             _COIL_I,

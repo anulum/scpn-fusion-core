@@ -772,6 +772,9 @@ def solve_predictive_equilibrium_newton(
         raise ValueError(
             "warm_start_linearization must be 'exact_jvp_gmres' or 'finite_difference_krylov'"
         )
+    shape = (int(Z_grid.size), int(R_grid.size))
+    if psi_init is not None and psi_init.shape != shape:
+        raise ValueError(f"psi_init shape {psi_init.shape} != grid shape {shape}")
     try:
         jax_version = tuple(int(part) for part in jax.__version__.split("+", 1)[0].split(".")[:2])
     except ValueError as exc:
@@ -781,10 +784,6 @@ def solve_predictive_equilibrium_newton(
             "predictive Newton requires JAX >= 0.7; older solver trajectories are not "
             "admitted by the multi-geometry evidence contract"
         )
-
-    shape = (int(Z_grid.size), int(R_grid.size))
-    if psi_init is not None and psi_init.shape != shape:
-        raise ValueError(f"psi_init shape {psi_init.shape} != grid shape {shape}")
 
     seed = (
         solve_free_boundary_gs_implicit(

@@ -1,9 +1,9 @@
 {
   "correctness_load_independent": {
-    "max_element_equivalence_span_rel": 3.5273281109442046e-15,
+    "max_element_equivalence_span_rel": 9.533288043940964e-15,
     "note": "each compared element's single solve converged (k < n_iter); a -1% coil perturbation warm case does NOT converge at 33\u00b2 within 300 iterations (residual plateau near the softmax X-point extraction) while +1% converges in 11 \u2014 comparisons are made only where the single solve converges, and the batched API inherits exactly the single solver's convergence envelope."
   },
-  "generated_utc": "2026-08-26T08:21:18+00:00",
+  "generated_utc": "2026-08-30T00:11:01+00:00",
   "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_batched_forward.py",
@@ -20,7 +20,7 @@
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "47c0d8dfc7482361be43b6960881a8e7f06b50053c24bd4be43841ec5b6bba98",
+    "logic_sources_sha256": "37a367141469c1e3fbc8e43c4a56f942f9177cdcea75f99ad09f333fbf4cc703",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
     "pinned_requirements_sha256": "bd71deb22e7ab465fb79cbb554e2bcc58488034ede8836469576efc4bce9a2a9"
   },
@@ -35,28 +35,28 @@
       {
         "batch_size": 4,
         "cache_hits_gained_after_first_call": 3,
-        "compile_plus_first_call_ms": 6738.996536994819,
-        "element_equivalence_span_rel": 3.5273281109442046e-15,
-        "warm_median_ms": 23.38195499032736,
+        "compile_plus_first_call_ms": 12943.30844504293,
+        "element_equivalence_span_rel": 6.514911578617963e-15,
+        "warm_median_ms": 57.787163998000324,
         "warm_ms": [
-          25.36460297415033,
-          23.38195499032736,
-          23.307031951844692
+          68.40508501045406,
+          57.787163998000324,
+          57.42975394241512
         ],
-        "warm_per_solve_ms": 5.84548874758184
+        "warm_per_solve_ms": 14.446790999500081
       },
       {
         "batch_size": 16,
         "cache_hits_gained_after_first_call": 4,
-        "compile_plus_first_call_ms": 6306.796504999511,
-        "element_equivalence_span_rel": 2.510979333214519e-15,
-        "warm_median_ms": 67.39971600472927,
+        "compile_plus_first_call_ms": 12529.736462049186,
+        "element_equivalence_span_rel": 9.533288043940964e-15,
+        "warm_median_ms": 149.46793694980443,
         "warm_ms": [
-          68.3410189813003,
-          66.437270026654,
-          67.39971600472927
+          195.45666791964322,
+          129.01913793757558,
+          149.46793694980443
         ],
-        "warm_per_solve_ms": 4.212482250295579
+        "warm_per_solve_ms": 9.341746059362777
       }
     ],
     "device": "cpu (cpu)",

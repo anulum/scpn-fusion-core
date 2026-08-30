@@ -11,11 +11,11 @@ The IDA MAP/MCMC loop and real-time control both evaluate NEIGHBOURING parameter
 the previous equilibrium is an in-basin initial guess. Two things make the warm path fast
 and both are measured here, honestly separated:
 
-1. **Correctness**: a warm-started solve (``psi_init`` = base solution, ``ip_ramp=1`` so the
-   early stop is armed immediately — the ramp exists for cold-start robustness and would
-   otherwise force 30 iterations) must land on the SAME fixed point as a cold solve of the
-   perturbed problem. Asserted at span-relative tolerance for a ±0.5 % coil perturbation
-   (the FD-validation scale, documented in-basin).
+1. **Correctness**: a warm-started solve (``psi_init`` = base solution) retains the standard
+   current ramp. The 65² regression proves that jumping directly to the full nonlinear
+   operator with ``ip_ramp=1`` can create a persistent Anderson limit cycle even from an
+   in-basin seed. The warm solve must land on the SAME fixed point as a cold solve of the
+   perturbed problem at the unchanged tolerance.
 2. **Speed (indicative)**: wall-clock of cold vs warm solves at 33²/65²/129² on this host,
    all repeats recorded. Host-load caveat applies; the claimable number is a dedicated-host
    run of this same generator.
@@ -120,7 +120,6 @@ def main() -> None:
                 b,
                 s,
                 psi_init=psi0,
-                ip_ramp=1,
             )
 
         psi_base, base_iterations = solve_predictive_equilibrium_compiled(
@@ -169,7 +168,6 @@ def main() -> None:
             b,
             s,
             psi_init=psi_base,
-            ip_ramp=1,
             return_iterations=True,
         )
         psi_warm = jax.block_until_ready(psi_warm)  # also warms the jit cache
@@ -218,7 +216,6 @@ def main() -> None:
                 b,
                 s,
                 psi_init=psi0,
-                ip_ramp=1,
                 inner_solver="mg_richardson",
                 inner_cycles=2,
             )
@@ -237,7 +234,6 @@ def main() -> None:
             b,
             s,
             psi_init=psi_base,
-            ip_ramp=1,
             inner_solver="mg_richardson",
             inner_cycles=2,
             return_iterations=True,
@@ -289,9 +285,9 @@ def main() -> None:
         "task": "warm-start behaviour of the compiled predictive forward (IDA pattern)",
         "method": (
             "base solve at nominal coil currents; perturb all coil currents by +0.5% (the "
-            "documented in-basin FD-validation scale); warm solve = psi_init=base + "
-            "ip_ramp=1 (the ramp exists for cold-start robustness and would otherwise force "
-            "30 iterations before the early stop can fire); correctness = warm solve agrees "
+            "documented in-basin FD-validation scale); warm solve = psi_init=base with the "
+            "standard current ramp retained for cross-grid nonlinear stability; correctness "
+            "= warm solve agrees "
             "with the COLD solve of the perturbed problem at span-relative tolerance"
         ),
         "correctness_load_independent": {

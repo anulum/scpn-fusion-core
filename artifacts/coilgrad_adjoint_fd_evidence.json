@@ -7,76 +7,76 @@
     "fd": "central FD, WARM-STARTED from the base solution (psi_init=psi_base) to stay in-basin; sweep the step and require convergence toward the adjoint (truncation error grows with the step; a real missing term does not)"
   },
   "adjoint_g_ci": [
-    2.0281260822821287e-07,
-    2.9725870648020873e-07,
-    8.130727809189297e-08,
-    2.624792063149223e-07,
-    2.0264040448214794e-07,
-    1.0286083939718165e-07
+    2.0167424781920596e-07,
+    2.9588669778123153e-07,
+    8.185576578622949e-08,
+    2.6291358699199766e-07,
+    2.0135640621875492e-07,
+    1.0328461627520323e-07
   ],
   "measurements": [
     {
       "coil": 5,
       "eps_A": 100.0,
-      "warm_fd": 1.0286050590488371e-07,
-      "adjoint": 1.0286083939718165e-07,
-      "rel_diff": 3.2421802226326685e-06
+      "warm_fd": 1.0328465174441054e-07,
+      "adjoint": 1.0328461627520323e-07,
+      "rel_diff": 3.4341217905035107e-07
     },
     {
       "coil": 5,
       "eps_A": 300.0,
-      "warm_fd": 1.0286074285157283e-07,
-      "adjoint": 1.0286083939718165e-07,
-      "rel_diff": 9.386050123315048e-07
+      "warm_fd": 1.0328461191782523e-07,
+      "adjoint": 1.0328461627520323e-07,
+      "rel_diff": 4.2188065747831504e-08
     },
     {
       "coil": 5,
       "eps_A": 1000.0,
-      "warm_fd": 1.0286088160353299e-07,
-      "adjoint": 1.0286083939718165e-07,
-      "rel_diff": 4.1032461206967676e-07
+      "warm_fd": 1.032847085988102e-07,
+      "adjoint": 1.0328461627520323e-07,
+      "rel_diff": 8.938748844901194e-07
     },
     {
       "coil": 5,
       "eps_A": 3000.0,
-      "warm_fd": 1.0287520389540167e-07,
-      "adjoint": 1.0286083939718165e-07,
-      "rel_diff": 0.00013963032563836186
+      "warm_fd": 1.0329556015649388e-07,
+      "adjoint": 1.0328461627520323e-07,
+      "rel_diff": 0.00010594725730782917
     },
     {
       "coil": 4,
       "eps_A": 100.0,
-      "warm_fd": 2.0264042835851925e-07,
-      "adjoint": 2.0264040448214794e-07,
-      "rel_diff": 1.1782629708811617e-07
+      "warm_fd": 2.013566524569285e-07,
+      "adjoint": 2.0135640621875492e-07,
+      "rel_diff": 1.2228956460209891e-06
     },
     {
       "coil": 4,
       "eps_A": 300.0,
-      "warm_fd": 2.0264043045435434e-07,
-      "adjoint": 2.0264040448214794e-07,
-      "rel_diff": 1.2816892632917565e-07
+      "warm_fd": 2.0135594628087338e-07,
+      "adjoint": 2.0135640621875492e-07,
+      "rel_diff": 2.2842031240600813e-06
     },
     {
       "coil": 4,
       "eps_A": 1000.0,
-      "warm_fd": 2.0264061203439757e-07,
-      "adjoint": 2.0264040448214794e-07,
-      "rel_diff": 1.0242381699909093e-06
+      "warm_fd": 2.0135661635627654e-07,
+      "adjoint": 2.0135640621875492e-07,
+      "rel_diff": 1.0436087247546663e-06
     },
     {
       "coil": 4,
       "eps_A": 3000.0,
-      "warm_fd": 2.026032231018729e-07,
-      "adjoint": 2.0264040448214794e-07,
-      "rel_diff": 0.00018351820719225643
+      "warm_fd": 2.01322324522496e-07,
+      "adjoint": 2.0135640621875492e-07,
+      "rel_diff": 0.00016928920495907812
     }
   ],
-  "guarded_claim": "agreement within 3.242e-06 relative at 100-300 A steps on the tested strong and weak coils (this run, full precision); larger steps show the GROWING-with-eps truncation signature \u2014 the origin of the historical '~3 %' artefact figure",
+  "guarded_claim": "agreement within 2.284e-06 relative at 100-300 A steps on the tested strong and weak coils (this run, full precision); larger steps show the GROWING-with-eps truncation signature \u2014 the origin of the historical '~3 %' artefact figure",
   "regression_guard": "tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference (eps=300 A, rel<1e-3)",
-  "generated_utc": "2026-08-22T09:46:13+00:00",
+  "generated_utc": "2026-08-29T23:20:53+00:00",
   "host_note": "aaarthuus \u2014 gradients/counts are load-independent; no timings recorded",
-  "jax_version": "0.6.2",
+  "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_coilgrad_adjoint_fd.py",
     "generator_sha256": "5e6c822b12afd2087b50f7e35931fb4cd1ffe346cd1a0bd122520a06a033dffa",
@@ -90,7 +90,7 @@
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "11b18a7738297fb67f9ef31e4f999f51fa3e8d9315fdcb8426ac27e4c7137cb8",
+    "logic_sources_sha256": "82d3a8e85232049ba4ace61282fe9ddd8a6ca9b145508a512db0853fe62f4de6",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
     "pinned_requirements_sha256": "bd71deb22e7ab465fb79cbb554e2bcc58488034ede8836469576efc4bce9a2a9"
   }

@@ -7,8 +7,18 @@
 # SCPN Fusion Core — source/config header compliance
 """Top-level package exports for SCPN Fusion Core."""
 
+from typing import Any
+
 __version__ = "4.0.0"
 
-from scpn_fusion.io.logging_config import setup_fusion_logging
-
 __all__ = ["setup_fusion_logging", "__version__"]
+
+
+def __getattr__(name: str) -> Any:
+    """Load optional package exports only when callers request them."""
+    if name == "setup_fusion_logging":
+        from scpn_fusion.io.logging_config import setup_fusion_logging
+
+        globals()[name] = setup_fusion_logging
+        return setup_fusion_logging
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

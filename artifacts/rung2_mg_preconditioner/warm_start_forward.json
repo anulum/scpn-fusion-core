@@ -4,81 +4,81 @@
       "129x129": {
         "base": {
           "converged": true,
-          "iterations": 120
+          "iterations": 156
         },
         "cold_perturbed": {
           "converged": true,
-          "iterations": 120
+          "iterations": 139
         },
         "warm_perturbed": {
           "converged": true,
-          "iterations": 3
+          "iterations": 61
         }
       },
       "129x129_warm_mg_richardson2": {
         "base": {
           "converged": true,
-          "iterations": 120
+          "iterations": 156
         },
         "cold_perturbed": {
           "converged": true,
-          "iterations": 120
+          "iterations": 139
         },
         "warm_mg_richardson2_perturbed": {
           "converged": true,
-          "iterations": 5
+          "iterations": 76
         }
       },
       "33x33": {
         "base": {
           "converged": true,
-          "iterations": 130
+          "iterations": 134
         },
         "cold_perturbed": {
           "converged": true,
-          "iterations": 130
+          "iterations": 135
         },
         "warm_perturbed": {
           "converged": true,
-          "iterations": 10
+          "iterations": 43
         }
       },
       "33x33_warm_mg_richardson2": {
         "base": {
           "converged": true,
-          "iterations": 130
+          "iterations": 134
         },
         "cold_perturbed": {
           "converged": true,
-          "iterations": 130
+          "iterations": 135
         },
         "warm_mg_richardson2_perturbed": {
           "converged": true,
-          "iterations": 10
+          "iterations": 44
         }
       },
       "65x65": {
         "base": {
-          "converged": false,
-          "iterations": 180
+          "converged": true,
+          "iterations": 143
         },
         "cold_perturbed": {
-          "converged": false,
-          "iterations": 180
+          "converged": true,
+          "iterations": 144
         },
         "warm_perturbed": {
-          "converged": false,
-          "iterations": 180
+          "converged": true,
+          "iterations": 60
         }
       },
       "65x65_warm_mg_richardson2": {
         "base": {
-          "converged": false,
-          "iterations": 180
+          "converged": true,
+          "iterations": 143
         },
         "cold_perturbed": {
-          "converged": false,
-          "iterations": 180
+          "converged": true,
+          "iterations": 144
         },
         "warm_mg_richardson2_perturbed": {
           "converged": false,
@@ -88,20 +88,20 @@
     },
     "policy": "an equivalence value is claimable only when the base, cold-perturbed, and candidate solves all terminate before n_iter; otherwise it is null",
     "warm_vs_cold_fixed_point_span_rel": {
-      "129x129": 1.6044326035626742e-14,
-      "129x129_warm_mg_richardson2": 2.8210549501935857e-09,
-      "33x33": 9.945853950632868e-10,
-      "33x33_warm_mg_richardson2": 1.232000094444975e-09,
-      "65x65": null,
+      "129x129": 2.225983643395166e-09,
+      "129x129_warm_mg_richardson2": 3.951583856622673e-09,
+      "33x33": 1.8012601944330345e-09,
+      "33x33_warm_mg_richardson2": 2.394985787661759e-09,
+      "65x65": 4.672425739654226e-09,
       "65x65_warm_mg_richardson2": null
     }
   },
-  "generated_utc": "2026-08-26T08:20:51+00:00",
+  "generated_utc": "2026-08-30T00:10:01+00:00",
   "jax_version": "0.7.1",
-  "method": "base solve at nominal coil currents; perturb all coil currents by +0.5% (the documented in-basin FD-validation scale); warm solve = psi_init=base + ip_ramp=1 (the ramp exists for cold-start robustness and would otherwise force 30 iterations before the early stop can fire); correctness = warm solve agrees with the COLD solve of the perturbed problem at span-relative tolerance",
+  "method": "base solve at nominal coil currents; perturb all coil currents by +0.5% (the documented in-basin FD-validation scale); warm solve = psi_init=base with the standard current ramp retained for cross-grid nonlinear stability; correctness = warm solve agrees with the COLD solve of the perturbed problem at span-relative tolerance",
   "provenance": {
     "generator": "validation/measure_warm_start_forward.py",
-    "generator_sha256": "9a394b2336f8074ad285e1efc4da59473e5095f4a5b4fbc56eb440389d46ffd6",
+    "generator_sha256": "a7372a0cdf6ea7ff249a5b55ce00d4d30b9e542d1099027dc03c40880329d442",
     "logic_sources": [
       "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
       "src/scpn_fusion/core/jax_free_boundary_predictive.py",
@@ -114,7 +114,7 @@
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "47c0d8dfc7482361be43b6960881a8e7f06b50053c24bd4be43841ec5b6bba98",
+    "logic_sources_sha256": "37a367141469c1e3fbc8e43c4a56f942f9177cdcea75f99ad09f333fbf4cc703",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
     "pinned_requirements_sha256": "bd71deb22e7ab465fb79cbb554e2bcc58488034ede8836469576efc4bce9a2a9"
   },
@@ -129,66 +129,66 @@
     "host": "aaarthuus (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
     "rows": [
       {
-        "cold_median_ms": 292.8733180160634,
+        "cold_median_ms": 325.91630902606994,
         "cold_ms": [
-          293.8827599864453,
-          292.8733180160634,
-          289.593152992893
+          320.0259190052748,
+          331.11830707639456,
+          325.91630902606994
         ],
         "grid": "33x33",
-        "warm_median_ms": 21.011721983086318,
-        "warm_mg_richardson2_median_ms": 16.799903998617083,
+        "warm_median_ms": 127.7404990978539,
+        "warm_mg_richardson2_median_ms": 78.01177608780563,
         "warm_mg_richardson2_ms": [
-          19.085251027718186,
-          16.799903998617083,
-          14.239146024920046
+          78.01177608780563,
+          74.48813191149384,
+          85.16353194136173
         ],
         "warm_ms": [
-          20.856973016634583,
-          21.011721983086318,
-          24.744746973738074
+          126.57570908777416,
+          127.7404990978539,
+          132.20213900785893
         ]
       },
       {
-        "cold_median_ms": 1218.6124349827878,
+        "cold_median_ms": 1446.88836496789,
         "cold_ms": [
-          1295.9702470107004,
-          1159.8276579752564,
-          1218.6124349827878
+          1410.8691590372473,
+          1446.88836496789,
+          1555.6234249379486
         ],
         "grid": "65x65",
-        "warm_median_ms": 1289.4725080113858,
-        "warm_mg_richardson2_median_ms": 850.5812719813548,
+        "warm_median_ms": 677.9427079018205,
+        "warm_mg_richardson2_median_ms": 1608.1369809107855,
         "warm_mg_richardson2_ms": [
-          837.3796269879676,
-          973.23335200781,
-          850.5812719813548
+          1483.786492026411,
+          1608.1369809107855,
+          1653.0783800408244
         ],
         "warm_ms": [
-          1289.4725080113858,
-          1395.1303499634378,
-          1141.66781201493
+          677.9427079018205,
+          775.2732500666752,
+          667.368273017928
         ]
       },
       {
-        "cold_median_ms": 1388.7896920205094,
+        "cold_median_ms": 3805.631911032833,
         "cold_ms": [
-          1438.7269199942239,
-          1388.7896920205094,
-          1346.3449060218409
+          3805.631911032833,
+          3913.267452036962,
+          3662.3924439772964
         ],
         "grid": "129x129",
-        "warm_median_ms": 48.24931395705789,
-        "warm_mg_richardson2_median_ms": 58.09326301096007,
+        "warm_median_ms": 2158.344251103699,
+        "warm_mg_richardson2_median_ms": 1782.0264809997752,
         "warm_mg_richardson2_ms": [
-          56.33986403699964,
-          58.09326301096007,
-          74.5278259855695
+          1572.7421069750562,
+          1782.0264809997752,
+          1805.3672829410061
         ],
         "warm_ms": [
-          48.24931395705789,
-          45.878029020968825,
-          48.96495398133993
+          1957.1224451065063,
+          2185.3026339085773,
+          2158.344251103699
         ]
       }
     ]

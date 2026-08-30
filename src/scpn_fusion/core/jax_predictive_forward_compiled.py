@@ -71,10 +71,8 @@ from scpn_fusion.core.jax_continuation_history import (
     continuation_history_requires_reset,
 )
 from scpn_fusion.core.jax_free_boundary_predictive import (
-    DEFAULT_ANDERSON_DEPTH,
     DEFAULT_CUTOFF_WIDTH,
     DEFAULT_IP_RAMP,
-    DEFAULT_MIXING,
     DEFAULT_N_ITER,
     DEFAULT_SEPARATRIX_RAMP,
     DEFAULT_SEPARATRIX_START,
@@ -92,6 +90,14 @@ from scpn_fusion.core.jax_predictive_checkpoint_trace import (
     run_checkpointed_while_loop,
     validate_trace_request,
 )
+
+# Five history vectors with 0.3 damping remain grid-robust for the
+# 33/65/129 diverted-equilibrium family. The eager (8, 0.5) policy enters a
+# persistent 65x65 limit cycle after a 0.5 % coil-current perturbation even at
+# 720 outer iterations; this compiled policy converges at the unchanged 1e-9
+# tolerance.
+COMPILED_DEFAULT_ANDERSON_DEPTH = 5
+COMPILED_DEFAULT_MIXING = 0.3
 
 
 def _require_uniform(name: str, axis: NDArray[np.float64]) -> float:
@@ -343,8 +349,8 @@ def solve_predictive_equilibrium_compiled(
     source_idx: jnp.ndarray,
     psi_init: jnp.ndarray | None = None,
     n_iter: int = DEFAULT_N_ITER,
-    anderson_depth: int = DEFAULT_ANDERSON_DEPTH,
-    mixing: float = DEFAULT_MIXING,
+    anderson_depth: int = COMPILED_DEFAULT_ANDERSON_DEPTH,
+    mixing: float = COMPILED_DEFAULT_MIXING,
     ip_ramp: int = DEFAULT_IP_RAMP,
     cutoff_width: float = DEFAULT_CUTOFF_WIDTH,
     tol: float = DEFAULT_TOL,
@@ -604,8 +610,8 @@ def solve_predictive_equilibrium_batched(
     source_idx: jnp.ndarray,
     psi_init: jnp.ndarray | None = None,
     n_iter: int = DEFAULT_N_ITER,
-    anderson_depth: int = DEFAULT_ANDERSON_DEPTH,
-    mixing: float = DEFAULT_MIXING,
+    anderson_depth: int = COMPILED_DEFAULT_ANDERSON_DEPTH,
+    mixing: float = COMPILED_DEFAULT_MIXING,
     ip_ramp: int = DEFAULT_IP_RAMP,
     cutoff_width: float = DEFAULT_CUTOFF_WIDTH,
     tol: float = DEFAULT_TOL,

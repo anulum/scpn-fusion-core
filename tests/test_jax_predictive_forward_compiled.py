@@ -32,6 +32,8 @@ from scpn_fusion.core.jax_free_boundary_predictive import (
 )
 from scpn_fusion.core.jax_o_point import smooth_axis_flux
 from scpn_fusion.core.jax_predictive_forward_compiled import (
+    COMPILED_DEFAULT_ANDERSON_DEPTH,
+    COMPILED_DEFAULT_MIXING,
     _make_batched_runner,
     solve_predictive_equilibrium_batched,
     solve_predictive_equilibrium_compiled,
@@ -225,6 +227,66 @@ def test_warm_start_can_retain_short_topology_continuation(response, compiled_ps
     span = float(jnp.max(compiled_psi) - jnp.min(compiled_psi))
     assert 4 <= iterations < 150
     assert float(jnp.max(jnp.abs(warm - compiled_psi))) / span < 1e-6
+
+
+def test_compiled_defaults_close_65_grid_coil_perturbation() -> None:
+    """Conservative compiled defaults avoid the historical 65² Anderson limit cycle."""
+    n = 65
+    r = jnp.linspace(1.0, 2.5, n)
+    z = jnp.linspace(-1.4, 1.4, n)
+    m, b, s = build_response_matrix(r, z)
+    perturbed_coils = _COIL_I * 1.005
+    base, base_iterations = solve_predictive_equilibrium_compiled(
+        _COIL_I,
+        _PPRIME,
+        _FFPRIME,
+        r,
+        z,
+        _COIL_R,
+        _COIL_Z,
+        _PSIN,
+        _IP,
+        m,
+        b,
+        s,
+        return_iterations=True,
+    )
+    cold, cold_iterations = solve_predictive_equilibrium_compiled(
+        perturbed_coils,
+        _PPRIME,
+        _FFPRIME,
+        r,
+        z,
+        _COIL_R,
+        _COIL_Z,
+        _PSIN,
+        _IP,
+        m,
+        b,
+        s,
+        return_iterations=True,
+    )
+    warm, warm_iterations = solve_predictive_equilibrium_compiled(
+        perturbed_coils,
+        _PPRIME,
+        _FFPRIME,
+        r,
+        z,
+        _COIL_R,
+        _COIL_Z,
+        _PSIN,
+        _IP,
+        m,
+        b,
+        s,
+        psi_init=base,
+        return_iterations=True,
+    )
+    span = abs(float(smooth_axis_flux(cold)) - float(smooth_xpoint_flux(cold, r, z)))
+    assert COMPILED_DEFAULT_ANDERSON_DEPTH == 5
+    assert pytest.approx(0.3) == COMPILED_DEFAULT_MIXING
+    assert max(base_iterations, cold_iterations, warm_iterations) < 180
+    assert float(jnp.max(jnp.abs(warm - cold))) / span < 1e-8
 
 
 def test_normal_eq_matches_lstsq_fixed_point(response, compiled_psi) -> None:

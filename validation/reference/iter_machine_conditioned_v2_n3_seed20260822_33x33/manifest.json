@@ -5,7 +5,7 @@
       "file": "coil_green_psi_per_current.npy",
       "logical_bytes": 52272,
       "role": "coil_green_psi_per_current",
-      "sha256": "3ca3cee6123248498f20de22c4cbd1836db90bef80c740585caabc622b1229a9",
+      "sha256": "728fa02656ffdb0247087665ca47f9cf1ba42166fbb8f8c7836e04129dd10d7c",
       "shape": [
         6,
         33,
@@ -18,7 +18,7 @@
       "file": "diagnostics.npy",
       "logical_bytes": 240,
       "role": "diagnostics",
-      "sha256": "3a1e09aeb0226eb2c794fea171266ac910772db49d5b801ef7ef8babf2df6a30",
+      "sha256": "7d5708565c3592f0e524821c26f833f4ecc3af1242f33e82b9c5d221bb045ccb",
       "shape": [
         3,
         10
@@ -76,7 +76,7 @@
       "file": "plasma_support_weights.npy",
       "logical_bytes": 8712,
       "role": "plasma_support_weights",
-      "sha256": "82f912cc37107c73fb873a3a1a59e662ec82c26376641b5bcab7a2af97aba542",
+      "sha256": "a836bf3a392498fe874f61ef69bd51e3603a04f804d3e6e3ff0f544a3d5925de",
       "shape": [
         33,
         33
@@ -88,7 +88,7 @@
       "file": "psi_total.npy",
       "logical_bytes": 26136,
       "role": "psi_total",
-      "sha256": "d11009bfee6cad4a1d322f69809ac6e6a43eab37efe5cc7ddf243852b8efcafd",
+      "sha256": "cf920ca636a134d6bd52a02d79dc72080f77d6c87116bd86f25522a34e5a7bf0",
       "shape": [
         3,
         33,
@@ -101,7 +101,7 @@
       "file": "psi_vacuum.npy",
       "logical_bytes": 26136,
       "role": "psi_vacuum",
-      "sha256": "dc96f398ec5b73d7cb6743e5ac22ffc920c7fc13066a1cc649d706d8654335dc",
+      "sha256": "07fac5e37f9535d0b56bb220b56026ac76e94d849000491f52109c2adc86f21d",
       "shape": [
         3,
         33,
@@ -471,7 +471,7 @@
     "files": {
       "compiled_solver": {
         "path": "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
-        "sha256": "c002a202809fdefbbfe6d3c0f8ed9e1c5490ac9020e5fb0d281d22e5ab48ccca"
+        "sha256": "b6b6efe157701e9e60f1591a0743718dc9d5fc13ec1ca6a49c3ab1f1cf46b0f5"
       },
       "dataset_contract": {
         "path": "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
@@ -487,7 +487,7 @@
       },
       "predictive_solver": {
         "path": "src/scpn_fusion/core/jax_free_boundary_predictive.py",
-        "sha256": "d8388dd7ad2e246e9943570d2456f472616dfc13896f2a6572c41344129b8d32"
+        "sha256": "6864163d4c4ccd43ee7b3bf289262400400d12587f35ce3858067d0dbfa600d9"
       },
       "recovery_store": {
         "path": "src/scpn_fusion/io/recoverable_npy_dataset.py",
@@ -495,7 +495,7 @@
       }
     },
     "repository": "https://github.com/anulum/scpn-fusion-core",
-    "repository_head_context": "c8c582ef6e5900fd45b0d1274847aa7979b2e3ca"
+    "repository_head_context": "4f57bf13b25c76ce26ebf4a3d8f9e3f95fc6d9d6"
   },
   "tolerances": {
     "diagnostic_replay_max_abs": 1e-12,

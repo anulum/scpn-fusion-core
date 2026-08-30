@@ -155,11 +155,11 @@
     "logic_sources": [
       "src/scpn_fusion/control/disruption_predictor.py"
     ],
-    "logic_sources_sha256": "74c8f573610dec31b95991abf6d848a0cf75aa724b232f5c94f0771d2f9ab6e2",
+    "logic_sources_sha256": "264d3fcad24ffac4c04d13ff959145bd976710d25e4d2c697af17cfb576f9038",
     "packages": {
       "matplotlib": "3.10.8",
       "numpy": "1.26.4",
-      "python": "3.11.15",
+      "python": "3.12.13",
       "torch": null
     },
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",

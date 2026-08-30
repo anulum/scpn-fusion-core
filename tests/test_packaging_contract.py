@@ -57,7 +57,7 @@ def test_packaging_contract_fallback_parser_handles_requirement_extras(
     payload = check_packaging_contract._load_pyproject(ROOT / "pyproject.toml")
     optional = payload["project"]["optional-dependencies"]
 
-    assert "jax[cuda12]>=0.4.20" in optional["gpu"]
+    assert "jax[cuda12]>=0.7.1,<0.8" in optional["gpu"]
     assert "cupy-cuda12x>=13.6,<14.0" in optional["gpu"]
     assert "nvidia-cuda-nvrtc-cu12>=12.0,<13.0" in optional["gpu"]
 

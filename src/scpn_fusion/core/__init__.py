@@ -45,7 +45,6 @@ from .pretrained_surrogates import (
     load_pretrained_mlp,
     save_pretrained_mlp,
 )
-from .integrated_transport_solver import _load_gyro_bohm_coefficient as load_gyro_bohm_coefficient
 from .scaling_laws import (
     TransportBenchmarkResult,
     assess_ipb98y2_domain,
@@ -72,6 +71,10 @@ from .stability_mhd_extended import ntm_stability, troyon_beta_limit
 
 # Additional modules available via lazy import to avoid circular deps
 _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
+    "load_gyro_bohm_coefficient": (
+        ".integrated_transport_solver",
+        "_load_gyro_bohm_coefficient",
+    ),
     "CompactReactorArchitect": (".compact_reactor_optimizer", "CompactReactorArchitect"),
     "ReactorConfig": (".config_schema", "ReactorConfig"),
     "DivertorLab": (".divertor_thermal_sim", "DivertorLab"),

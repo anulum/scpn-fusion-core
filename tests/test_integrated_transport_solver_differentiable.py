@@ -13,7 +13,16 @@ import numpy as np
 import pytest
 
 from scpn_fusion.core import CoupledTransportControls, CoupledTransportTarget
+from scpn_fusion.core import _integrated_transport_solver_differentiable_numerics as numerics
+from scpn_fusion.core import integrated_transport_solver_differentiable_contracts as contracts
 from validation import benchmark_torax_differentiable_transport as benchmark
+
+
+def test_extracted_differentiable_modules_are_directly_exercised() -> None:
+    """Bind extracted JAX numerics and contracts to the public gradient suite."""
+    assert contracts.CoupledTransportControls is CoupledTransportControls
+    assert callable(numerics.one_step)
+    assert callable(numerics.objective)
 
 
 def test_public_differentiable_rollout_matches_production_and_fd() -> None:
