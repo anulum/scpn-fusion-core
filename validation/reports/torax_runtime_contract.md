@@ -25,8 +25,8 @@ Overall gate: **PASS**.
 - `ion_temperature` relative L2: `0.00133874793953`
 - `poloidal_flux` relative L2: `9.70515601354e-05`
 
-The public runtime executed real TORAX 1.4.3 through the isolated CLI. 
-The typed projection contains only Ti, Te, ne, poloidal flux, source totals, 
-state budgets, and numerical status. The checksummed NetCDF DataTree sidecar 
-retains every backend variable. No actuation, experimental-validation, full-physics 
+The public runtime executed real TORAX 1.4.3 through the isolated CLI.
+The typed projection contains only Ti, Te, ne, poloidal flux, source totals,
+state budgets, and numerical status. The checksummed NetCDF DataTree sidecar
+retains every backend variable. No actuation, experimental-validation, full-physics
 equivalence, or portable-performance claim is made.
