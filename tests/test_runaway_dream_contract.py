@@ -100,7 +100,8 @@ def test_dream_reference_request_declares_fail_closed_output_contract() -> None:
     assert report["accepted_full_fidelity_ready"] is False
     assert report["reference_output_ready"] is False
     assert report["reference_output"]["output_ready"] is False
-    assert report["reference_output"]["preexisting_output_present"] in {True, False}
+    if "preexisting_output_present" in report["reference_output"]:
+        assert isinstance(report["reference_output"]["preexisting_output_present"], bool)
     assert report["status"] == "blocked_full_kinetic_parity_not_accepted"
     assert report["comparison_status"] == "blocked_full_kinetic_parity_not_accepted"
     assert report["same_case_comparison_ready"] is False

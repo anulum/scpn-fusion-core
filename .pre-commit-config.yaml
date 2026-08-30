@@ -10,7 +10,7 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: end-of-file-fixer
-        exclude: '(\.(npz|npy|pkl|pt|onnx|whl|tar\.gz|png|jpg|svg)$|^validation/reference_data/tglf_gacode_development_v2_fixture/runs/)'
+        exclude: '(\.(npz|npy|pkl|pt|onnx|whl|tar\.gz|png|jpg|svg)$|^validation/reference_data/tglf_gacode_development_v2_fixture/runs/|^validation/reference_data/torax/torax_runtime_review_envelope_v1\.json$)'
       - id: trailing-whitespace
         exclude: '(\.(npz|npy|pkl|pt|onnx|whl|tar\.gz|png|jpg|svg)$|^validation/reference_data/tglf_gacode_development_v2_fixture/runs/)'
 
