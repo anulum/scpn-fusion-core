@@ -34,6 +34,12 @@ report, command, environment, threshold, and artifact.
   neutronics, and plant-model utilities.
 - Native acceleration: Python first, with Rust crates and bindings for selected
   kernels plus polyglot solver surfaces where equivalent logic is maintained.
+  The full runaway solver evolves radius-pitch-momentum states and exposes the
+  same complete tendency, density-balance, history, and moment contract through
+  NumPy and fail-closed PyO3/Rust backends. The host-conditioned comparison is
+  tracked in `validation/reports/runaway_kinetic_rust_benchmark.md`; Julia is a
+  gated candidate for future stiff/implicit/adjoint mathematics, while Go is
+  retained for service/orchestration work rather than this tensor kernel.
 - Evidence surfaces: tracked validation reports, JSON schemas, benchmark
   bundles, notebooks, Sphinx docs, and fail-closed acceptance gates.
 - Studio federation surface: schema-A capability manifests, Studio evidence
