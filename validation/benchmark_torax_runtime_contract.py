@@ -31,7 +31,6 @@ from scpn_fusion.integrations.torax import (  # noqa: E402
     ToraxClock,
     ToraxConfigBinding,
     ToraxGeometry,
-    ToraxProjection,
     ToraxRunRequest,
     ToraxRuntimeClient,
     ToraxSignal,
@@ -476,16 +475,6 @@ def build_report(
     assert primary.projection is not None
     assert repeat.projection is not None
     assert refined.projection is not None
-    refinement_metrics = _refinement_metrics(primary.projection, refined.projection)
-    refinement = {
-        name: cast(float, metric["relative_l2"])
-        for name, metric in refinement_metrics["profiles"].items()
-    }
-    all_refinement_relative_l2 = tuple(
-        cast(float, metric["relative_l2"])
-        for category in refinement_metrics.values()
-        for metric in category.values()
-    )
     effective_sidecar_path = ROOT / sidecar_path if not sidecar_path.is_absolute() else sidecar_path
     manifest_path = effective_sidecar_path.with_suffix(
         effective_sidecar_path.suffix + ".manifest.json"
@@ -524,7 +513,6 @@ def build_report(
         refined_request=refined_request,
         primary=primary,
         refined=refined,
-        refinement_metrics=refinement_metrics,
         primary_dt_ns=primary_dt_ns,
         refined_dt_ns=refined_dt_ns,
         source_revision=producer_revision,
@@ -537,13 +525,25 @@ def build_report(
         refined_request=refined_request,
         primary=repeat,
         refined=refined,
-        refinement_metrics=refinement_metrics,
         primary_dt_ns=primary_dt_ns,
         refined_dt_ns=refined_dt_ns,
         source_revision=producer_revision,
         runtime_source_sha256=runtime_source_sha256,
         artifact_content_sha256=cast(str, repeat_manifest["content_sha256"]),
         manifest_inventory_sha256=cast(str, repeat_manifest["inventory_sha256"]),
+    )
+    uncertainty = cast(Mapping[str, object], review_envelope.payload["uncertainty"])
+    refinement_metrics = cast(
+        Mapping[str, Mapping[str, Mapping[str, object]]], uncertainty["observables"]
+    )
+    refinement = {
+        name: cast(float, metric["relative_l2"])
+        for name, metric in refinement_metrics["profiles"].items()
+    }
+    all_refinement_relative_l2 = tuple(
+        cast(float, metric["relative_l2"])
+        for category in refinement_metrics.values()
+        for metric in category.values()
     )
     gates = {
         "schemas_exact": primary_request.schema == TORAX_REQUEST_SCHEMA
@@ -655,78 +655,6 @@ def build_report(
         write_json_atomic(REPORT_JSON, report)
         REPORT_MD.write_text(_render_markdown(report), encoding="utf-8")
     return report
-
-
-def _relative_l2(left: Sequence[float], right: Sequence[float]) -> float:
-    left_array = np.asarray(left, dtype=np.float64)
-    right_array = np.asarray(right, dtype=np.float64)
-    numerator = float(np.linalg.norm(left_array - right_array))
-    denominator = max(float(np.linalg.norm(right_array)), 1e-30)
-    return numerator / denominator
-
-
-def _refinement_metrics(
-    primary: ToraxProjection,
-    refined: ToraxProjection,
-) -> dict[str, dict[str, dict[str, object]]]:
-    """Measure every typed observable on the primary run's simulation times."""
-    if primary.rho_norm != refined.rho_norm:
-        raise ValueError("primary and refined projections use different radial grids")
-    refined_time_index = {time_ns: index for index, time_ns in enumerate(refined.time_ns)}
-    try:
-        matching_refined_indices = tuple(refined_time_index[time_ns] for time_ns in primary.time_ns)
-    except KeyError as error:
-        raise ValueError("refined projection does not contain every primary sample time") from error
-
-    def metrics(
-        left: Sequence[float],
-        right: Sequence[float],
-        unit: str,
-    ) -> dict[str, object]:
-        left_array = np.asarray(left, dtype=np.float64)
-        right_array = np.asarray(right, dtype=np.float64)
-        if left_array.shape != right_array.shape or left_array.size == 0:
-            raise ValueError("refinement arrays must be non-empty and shape-identical")
-        difference = left_array - right_array
-        denominator = max(float(np.linalg.norm(right_array)), 1e-30)
-        return {
-            "absolute_rms": float(np.sqrt(np.mean(np.square(difference)))),
-            "relative_l2": float(np.linalg.norm(difference)) / denominator,
-            "unit": unit,
-        }
-
-    profiles: dict[str, dict[str, object]] = {}
-    for name, rows in primary.profiles.items():
-        primary_values = tuple(value for row in rows for value in row)
-        refined_values = tuple(
-            value for index in matching_refined_indices for value in refined.profiles[name][index]
-        )
-        profiles[name] = metrics(
-            primary_values,
-            refined_values,
-            primary.profile_units[name],
-        )
-
-    source_totals: dict[str, dict[str, object]] = {}
-    for name, values in primary.source_totals.items():
-        source_totals[name] = metrics(
-            values,
-            tuple(refined.source_totals[name][index] for index in matching_refined_indices),
-            primary.source_units[name],
-        )
-
-    state_budgets: dict[str, dict[str, object]] = {}
-    for name in sorted(primary.budget_units):
-        state_budgets[name] = metrics(
-            tuple(row[name] for row in primary.state_budgets),
-            tuple(refined.state_budgets[index][name] for index in matching_refined_indices),
-            primary.budget_units[name],
-        )
-    return {
-        "profiles": profiles,
-        "source_totals": source_totals,
-        "state_budgets": state_budgets,
-    }
 
 
 def _seconds_to_ns(value: float) -> int:

@@ -17,7 +17,12 @@ from dataclasses import dataclass
 from types import MappingProxyType
 from typing import cast
 
-from .contracts import TORAX_OUTCOME_SCHEMA, ToraxRunOutcome, ToraxRunRequest
+from .contracts import (
+    TORAX_OUTCOME_SCHEMA,
+    ToraxProjection,
+    ToraxRunOutcome,
+    ToraxRunRequest,
+)
 from .serialization import canonical_json_bytes, canonical_sha256
 
 TORAX_REVIEW_SCHEMA = "scpn-fusion-core.torax-runtime-review-envelope.v1"
@@ -55,8 +60,44 @@ _CLOCK_KEYS = {
     "synchronized_to",
     "timestamp_ns",
 }
-_CALIBRATION_KEYS = {"calibrated_at_ns", "calibration_id", "transfer_function_id"}
-_FORBIDDEN_TYPED_KEYS = {"q95", "li3", "beta_N", "W_thermal_total", "regime", "phase"}
+_CALIBRATION_KEYS = {
+    "basis",
+    "calibrated_at_ns",
+    "calibration_id",
+    "empirical",
+    "transfer",
+    "transfer_function_id",
+}
+_EXPECTED_UNITS = {
+    "profiles": {
+        "electron_density": "m^-3",
+        "electron_temperature": "keV",
+        "ion_temperature": "keV",
+        "poloidal_flux": "Wb/rad",
+    },
+    "source_totals": {
+        "driven_current": "A",
+        "electron_heat": "W",
+        "ion_electron_exchange": "W",
+        "ion_heat": "W",
+        "particles": "s^-1",
+    },
+    "state_budgets": {
+        "particle_inventory": "1",
+        "poloidal_flux_l2": "Wb/rad",
+        "thermal_energy": "J",
+    },
+}
+_FORBIDDEN_TYPED_KEYS = {
+    "W_thermal_total",
+    "Wthermal",
+    "beta_N",
+    "li3",
+    "phase",
+    "q95",
+    "regime",
+    "wthermal",
+}
 _NONDETERMINISTIC_KEYS = {
     "started_at_utc",
     "finished_at_utc",
@@ -64,6 +105,9 @@ _NONDETERMINISTIC_KEYS = {
     "sidecar_path",
     "manifest_path",
 }
+_REGISTRY_DIGEST = "786d9542ce76c56dd7748fa948b17efed6c073525e527ce90e6d5e29a2d00090"
+_FUEL_CLASS_BASIS = "deuterium_only_input_no_fusion_power_or_burn_model"
+_MAX_REFINEMENT_RELATIVE_L2 = 0.02
 
 
 @dataclass(frozen=True)
@@ -97,12 +141,18 @@ class ToraxReviewEnvelope:
             "payload",
             {"clock", "reactor", "observables", "completion", "uncertainty", "validity"},
         )
-        _validate_clock(_mapping(self.payload["clock"], "payload.clock"))
-        _validate_reactor(
+        clock = _mapping(self.payload["clock"], "payload.clock")
+        sample_ns = _validate_clock(clock)
+        coordinate_frame = _validate_reactor(
             _mapping(self.payload["reactor"], "payload.reactor"), event_id=self.event_id
         )
         observables = _mapping(self.payload["observables"], "payload.observables")
-        _validate_observables(observables)
+        _validate_observables(
+            observables,
+            sample_count=len(sample_ns),
+            calibrated_at_ns=sample_ns[0],
+            coordinate_frame=coordinate_frame,
+        )
         _validate_uncertainty(
             _mapping(self.payload["uncertainty"], "payload.uncertainty"), observables
         )
@@ -120,6 +170,11 @@ class ToraxReviewEnvelope:
         )
         if completion["complete"] is not True or completion["sim_error"] != "NO_ERROR":
             raise ValueError("review envelope requires a complete NO_ERROR source run")
+        if (
+            completion["reached_final_ns"] != sample_ns[-1]
+            or completion["reached_final_ns"] != clock["requested_final_ns"]
+        ):
+            raise ValueError("review completion must equal the clock's requested final sample")
         _validate_provenance(self.provenance)
         forbidden = _find_keys(self.to_dict_without_digest(), _FORBIDDEN_TYPED_KEYS)
         if forbidden:
@@ -189,7 +244,6 @@ def build_review_envelope(
     refined_request: ToraxRunRequest,
     primary: ToraxRunOutcome,
     refined: ToraxRunOutcome,
-    refinement_metrics: Mapping[str, Mapping[str, Mapping[str, object]]],
     primary_dt_ns: int,
     refined_dt_ns: int,
     source_revision: str,
@@ -197,7 +251,19 @@ def build_review_envelope(
     artifact_content_sha256: str,
     manifest_inventory_sha256: str,
 ) -> ToraxReviewEnvelope:
-    """Project real primary/refined outcomes into deterministic review bytes."""
+    """Build a deterministic, review-only envelope from two real TORAX runs.
+
+    The producer derives all twelve uncertainty records from primary and refined
+    projections aligned at the primary sample times. The D-D reaction value is
+    only the fuel-class identity supported by the deuterium-only deck; it does
+    not claim that fusion burn or fusion power was modeled.
+
+    Raises
+    ------
+    ValueError
+        If request identity, timing, projection vocabulary, shape, units, or
+        numerical-refinement evidence differs from the frozen U1 contract.
+    """
     primary.require_success()
     refined.require_success()
     if primary.projection is None or primary.artifact is None:
@@ -216,9 +282,21 @@ def build_review_envelope(
     ):
         raise ValueError("refined outcome does not bind the supplied refined request")
     projection = primary.projection
+    _validate_refinement_inputs(
+        request=request,
+        refined_request=refined_request,
+        primary=primary,
+        refined=refined,
+        primary_dt_ns=primary_dt_ns,
+        refined_dt_ns=refined_dt_ns,
+    )
+    refinement_metrics = _refinement_metrics(projection, refined.projection)
     calibration = {
+        "basis": "simulation_declared_units",
         "calibrated_at_ns": request.clock.initial_ns,
-        "calibration_id": "fusion.torax.direct_model_output.v1",
+        "calibration_id": "fusion.torax.simulation_declared_units.v1",
+        "empirical": False,
+        "transfer": "identity",
         "transfer_function_id": "fusion.torax.identity_projection.v1",
     }
 
@@ -250,7 +328,7 @@ def build_review_envelope(
             "context_id": "fusion.torax.circular_iter_scale_comparison",
             "conversion": "experimental_no_power_conversion",
             "coordinate_frame": request.geometry.frame,
-            "drivers": ["external_magnetic_coils", "plasma_current", "combined"],
+            "drivers": ["external_magnetic_coils", "plasma_current"],
             "evidence_class": "S",
             "event_id": request.event_id,
             "facility": "simulation_only_no_facility",
@@ -262,9 +340,10 @@ def build_review_envelope(
                 "major_radius_m": request.geometry.major_radius_m,
                 "minor_radius_m": request.geometry.minor_radius_m,
                 "plasma_current_a": profile_conditions["Ip"],
+                "fuel_class_basis": _FUEL_CLASS_BASIS,
             },
             "reaction": "deuterium_deuterium",
-            "registry_digest": "786d9542ce76c56dd7748fa948b17efed6c073525e527ce90e6d5e29a2d00090",
+            "registry_digest": _REGISTRY_DIGEST,
             "registry_version": "1.0.0",
             "schema_version": "1.0.0",
             "topology": "axisymmetric torus",
@@ -335,6 +414,158 @@ def build_review_envelope(
     )
 
 
+def _refinement_metrics(
+    primary: ToraxProjection,
+    refined: ToraxProjection,
+) -> dict[str, dict[str, dict[str, object]]]:
+    """Derive U1 uncertainty inside the producer at every primary sample time."""
+    _validate_projection_vocabulary(primary, "primary")
+    _validate_projection_vocabulary(refined, "refined")
+    if primary.rho_norm != refined.rho_norm:
+        raise ValueError("primary and refined projections use different radial grids")
+    refined_time_index = {time_ns: index for index, time_ns in enumerate(refined.time_ns)}
+    try:
+        matching_refined_indices = tuple(refined_time_index[time_ns] for time_ns in primary.time_ns)
+    except KeyError as error:
+        raise ValueError("refined projection does not contain every primary sample time") from error
+
+    def metrics(
+        left: tuple[float, ...],
+        right: tuple[float, ...],
+        unit: str,
+    ) -> dict[str, object]:
+        if not left or len(left) != len(right):
+            raise ValueError("refinement vectors must be non-empty and shape-identical")
+        if any(not math.isfinite(value) for value in (*left, *right)):
+            raise ValueError("refinement vectors must contain only finite values")
+        squared_difference = sum(
+            (left_value - right_value) ** 2 for left_value, right_value in zip(left, right)
+        )
+        right_norm = math.sqrt(sum(value**2 for value in right))
+        return {
+            "absolute_rms_difference": math.sqrt(squared_difference / len(left)),
+            "relative_l2": math.sqrt(squared_difference) / max(right_norm, 1e-30),
+            "unit": unit,
+        }
+
+    profiles: dict[str, dict[str, object]] = {}
+    for name in sorted(_EXPECTED_UNITS["profiles"]):
+        profiles[name] = metrics(
+            tuple(value for row in primary.profiles[name] for value in row),
+            tuple(
+                value
+                for index in matching_refined_indices
+                for value in refined.profiles[name][index]
+            ),
+            _EXPECTED_UNITS["profiles"][name],
+        )
+    source_totals = {
+        name: metrics(
+            primary.source_totals[name],
+            tuple(refined.source_totals[name][index] for index in matching_refined_indices),
+            _EXPECTED_UNITS["source_totals"][name],
+        )
+        for name in sorted(_EXPECTED_UNITS["source_totals"])
+    }
+    state_budgets = {
+        name: metrics(
+            tuple(row[name] for row in primary.state_budgets),
+            tuple(refined.state_budgets[index][name] for index in matching_refined_indices),
+            _EXPECTED_UNITS["state_budgets"][name],
+        )
+        for name in sorted(_EXPECTED_UNITS["state_budgets"])
+    }
+    return {
+        "profiles": profiles,
+        "source_totals": source_totals,
+        "state_budgets": state_budgets,
+    }
+
+
+def _validate_refinement_inputs(
+    *,
+    request: ToraxRunRequest,
+    refined_request: ToraxRunRequest,
+    primary: ToraxRunOutcome,
+    refined: ToraxRunOutcome,
+    primary_dt_ns: int,
+    refined_dt_ns: int,
+) -> None:
+    """Bind refinement claims to compatible requests and every actual interval."""
+    identity_fields = (
+        "model_id",
+        "scenario_id",
+        "reactor_family",
+        "reactor_id",
+        "configuration_id",
+        "expected_torax_version",
+    )
+    if any(getattr(request, name) != getattr(refined_request, name) for name in identity_fields):
+        raise ValueError("primary and refined requests must describe one model scenario")
+    if request.geometry != refined_request.geometry or request.models != refined_request.models:
+        raise ValueError("primary and refined requests must use identical geometry and models")
+    primary_config = cast(dict[str, object], _plain(request.torax_config))
+    refined_config = cast(dict[str, object], _plain(refined_request.torax_config))
+    for config in (primary_config, refined_config):
+        config_numerics = cast(dict[str, object], config["numerics"])
+        config_numerics["fixed_dt"] = "refinement-variable"
+    if canonical_sha256(primary_config) != canonical_sha256(refined_config):
+        raise ValueError("primary and refined TORAX configurations may differ only in fixed_dt")
+    for name in ("source_repo_commit", "deck_path", "deck_sha256"):
+        if request.custody[name] != refined_request.custody[name]:
+            raise ValueError("primary and refined requests must use one deck provenance")
+    for name in ("domain", "epoch", "initial_ns", "final_ns", "reset_policy"):
+        if getattr(request.clock, name) != getattr(refined_request.clock, name):
+            raise ValueError("primary and refined requests must use one simulation clock")
+    primary_dt = _integer(primary_dt_ns, "primary_dt_ns")
+    refined_dt = _integer(refined_dt_ns, "refined_dt_ns")
+    if primary_dt <= refined_dt or refined_dt <= 0:
+        raise ValueError("refined_dt_ns must be positive and smaller than primary_dt_ns")
+    for label, run_request, outcome, dt_ns in (
+        ("primary", request, primary, primary_dt),
+        ("refined", refined_request, refined, refined_dt),
+    ):
+        projection = outcome.projection
+        if projection is None:
+            raise ValueError(f"{label} outcome lacks projection")
+        if (
+            projection.time_ns[0] != run_request.clock.initial_ns
+            or projection.time_ns[-1] != run_request.clock.final_ns
+            or outcome.reached_time_ns != run_request.clock.final_ns
+        ):
+            raise ValueError(f"{label} outcome must reach the complete request clock")
+        intervals = tuple(
+            right - left for left, right in zip(projection.time_ns, projection.time_ns[1:])
+        )
+        if not intervals or any(interval != dt_ns for interval in intervals):
+            raise ValueError(f"{label} projection intervals disagree with declared dt_ns")
+        numerics = _mapping(run_request.torax_config["numerics"], f"{label}.numerics")
+        fixed_dt_scaled = _positive_finite(numerics["fixed_dt"], "fixed_dt") * 1e9
+        fixed_dt_ns = round(fixed_dt_scaled)
+        if not math.isclose(fixed_dt_scaled, fixed_dt_ns, rel_tol=0.0, abs_tol=1e-6):
+            raise ValueError(f"{label} TORAX fixed_dt is not integral nanoseconds")
+        if fixed_dt_ns != dt_ns:
+            raise ValueError(f"{label} TORAX fixed_dt disagrees with declared dt_ns")
+
+
+def _validate_projection_vocabulary(projection: ToraxProjection, label: str) -> None:
+    """Close the producer derivation over the frozen U1 names and units."""
+    for category, values, units in (
+        ("profiles", projection.profiles, projection.profile_units),
+        ("source_totals", projection.source_totals, projection.source_units),
+    ):
+        expected = _EXPECTED_UNITS[category]
+        if set(values) != set(expected) or dict(units) != expected:
+            raise ValueError(
+                f"{label} {category} names or units differ from the frozen U1 contract"
+            )
+    expected_budgets = _EXPECTED_UNITS["state_budgets"]
+    if dict(projection.budget_units) != expected_budgets or any(
+        set(row) != set(expected_budgets) for row in projection.state_budgets
+    ):
+        raise ValueError(f"{label} state-budget names or units differ from the frozen U1 contract")
+
+
 def review_envelope_to_bytes(envelope: ToraxReviewEnvelope) -> bytes:
     """Return the unique canonical UTF-8 representation of an envelope."""
     if not isinstance(envelope, ToraxReviewEnvelope):
@@ -378,41 +609,73 @@ def review_envelope_sha256(envelope: ToraxReviewEnvelope) -> str:
     return hashlib.sha256(review_envelope_to_bytes(envelope)).hexdigest()
 
 
-def _validate_clock(clock: Mapping[str, object]) -> None:
+def _validate_clock(clock: Mapping[str, object]) -> tuple[int, ...]:
     _exact_keys(clock, "payload.clock", _CLOCK_KEYS)
     if clock["domain"] != "simulation_monotonic" or clock["kind"] != "simulation_monotonic":
         raise ValueError("review clock must be simulation_monotonic")
+    if clock["epoch"] != "scenario_start":
+        raise ValueError("review clock epoch must be scenario_start")
     if clock["latency_s"] != 0.0:
         raise ValueError("direct simulation projection latency must be declared as 0.0 s")
     if clock["reset_policy"] != "fresh_process_no_hidden_state":
         raise ValueError("review clock must retain the fresh-process reset policy")
     sample_ns = _integer_sequence(clock["sample_ns"], "payload.clock.sample_ns")
+    if sample_ns[0] != 0:
+        raise ValueError("review simulation clock must begin at zero")
     if any(right <= left for left, right in zip(sample_ns, sample_ns[1:])):
         raise ValueError("review sample_ns must be strictly increasing")
+    intervals = tuple(right - left for left, right in zip(sample_ns, sample_ns[1:]))
+    if not intervals or len(set(intervals)) != 1:
+        raise ValueError("review sample_ns must use one fixed positive interval")
     if clock["timestamp_ns"] != sample_ns[-1]:
         raise ValueError("review timestamp_ns must equal the final sample")
     if clock["requested_final_ns"] != sample_ns[-1]:
         raise ValueError("review clock must reach the requested final time")
     _nonnegative_finite(clock["latency_s"], "payload.clock.latency_s")
-    _positive_finite(clock["sample_rate_hz"], "payload.clock.sample_rate_hz")
+    sample_rate = _positive_finite(clock["sample_rate_hz"], "payload.clock.sample_rate_hz")
+    expected_rate = 1_000_000_000.0 / intervals[0]
+    if not math.isclose(sample_rate, expected_rate, rel_tol=1e-15, abs_tol=0.0):
+        raise ValueError("review sample_rate_hz disagrees with the integer-nanosecond interval")
+    if clock["picosecond_offset"] != 0 or clock["synchronized_to"] is not None:
+        raise ValueError("simulation-monotonic v1 clock is unsynchronized with zero sub-ns offset")
+    return sample_ns
 
 
-def _validate_reactor(reactor: Mapping[str, object], *, event_id: str) -> None:
+def _validate_reactor(reactor: Mapping[str, object], *, event_id: str) -> str:
     _exact_keys(reactor, "payload.reactor", _U0_REACTOR_KEYS)
     if reactor["schema_version"] != "1.0.0" or reactor["registry_version"] != "1.0.0":
         raise ValueError("review reactor must declare U0 and registry version 1.0.0")
-    _digest(_text(reactor["registry_digest"], "payload.reactor.registry_digest"), "registry_digest")
+    if reactor["registry_digest"] != _REGISTRY_DIGEST:
+        raise ValueError("review reactor registry digest must match SPO U0 v1")
     if reactor["event_id"] != event_id:
         raise ValueError("review reactor event_id must match the envelope")
     drivers = reactor["drivers"]
-    if not isinstance(drivers, (list, tuple)) or not drivers or len(set(drivers)) != len(drivers):
-        raise ValueError("review reactor drivers must be a non-empty unique sequence")
+    if not isinstance(drivers, (list, tuple)) or tuple(drivers) != (
+        "external_magnetic_coils",
+        "plasma_current",
+    ):
+        raise ValueError("review reactor drivers must be the two deck-evidenced drivers")
+    expected_facets = {
+        "cadence": "single_experiment",
+        "configuration": "conventional_tokamak",
+        "configuration_version": "1.0.0",
+        "confinement_family": "magnetic_closed",
+        "context_id": "fusion.torax.circular_iter_scale_comparison",
+        "conversion": "experimental_no_power_conversion",
+        "evidence_class": "S",
+        "facility": "simulation_only_no_facility",
+        "topology": "axisymmetric torus",
+    }
+    if any(reactor[name] != value for name, value in expected_facets.items()):
+        raise ValueError("review reactor facets differ from the frozen U0 context")
+    coordinate_frame = _text(reactor["coordinate_frame"], "payload.reactor.coordinate_frame")
     operating_point = _mapping(reactor["operating_point"], "payload.reactor.operating_point")
     _exact_keys(
         operating_point,
         "payload.reactor.operating_point",
         {
             "effective_charge",
+            "fuel_class_basis",
             "impurity",
             "magnetic_field_t",
             "main_ion",
@@ -421,9 +684,32 @@ def _validate_reactor(reactor: Mapping[str, object], *, event_id: str) -> None:
             "plasma_current_a",
         },
     )
+    if operating_point["main_ion"] != "D" or reactor["reaction"] != "deuterium_deuterium":
+        raise ValueError("U1 reaction identity must be derived from the D-only model deck")
+    if operating_point["fuel_class_basis"] != _FUEL_CLASS_BASIS:
+        raise ValueError(
+            "D-D must be labelled as D-only fuel identity without modeled burn or power"
+        )
+    if operating_point["impurity"] != "Ne":
+        raise ValueError("review impurity identity must be derived from the Ne model deck")
+    for name in (
+        "effective_charge",
+        "magnetic_field_t",
+        "major_radius_m",
+        "minor_radius_m",
+        "plasma_current_a",
+    ):
+        _positive_finite(operating_point[name], f"payload.reactor.operating_point.{name}")
+    return coordinate_frame
 
 
-def _validate_observables(observables: Mapping[str, object]) -> None:
+def _validate_observables(
+    observables: Mapping[str, object],
+    *,
+    sample_count: int,
+    calibrated_at_ns: int,
+    coordinate_frame: str,
+) -> None:
     _exact_keys(
         observables,
         "payload.observables",
@@ -431,23 +717,75 @@ def _validate_observables(observables: Mapping[str, object]) -> None:
     )
     rho = _mapping(observables["rho"], "payload.observables.rho")
     _exact_keys(rho, "payload.observables.rho", {"frame", "name", "samples", "unit"})
+    if rho["name"] != "rho_norm" or rho["unit"] != "1":
+        raise ValueError("review radial coordinate must be dimensionless rho_norm")
+    if _text(rho["frame"], "payload.observables.rho.frame") != coordinate_frame:
+        raise ValueError("review radial coordinate frame must match the reactor frame")
+    rho_samples = _finite_sequence(rho["samples"], "payload.observables.rho.samples")
+    if (
+        len(rho_samples) < 2
+        or rho_samples[0] != 0.0
+        or rho_samples[-1] != 1.0
+        or any(right <= left for left, right in zip(rho_samples, rho_samples[1:]))
+    ):
+        raise ValueError("review rho samples must strictly increase from 0.0 to 1.0")
     for category in ("profiles", "source_totals", "state_budgets"):
         entries = _mapping(observables[category], f"payload.observables.{category}")
-        if not entries:
-            raise ValueError(f"payload.observables.{category} must not be empty")
+        _exact_keys(entries, f"payload.observables.{category}", set(_EXPECTED_UNITS[category]))
         for name, value in entries.items():
             label = f"payload.observables.{category}.{name}"
             item = _mapping(value, label)
             _exact_keys(item, label, {"calibration", "samples", "unit"})
-            _text(item["unit"], f"{label}.unit")
+            if item["unit"] != _EXPECTED_UNITS[category][name]:
+                raise ValueError(f"{label}.unit does not match the frozen U1 contract")
+            if category == "profiles":
+                _finite_matrix_value(
+                    item["samples"],
+                    f"{label}.samples",
+                    rows=sample_count,
+                    columns=len(rho_samples),
+                )
+            else:
+                samples = _finite_sequence(item["samples"], f"{label}.samples")
+                if len(samples) != sample_count:
+                    raise ValueError(f"{label}.samples must have one scalar per clock sample")
             calibration = _mapping(item["calibration"], f"{label}.calibration")
             _exact_keys(calibration, f"{label}.calibration", _CALIBRATION_KEYS)
-            if calibration["calibrated_at_ns"] != 0:
-                raise ValueError(
-                    "direct model-output calibration must be anchored at scenario start"
-                )
-            if calibration["transfer_function_id"] != "fusion.torax.identity_projection.v1":
-                raise ValueError("review observables require the declared identity projection")
+            expected_calibration = {
+                "basis": "simulation_declared_units",
+                "calibrated_at_ns": calibrated_at_ns,
+                "calibration_id": "fusion.torax.simulation_declared_units.v1",
+                "empirical": False,
+                "transfer": "identity",
+                "transfer_function_id": "fusion.torax.identity_projection.v1",
+            }
+            if dict(calibration) != expected_calibration:
+                raise ValueError("review observable calibration differs from the identity transfer")
+    numerics = _mapping(observables["numerics"], "payload.observables.numerics")
+    _exact_keys(
+        numerics,
+        "payload.observables.numerics",
+        {
+            "inner_solver_iterations",
+            "outer_solver_iterations",
+            "sawtooth_crash",
+            "sim_error",
+            "sim_status",
+        },
+    )
+    for name in ("inner_solver_iterations", "outer_solver_iterations"):
+        values = _integer_sequence(numerics[name], f"payload.observables.numerics.{name}")
+        if len(values) != sample_count or any(value < 0 for value in values):
+            raise ValueError(f"numerics.{name} must contain one non-negative value per sample")
+    sawtooth = numerics["sawtooth_crash"]
+    if (
+        not isinstance(sawtooth, (list, tuple))
+        or len(sawtooth) != sample_count
+        or any(not isinstance(value, bool) for value in sawtooth)
+    ):
+        raise ValueError("numerics.sawtooth_crash must contain one boolean per sample")
+    if numerics["sim_error"] != 0 or numerics["sim_status"] != "completed":
+        raise ValueError("review numerics must retain the completed NO_ERROR state")
 
 
 def _validate_uncertainty(
@@ -475,13 +813,22 @@ def _validate_uncertainty(
         for name, raw in actual.items():
             metric = _mapping(raw, f"uncertainty.{category}.{name}")
             _exact_keys(
-                metric, f"uncertainty.{category}.{name}", {"absolute_rms", "relative_l2", "unit"}
+                metric,
+                f"uncertainty.{category}.{name}",
+                {"absolute_rms_difference", "relative_l2", "unit"},
             )
             expected_item = _mapping(expected[name], f"observables.{category}.{name}")
             if metric["unit"] != expected_item["unit"]:
                 raise ValueError(f"uncertainty unit mismatch for {category}.{name}")
-            _nonnegative_finite(metric["absolute_rms"], f"{category}.{name}.absolute_rms")
-            _nonnegative_finite(metric["relative_l2"], f"{category}.{name}.relative_l2")
+            _nonnegative_finite(
+                metric["absolute_rms_difference"],
+                f"{category}.{name}.absolute_rms_difference",
+            )
+            relative_l2 = _nonnegative_finite(
+                metric["relative_l2"], f"{category}.{name}.relative_l2"
+            )
+            if relative_l2 > _MAX_REFINEMENT_RELATIVE_L2:
+                raise ValueError(f"{category}.{name}.relative_l2 exceeds the refinement gate")
 
 
 def _validate_provenance(provenance: Mapping[str, object]) -> None:
@@ -572,6 +919,35 @@ def _integer_sequence(value: object, label: str) -> tuple[int, ...]:
     if not isinstance(value, (list, tuple)) or not value:
         raise ValueError(f"{label} must be a non-empty integer sequence")
     return tuple(_integer(item, label) for item in value)
+
+
+def _finite_sequence(value: object, label: str) -> tuple[float, ...]:
+    if not isinstance(value, (list, tuple)) or not value:
+        raise ValueError(f"{label} must be a non-empty numeric sequence")
+    result: list[float] = []
+    for item in value:
+        if isinstance(item, bool) or not isinstance(item, (int, float)):
+            raise ValueError(f"{label} must contain only finite numbers")
+        parsed = float(item)
+        if not math.isfinite(parsed):
+            raise ValueError(f"{label} must contain only finite numbers")
+        result.append(parsed)
+    return tuple(result)
+
+
+def _finite_matrix_value(
+    value: object,
+    label: str,
+    *,
+    rows: int,
+    columns: int,
+) -> tuple[tuple[float, ...], ...]:
+    if not isinstance(value, (list, tuple)) or len(value) != rows:
+        raise ValueError(f"{label} must have one radial row per clock sample")
+    result = tuple(_finite_sequence(row, f"{label} row") for row in value)
+    if any(len(row) != columns for row in result):
+        raise ValueError(f"{label} radial width must equal the rho coordinate length")
+    return result
 
 
 def _nonnegative_finite(value: object, label: str) -> float:
