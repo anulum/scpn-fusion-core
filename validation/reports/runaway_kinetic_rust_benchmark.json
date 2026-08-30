@@ -6,13 +6,13 @@
     "internal_ssprk3_steps_exact": true,
     "rust_measured_faster_on_this_host_problem": true
   },
-  "generated_at_utc": "2026-08-30T17:43:08.333205+00:00",
+  "generated_at_utc": "2026-08-30T19:05:20.371318+00:00",
   "host": {
     "conditioning": "Local shared host; a concurrent pinned DREAM reference run was active. Timings are evidence for this host and problem only.",
     "load_average_1m_5m_15m": [
-      8.51025390625,
-      7.76708984375,
-      8.7255859375
+      6.72265625,
+      7.11669921875,
+      7.89404296875
     ],
     "logical_cpu_count": 12,
     "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
@@ -130,7 +130,7 @@
   },
   "schema": "runaway-kinetic-rust-benchmark.v1",
   "schema_version": 1,
-  "scientific_projection_sha256": "e71f76467da9c8cc17de9e4053de8ba8ebacd1fc0b3f8f43be9bf86a380b2b73",
+  "scientific_projection_sha256": "247670c844b74fdcbb2b1a6a88e40a6273646dff80e17aad7214c7e3633c06a0",
   "source_provenance": {
     "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/coefficients.rs": "9151bbd823368f14cfa0e3fc4575bfcd15f5c168fa6c9b1cab1d1b9aaf930dfd",
     "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/grid.rs": "5f36fd096f56e0d8c22b3aeac6f240df2776818a3047d62f45a985f8404cb7f3",
@@ -138,45 +138,45 @@
     "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/operator.rs": "baee9e75ea89fff01d873a968a198905605372ba37e1290ec14259312207aeda",
     "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/solver.rs": "d87fbbcf113c86262e2fbd695be2c183c4d4d003d8d71358599dbb17ed2218b4",
     "scpn-fusion-rs/crates/fusion-python/src/bindings/runaway_kinetic.rs": "c3c46a6257780774fb6108d317c396ff27f13a1e9b00d31fdde600cdbdc30d2a",
-    "src/scpn_fusion/core/runaway_kinetic_coefficients.py": "c82731ebabe7204f409e8e228d8af42032e26521991d13d292ed84dacfea7099",
-    "src/scpn_fusion/core/runaway_kinetic_diagnostics.py": "67ed27c4d842d5378a9a7434cf3e6db055eb3c621e269d96273832b017c7e784",
-    "src/scpn_fusion/core/runaway_kinetic_grid.py": "0b82a423606f771de6c0bbd32e902eb0c76543e4f96fa4617278cdf25914400a",
-    "src/scpn_fusion/core/runaway_kinetic_operator.py": "e3136d4898f200ab10a4bc4b39ba249ea849ec7fdd540b503bc75ddb89a2d443",
-    "src/scpn_fusion/core/runaway_kinetic_solver.py": "6b898f16867ea5ab7855ebf0a0927ad94ed46a7425a6865042d3abea6ff1b7b0",
+    "src/scpn_fusion/core/runaway_kinetic_coefficients.py": "32f32f49a2cbbc301754b7f2bcb53d505abca67f5872728671f27b1fb7062829",
+    "src/scpn_fusion/core/runaway_kinetic_diagnostics.py": "d0f951d586ebb677e8e1b7331f49eeee8c102c9c21d8ae49e0191df76108f815",
+    "src/scpn_fusion/core/runaway_kinetic_grid.py": "cc155ea525083fb30fb29b55791a67fd303de1d48cb148061a8ff77644cbfdcc",
+    "src/scpn_fusion/core/runaway_kinetic_operator.py": "77511f3ec134f142817861cde65b52e40bce155bb05de17d33b76b1892e8eb58",
+    "src/scpn_fusion/core/runaway_kinetic_solver.py": "16c4dcf91c844e69c49601a2d2b32e2a44ff5201f2cef8feca5567d6d2aa7de1",
     "validation/benchmark_runaway_kinetic_rust.py": "925291b92d6aa8e9734537da752854bbedc03140c5f957b8cefb6bf03170c9a6"
   },
-  "source_revision": "e64bcd3d0bafaabcfc8b057881112379cea3a89d",
+  "source_revision": "ec8f6e24dd8104df7b43efa62d32dc39bce64253",
   "status": "accepted_full_kinetic_rust_backend_parity",
   "timing_seconds": {
-    "numpy_median": 0.018411425058729947,
+    "numpy_median": 0.0158920600079,
     "numpy_samples": [
-      0.033494918956421316,
-      0.03182949998881668,
-      0.032663745107129216,
-      0.03209610900375992,
-      0.017839398002251983,
-      0.021601062966510653,
-      0.018411425058729947,
-      0.01639037497807294,
-      0.015956160961650312,
-      0.0165695589967072,
-      0.015684436890296638
+      0.016174869029782712,
+      0.015987055958248675,
+      0.0158920600079,
+      0.015094480011612177,
+      0.015931891975924373,
+      0.015317965066060424,
+      0.016172606963664293,
+      0.01797313499264419,
+      0.014069915050640702,
+      0.014006059034727514,
+      0.015650953981094062
     ],
     "repeats": 11,
-    "rust_median": 0.009335501934401691,
+    "rust_median": 0.007313351961784065,
     "rust_samples": [
-      0.01275346998590976,
-      0.01263147999998182,
-      0.011789674987085164,
-      0.012462402926757932,
-      0.009434892912395298,
-      0.009335501934401691,
-      0.007469848962500691,
-      0.008090989082120359,
-      0.007451485958881676,
-      0.0070144119672477245,
-      0.0076907239854335785
+      0.007311100955121219,
+      0.0073251769645139575,
+      0.0074433289701119065,
+      0.007313351961784065,
+      0.008301116060465574,
+      0.0075459040235728025,
+      0.007339216070249677,
+      0.0069371729623526335,
+      0.0071049099788069725,
+      0.00632838997989893,
+      0.0071867440128698945
     ],
-    "rust_speedup_over_numpy": 1.972194445258816
+    "rust_speedup_over_numpy": 2.1730199901418654
   }
 }
