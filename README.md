@@ -161,12 +161,12 @@ checksums, thresholds, grid or scaling evidence, and native comparisons.
 |---|---:|
 | Package version | 4.0.0 |
 | Public API exports | 2 |
-| Python capability source modules | 351 |
-| Python capability classes | 611 |
+| Python capability source modules | 356 |
+| Python capability classes | 620 |
 | Capability documentation pages | 64 |
 | Rust workspace crates | 13 |
 | Optional extras | 13 |
-| Python test files | 627 |
+| Python test files | 638 |
 | Public documentation pages | 64 |
 | GitHub Actions workflows | 15 |
 
@@ -380,6 +380,21 @@ native-only source-term budget evidence for avalanche growth, synchrotron loss,
 partial-screening drag, and bremsstrahlung loss channels; DREAM same-case
 source-budget parity remains blocked until compiled `iface/dreami` output is
 available.
+
+The public `RunawayKineticSolver` is a separate full three-axis finite-volume
+surface: radius, pitch and momentum are evolved rather than projected. It
+returns each radial/advection/diffusion/cross-diffusion/radiation/avalanche
+contribution, the independently evolved total-runaway-density equation, full
+state history, and radially resolved density/current/energy moments. Its Rust
+backend is explicit and fail-closed (there is no silent NumPy fallback), and
+the same-output comparison is recorded in
+[`validation/reports/runaway_kinetic_rust_benchmark.md`](validation/reports/runaway_kinetic_rust_benchmark.md).
+On the recorded shared-host `(8, 16, 32)` case Rust was `2.342x` faster at
+`5.272e-14` maximum component relative L2 error; the report records the active
+DREAM load and does not generalize that timing to other hardware. Python
+remains the orchestration/DREAM/HDF5 tier. Julia is reserved for a measured
+stiff-implicit, sparse-nonlinear, adjoint, or differentiable-solve advantage;
+Go remains a service/orchestration choice rather than this tensor kernel.
 The Aurora execution lane runs a cached Aurora/Open-ADAS atomic-data path and
 exports normalized argon charge-state fractions. The current accepted scope is
 bounded: Aurora/Open-ADAS artefact conversion, finite-volume radial-transport
@@ -515,7 +530,7 @@ and hardware-specific timing evidence exist.
 | Free-boundary tracking | Direct kernel + supervisor; not EFIT/LiUQE-grade inverse reconstruction | N | N | N | N |
 | Disruption chain (TQ+CQ+RE+halo) | Reduced chain with 0D runaway rates | N | N | N | Y |
 | ELM model + RMP suppression | Peeling-ballooning proxy; no nonlinear MHD ELM simulation | N | Y | N | N |
-| Runaway electron dynamics | DREAM-style fluid balance, 1D momentum Fokker-Planck, multidimensional artifact-export contract, fail-closed kinetic-operator evidence, and native-only source-term budget diagnostics; no public DREAM kinetic-distribution parity or coupled momentum-pitch-radius operator parity | N | N | N | Y |
+| Runaway electron dynamics | DREAM-style fluid balance and legacy 1D momentum Fokker-Planck/multidimensional artifact-export contract, plus a full radius-pitch-momentum finite-volume solver with named transport, collision, radiation, avalanche, density-balance, moment, and Python/Rust full-output parity surfaces; no public DREAM kinetic-distribution parity until every frozen independent-reference gate passes | N | N | N | Y |
 | Pellet injection (Parks-Turnbull) | **Y** | N | N | N | N |
 | Impurity transport (neoclassical) | Trace radial transport with source conservation, neoclassical pinch, charge-state artifact/source-sink contract, fail-closed native transport evidence, and native-only source/sink budget diagnostics; no public Aurora/STRAHL collisional-operator parity or same-case transport thresholds | N | N | N | N |
 | Momentum transport (ExB shearing) | **Y** | N | partial | N | N |

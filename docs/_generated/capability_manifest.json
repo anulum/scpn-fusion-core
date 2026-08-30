@@ -1893,6 +1893,42 @@
         "path": "src/scpn_fusion/core/runaway_electrons.py"
       },
       {
+        "name": "RunawayKineticBudget",
+        "path": "src/scpn_fusion/core/runaway_kinetic_diagnostics.py"
+      },
+      {
+        "name": "RunawayKineticCoefficients",
+        "path": "src/scpn_fusion/core/runaway_kinetic_coefficients.py"
+      },
+      {
+        "name": "RunawayKineticGeometry",
+        "path": "src/scpn_fusion/core/runaway_kinetic_operator.py"
+      },
+      {
+        "name": "RunawayKineticGrid",
+        "path": "src/scpn_fusion/core/runaway_kinetic_grid.py"
+      },
+      {
+        "name": "RunawayKineticMoments",
+        "path": "src/scpn_fusion/core/runaway_kinetic_solver.py"
+      },
+      {
+        "name": "RunawayKineticOperator",
+        "path": "src/scpn_fusion/core/runaway_kinetic_operator.py"
+      },
+      {
+        "name": "RunawayKineticSolver",
+        "path": "src/scpn_fusion/core/runaway_kinetic_solver.py"
+      },
+      {
+        "name": "RunawayKineticTendencies",
+        "path": "src/scpn_fusion/core/runaway_kinetic_operator.py"
+      },
+      {
+        "name": "RunawayKineticTrajectory",
+        "path": "src/scpn_fusion/core/runaway_kinetic_solver.py"
+      },
+      {
         "name": "RunawayMitigationAssessment",
         "path": "src/scpn_fusion/core/runaway_electrons.py"
       },
@@ -2766,6 +2802,11 @@
       "src/scpn_fusion/core/quasi_3d_contracts.py",
       "src/scpn_fusion/core/rf_heating.py",
       "src/scpn_fusion/core/runaway_electrons.py",
+      "src/scpn_fusion/core/runaway_kinetic_coefficients.py",
+      "src/scpn_fusion/core/runaway_kinetic_diagnostics.py",
+      "src/scpn_fusion/core/runaway_kinetic_grid.py",
+      "src/scpn_fusion/core/runaway_kinetic_operator.py",
+      "src/scpn_fusion/core/runaway_kinetic_solver.py",
       "src/scpn_fusion/core/sandpile_fusion_reactor.py",
       "src/scpn_fusion/core/sawtooth.py",
       "src/scpn_fusion/core/scaling_laws.py",
@@ -2927,10 +2968,10 @@
     "optional_extras": 13,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
-    "python_capability_classes": 611,
-    "python_capability_source_modules": 351,
+    "python_capability_classes": 620,
+    "python_capability_source_modules": 356,
     "rust_workspace_crates": 13,
-    "test_files": 627
+    "test_files": 638
   },
   "documentation": {
     "public_pages": [
@@ -3191,6 +3232,7 @@
       "tests/test_download_efit_geqdsk.py",
       "tests/test_download_mast_labelled_shots.py",
       "tests/test_dream_fluid_parity.py",
+      "tests/test_dream_full_kinetic_parity.py",
       "tests/test_dream_reference_execution_request.py",
       "tests/test_dynamic_burn_model.py",
       "tests/test_elm_model.py",
@@ -3557,6 +3599,11 @@
       "tests/test_runaway_dream_contract.py",
       "tests/test_runaway_electron_model_module.py",
       "tests/test_runaway_electrons.py",
+      "tests/test_runaway_kinetic_coefficients.py",
+      "tests/test_runaway_kinetic_grid.py",
+      "tests/test_runaway_kinetic_operator.py",
+      "tests/test_runaway_kinetic_rust_parity.py",
+      "tests/test_runaway_kinetic_solver.py",
       "tests/test_runtime_parity_perf_guard.py",
       "tests/test_rust_compat_solver_method.py",
       "tests/test_rust_compat_wrapper.py",
@@ -3665,6 +3712,11 @@
       "tests/test_torax_hybrid_realtime_control_benchmark.py",
       "tests/test_torax_imas_interchange.py",
       "tests/test_torax_real_parity.py",
+      "tests/test_torax_runtime_client.py",
+      "tests/test_torax_runtime_contracts.py",
+      "tests/test_torax_runtime_real_backend.py",
+      "tests/test_torax_runtime_review.py",
+      "tests/test_torax_runtime_serialization.py",
       "tests/test_torax_same_physics_config_study.py",
       "tests/test_trace_ida_geometry_feedback.py",
       "tests/test_traceable_runtime_parity_cli.py",
