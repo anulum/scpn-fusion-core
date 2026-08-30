@@ -182,7 +182,7 @@ class RunawayKineticOperator:
     ) -> FloatArray:
         shape = list(state.shape)
         shape[axis] += 1
-        face = np.zeros(shape, dtype=np.float64)
+        face: FloatArray = np.zeros(shape, dtype=np.float64)
 
         inner: list[Index] = [slice(None)] * state.ndim
         inner[axis] = slice(1, -1)
@@ -223,7 +223,7 @@ class RunawayKineticOperator:
     ) -> FloatArray:
         shape = list(state.shape)
         shape[axis] += 1
-        gradient = np.zeros(shape, dtype=np.float64)
+        gradient: FloatArray = np.zeros(shape, dtype=np.float64)
         inner: list[Index] = [slice(None)] * state.ndim
         inner[axis] = slice(1, -1)
         left: list[Index] = [slice(None)] * state.ndim
@@ -329,7 +329,7 @@ class RunawayKineticOperator:
             )
         shape = list(state.shape)
         shape[face_axis] += 1
-        result = np.zeros(shape, dtype=np.float64)
+        result: FloatArray = np.zeros(shape, dtype=np.float64)
         inner: list[Index] = [slice(None)] * state.ndim
         inner[face_axis] = slice(1, -1)
         left: list[Index] = [slice(None)] * state.ndim
@@ -389,6 +389,8 @@ class RunawayKineticOperator:
             g.pitch_face_measure,
             axis=1,
             upwind_advection=c.pitch_advection,
+            zero_low=True,
+            zero_high=True,
         )
         collision = self._advection_tendency(
             state,
@@ -442,6 +444,8 @@ class RunawayKineticOperator:
             g.pitch_face_measure,
             axis=1,
             upwind_advection=c.pitch_advection,
+            zero_low=True,
+            zero_high=True,
         )
         bremsstrahlung = self._advection_tendency(
             state,

@@ -214,6 +214,38 @@ def test_component_budgets_share_total_upwind_interpolation() -> None:
     )
 
 
+def test_pitch_advection_closes_both_physical_pitch_boundaries() -> None:
+    grid = _grid()
+    base = _coefficients(grid)
+    nonzero_pitch_faces = np.ones((grid.nr, grid.nxi + 1, grid.np))
+    coefficients = RunawayKineticCoefficients.checked(
+        grid,
+        radial_advection=base.radial_advection,
+        momentum_electric_advection=base.momentum_electric_advection,
+        momentum_collision_advection=base.momentum_collision_advection,
+        momentum_synchrotron_advection=base.momentum_synchrotron_advection,
+        momentum_bremsstrahlung_advection=base.momentum_bremsstrahlung_advection,
+        pitch_electric_advection=nonzero_pitch_faces,
+        pitch_synchrotron_advection=base.pitch_synchrotron_advection,
+        radial_diffusion=base.radial_diffusion,
+        momentum_diffusion=base.momentum_diffusion,
+        pitch_diffusion=base.pitch_diffusion,
+        momentum_pitch_diffusion=base.momentum_pitch_diffusion,
+        pitch_momentum_diffusion=base.pitch_momentum_diffusion,
+        avalanche_source_kernel=base.avalanche_source_kernel,
+        total_electron_density_m3=base.total_electron_density_m3,
+        total_density_avalanche_rate_s_inv=base.total_density_avalanche_rate_s_inv,
+        total_density_external_source_m3_s=base.total_density_external_source_m3_s,
+        external_source=base.external_source,
+    )
+    operator = RunawayKineticOperator(grid, coefficients)
+    state = np.broadcast_to((2.0 + grid.pitch)[None, :, None], grid.shape)
+    electric = operator.evaluate(state).electric_acceleration
+
+    assert np.max(np.abs(electric)) > 0.0
+    assert abs(float(np.sum(electric * operator.geometry.cell_measure))) < 1.0e-12
+
+
 def test_imported_geometry_rejects_shape_sign_and_zero_cell_measure() -> None:
     grid = _grid()
     geometry = RunawayKineticGeometry.cylindrical(grid)

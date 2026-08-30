@@ -56,6 +56,37 @@ fn fixture() -> (RunawayKineticOperator, Vec<f64>, Vec<f64>) {
     )
 }
 
+fn zero_physics(operator: &mut RunawayKineticOperator) {
+    operator.coefficients.radial_advection.fill(0.0);
+    operator.coefficients.momentum_electric_advection.fill(0.0);
+    operator.coefficients.momentum_collision_advection.fill(0.0);
+    operator
+        .coefficients
+        .momentum_synchrotron_advection
+        .fill(0.0);
+    operator
+        .coefficients
+        .momentum_bremsstrahlung_advection
+        .fill(0.0);
+    operator.coefficients.pitch_electric_advection.fill(0.0);
+    operator.coefficients.pitch_synchrotron_advection.fill(0.0);
+    operator.coefficients.radial_diffusion.fill(0.0);
+    operator.coefficients.momentum_diffusion.fill(0.0);
+    operator.coefficients.pitch_diffusion.fill(0.0);
+    operator.coefficients.momentum_pitch_diffusion.fill(0.0);
+    operator.coefficients.pitch_momentum_diffusion.fill(0.0);
+    operator.coefficients.avalanche_source_kernel.fill(0.0);
+    operator
+        .coefficients
+        .total_density_avalanche_rate_s_inv
+        .fill(0.0);
+    operator
+        .coefficients
+        .total_density_external_source_m3_s
+        .fill(0.0);
+    operator.coefficients.external_source.fill(0.0);
+}
+
 #[test]
 fn operator_reports_every_required_component_and_integrated_radial_transport() {
     let (operator, state, density) = fixture();
@@ -125,4 +156,68 @@ fn imported_geometry_rejects_negative_measures() {
     )
     .unwrap_err();
     assert_eq!(error, "pitch_face_measure must be non-negative");
+}
+
+#[test]
+fn pitch_advection_closes_both_physical_pitch_boundaries() {
+    let (mut operator, _, density) = fixture();
+    zero_physics(&mut operator);
+    operator.coefficients.pitch_electric_advection.fill(1.0);
+    let pitch = operator.grid.pitch();
+    let mut state = vec![0.0; operator.grid.cell_count()];
+    for ir in 0..operator.grid.nr() {
+        for (ixi, pitch_value) in pitch.iter().enumerate() {
+            for ip in 0..operator.grid.np() {
+                state[operator.grid.cell_index(ir, ixi, ip)] = 2.0 + pitch_value;
+            }
+        }
+    }
+
+    let electric = operator
+        .evaluate(&state, Some(&density))
+        .unwrap()
+        .electric_acceleration;
+    let integrated: f64 = electric
+        .iter()
+        .zip(&operator.geometry.cell_measure)
+        .map(|(value, measure)| value * measure)
+        .sum();
+
+    assert!(electric.iter().any(|value| value.abs() > 0.0));
+    assert!(integrated.abs() < 1.0e-12);
+}
+
+#[test]
+fn solver_fails_closed_on_nonfinite_evolved_distribution() {
+    let (mut operator, _, _) = fixture();
+    zero_physics(&mut operator);
+    operator.coefficients.external_source.fill(f64::MAX);
+    let initial = vec![1.0; operator.grid.cell_count()];
+    let density = vec![0.0; operator.grid.nr()];
+    let solver = RunawayKineticSolver::new(operator, 1.0, 0.0).unwrap();
+
+    let error = solver
+        .solve(&initial, &[0.0, 1.0], Some(&density))
+        .unwrap_err();
+
+    assert_eq!(error, "kinetic evolution produced a non-finite state");
+}
+
+#[test]
+fn solver_fails_closed_on_negative_evolved_runaway_density() {
+    let (mut operator, _, _) = fixture();
+    zero_physics(&mut operator);
+    operator
+        .coefficients
+        .total_density_external_source_m3_s
+        .fill(-100.0);
+    let initial = vec![1.0; operator.grid.cell_count()];
+    let density = vec![1.0; operator.grid.nr()];
+    let solver = RunawayKineticSolver::new(operator, 0.1, 0.0).unwrap();
+
+    let error = solver
+        .solve(&initial, &[0.0, 0.1], Some(&density))
+        .unwrap_err();
+
+    assert_eq!(error, "runaway-density evolution produced an invalid state");
 }

@@ -103,6 +103,13 @@ class RunawayKineticSolver:
             np.asarray(tendency.runaway_density_tendency_m3_s, dtype=np.float64),
         )
 
+    @staticmethod
+    def _validate_evolved_stage(state: FloatArray, density: FloatArray) -> None:
+        if not np.all(np.isfinite(state)):
+            raise FloatingPointError("kinetic evolution produced a non-finite state")
+        if not np.all(np.isfinite(density)) or np.any(density < 0.0):
+            raise FloatingPointError("runaway-density evolution produced an invalid state")
+
     def _step(
         self,
         state: FloatArray,
@@ -112,18 +119,17 @@ class RunawayKineticSolver:
         rhs0, density_rhs0 = self._rhs(self.operator, state, density)
         first = state + dt * rhs0
         density_first = density + dt * density_rhs0
+        self._validate_evolved_stage(first, density_first)
         rhs1, density_rhs1 = self._rhs(self.operator, first, density_first)
         second = 0.75 * state + 0.25 * (first + dt * rhs1)
         density_second = 0.75 * density + 0.25 * (density_first + dt * density_rhs1)
+        self._validate_evolved_stage(second, density_second)
         rhs2, density_rhs2 = self._rhs(self.operator, second, density_second)
-        state_result = cast(
-            FloatArray,
-            (1.0 / 3.0) * state + (2.0 / 3.0) * (second + dt * rhs2),
+        state_result: FloatArray = (1.0 / 3.0) * state + (2.0 / 3.0) * (second + dt * rhs2)
+        density_result: FloatArray = (1.0 / 3.0) * density + (2.0 / 3.0) * (
+            density_second + dt * density_rhs2
         )
-        density_result = cast(
-            FloatArray,
-            (1.0 / 3.0) * density + (2.0 / 3.0) * (density_second + dt * density_rhs2),
-        )
+        self._validate_evolved_stage(state_result, density_result)
         return state_result, density_result
 
     def _moments(self, history: FloatArray) -> RunawayKineticMoments:
@@ -209,14 +215,10 @@ class RunawayKineticSolver:
                 state, density = self._step(state, density, dt)
                 internal_steps += 1
                 minimum = float(np.min(state))
-                if not np.all(np.isfinite(state)):
-                    raise FloatingPointError("kinetic evolution produced a non-finite state")
                 if minimum < -self.negativity_tolerance * scale:
                     raise FloatingPointError(
                         f"kinetic evolution violated the declared negativity tolerance: {minimum}"
                     )
-                if not np.all(np.isfinite(density)) or np.any(density < 0.0):
-                    raise FloatingPointError("runaway-density evolution produced an invalid state")
             history.append(np.array(state, copy=True))
             density_history.append(np.array(density, copy=True))
 

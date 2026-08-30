@@ -106,6 +106,19 @@ impl RunawayKineticSolver {
         Ok((tendency.total(), tendency.runaway_density_tendency_m3_s))
     }
 
+    fn validate_evolved_stage(state: &[f64], density: &[f64]) -> Result<(), String> {
+        if state.iter().any(|value| !value.is_finite()) {
+            return Err("kinetic evolution produced a non-finite state".to_string());
+        }
+        if density
+            .iter()
+            .any(|value| !value.is_finite() || *value < 0.0)
+        {
+            return Err("runaway-density evolution produced an invalid state".to_string());
+        }
+        Ok(())
+    }
+
     fn step(
         &self,
         state: &[f64],
@@ -123,6 +136,7 @@ impl RunawayKineticSolver {
             .zip(density_rhs0)
             .map(|(value, rhs)| value + dt * rhs)
             .collect();
+        Self::validate_evolved_stage(&first, &density_first)?;
         let (rhs1, density_rhs1) = self.rhs(&first, &density_first)?;
         let second: Vec<f64> = state
             .iter()
@@ -134,17 +148,19 @@ impl RunawayKineticSolver {
             .zip(density_first.iter().zip(density_rhs1))
             .map(|(initial, (stage, rhs))| 0.75 * initial + 0.25 * (stage + dt * rhs))
             .collect();
+        Self::validate_evolved_stage(&second, &density_second)?;
         let (rhs2, density_rhs2) = self.rhs(&second, &density_second)?;
-        let result = state
+        let result: Vec<f64> = state
             .iter()
             .zip(second.iter().zip(rhs2))
             .map(|(initial, (stage, rhs))| (1.0 / 3.0) * initial + (2.0 / 3.0) * (stage + dt * rhs))
             .collect();
-        let density_result = density
+        let density_result: Vec<f64> = density
             .iter()
             .zip(density_second.iter().zip(density_rhs2))
             .map(|(initial, (stage, rhs))| (1.0 / 3.0) * initial + (2.0 / 3.0) * (stage + dt * rhs))
             .collect();
+        Self::validate_evolved_stage(&result, &density_result)?;
         Ok((result, density_result))
     }
 
@@ -197,20 +213,11 @@ impl RunawayKineticSolver {
             for _ in 0..count {
                 (state, density) = self.step(&state, &density, dt)?;
                 internal_steps += 1;
-                if state.iter().any(|value| !value.is_finite()) {
-                    return Err("kinetic evolution produced a non-finite state".to_string());
-                }
                 let minimum = state.iter().copied().fold(f64::INFINITY, f64::min);
                 if minimum < -self.negativity_tolerance * scale {
                     return Err(format!(
                         "kinetic evolution violated the declared negativity tolerance: {minimum}"
                     ));
-                }
-                if density
-                    .iter()
-                    .any(|value| !value.is_finite() || *value < 0.0)
-                {
-                    return Err("runaway-density evolution produced an invalid state".to_string());
                 }
             }
             distribution.extend_from_slice(&state);

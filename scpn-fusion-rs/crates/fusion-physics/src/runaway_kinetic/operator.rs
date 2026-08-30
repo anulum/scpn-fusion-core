@@ -523,8 +523,8 @@ impl RunawayKineticOperator {
             &g.pitch_face_measure,
             Axis::Pitch,
             Some(&pitch_advection),
-            false,
-            false,
+            true,
+            true,
         );
         let electric_acceleration = add(&electric_momentum, &electric_pitch);
 
@@ -599,8 +599,8 @@ impl RunawayKineticOperator {
                 &g.pitch_face_measure,
                 Axis::Pitch,
                 Some(&pitch_advection),
-                false,
-                false,
+                true,
+                true,
             ),
         );
         let bremsstrahlung_loss = self.advection_tendency(

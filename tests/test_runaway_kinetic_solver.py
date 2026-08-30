@@ -27,7 +27,9 @@ from scpn_fusion.core.runaway_kinetic_operator import (
 from scpn_fusion.core.runaway_kinetic_solver import RunawayKineticSolver
 
 
-def _source_operator(source: float) -> RunawayKineticOperator:
+def _source_operator(
+    source: float, *, density_source_m3_s: float | None = None
+) -> RunawayKineticOperator:
     grid = RunawayKineticGrid(
         radius_faces_m=np.array([0.0, 0.1, 0.2]),
         pitch_faces=np.array([-1.0, 0.0, 1.0]),
@@ -38,9 +40,10 @@ def _source_operator(source: float) -> RunawayKineticOperator:
     momentum = np.zeros((grid.nr, grid.nxi, grid.np + 1))
     pitch = np.zeros((grid.nr, grid.nxi + 1, grid.np))
     geometry = RunawayKineticGeometry.cylindrical(grid)
-    density_source = np.sum(
-        cell * geometry.density_cell_measure,
-        axis=(1, 2),
+    density_source = (
+        np.sum(cell * geometry.density_cell_measure, axis=(1, 2))
+        if density_source_m3_s is None
+        else np.full(grid.nr, density_source_m3_s)
     )
     coefficients = RunawayKineticCoefficients.checked(
         grid,
@@ -263,4 +266,53 @@ def test_solver_enforces_declared_distribution_negativity_tolerance() -> None:
             np.ones(solver.operator.grid.shape),
             np.array([0.0, 0.2]),
             initial_runaway_density_m3=np.full(solver.operator.grid.nr, 1.0e6),
+        )
+
+
+def test_solver_fails_closed_on_nonfinite_evolved_distribution() -> None:
+    operator = _source_operator(
+        np.finfo(np.float64).max,
+        density_source_m3_s=0.0,
+    )
+    solver = RunawayKineticSolver(operator, maximum_step_s=1.0)
+
+    with (
+        np.errstate(over="ignore", invalid="ignore"),
+        pytest.raises(FloatingPointError, match="non-finite state"),
+    ):
+        solver.solve(np.ones(operator.grid.shape), np.array([0.0, 1.0]))
+
+
+def test_solver_fails_closed_on_negative_evolved_runaway_density() -> None:
+    operator = _source_operator(0.0)
+    base = operator.coefficients
+    coefficients = RunawayKineticCoefficients.checked(
+        operator.grid,
+        radial_advection=base.radial_advection,
+        momentum_electric_advection=base.momentum_electric_advection,
+        momentum_collision_advection=base.momentum_collision_advection,
+        momentum_synchrotron_advection=base.momentum_synchrotron_advection,
+        momentum_bremsstrahlung_advection=base.momentum_bremsstrahlung_advection,
+        pitch_electric_advection=base.pitch_electric_advection,
+        pitch_synchrotron_advection=base.pitch_synchrotron_advection,
+        radial_diffusion=base.radial_diffusion,
+        momentum_diffusion=base.momentum_diffusion,
+        pitch_diffusion=base.pitch_diffusion,
+        momentum_pitch_diffusion=base.momentum_pitch_diffusion,
+        pitch_momentum_diffusion=base.pitch_momentum_diffusion,
+        avalanche_source_kernel=base.avalanche_source_kernel,
+        total_electron_density_m3=base.total_electron_density_m3,
+        total_density_avalanche_rate_s_inv=base.total_density_avalanche_rate_s_inv,
+        total_density_external_source_m3_s=np.full(operator.grid.nr, -100.0),
+        external_source=base.external_source,
+    )
+    solver = RunawayKineticSolver(
+        RunawayKineticOperator(operator.grid, coefficients), maximum_step_s=0.1
+    )
+
+    with pytest.raises(FloatingPointError, match="runaway-density evolution"):
+        solver.solve(
+            np.ones(operator.grid.shape),
+            np.array([0.0, 0.1]),
+            initial_runaway_density_m3=np.ones(operator.grid.nr),
         )
