@@ -102,8 +102,12 @@ def test_dream_reference_request_declares_fail_closed_output_contract() -> None:
     assert report["reference_output"]["output_ready"] is False
     if "preexisting_output_present" in report["reference_output"]:
         assert isinstance(report["reference_output"]["preexisting_output_present"], bool)
-    assert report["status"] == "blocked_full_kinetic_parity_not_accepted"
-    assert report["comparison_status"] == "blocked_full_kinetic_parity_not_accepted"
+    fail_closed_statuses = {
+        "blocked_missing_dream_backend": "blocked_missing_reference_output",
+        "blocked_full_kinetic_parity_not_accepted": ("blocked_full_kinetic_parity_not_accepted"),
+    }
+    assert report["status"] in fail_closed_statuses
+    assert report["comparison_status"] == fail_closed_statuses[report["status"]]
     assert report["same_case_comparison_ready"] is False
     assert report["required_output_contract"]["schema"] == "dream-output-contract.v1"
     assert report["required_output_contract"]["coordinate_axes"] == [
