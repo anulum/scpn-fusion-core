@@ -271,7 +271,7 @@ def test_solver_enforces_declared_distribution_negativity_tolerance() -> None:
 
 def test_solver_fails_closed_on_nonfinite_evolved_distribution() -> None:
     operator = _source_operator(
-        np.finfo(np.float64).max,
+        float(np.finfo(np.float64).max),
         density_source_m3_s=0.0,
     )
     solver = RunawayKineticSolver(operator, maximum_step_s=1.0)

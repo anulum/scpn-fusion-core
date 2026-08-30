@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import os
 import tempfile
 from pathlib import Path
@@ -145,7 +146,7 @@ def build_manifest(data_tree: Any, sidecar_path: Path) -> dict[str, object]:
 
 def publish_manifest(data_tree: Any, sidecar_path: Path, manifest_path: Path) -> ToraxArtifact:
     """Publish the complete manifest and return immutable artifact custody."""
-    import xarray as xr
+    xr = importlib.import_module("xarray")
 
     in_memory_manifest = build_manifest(data_tree, sidecar_path)
     restored = xr.open_datatree(sidecar_path)
