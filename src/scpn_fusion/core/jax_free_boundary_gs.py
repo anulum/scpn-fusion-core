@@ -41,6 +41,7 @@ References: Grad & Rubin (1958); Shafranov (1966); Lao et al. (1985).
 from __future__ import annotations
 
 from functools import partial
+from math import pi
 from typing import Any, cast
 
 import jax
@@ -60,7 +61,7 @@ from scpn_fusion.core.jax_equilibrium_solver import (
 from scpn_fusion.core.jax_plasma_support import soft_axis_connected_support
 
 # SI vacuum permeability [H/m].
-MU0_SI: float = 4.0e-7 * jnp.pi
+MU0_SI: float = 4.0e-7 * pi
 
 
 # ── SI toroidal Green's function ──────────────────────────────────
