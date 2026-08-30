@@ -12,6 +12,7 @@ import importlib.util
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -27,7 +28,7 @@ sys.modules[SPEC.name] = prov
 SPEC.loader.exec_module(prov)
 
 
-def _write_json(path: Path, payload: dict) -> None:
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
@@ -67,7 +68,7 @@ _TEST_LICENSE_REGISTRY = [
 ]
 
 
-def _policy_with_rules(rules: list[dict]) -> dict:
+def _policy_with_rules(rules: list[dict[str, Any]]) -> dict[str, Any]:
     return {
         "policy_version": "reference-data-provenance-policy-v2",
         "license_registry": _TEST_LICENSE_REGISTRY,
@@ -116,6 +117,119 @@ def test_build_manifest_assigns_license_for_all_files(tmp_path: Path) -> None:
     licenses = {row["license"] for row in payload["files"]}
     assert "AGPL-3.0-or-later" in licenses
     assert "synthetic-v1" in licenses
+
+
+def test_repository_torax_artifacts_have_exact_provenance() -> None:
+    """Bind TORAX input/output artifacts to distinct exact provenance rules."""
+    reference_root = ROOT / "validation" / "reference_data"
+    deck_path = reference_root / "torax" / "coupled_transport_model_intersection_deck.py"
+    policy = json.loads((reference_root / "provenance_policy.json").read_text(encoding="utf-8"))
+    manifest = json.loads((reference_root / "provenance_manifest.json").read_text(encoding="utf-8"))
+
+    matching_rules = [
+        rule
+        for rule in policy["rules"]
+        if rule["glob"] == "torax/coupled_transport_model_intersection_deck.py"
+    ]
+    assert matching_rules == [
+        {
+            "id": "torax_coupled_model_intersection_deck",
+            "glob": "torax/coupled_transport_model_intersection_deck.py",
+            "source_type": "repository_solver_input_deck",
+            "source": (
+                "Repository-maintained frozen shared model-intersection input deck used by "
+                "coupled native/TORAX parity validation; contains no upstream TORAX code or data."
+            ),
+            "license": "AGPL-3.0-or-later",
+        }
+    ]
+
+    matching_rows = [
+        row
+        for row in manifest["files"]
+        if row["path"] == "torax/coupled_transport_model_intersection_deck.py"
+    ]
+    assert len(matching_rows) == 1
+    row = matching_rows[0]
+    assert row["dataset_id"] == "torax_coupled_model_intersection_deck"
+    assert row["source_type"] == "repository_solver_input_deck"
+    assert row["license"] == "AGPL-3.0-or-later"
+    assert row["size_bytes"] == len(prov._content_bytes(deck_path))
+    assert row["sha256"] == prov._sha256(prov._content_bytes(deck_path))
+
+    netcdf_rule = [
+        rule for rule in policy["rules"] if rule["glob"] == "torax/torax_runtime_primary_v1.nc"
+    ]
+    assert len(netcdf_rule) == 1
+    assert netcdf_rule[0]["id"] == "torax_runtime_primary_netcdf"
+    assert netcdf_rule[0]["source_type"] == "official_solver_output_artifact"
+    assert netcdf_rule[0]["license"] == "citation-required"
+    assert "arXiv:2406.06718" in netcdf_rule[0]["citation"]
+
+    netcdf_path = reference_root / "torax" / "torax_runtime_primary_v1.nc"
+    netcdf_rows = [
+        row for row in manifest["files"] if row["path"] == "torax/torax_runtime_primary_v1.nc"
+    ]
+    assert len(netcdf_rows) == 1
+    netcdf_row = netcdf_rows[0]
+    assert netcdf_row["dataset_id"] == "torax_runtime_primary_netcdf"
+    assert netcdf_row["source_type"] == "official_solver_output_artifact"
+    assert netcdf_row["license"] == "citation-required"
+    assert netcdf_row["size_bytes"] == len(prov._content_bytes(netcdf_path))
+    assert netcdf_row["sha256"] == prov._sha256(prov._content_bytes(netcdf_path))
+
+    assert all(rule["glob"] != "torax/*.json" for rule in policy["rules"])
+    json_expectations = {
+        "torax/torax_basic_config_profiles.json": (
+            "torax_reference_profiles",
+            "derived_reference_artifact",
+            "citation-required",
+        ),
+        "torax/torax_basic_config_core_profiles_ids.json": (
+            "torax_reference_profiles",
+            "derived_reference_artifact",
+            "citation-required",
+        ),
+        "torax/torax_coupled_transport_reference.json": (
+            "torax_coupled_transport_reference",
+            "derived_reference_artifact",
+            "citation-required",
+        ),
+        "torax/torax_runtime_primary_v1.nc.manifest.json": (
+            "torax_runtime_artifact_manifest",
+            "derived_artifact_manifest",
+            "citation-required",
+        ),
+        "torax/torax_runtime_request_v1.json": (
+            "torax_runtime_request",
+            "repository_solver_request",
+            "AGPL-3.0-or-later",
+        ),
+        "torax/torax_runtime_result_v1.json": (
+            "torax_runtime_result",
+            "derived_execution_result",
+            "citation-required",
+        ),
+        "torax/torax_runtime_review_envelope_v1.json": (
+            "torax_runtime_review_envelope",
+            "derived_review_envelope",
+            "citation-required",
+        ),
+    }
+    for rel_path, (dataset_id, source_type, license_name) in json_expectations.items():
+        rules = [rule for rule in policy["rules"] if rule["glob"] == rel_path]
+        assert len(rules) == 1
+        assert rules[0]["id"] == dataset_id
+        assert rules[0]["source_type"] == source_type
+        assert rules[0]["license"] == license_name
+        if license_name == "citation-required":
+            assert "arXiv:2406.06718" in rules[0]["citation"]
+
+        rows = [row for row in manifest["files"] if row["path"] == rel_path]
+        assert len(rows) == 1
+        assert rows[0]["dataset_id"] == dataset_id
+        assert rows[0]["source_type"] == source_type
+        assert rows[0]["license"] == license_name
 
 
 def test_main_check_mode_detects_stale_manifest(tmp_path: Path) -> None:
