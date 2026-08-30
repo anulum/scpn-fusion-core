@@ -42,7 +42,6 @@ class RunawayKineticGeometry:
     @classmethod
     def cylindrical(cls, grid: RunawayKineticGrid) -> RunawayKineticGeometry:
         """Construct exact tensor-product cylindrical phase-space measures."""
-
         radial_shell = grid.radial_shell_measure_m2
         pitch_width = np.diff(grid.pitch_faces)
         momentum_shell = grid.momentum_shell_measure
@@ -94,7 +93,6 @@ class RunawayKineticGeometry:
         pitch_face_measure: FloatArray,
     ) -> RunawayKineticGeometry:
         """Construct geometry imported from an independent kinetic code."""
-
         expected = {
             "cell_measure": grid.shape,
             "density_cell_measure": grid.shape,
@@ -143,7 +141,6 @@ class RunawayKineticTendencies:
     @property
     def total(self) -> FloatArray:
         """Complete operator tendency with no hidden or omitted component."""
-
         return (
             self.radial_transport
             + self.electric_acceleration
@@ -355,7 +352,6 @@ class RunawayKineticOperator:
         runaway_density_m3: FloatArray | None = None,
     ) -> RunawayKineticTendencies:
         """Evaluate every operator contribution for one finite distribution."""
-
         state = self.grid.require_state("distribution", distribution)
         c = self.coefficients
         g = self.geometry

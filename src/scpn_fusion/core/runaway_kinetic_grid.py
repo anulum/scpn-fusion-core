@@ -48,6 +48,7 @@ class RunawayKineticGrid:
     momentum_faces_mc: FloatArray
 
     def __post_init__(self) -> None:
+        """Validate and freeze all phase-space cell-face coordinates."""
         radius = _strict_faces("radius_faces_m", self.radius_faces_m, lower=0.0)
         pitch = _strict_faces("pitch_faces", self.pitch_faces)
         momentum = _strict_faces("momentum_faces_mc", self.momentum_faces_mc, lower=0.0)
@@ -60,55 +61,46 @@ class RunawayKineticGrid:
     @property
     def nr(self) -> int:
         """Number of evolved radial cells."""
-
         return self.radius_faces_m.size - 1
 
     @property
     def nxi(self) -> int:
         """Number of evolved pitch cells."""
-
         return self.pitch_faces.size - 1
 
     @property
     def np(self) -> int:
         """Number of evolved momentum cells."""
-
         return self.momentum_faces_mc.size - 1
 
     @property
     def shape(self) -> tuple[int, int, int]:
         """Distribution shape in radius-pitch-momentum order."""
-
         return (self.nr, self.nxi, self.np)
 
     @property
     def radius_m(self) -> FloatArray:
         """Radial cell centres."""
-
         return 0.5 * (self.radius_faces_m[1:] + self.radius_faces_m[:-1])
 
     @property
     def pitch(self) -> FloatArray:
         """Pitch cell centres."""
-
         return 0.5 * (self.pitch_faces[1:] + self.pitch_faces[:-1])
 
     @property
     def momentum_mc(self) -> FloatArray:
         """Momentum cell centres in units of electron rest momentum."""
-
         return 0.5 * (self.momentum_faces_mc[1:] + self.momentum_faces_mc[:-1])
 
     @property
     def radial_shell_measure_m2(self) -> FloatArray:
         """Cylindrical radial measure ``(r_f[i+1]^2-r_f[i]^2)/2``."""
-
         return 0.5 * (self.radius_faces_m[1:] ** 2 - self.radius_faces_m[:-1] ** 2)
 
     @property
     def momentum_shell_measure(self) -> FloatArray:
         """Relativistic spherical momentum measure ``(p_f^3)/3``."""
-
         return (self.momentum_faces_mc[1:] ** 3 - self.momentum_faces_mc[:-1] ** 3) / 3.0
 
     @property
@@ -119,7 +111,6 @@ class RunawayKineticGrid:
         residuals.  Geometry imported from DREAM can instead supply its exact
         bounce-averaged cell volumes to the operator.
         """
-
         return cast(
             FloatArray,
             self.radial_shell_measure_m2[:, None, None]
@@ -129,7 +120,6 @@ class RunawayKineticGrid:
 
     def require_state(self, name: str, values: FloatArray) -> FloatArray:
         """Validate and copy a finite tensor defined on every physical cell."""
-
         state = np.asarray(values, dtype=np.float64)
         if state.shape != self.shape:
             raise ValueError(f"{name} must have shape {self.shape}, got {state.shape}")

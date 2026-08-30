@@ -89,7 +89,6 @@ class RunawayKineticCoefficients:
         external_source: FloatArray,
     ) -> RunawayKineticCoefficients:
         """Construct a shape-checked immutable coefficient bundle."""
-
         cell = grid.shape
         radial_face = (grid.nr + 1, grid.nxi, grid.np)
         momentum_face = (grid.nr, grid.nxi, grid.np + 1)
@@ -172,7 +171,6 @@ class RunawayKineticCoefficients:
     @property
     def momentum_advection(self) -> FloatArray:
         """Total momentum advection with every declared loss term included."""
-
         result = (
             self.momentum_electric_advection
             + self.momentum_collision_advection
@@ -185,7 +183,6 @@ class RunawayKineticCoefficients:
     @property
     def pitch_advection(self) -> FloatArray:
         """Total pitch advection including electric and synchrotron terms."""
-
         result = self.pitch_electric_advection + self.pitch_synchrotron_advection
         result.setflags(write=False)
         return result

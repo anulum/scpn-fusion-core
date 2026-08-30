@@ -44,7 +44,6 @@ def weighted_relative_l2(
     floor: float = 1.0,
 ) -> float:
     """Return a finite weighted relative L2 error with an explicit floor."""
-
     lhs = np.asarray(actual, dtype=np.float64)
     rhs = np.asarray(expected, dtype=np.float64)
     weights = np.asarray(weight, dtype=np.float64)
@@ -62,7 +61,6 @@ def integrated_budget(
     geometry: RunawayKineticGeometry,
 ) -> RunawayKineticBudget:
     """Integrate every tendency without hiding canceling contributions."""
-
     weight = geometry.cell_measure
 
     def integrate(values: FloatArray) -> float:
@@ -90,7 +88,6 @@ def interval_residual(
     dt_s: float,
 ) -> float:
     """Check a backward-Euler/implicit interval against its full tendency."""
-
     if not np.isfinite(dt_s) or dt_s <= 0.0:
         raise ValueError("dt_s must be finite and positive")
     finite_difference = (np.asarray(current) - np.asarray(previous)) / dt_s

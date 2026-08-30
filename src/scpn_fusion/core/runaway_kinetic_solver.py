@@ -168,7 +168,6 @@ class RunawayKineticSolver:
         backend: Literal["numpy", "rust"] = "numpy",
     ) -> RunawayKineticTrajectory:
         """Evolve and return the unprojected distribution at every given time."""
-
         if backend == "rust":
             return self._solve_rust(
                 initial_distribution,
@@ -271,7 +270,6 @@ class RunawayKineticSolver:
         initial_runaway_density_m3: FloatArray | None,
     ) -> RunawayKineticTrajectory:
         """Run the compiled full-fidelity backend without silent fallback."""
-
         try:
             extension = importlib.import_module("scpn_fusion_rs")
         except ImportError as exc:
