@@ -156,6 +156,7 @@ Public Documentation Hubs
    api/ui
    api/hpc
    api/io
+   api/integrations
 
 .. toctree::
    :maxdepth: 2

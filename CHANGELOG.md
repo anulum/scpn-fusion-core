@@ -4,6 +4,25 @@
 
 ### Added
 
+- Add `scpn_fusion.integrations.torax`, a versioned process-isolated public
+  contract for real pinned TORAX 1.4.3 execution. Requests retain the complete
+  TORAX configuration while checking unit-bearing typed state/control bindings;
+  outcomes carry typed failures and a checksummed complete DataTree NetCDF
+  sidecar. A separate deterministic, review-only envelope exposes only the
+  verified Ti/Te/ne/poloidal-flux model-intersection projection, source totals,
+  budgets, solver status, and per-observable absolute-RMS/relative-L2 numerical
+  refinement uncertainty to sibling consumers. Its strict canonical byte codec
+  binds the producer code commit, model-intersection revision, complete U0
+  reactor/clock facets, and identity calibration/transfer declarations without
+  granting actuation authority.
+- Add a public full runaway-electron kinetic solver over evolved radius,
+  pitch, and momentum axes with conservative finite-volume transport,
+  momentum/pitch/cross diffusion, separate electric/collisional/synchrotron/
+  bremsstrahlung/avalanche budgets, an independently evolved total-density
+  equation, full histories and radial moments. Add an equivalent Rust kernel
+  and explicit fail-closed PyO3 backend; retire the Rust 1D-to-3D projected
+  DREAM-style artifact export while retaining the honestly named legacy 1D
+  solver.
 - Add a typed public sliding-window disruption-risk scan with exact window-end
   indices, deterministic first-alarm reporting, final-sample coverage,
   fail-closed configuration validation, and stable disruption/control facade
@@ -87,6 +106,20 @@
 
 ### Validation
 
+- Add a real primary/repeat/refined TORAX runtime contract gate. The primary
+  and repeat scientific projections and canonical 204-variable DataTree
+  inventories are identical; 0.01 s versus 0.005 s fixed-step final-profile
+  relative L2 differences range from `1.38247688965e-4` to
+  `1.89112766889e-3`. The tracked outcome binds the exact NetCDF container,
+  while the deterministic review envelope binds the container-independent full
+  content inventory. Invalid input, unavailable backend, configuration refusal,
+  timeout, truncation, duplicate JSON keys, and post-run corruption fail closed.
+- Add component-by-component NumPy/Rust full-kinetic parity and a
+  host-conditioned `(8, 16, 32)` benchmark. The recorded shared-host run keeps
+  every declared output within `5.272e-14` maximum relative L2 error and
+  measures a `2.342x` Rust median speedup while a pinned DREAM reference solve
+  is active; the report explicitly avoids hardware-neutral extrapolation and
+  gates Julia on a future measured stiff/implicit/adjoint advantage.
 - Record the completed 20,000-step seed-42 DeepONet run from published source
   SHA `0f369b50`: validation selected step 19,500, untouched final-test field
   RMSE is `0.023554938170431822 Wb/rad`, mean relative L2 is

@@ -154,13 +154,13 @@ on a discrete adapter the wgpu tier runs the identical 200-sweep workload 11.8x
 | `fusion-core` | Grad-Shafranov kernel, equilibrium, current diffusion, transport, X-point, inversion, particles | `PyFusionKernel`, `PyTransportSolver`, `PyInverseSolver`, particle/Boris fns |
 | `fusion-polyglot` | standalone native GS reference solver | (Rust-only) |
 | `fusion-phase` | Kuramoto-Sakaguchi step + multi-layer UPDE tick/run (SCPN phase lane) | `py_kuramoto_step`, `py_upde_tick`, `py_upde_run` |
-| `fusion-physics` | Fokker-Planck, FNO, nonlinear GK, Hall-MHD, drift-wave, reduced-MHD sawtooth, FRC, MRTI, Faraday, compression | `PyFokkerPlanckSolver`, `PyFnoController`, `PyHallMHD`, `PyDriftWave`, `PyReducedMHD`, `PyNonlinearGKSolver`, FRC fns |
+| `fusion-physics` | Legacy 1D Fokker-Planck plus full radius-pitch-momentum runaway kinetics, FNO, nonlinear GK, Hall-MHD, drift-wave, reduced-MHD sawtooth, FRC, MRTI, Faraday, compression | `PyFokkerPlanckSolver`, `runaway_kinetic_solve_rust`, `PyFnoController`, `PyHallMHD`, `PyDriftWave`, `PyReducedMHD`, `PyNonlinearGKSolver`, FRC fns |
 | `fusion-nuclear` | neutronics, TEMHD, sputtering, wall interaction, divertor, BOP | `PyBreedingBlanket` |
 | `fusion-engineering` | plant design, magnets, tritium, blanket lifetime, economics | `PyPlantModel` |
 | `fusion-control` | PID, optimal, MPC, SNN, digital twin, flight sim, SPI, analytic | `PyRustFlightSim`, `PySnnController`, `PySnnPool`, `PyMpcController`, `PyPlasma2D`, `PySpiAblationSolver`, `shafranov_bv`, `solve_coil_currents` |
 | `fusion-diagnostics` | synthetic probes, bolometer, soft X-ray tomography | `PyTomography` |
 | `fusion-ml` | neural equilibrium (PCA+MLP), neural transport, disruption (Transformer), PCE | `PyNeuralTransport`, `simulate_tearing_mode`, `rutherford_island_growth` |
-| `fusion-python` | **PyO3 bindings** — this is the Rust→Python API | ~31 classes + ~31 functions |
+| `fusion-python` | **PyO3 bindings** — this is the Rust→Python API | ~31 classes + ~32 functions |
 | `fusion-gpu` | wgpu compute: Red-Black SOR + multigrid V-cycle GS solver | `PyGpuSolver` (feature-gated `gpu`) |
 
 The PyO3 surface (`fusion-python/src/lib.rs`) is the complete Rust→Python API. Most exports are
@@ -168,7 +168,11 @@ consumed either through the dispatcher (the function kernels above, the equilibr
 Fokker-Planck runaway-electron (`fokker_planck_re`), FNO-turbulence (`fno_turbulence`),
 canonical-configuration surrogate-MPC (`neural_surrogate_mpc`), and reactor-design evaluator
 (`global_design_scan`) class kernels, and the tomography solver path) or by direct import in a small number of performance-critical sites (the SCPN
-runtime kernels, the Rust flight simulator). The remaining exports are an explicit
+runtime kernels, the Rust flight simulator). `runaway_kinetic_solve_rust` is
+called by the public `RunawayKineticSolver` only for an explicit
+`backend="rust"` request; the request fails closed instead of substituting the
+NumPy tier. Both tiers return the same full radius-pitch-momentum state,
+component tendencies, total-density balance, and radial moments. The remaining exports are an explicit
 **library-only capability surface** — built and tested but deliberately not on a production
 dispatch path, each for a stated reason: `py_advance_boris`/`PyParticle` (uniform-field
 full-orbit pusher; the production `orbit_following` lane is a guiding-centre integrator in
@@ -528,14 +532,41 @@ Internal `_` modules, gitignored TODO/planning files, and un-reconciled native e
 sibling integration contracts. A sibling may inspect them while planning, but a public dependency
 needs a documented seam, tests, and evidence references before it becomes an ecosystem contract.
 
+### 10.3 Process-isolated TORAX plant seam
+
+The public `scpn_fusion.integrations.torax` package separates three concerns:
+
+1. immutable request/outcome contracts and canonical JSON remain importable in
+   an ordinary consumer environment without TORAX or JAX;
+2. the worker imports and executes pinned TORAX 1.4.3 only inside the explicitly
+   selected backend interpreter, retaining its complete DataTree in a
+   checksummed NetCDF sidecar and manifest;
+3. a deterministic review envelope projects only the frozen coupled-transport
+   model intersection and per-observable numerical-refinement uncertainty for
+   SPO/CONTROL. Its canonical bytes identify the exact producer code commit
+   separately from the model-intersection schema/revision and carry every U0
+   reactor/clock facet plus explicit identity calibration and transfer.
+
+FUSION owns plant simulation and observable truth. CONTROL owns controller
+admission and any later actuation. SPO may add bounded semantics but cannot
+turn the envelope into feedback authority. The typed v1 projection excludes
+q95, li3, normalized beta, stored thermal energy, regime, and phase; if TORAX
+emits such variables they remain available only in the complete provenance
+sidecar. A truncated or failed solver run may retain diagnostic artifacts but
+is never a successful plant state. Each request starts a fresh process with no
+hidden-state carry-over. V1 `control` and `disturbance` signals are prescribed
+simulation sources only: their model delay is zero, while actuator saturation,
+slew, hardware delay, and hardware-limit authority are explicitly absent.
+
 ## 11. Cross-repository contracts
 
 What `scpn-fusion-core` provides to siblings:
 
-- **To `scpn-control`**: the equilibrium/transport/free-boundary solver subset and the Petri→SNN
-  compiler internals; CONTROL wraps the control-loop subset behind bounded public APIs and the
-  Studio control vertical. (The GS multigrid defect-sign correction and the Solovev exact-solution
-  validation suite are an active two-way contract between the repos.)
+- **To `scpn-control`**: the equilibrium/transport/free-boundary solver subset,
+  the deterministic TORAX review envelope, and the Petri→SNN compiler
+  internals; CONTROL wraps the control-loop subset behind bounded public APIs
+  and the Studio control vertical. TORAX runtime outcomes are provenance, not
+  actuation commands.
 - **To `scpn-mif-core`**: FRC rigid-rotor equilibrium, Faraday induction recovery, and pulsed-compression
   seams; the canonical FRC physics lives here.
 - **To `scpn-quantum-control`**: the classical Kuramoto/UPDE phase engine and disruption-feature

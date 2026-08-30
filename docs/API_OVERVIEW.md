@@ -63,6 +63,20 @@ The Studio import is part of the repository surface; downstream Hub integration
 may additionally require the optional `studio` extra. Use the generated API
 pages for signatures and the linked tests/reports for behavioral guarantees.
 
+### Full runaway kinetic solver
+
+`scpn_fusion.core` exports `RunawayKineticGrid`,
+`RunawayKineticCoefficients`, `RunawayKineticGeometry`,
+`RunawayKineticOperator`, and `RunawayKineticSolver`. The state order is
+`(radius, pitch, momentum)`. `RunawayKineticSolver.solve()` returns the full
+unprojected history, every named operator contribution, the independently
+evolved total-density balance, and radial density/current/energy moments.
+Select `backend="numpy"` or `backend="rust"` explicitly. The Rust request
+fails closed if the compiled extension or full-kinetic symbol is unavailable;
+it never silently substitutes NumPy. Exact-output parity and the
+host-conditioned timing are recorded in
+`validation/reports/runaway_kinetic_rust_benchmark.md`.
+
 ## Practical orientation
 
 This map is intended as a navigation layer before opening generated API details.
@@ -154,8 +168,9 @@ boundaries the Hub can ingest.
 ## Rust workspace
 
 Rust crates live under `scpn-fusion-rs/`. They are used for selected native
-kernels and parity surfaces. Python fallback paths remain available when the
-compiled extension is absent.
+kernels and parity surfaces. Some dispatchers provide observable Python
+fallbacks when the compiled extension is absent. Explicit full-kinetic
+`backend="rust"` requests are fail-closed and do not silently fall back.
 
 Common commands:
 
@@ -178,6 +193,43 @@ Reference-code adapters and benchmark requests exist for GENE, CGYRO, GS2,
 DREAM, Aurora, STRAHL, FreeGS, and related data formats. These adapters do not
 bundle the external solvers. Acceptance requires same-case outputs, licenses,
 provenance, thresholds, checksums, and native comparisons.
+
+### Real TORAX runtime contract
+
+`scpn_fusion.integrations.torax` is the stable caller surface for real pinned
+TORAX 1.4.3 execution. Importing it does not import TORAX or JAX. A
+`ToraxRuntimeClient` launches an explicitly supplied TORAX interpreter through
+the one-request CLI:
+
+```bash
+python -m scpn_fusion.integrations.torax \
+  --request request.json \
+  --result outcome.json \
+  --output-sidecar torax-output.nc
+```
+
+`ToraxRunRequest` carries the complete JSON-compatible TORAX configuration plus
+unit-bearing typed state/control bindings that must agree with it. Every run is
+a fresh process with no hidden-state carry-over. V1 controls are prescribed
+model sources, not actuator commands: model delay is zero and hardware
+saturation, slew, and hardware-delay limits are explicitly undeclared.
+`ToraxRunOutcome` distinguishes success from every TORAX 1.4.3 `SimError`,
+backend/configuration/process/timeout/schema/provenance failures, and preserves
+the complete output as a NetCDF DataTree with a per-variable inventory.
+
+Sibling semantic consumers use `ToraxReviewEnvelope`, not the runtime outcome
+directly. Its canonical bytes contain simulation-monotonic integer-nanosecond
+samples, Ti/Te/ne/poloidal-flux profiles, source totals, state budgets, solver
+completion, and numerical-refinement uncertainty. It deliberately omits
+inferred q95, li3, normalized beta, stored thermal energy, regime, and phase.
+The envelope includes all U0 reactor and clock facets, direct-model-output
+calibration and identity-transfer declarations, and absolute RMS plus relative
+L2 refinement uncertainty for every profile, source total, and state budget.
+`review_envelope_to_bytes` and `review_envelope_from_bytes` provide the unique
+bounded, duplicate-free, digest-verifiable canonical representation. The
+envelope is review-only and non-actuating. Evidence and the exact claim boundary
+are tracked in
+`validation/reports/torax_runtime_contract.{json,md}`.
 
 
 ## API stability model

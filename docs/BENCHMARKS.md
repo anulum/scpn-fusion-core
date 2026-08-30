@@ -368,6 +368,25 @@ physical NVIDIA L4.
 
 ### Native Rust solver kernels
 
+The full runaway-electron kernel has an apples-to-apples NumPy/Rust report at
+[`validation/reports/runaway_kinetic_rust_benchmark.md`](../validation/reports/runaway_kinetic_rust_benchmark.md).
+Both tiers evolve the same `(radius, pitch, momentum)` state and return every
+named tendency, the total-density balance, full output history, and radial
+moments. On the recorded shared-host `(8, 16, 32)` problem, with a pinned DREAM
+solve active concurrently, the NumPy median is `0.018567189 s`, the Rust median
+is `0.007929273 s`, and the Rust speedup is `2.342x`. The maximum component
+relative L2 error is `5.272e-14`. These values are evidence for that host and
+problem only; the report retains load averages and does not assert a
+hardware-neutral speedup.
+
+Reproduce the measured row after building the PyO3 extension:
+
+```bash
+python validation/benchmark_runaway_kinetic_rust.py --repeats 11 \
+  --output-json validation/reports/runaway_kinetic_rust_benchmark.json \
+  --output-markdown validation/reports/runaway_kinetic_rust_benchmark.md
+```
+
 ### Digital-twin control latency
 
 Tracked benchmark target:
@@ -1786,6 +1805,50 @@ The CI benchmark-provenance lane writes the same current-schema payload to
 `artifacts/torax_benchmark.json` so the fallback-budget guard validates the
 real-reference provenance and pass/fail contract rather than a removed legacy
 case-based TORAX artifact.
+
+### Real TORAX runtime contract
+
+The tracked runtime contract executes the frozen FCE-10 model intersection
+through the public process-isolated API in primary, repeat, and refined forms:
+
+```bash
+.venv/bin/python -m validation.benchmark_torax_runtime_contract \
+  --torax-python .venv-torax/bin/python \
+  --work-directory /tmp/scpn-torax-runtime-contract \
+  --source-revision "$(git rev-parse HEAD)" \
+  --write-canonical
+```
+
+The current TORAX 1.4.3 CPU evidence passes every gate. Primary and repeat
+critical projections have the same SHA-256. Their complete canonical DataTree
+inventories also match across all 4 groups and 204 coordinate/data-variable
+entries. The raw NetCDF/HDF5 container is bound by its own per-run SHA-256;
+because HDF5 layout bytes are not stable across equivalent writes, the
+cross-repository review envelope binds a separate canonical full-content
+inventory digest rather than pretending the container bytes are deterministic.
+
+Fixed-step refinement from 0.01 s to 0.005 s records absolute RMS and relative
+L2 differences over all shared simulation times for every profile, source
+total, and state budget; all relative-L2 values must remain below the frozen
+`0.02` gate. The typed projection contains only the four state profiles, source
+totals, state budgets, and numerical status. The review envelope also carries
+the exact producer code commit, model-intersection identity, all U0 reactor and
+clock facets, and explicit direct-output calibration/identity-transfer fields.
+TORAX q95,
+li3, normalized beta, and thermal-energy scalars remain preserved in the full
+sidecar but are excluded from the review-only plant-truth envelope together
+with regime and phase. This benchmark does not claim full TORAX/native physics
+equivalence, experimental validation, controller admission, actuation, safety
+certification, or portable performance superiority.
+
+Tracked evidence:
+
+- `validation/reference_data/torax/torax_runtime_request_v1.json`
+- `validation/reference_data/torax/torax_runtime_result_v1.json`
+- `validation/reference_data/torax/torax_runtime_review_envelope_v1.json`
+- `validation/reference_data/torax/torax_runtime_primary_v1.nc`
+- `validation/reference_data/torax/torax_runtime_primary_v1.nc.manifest.json`
+- `validation/reports/torax_runtime_contract.{json,md}`
 
 ### TORAX IMAS interchange fixture
 
