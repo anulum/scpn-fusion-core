@@ -4,7 +4,7 @@
   "note": "one MG-preconditioned iteration costs more than a plain one (a V-cycle per matvec pair); the wall-clock verdict against the ~20 ms/129^2 contract bar is the dedicated-hardware FP64 benchmark, deliberately not measured here",
   "case": "synthetic GS-like RHS (smooth interior source + non-trivial Dirichlet ring)",
   "preconditioner": "build_gs_mg_preconditioner defaults (1 V-cycle, 2+2 RB-GS sweeps)",
-  "generated_utc": "2026-08-29T23:28:14+00:00",
+  "generated_utc": "2026-08-30T08:18:28+00:00",
   "host_note": "aaarthuus (x86_64) \u2014 counts only, no timings",
   "measurements": [
     {
@@ -63,7 +63,7 @@
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "82d3a8e85232049ba4ace61282fe9ddd8a6ca9b145508a512db0853fe62f4de6",
+    "logic_sources_sha256": "13d4fca2d1eb83b6c3be5350b3337f5c8ad6c266f92b658bb3bcdd5b65183893",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
     "pinned_requirements_sha256": "bd71deb22e7ab465fb79cbb554e2bcc58488034ede8836469576efc4bce9a2a9"
   }
