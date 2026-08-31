@@ -535,8 +535,7 @@ def assert_outputs_current(
                 overview_path.read_text(encoding="utf-8")
             ) != [expected_inventory]:
                 errors.append(
-                    "stale project overview capability inventory: "
-                    f"{config.project_overview_path}"
+                    f"stale project overview capability inventory: {config.project_overview_path}"
                 )
     if errors:
         raise RuntimeError("; ".join(errors))
