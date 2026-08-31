@@ -215,6 +215,19 @@
       "total_bytes": 381655
     },
     {
+      "citation": "UKAEA FAIR-MAST, shot 27707 magnetics group, https://mastapp.site/; ingestion mapping revision ab435c799d892956fb042d55391f7d1be0c950e6.",
+      "file_count": 3,
+      "id": "mast_complete_magnetic_archive_evidence",
+      "license": "CC-BY-SA-4.0",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/.",
+      "license_redistributable": true,
+      "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
+      "source_type": "source_derived_reference_evidence",
+      "total_bytes": 410787
+    },
+    {
       "file_count": 1,
       "id": "mast_disruption_provenance_manifest",
       "license": "AGPL-3.0-or-later",
@@ -280,7 +293,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 25248
+      "total_bytes": 26242
     },
     {
       "file_count": 1,
@@ -462,7 +475,7 @@
       "total_bytes": 12073
     }
   ],
-  "file_count": 338,
+  "file_count": 341,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -1311,6 +1324,48 @@
       "source_type": "reference_equilibrium_bundle"
     },
     {
+      "citation": "UKAEA FAIR-MAST, shot 27707 magnetics group, https://mastapp.site/; ingestion mapping revision ab435c799d892956fb042d55391f7d1be0c950e6.",
+      "dataset_id": "mast_complete_magnetic_archive_evidence",
+      "license": "CC-BY-SA-4.0",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/.",
+      "license_redistributable": true,
+      "path": "mast/disruption_shots/MAGNETIC_ARCHIVE_ENVELOPE.json",
+      "sha256": "5c5aafecc1b53382456defdf8c6a3d803bd5e413b06b016f340886f607b50bb6",
+      "size_bytes": 232920,
+      "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
+      "source_type": "source_derived_reference_evidence"
+    },
+    {
+      "citation": "UKAEA FAIR-MAST, shot 27707 magnetics group, https://mastapp.site/; ingestion mapping revision ab435c799d892956fb042d55391f7d1be0c950e6.",
+      "dataset_id": "mast_complete_magnetic_archive_evidence",
+      "license": "CC-BY-SA-4.0",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/.",
+      "license_redistributable": true,
+      "path": "mast/disruption_shots/MAGNETIC_ARCHIVE_PROVENANCE.json",
+      "sha256": "7330d4771803c8c7b3fd098e6297ea1c99881fa19440974fe1f355851265d670",
+      "size_bytes": 85588,
+      "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
+      "source_type": "source_derived_reference_evidence"
+    },
+    {
+      "citation": "UKAEA FAIR-MAST, shot 27707 magnetics group, https://mastapp.site/; ingestion mapping revision ab435c799d892956fb042d55391f7d1be0c950e6.",
+      "dataset_id": "mast_complete_magnetic_archive_evidence",
+      "license": "CC-BY-SA-4.0",
+      "license_attribution_required": true,
+      "license_citation_required": true,
+      "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/.",
+      "license_redistributable": true,
+      "path": "mast/disruption_shots/MAGNETIC_DIAGNOSTIC_QUALIFICATION.json",
+      "sha256": "f0d5a50b74ab8b82fb96c7d2eda14456c464e7613e306df9d3761c4bf3c4035c",
+      "size_bytes": 92279,
+      "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
+      "source_type": "source_derived_reference_evidence"
+    },
+    {
       "dataset_id": "mast_disruption_provenance_manifest",
       "license": "AGPL-3.0-or-later",
       "license_attribution_required": true,
@@ -1354,8 +1409,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "35a0fa463d4f1b7797e23ea8e6122309cd09b9502167068d79442744e74d3048",
-      "size_bytes": 21263,
+      "sha256": "f5583af460efb3d0c5f96b6faba13f6a9e608ccdccc633d7c25ba7701d8392fe",
+      "size_bytes": 22257,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -4641,7 +4696,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-08-30T18:03:22.563110+00:00",
+  "generated_at_utc": "2026-08-31T20:41:11.789523+00:00",
   "license_registry": [
     {
       "attribution_required": true,
@@ -4658,6 +4713,14 @@
       "notes": "Official GACODE TGLF outputs and their exact solver-input custody fixtures.",
       "redistributable": true,
       "requires_license_notice": false
+    },
+    {
+      "attribution_required": true,
+      "citation_required": true,
+      "id": "CC-BY-SA-4.0",
+      "notes": "FAIR-MAST source data and source-derived evidence under Creative Commons Attribution-ShareAlike 4.0 International.",
+      "redistributable": true,
+      "requires_license_notice": true
     },
     {
       "attribution_required": true,

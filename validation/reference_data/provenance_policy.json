@@ -18,6 +18,14 @@
       "notes": "Official GACODE TGLF outputs and their exact solver-input custody fixtures."
     },
     {
+      "id": "CC-BY-SA-4.0",
+      "redistributable": true,
+      "attribution_required": true,
+      "citation_required": true,
+      "requires_license_notice": true,
+      "notes": "FAIR-MAST source data and source-derived evidence under Creative Commons Attribution-ShareAlike 4.0 International."
+    },
+    {
       "id": "synthetic-v1",
       "redistributable": true,
       "attribution_required": false,
@@ -419,6 +427,15 @@
       "source_type": "documentation",
       "source": "Repository-authored provenance manifest for the MAST forced-VDE open-data disruption pilot (CC-BY-SA-4.0 source data): per-object SHA-256 digests, source URLs and rejected-candidate log.",
       "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "mast_complete_magnetic_archive_evidence",
+      "glob": "mast/disruption_shots/MAGNETIC_*.json",
+      "source_type": "source_derived_reference_evidence",
+      "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
+      "license": "CC-BY-SA-4.0",
+      "citation": "UKAEA FAIR-MAST, shot 27707 magnetics group, https://mastapp.site/; ingestion mapping revision ab435c799d892956fb042d55391f7d1be0c950e6.",
+      "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/."
     }
   ]
 }
