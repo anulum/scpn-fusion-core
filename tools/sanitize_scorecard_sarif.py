@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — OpenSSF Scorecard SARIF Sanitizer
-"""Remove upstream placeholder locations from repository-level Scorecard SARIF."""
+"""Map upstream Scorecard placeholders to explicit repository policy anchors."""
 
 from __future__ import annotations
 
@@ -19,6 +19,10 @@ from typing import Any
 
 
 PLACEHOLDER_URI = "no file associated with this alert"
+REPOSITORY_ANCHORS = {
+    "CodeReviewID": "CONTRIBUTING.md",
+    "VulnerabilitiesID": "SECURITY.md",
+}
 
 
 class ScorecardSarifError(ValueError):
@@ -38,7 +42,7 @@ def _array(value: Any, *, context: str) -> list[Any]:
 
 
 def sanitize_scorecard_sarif(payload: Any) -> int:
-    """Remove only the known non-URI placeholder and return the removal count."""
+    """Replace known pseudo-URIs and return the replacement count."""
     root = _object(payload, context="SARIF root")
     if root.get("version") != "2.1.0":
         raise ScorecardSarifError("SARIF version must be '2.1.0'")
@@ -60,7 +64,6 @@ def sanitize_scorecard_sarif(payload: Any) -> int:
                 locations_value,
                 context=f"runs[{run_index}].results[{result_index}].locations",
             )
-            retained: list[Any] = []
             for location_index, location_value in enumerate(locations):
                 location = _object(
                     location_value,
@@ -70,18 +73,28 @@ def sanitize_scorecard_sarif(payload: Any) -> int:
                 )
                 physical = location.get("physicalLocation")
                 if not isinstance(physical, dict):
-                    retained.append(location_value)
                     continue
                 artifact = physical.get("artifactLocation")
                 if not isinstance(artifact, dict) or artifact.get("uri") != PLACEHOLDER_URI:
-                    retained.append(location_value)
                     continue
+                rule_id = result.get("ruleId")
+                if not isinstance(rule_id, str) or rule_id not in REPOSITORY_ANCHORS:
+                    raise ScorecardSarifError(
+                        f"unmapped repository-level Scorecard rule {rule_id!r}"
+                    )
+                anchor = REPOSITORY_ANCHORS[rule_id]
+                artifact["uri"] = anchor
+                properties = result.get("properties")
+                if properties is None:
+                    properties = {}
+                    result["properties"] = properties
+                if not isinstance(properties, dict):
+                    raise ScorecardSarifError(
+                        f"runs[{run_index}].results[{result_index}].properties must be an object"
+                    )
+                properties["scpn.repositoryLevelAnchor"] = anchor
+                properties["scpn.originalArtifactLocationUri"] = PLACEHOLDER_URI
                 removed += 1
-
-            if retained:
-                result["locations"] = retained
-            else:
-                result.pop("locations", None)
 
     return removed
 
@@ -92,6 +105,10 @@ def sanitize_file(path: Path) -> int:
         payload: Any = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise ScorecardSarifError(f"{path}: cannot read valid UTF-8 JSON: {exc}") from exc
+
+    for anchor in REPOSITORY_ANCHORS.values():
+        if not (path.parent / anchor).is_file():
+            raise ScorecardSarifError(f"{path}: repository anchor is missing: {anchor}")
 
     removed = sanitize_scorecard_sarif(payload)
     serialized = json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
@@ -121,7 +138,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("path", type=Path, help="Scorecard SARIF file")
     args = parser.parse_args(argv)
     removed = sanitize_file(args.path)
-    print(f"sanitized {args.path}: removed {removed} placeholder location(s)")
+    print(f"sanitized {args.path}: replaced {removed} placeholder location(s)")
     return 0
 
 

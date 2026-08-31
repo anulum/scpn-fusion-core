@@ -17,6 +17,7 @@ import pytest
 from tools.validate_cyclonedx_sbom import SbomValidationError, validate_sbom
 from tools.sanitize_scorecard_sarif import (
     PLACEHOLDER_URI,
+    REPOSITORY_ANCHORS,
     ScorecardSarifError,
     sanitize_file,
     sanitize_scorecard_sarif,
@@ -164,32 +165,49 @@ def test_every_checkout_workflow_configures_default_branch() -> None:
     assert not violations, "\n".join(violations)
 
 
-def _scorecard_sarif(*locations: object) -> dict[str, object]:
+def _scorecard_sarif(rule_id: str, *locations: object) -> dict[str, object]:
     return {
         "version": "2.1.0",
-        "runs": [{"results": [{"locations": list(locations)}]}],
+        "runs": [{"results": [{"ruleId": rule_id, "locations": list(locations)}]}],
     }
 
 
-def test_scorecard_sarif_removes_only_placeholder_locations() -> None:
-    """Repository-only findings lose the invalid upstream pseudo-URI."""
+def test_scorecard_sarif_maps_placeholder_and_preserves_real_location() -> None:
+    """Repository findings gain a real anchor without changing real locations."""
     real_location = {"physicalLocation": {"artifactLocation": {"uri": "src/scpn_fusion/core.py"}}}
     placeholder = {"physicalLocation": {"artifactLocation": {"uri": PLACEHOLDER_URI}}}
-    payload = _scorecard_sarif(placeholder, real_location)
+    payload = _scorecard_sarif("VulnerabilitiesID", placeholder, real_location)
 
     assert sanitize_scorecard_sarif(payload) == 1
     result = payload["runs"][0]["results"][0]  # type: ignore[index]
-    assert result["locations"] == [real_location]
+    locations = result["locations"]
+    assert locations[0]["physicalLocation"]["artifactLocation"]["uri"] == "SECURITY.md"
+    assert locations[1] == real_location
+    assert result["properties"] == {
+        "scpn.repositoryLevelAnchor": "SECURITY.md",
+        "scpn.originalArtifactLocationUri": PLACEHOLDER_URI,
+    }
 
 
-def test_scorecard_sarif_removes_empty_locations_member() -> None:
-    """A result with no file association remains valid as a global result."""
+def test_scorecard_sarif_maps_code_review_to_contributing_policy() -> None:
+    """The code-review finding uses its semantically relevant policy anchor."""
     placeholder = {"physicalLocation": {"artifactLocation": {"uri": PLACEHOLDER_URI}}}
-    payload = _scorecard_sarif(placeholder)
+    payload = _scorecard_sarif("CodeReviewID", placeholder)
 
     assert sanitize_scorecard_sarif(payload) == 1
     result = payload["runs"][0]["results"][0]  # type: ignore[index]
-    assert "locations" not in result
+    assert (
+        result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] == "CONTRIBUTING.md"
+    )
+
+
+def test_scorecard_sarif_rejects_unknown_repository_finding() -> None:
+    """Future placeholder-bearing rules require an explicit truthful anchor."""
+    placeholder = {"physicalLocation": {"artifactLocation": {"uri": PLACEHOLDER_URI}}}
+    payload = _scorecard_sarif("UnknownRuleID", placeholder)
+
+    with pytest.raises(ScorecardSarifError, match="unmapped repository-level"):
+        sanitize_scorecard_sarif(payload)
 
 
 @pytest.mark.parametrize(
@@ -210,13 +228,29 @@ def test_scorecard_sarif_rejects_invalid_structure(payload: object) -> None:
 def test_scorecard_sarif_file_replacement_is_deterministic(tmp_path: Path) -> None:
     """The CLI-facing file operation emits stable UTF-8 JSON."""
     placeholder = {"physicalLocation": {"artifactLocation": {"uri": PLACEHOLDER_URI}}}
+    for anchor in REPOSITORY_ANCHORS.values():
+        (tmp_path / anchor).write_text("policy\n", encoding="utf-8")
     path = tmp_path / "results.sarif"
-    path.write_text(json.dumps(_scorecard_sarif(placeholder)), encoding="utf-8")
+    path.write_text(
+        json.dumps(_scorecard_sarif("VulnerabilitiesID", placeholder)), encoding="utf-8"
+    )
 
     assert sanitize_file(path) == 1
     first = path.read_text(encoding="utf-8")
     assert sanitize_file(path) == 0
     assert path.read_text(encoding="utf-8") == first
+
+
+def test_scorecard_sarif_file_requires_tracked_policy_anchors(tmp_path: Path) -> None:
+    """The CLI fails before writing when a configured anchor is absent."""
+    placeholder = {"physicalLocation": {"artifactLocation": {"uri": PLACEHOLDER_URI}}}
+    path = tmp_path / "results.sarif"
+    original = json.dumps(_scorecard_sarif("VulnerabilitiesID", placeholder))
+    path.write_text(original, encoding="utf-8")
+
+    with pytest.raises(ScorecardSarifError, match="repository anchor is missing"):
+        sanitize_file(path)
+    assert path.read_text(encoding="utf-8") == original
 
 
 def test_scorecard_workflow_sanitizes_before_upload() -> None:
