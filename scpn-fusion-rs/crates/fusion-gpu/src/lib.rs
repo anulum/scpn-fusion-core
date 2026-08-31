@@ -96,6 +96,7 @@ impl GpuGsSolver {
             power_preference: wgpu::PowerPreference::HighPerformance,
             compatible_surface: None,
             force_fallback_adapter: false,
+            apply_limit_buckets: false,
         }))
         .map_err(|e| FusionError::ConfigError(format!("No suitable GPU adapter found: {e}")))?;
         let adapter_info = adapter.get_info();
@@ -503,7 +504,9 @@ impl GpuGsSolver {
             .map_err(|e| FusionError::ConfigError(format!("GPU download channel error: {e}")))?
             .map_err(|e| FusionError::ConfigError(format!("GPU buffer map failed: {e}")))?;
 
-        let data = buffer_slice.get_mapped_range();
+        let data = buffer_slice
+            .get_mapped_range()
+            .map_err(|e| FusionError::ConfigError(format!("GPU mapped range unavailable: {e}")))?;
         let result: Vec<f32> = bytemuck::cast_slice(&data).to_vec();
         drop(data);
         self.staging_buffer.unmap();
@@ -695,6 +698,7 @@ pub fn gpu_available() -> bool {
         power_preference: wgpu::PowerPreference::HighPerformance,
         compatible_surface: None,
         force_fallback_adapter: false,
+        apply_limit_buckets: false,
     })) else {
         return false;
     };
@@ -711,6 +715,7 @@ pub fn gpu_info() -> Option<String> {
         power_preference: wgpu::PowerPreference::HighPerformance,
         compatible_surface: None,
         force_fallback_adapter: false,
+        apply_limit_buckets: false,
     }))
     .ok()?;
     let info = adapter.get_info();
