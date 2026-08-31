@@ -2971,7 +2971,7 @@
     "python_capability_classes": 620,
     "python_capability_source_modules": 356,
     "rust_workspace_crates": 13,
-    "test_files": 637
+    "test_files": 638
   },
   "documentation": {
     "public_pages": [
@@ -3190,6 +3190,7 @@
       "tests/test_current_diffusion.py",
       "tests/test_current_diffusion_nonadiabatic.py",
       "tests/test_current_drive.py",
+      "tests/test_cyclonedx_sbom_validator.py",
       "tests/test_dashboard_generator.py",
       "tests/test_dashboard_launcher.py",
       "tests/test_data_paths.py",
