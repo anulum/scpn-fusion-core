@@ -6,6 +6,28 @@ The IO subpackage provides data-interoperability adapters for the IMAS
 (Integrated Modelling & Analysis Suite) data exchange standard used in
 the fusion community.
 
+Complete FAIR-MAST Magnetic Archives
+------------------------------------
+
+The complete magnetic archive surface preserves every source object, decoded
+array and native clock. It is evidence transport only and carries no actuation
+authority.
+
+.. automodule:: scpn_fusion.io.mast_magnetic_archive_codec
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scpn_fusion.io.mast_magnetic_archive
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scpn_fusion.io.mast_magnetic_archive_acquisition
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 IMAS Connector
 ----------------
 

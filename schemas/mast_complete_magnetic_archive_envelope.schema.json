@@ -1,0 +1,307 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.li/schemas/scpn-fusion-core/mast-complete-magnetic-archive-envelope.v1.json",
+  "title": "SCPN Fusion Core complete FAIR-MAST magnetic archive envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payload", "payload_sha256", "schema", "schema_version"],
+  "properties": {
+    "schema": {
+      "const": "scpn-fusion-core.mast-complete-magnetic-archive-envelope.v1"
+    },
+    "schema_version": {"const": "1.0.0"},
+    "payload_sha256": {"$ref": "#/$defs/sha256"},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archive",
+        "arrays",
+        "authority",
+        "clocks",
+        "completeness",
+        "event_id",
+        "event_identity_state",
+        "facility",
+        "observation_id",
+        "producer_artifacts",
+        "producer_project",
+        "provenance",
+        "qualification",
+        "reactor_configuration",
+        "shot_id",
+        "source_archive",
+        "source_ingestion_revision",
+        "source_ingestion_tree_state"
+      ],
+      "properties": {
+        "archive": {"$ref": "#/$defs/archive"},
+        "arrays": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/array"}
+        },
+        "authority": {"$ref": "#/$defs/authority"},
+        "clocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/clock"}
+        },
+        "completeness": {"$ref": "#/$defs/completeness"},
+        "event_id": {"type": "null"},
+        "event_identity_state": {"const": "unresolved_facility_mapping"},
+        "facility": {"const": "MAST"},
+        "observation_id": {
+          "type": "string",
+          "pattern": "^mast-[1-9][0-9]*-complete-magnetics-[0-9a-f]{16}$"
+        },
+        "producer_artifacts": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/artifact"}
+        },
+        "producer_project": {"const": "SCPN-FUSION-CORE"},
+        "provenance": {"$ref": "#/$defs/provenance"},
+        "qualification": {"$ref": "#/$defs/qualification"},
+        "reactor_configuration": {"const": "spherical_tokamak"},
+        "shot_id": {"type": "integer", "minimum": 1},
+        "source_archive": {"const": "FAIR-MAST"},
+        "source_ingestion_revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "source_ingestion_tree_state": {"enum": ["clean", "dirty"]}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "group",
+        "group_metadata",
+        "group_metadata_sha256",
+        "metadata_path",
+        "root_url",
+        "zarr_format"
+      ],
+      "properties": {
+        "group": {"const": "magnetics"},
+        "group_metadata": {"type": "object"},
+        "group_metadata_sha256": {"$ref": "#/$defs/sha256"},
+        "metadata_path": {"type": "string", "pattern": "/magnetics/zarr\\.json$"},
+        "root_url": {"type": "string", "format": "uri"},
+        "zarr_format": {"const": 3}
+      }
+    },
+    "source_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes", "source_url"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "source_url": {"type": "string", "format": "uri"}
+      }
+    },
+    "array": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archive_path",
+        "attributes",
+        "clock_dimensions",
+        "data_object_paths",
+        "data_type",
+        "decoded_content_sha256",
+        "decoded_nonfinite_count",
+        "decoded_value_count",
+        "dimension_names",
+        "metadata_object_path",
+        "metadata_object_sha256",
+        "name",
+        "shape",
+        "zarr_metadata"
+      ],
+      "properties": {
+        "archive_path": {"type": "string", "minLength": 1},
+        "attributes": {"type": "object"},
+        "clock_dimensions": {"type": "array", "items": {"type": "string"}},
+        "data_object_paths": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "data_type": {},
+        "decoded_content_sha256": {"$ref": "#/$defs/sha256"},
+        "decoded_nonfinite_count": {"type": "integer", "minimum": 0},
+        "decoded_value_count": {"type": "integer", "minimum": 0},
+        "dimension_names": {"type": "array", "items": {"type": "string"}},
+        "metadata_object_path": {"type": "string", "minLength": 1},
+        "metadata_object_sha256": {"$ref": "#/$defs/sha256"},
+        "name": {"type": "string", "minLength": 1},
+        "shape": {"type": "array", "items": {"type": "integer", "minimum": 0}},
+        "zarr_metadata": {"type": "object"}
+      }
+    },
+    "clock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "clock_kind_candidate",
+        "clock_qualification",
+        "finite",
+        "first_value_s",
+        "last_value_s",
+        "mapping_evidence_claimed",
+        "maximum_interval_s",
+        "mean_interval_s",
+        "minimum_interval_s",
+        "name",
+        "sample_count",
+        "strictly_increasing",
+        "units"
+      ],
+      "properties": {
+        "clock_kind_candidate": {"const": "shot_relative"},
+        "clock_qualification": {"const": "unresolved"},
+        "finite": {"const": true},
+        "first_value_s": {"type": "number"},
+        "last_value_s": {"type": "number"},
+        "mapping_evidence_claimed": {"const": false},
+        "maximum_interval_s": {"type": "number", "exclusiveMinimum": 0},
+        "mean_interval_s": {"type": "number", "exclusiveMinimum": 0},
+        "minimum_interval_s": {"type": "number", "exclusiveMinimum": 0},
+        "name": {"type": "string", "minLength": 1},
+        "sample_count": {"type": "integer", "minimum": 2},
+        "strictly_increasing": {"const": true},
+        "units": {"const": "s"}
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "license",
+        "limitations",
+        "magnetic_group_manifest_sha256",
+        "object_count",
+        "objects",
+        "parent_download_manifest_sha256",
+        "parent_object_count",
+        "parent_total_bytes",
+        "retrieved_at_utc",
+        "schema",
+        "sha256",
+        "total_bytes"
+      ],
+      "properties": {
+        "license": {"type": "object"},
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "magnetic_group_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "object_count": {"type": "integer", "minimum": 1},
+        "objects": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/source_object"}
+        },
+        "parent_download_manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "parent_object_count": {"type": "integer", "minimum": 1},
+        "parent_total_bytes": {"type": "integer", "minimum": 1},
+        "retrieved_at_utc": {"type": "string", "format": "date-time"},
+        "schema": {"const": "scpn-fusion-open-disruption-data-provenance.v1"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "total_bytes": {"type": "integer", "minimum": 1}
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "array_count",
+        "arrays_complete",
+        "clock_count",
+        "objects_complete",
+        "source_decoded"
+      ],
+      "properties": {
+        "array_count": {"type": "integer", "minimum": 1},
+        "arrays_complete": {"const": true},
+        "clock_count": {"type": "integer", "minimum": 1},
+        "objects_complete": {"const": true},
+        "source_decoded": {"const": true}
+      }
+    },
+    "qualification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "calibration_state",
+        "channel_geometry_mapping_state",
+        "classification_eligible",
+        "diagnostic_semantics_state",
+        "event_clock_state",
+        "observation_operator_state",
+        "phase_eligible",
+        "quality_state",
+        "raw_samples_present",
+        "semantic_ingress_eligible",
+        "source_kind",
+        "source_clock_relationship_state",
+        "synthetic",
+        "uncertainty_state",
+        "validity_state"
+      ],
+      "properties": {
+        "calibration_state": {"const": "unresolved"},
+        "channel_geometry_mapping_state": {"const": "unresolved"},
+        "classification_eligible": {"const": false},
+        "diagnostic_semantics_state": {"const": "source_preserved_unqualified"},
+        "event_clock_state": {"const": "unresolved"},
+        "observation_operator_state": {"const": "not_supplied"},
+        "phase_eligible": {"const": false},
+        "quality_state": {"const": "unknown"},
+        "raw_samples_present": {"const": true},
+        "semantic_ingress_eligible": {"const": false},
+        "source_kind": {"const": "physical_archive"},
+        "source_clock_relationship_state": {"const": "unresolved"},
+        "synthetic": {"const": false},
+        "uncertainty_state": {"const": "unknown"},
+        "validity_state": {"const": "unknown"}
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actionable",
+        "classification_performed",
+        "direct_actuation",
+        "execution_permitted",
+        "review_only"
+      ],
+      "properties": {
+        "actionable": {"const": false},
+        "classification_performed": {"const": false},
+        "direct_actuation": {"const": false},
+        "execution_permitted": {"const": false},
+        "review_only": {"const": true}
+      }
+    }
+  }
+}

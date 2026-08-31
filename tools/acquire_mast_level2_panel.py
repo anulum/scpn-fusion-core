@@ -5,12 +5,13 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — bounded FAIR-MAST Level-2 acquisition
-"""Acquire a bounded FAIR-MAST Level-2 benchmark panel.
+"""Acquire a bounded FAIR-MAST Level-2 summary benchmark panel.
 
 The script intentionally avoids downloading the whole FAIR-MAST archive. It
-loads only the groups used by the current disruption benchmark lane: ``summary``
-and ``magnetics``. fsspec's simplecache stores downloaded chunks under the
-repository-local cache directory by default.
+loads only the legacy ``summary`` diagnostic used by the local benchmark lane.
+Magnetic groups are forbidden on this partial path and must use the complete
+manifest-bound archive API. fsspec's simplecache stores downloaded chunks under
+the repository-local cache directory by default.
 """
 
 from __future__ import annotations
@@ -133,7 +134,7 @@ def write_report(path: Path, report: dict[str, Any]) -> None:
 
 
 def acquire_one(shot_id: int, cache_dir: Path, timeout_s: int) -> dict[str, Any]:
-    """Acquire summary and magnetic-probe groups for one shot in a subprocess."""
+    """Acquire only the legacy summary diagnostic for one shot in a subprocess."""
     root = repo_root()
     code = (
         "import json, sys; "
@@ -142,13 +143,11 @@ def acquire_one(shot_id: int, cache_dir: Path, timeout_s: int) -> dict[str, Any]
         "from scpn_fusion.io.mast_ingestor import MastIngestor; "
         f"ing=MastIngestor(cache_dir={str(cache_dir)!r}); "
         f"summary=ing.load_shot_summary({shot_id}); "
-        f"mag=ing.load_magnetic_probes({shot_id}); "
         "print(json.dumps({"
         f"'shot_id': {shot_id}, "
         "'summary_samples': int(len(summary.get('time', []))), "
         "'summary_keys': sorted(summary.keys()), "
-        "'magnetic_keys': sorted(mag.keys()), "
-        "'magnetic_samples': int(len(mag.get('time', [])))"
+        "'magnetic_contract': 'complete_group_required'"
         "}))"
     )
     env = os.environ.copy()
@@ -220,10 +219,10 @@ def main() -> int:
     else:
         targets = select_targets(catalog, args.recent_count)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    report_path = run_dir / f"level2_benchmark_panel_{run_id}.json"
+    report_path = run_dir / f"level2_summary_panel_{run_id}.json"
 
     report: dict[str, Any] = {
-        "schema": "scpn-control.mast-level2-benchmark-panel-run.v1",
+        "schema": "scpn-fusion.mast-level2-summary-panel-run.v1",
         "created_utc": utc_now(),
         "repo": str(repo_root()),
         "cache_dir": str(cache_dir),
@@ -231,9 +230,9 @@ def main() -> int:
         "catalog_min_shot": catalog[0] if catalog else None,
         "catalog_max_shot": catalog[-1] if catalog else None,
         "selection_policy": (
-            "explicit shot retry panel"
+            "explicit summary-shot retry panel"
             if args.shots
-            else "known candidate disruption shots + neighboring controls + capped recent-shot panel"
+            else "known candidate disruption summaries + neighboring controls + capped recent summaries"
         ),
         "target_count": len(targets),
         "targets": targets,

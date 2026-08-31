@@ -4,6 +4,13 @@
 
 ### Added
 
+- Add a generic complete FAIR-MAST magnetic archive contract with atomic
+  acquisition, full object and decoded-array verification, canonical JSON
+  transport, JSON Schema, all native clocks, exact Zarr v3 metadata, licence
+  and producer/source provenance, and permanent review-only authority. A
+  dedicated hash-locked Python 3.12 workflow reproduces the tracked full shot
+  witness from every declared source object; partial first-probe and
+  first-ten-variable magnetic paths now fail closed.
 - Add `scpn_fusion.integrations.torax`, a versioned process-isolated public
   contract for real pinned TORAX 1.4.3 execution. Requests retain the complete
   TORAX configuration while checking unit-bearing typed state/control bindings;

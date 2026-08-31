@@ -140,6 +140,9 @@ def test_architecture_map_extension_shape() -> None:
     }
     assert all({"kind", "entry"} <= set(i) for i in ext["interfaces"])
     assert all({"name", "schema_ref"} <= set(w) for w in ext["wire_formats"])
+    assert {wire_format["name"] for wire_format in ext["wire_formats"]} >= {
+        "FAIR-MAST-complete-magnetics"
+    }
     assert all({"sibling", "adapter", "wire_format"} <= set(c) for c in ext["cross_repo"])
     assert {"executed", "bounded", "feasibility_only", "closed"} <= set(ext["boundaries"])
 

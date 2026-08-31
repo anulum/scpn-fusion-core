@@ -25,6 +25,8 @@ from typing import Any, Optional, cast
 import numpy as np
 from numpy.typing import NDArray
 
+from .mast_magnetic_archive_codec import MastMagneticArchiveValidationError
+
 logger = logging.getLogger(__name__)
 
 # 1. Resolve repository-hosted external libraries path
@@ -145,28 +147,21 @@ class MastIngestor:
             "density": density,
         }
 
+    @staticmethod
     def load_magnetic_probes(
-        self, shot_id: int, probe_ids: Optional[list[str]] = None
+        shot_id: int, probe_ids: Optional[list[str]] = None
     ) -> dict[str, NDArray[np.float64]]:
-        """Load raw magnetic probe signals."""
-        if xr is None:
-            raise ImportError("MAST ingestion requires xarray.")
-        url = f"s3://{self.BUCKET_NAME}/level2/shots/{shot_id}.zarr"
+        """Refuse the retired partial-probe path.
 
-        fs = self._filesystem()
-        store = fs.get_mapper(url)
-
-        ds = xr.open_zarr(store, group="magnetics", consolidated=True)
-
-        if probe_ids is None:
-            probe_ids = list(ds.data_vars)[:10]
-
-        out: dict[str, NDArray[np.float64]] = {"time": np.asarray(ds.time.values, dtype=np.float64)}
-        for pid in probe_ids:
-            if pid in ds.data_vars:
-                out[pid] = np.asarray(ds[pid].values, dtype=np.float64)
-
-        return out
+        Magnetic data must enter through
+        :func:`acquire_mast_complete_magnetic_archive`; selecting probes here
+        would discard objects, clocks, geometry, attributes and provenance.
+        """
+        del shot_id, probe_ids
+        raise MastMagneticArchiveValidationError(
+            "partial FAIR-MAST magnetic reads are forbidden; use "
+            "acquire_mast_complete_magnetic_archive with a complete provenance manifest"
+        )
 
 
 if __name__ == "__main__":

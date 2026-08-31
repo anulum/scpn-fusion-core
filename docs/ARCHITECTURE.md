@@ -243,10 +243,14 @@ The repository can ingest the following external formats:
 | **NPZ** | `io/tokamak_disruption_archive`, `tokamak_synthetic_archive`, weights loaders | shot time-series, disruption flags, neural weights (loaded via DoS-bounded `safe_loaders`, no pickle) |
 | **ITPA CSV** | `io/tokamak_archive` | H-mode confinement reference (Ip, BT, H98y2, κ, δ, τ_E) |
 | **MDSplus (live)** | `io/tokamak_archive.fetch_mdsplus_profiles` | live facility data (β_N, q95, τ_E, contours, toroidal modes) — optional dependency |
-| **Zarr / S3 (FAIR MAST)** | `io/mast_ingestor` | MAST (UKAEA) public shot summaries + magnetic probes — optional dependency |
+| **Zarr v3 / S3 (FAIR MAST)** | `io/mast_magnetic_archive*` | complete, hash-bound MAST magnetic groups with every object, array, native clock, attribute, licence and qualification boundary; Python ≥3.11 optional profile |
 | **JSON config** | `core/fusion_kernel`, CLI modes | FusionKernel config (grid, coils, boundary, plasma profiles); bounded depth/size |
 
 `io/safe_loaders.py` enforces size bounds and disables pickle on all JSON/NPZ loads.
+The older `io/mast_ingestor` array convenience path is not the complete magnetic
+archive contract and is ineligible as physical control evidence. The complete
+contract is documented in
+[`MAST_COMPLETE_MAGNETIC_ARCHIVE.md`](MAST_COMPLETE_MAGNETIC_ARCHIVE.md).
 
 ---
 
@@ -256,6 +260,7 @@ The repository can ingest the following external formats:
 |---|---|---|
 | **IMAS IDS (JSON)** | `io/imas_connector_storage.write_ids`, `validation/torax_imas_interchange.py` | serialized equilibrium/core_profiles/summary/core_transport IDS, including the tracked TORAX basic-config `core_profiles` fixture |
 | **GEQDSK** | `core/eqdsk.write_geqdsk` | EFIT-format equilibrium |
+| **Canonical JSON magnetic archive envelope** | `io/mast_magnetic_archive*` | complete FAIR-MAST object/array/clock evidence with source and producer digests, unresolved qualification, and review-only authority |
 | **`.scpnctl.json`** | `scpn/artifact.save_artifact` | compiled SNN controller artifact (topology + weights + readout + packed bitstreams) |
 | **NPZ** | surrogate/training modules | neural weights, surrogate datasets |
 | **PNG figures** | `diagnostics/`, `ui/dashboard_generator` | tomography reconstructions, sensor geometry, Poincaré maps |

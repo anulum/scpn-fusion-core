@@ -11,7 +11,7 @@
 | Python capability classes | 620 |
 | Capability documentation pages | 64 |
 | Rust workspace crates | 13 |
-| Optional extras | 13 |
+| Optional extras | 14 |
 | Python test files | 638 |
 | Public documentation pages | 64 |
 | GitHub Actions workflows | 15 |

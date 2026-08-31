@@ -91,42 +91,12 @@ def initialise_base_weights(n_neurons: int = 64, seed: int = 1729) -> NDArray[np
 
 
 def load_shot(ingestor: MastIngestor, shot_id: int) -> ShotTrace | None:
-    """Load and align the summary current and first available magnetic trace."""
-    try:
-        summary = ingestor.load_shot_summary(shot_id)
-        magnetics = ingestor.load_magnetic_probes(shot_id)
-
-        time_s = np.asarray(summary["time"], dtype=np.float64)
-        plasma_current_a = np.asarray(summary["ip"], dtype=np.float64)
-        max_ip = float(np.max(plasma_current_a))
-
-        flattop = np.where(plasma_current_a > 0.8 * max_ip)[0]
-        if len(flattop) == 0:
-            return None
-
-        disruption_idx = int(flattop[-1])
-        for idx in range(disruption_idx, len(plasma_current_a)):
-            if plasma_current_a[idx] < 0.2 * max_ip:
-                disruption_idx = idx
-                break
-
-        magnetic_keys = [key for key in magnetics if key != "time"]
-        if not magnetic_keys:
-            return None
-        magnetic_trace_t = np.asarray(magnetics[magnetic_keys[0]], dtype=np.float64).flatten()
-        if len(magnetic_trace_t) != len(time_s):
-            sample_idx = np.linspace(0, len(magnetic_trace_t) - 1, len(time_s)).astype(int)
-            magnetic_trace_t = magnetic_trace_t[sample_idx]
-
-        return ShotTrace(
-            time_s=time_s,
-            plasma_current_a=plasma_current_a,
-            magnetic_trace_t=magnetic_trace_t,
-            disruption_time_s=float(time_s[disruption_idx]),
-            source="fair_mast_zarr",
-        )
-    except Exception:
-        return None
+    """Refuse the retired first-probe and index-resampling live path."""
+    del ingestor, shot_id
+    raise RuntimeError(
+        "live FAIR-MAST SNN input is disabled until complete-group channel, "
+        "calibration and clock mappings are qualified"
+    )
 
 
 def _resample_to_summary_time(trace: NDArray[np.float64], n_time: int) -> NDArray[np.float64]:
@@ -387,12 +357,13 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    ingestor: MastIngestor | None = None
     if args.enable_fair_mast:
-        try:
-            ingestor = MastIngestor(cache_dir=args.cache_dir)
-        except ImportError:
-            ingestor = None
+        raise SystemExit(
+            "--enable-fair-mast is disabled: the complete magnetic archive is "
+            "review-only until channel, calibration and clock mappings are qualified"
+        )
+
+    ingestor: MastIngestor | None = None
 
     try:
         weights, train_available_count = adapt_weights_from_sources(

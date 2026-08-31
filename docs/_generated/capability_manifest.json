@@ -2965,7 +2965,7 @@
   "counts": {
     "capability_documentation_pages": 64,
     "github_workflows": 15,
-    "optional_extras": 13,
+    "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 64,
     "python_capability_classes": 620,
@@ -3071,6 +3071,7 @@
       "full-physics",
       "fuzz",
       "gpu",
+      "mast",
       "ml",
       "mpi",
       "rl",

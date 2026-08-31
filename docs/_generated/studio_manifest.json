@@ -295,6 +295,10 @@
         "schema_ref": "scpn_fusion.io.imas_connector (ITER IMAS interface data structures)"
       },
       {
+        "name": "FAIR-MAST-complete-magnetics",
+        "schema_ref": "schemas/mast_complete_magnetic_archive_envelope.schema.json (complete source evidence; review-only and non-actuating)"
+      },
+      {
         "name": "studio-evidence",
         "schema_ref": "studio.*.v1 (9 evidence schemas from the bounded-claim ledger)"
       },

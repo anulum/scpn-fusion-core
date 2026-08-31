@@ -165,7 +165,7 @@ checksums, thresholds, grid or scaling evidence, and native comparisons.
 | Python capability classes | 620 |
 | Capability documentation pages | 64 |
 | Rust workspace crates | 13 |
-| Optional extras | 13 |
+| Optional extras | 14 |
 | Python test files | 638 |
 | Public documentation pages | 64 |
 | GitHub Actions workflows | 15 |
@@ -219,6 +219,7 @@ before plant deployment.
 | Read the current release and checksums | [`CHANGELOG.md`](CHANGELOG.md), [v4.0.0 release](https://github.com/anulum/scpn-fusion-core/releases/tag/v4.0.0) |
 | Reproduce benchmark claims | [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`RESULTS.md`](RESULTS.md) |
 | Download and reproduce the ITER-like synthetic baseline | [`docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md`](docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md) |
+| Reproduce the complete FAIR-MAST magnetic archive proof | [`docs/MAST_COMPLETE_MAGNETIC_ARCHIVE.md`](docs/MAST_COMPLETE_MAGNETIC_ARCHIVE.md) |
 | Track full-fidelity blockers | [`validation/reports/full_fidelity_end_to_end_campaign.md`](validation/reports/full_fidelity_end_to_end_campaign.md) |
 | Refresh checksummed full-reproduction evidence | [`validation/reports/full_reproduction_evidence.md`](validation/reports/full_reproduction_evidence.md) |
 | Choose a tutorial or notebook | [`docs/notebooks/README.md`](docs/notebooks/README.md), [`docs/sphinx/quickstart.rst`](docs/sphinx/quickstart.rst) |
@@ -825,6 +826,7 @@ cargo bench                      # Criterion benchmarks
 | **ITPA H-mode** | Verdoolaege et al., NF 61 (2021) | 53 shots from 24 machines |
 | **DIII-D disruptions** | Reference profiles (16 shots) | Locked mode, VDE, tearing, density, beta |
 | **Multi-machine GEQDSK** | Synthetic Solov'ev | 100 equilibria (DIII-D, JET, EAST, KSTAR, ASDEX-U) |
+| **FAIR-MAST complete magnetics** | UKAEA FAIR-MAST, CC BY-SA 4.0 | complete shot-group object and decoded-array contract; shot 27707 is the tracked full regression witness, with qualification and actuation authority fail-closed |
 
 ```bash
 python validation/validate_real_shots.py        # real-shot gate

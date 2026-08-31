@@ -82,6 +82,12 @@ studio = [
 benchmark = [
     "freegs>=0.6",
 ]
+mast = [
+    "fsspec>=2026.4,<2027; python_version >= '3.11'",
+    "s3fs>=2026.4,<2027; python_version >= '3.11'",
+    "xarray>=2026.4,<2027; python_version >= '3.11'",
+    "zarr>=3.1,<3.2; python_version >= '3.11'",
+]
 full-physics = [
     "freegs>=0.6",
     "omas>=0.70",
@@ -105,6 +111,10 @@ full = [
     "mpi4py>=4.1",
     "omas>=0.70",
     "maturin>=1.14.1,<2.0",
+    "fsspec>=2026.4,<2027; python_version >= '3.11'",
+    "s3fs>=2026.4,<2027; python_version >= '3.11'",
+    "xarray>=2026.4,<2027; python_version >= '3.11'",
+    "zarr>=3.1,<3.2; python_version >= '3.11'",
 ]
 
 [tool.setuptools]
@@ -222,6 +232,13 @@ files = [
     "tests/test_deeponet_training_modules.py",
     "tests/test_machine_conditioned_deeponet_training.py",
     "src/scpn_fusion/io/mast_ingestor.py",
+    "src/scpn_fusion/io/mast_magnetic_archive.py",
+    "src/scpn_fusion/io/mast_magnetic_archive_acquisition.py",
+    "src/scpn_fusion/io/mast_magnetic_archive_codec.py",
+    "tests/test_mast_magnetic_archive.py",
+    "tests/test_mast_magnetic_archive_acquisition.py",
+    "tests/test_mast_magnetic_archive_codec.py",
+    "tests/test_mast_magnetic_archive_validation.py",
     "src/scpn_fusion/io/safe_loaders.py",
     "tests/test_safe_loaders.py",
     "src/scpn_fusion/io/tokamak_live_payload.py",
@@ -503,6 +520,7 @@ files = [
     "tests/test_polyglot_gs_solver_comparison_report.py",
     "tests/test_solver_comparison.py",
     "validation/full_fidelity_end_to_end_campaign.py",
+    "validation/verify_mast_complete_magnetic_archive.py",
     "tests/test_full_fidelity_end_to_end_campaign.py",
     "validation/torax_imas_interchange.py",
     "tests/test_torax_imas_interchange.py",

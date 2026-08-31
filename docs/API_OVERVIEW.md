@@ -23,7 +23,7 @@ Important surfaces:
 | Engineering | `scpn_fusion.engineering` | Balance-of-plant and engineering utilities |
 | Nuclear | `scpn_fusion.nuclear` | Blanket, neutronics, and wall-interaction utilities |
 | HPC | `scpn_fusion.hpc` | Optional distributed and accelerator integration surfaces |
-| I/O | `scpn_fusion.io` | IMAS/OMAS and archive adapters |
+| I/O | `scpn_fusion.io` | IMAS/OMAS adapters and complete evidence-bound archive contracts |
 | Phase | `scpn_fusion.phase` | Kuramoto, UPDE, K_nm, and phase-stream bridge surfaces |
 | Studio federation | `scpn_fusion.studio` | Schema-A manifest, exactness comparator, architecture-map extension, and Studio manifest emitter |
 | UI | `scpn_fusion.ui` | Streamlit dashboard launcher, dashboard generator, and security-header helpers |
@@ -62,6 +62,17 @@ print(manifest.studio, manifest.studio_version)
 The Studio import is part of the repository surface; downstream Hub integration
 may additionally require the optional `studio` extra. Use the generated API
 pages for signatures and the linked tests/reports for behavioral guarantees.
+
+### Complete FAIR-MAST magnetic archives
+
+`scpn_fusion.io` exports `acquire_mast_complete_magnetic_archive`,
+`build_mast_complete_magnetic_archive_envelope`,
+`verify_mast_complete_magnetic_archive_source`, and
+`decode_mast_complete_magnetic_archive_envelope`. These surfaces preserve and
+verify the complete native magnetic group. The returned envelope is permanently
+review-only until separate authoritative channel, calibration, clock, quality,
+uncertainty, event-identity, and observation-operator evidence is supplied. See
+[`MAST_COMPLETE_MAGNETIC_ARCHIVE.md`](MAST_COMPLETE_MAGNETIC_ARCHIVE.md).
 
 ### Full runaway kinetic solver
 

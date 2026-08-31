@@ -1,0 +1,7 @@
+# FAIR-MAST Zarr v3 ingestion dependencies
+# Regenerate: uv pip compile requirements/mast.in --generate-hashes --python-version 3.12 --universal -o requirements/mast.txt
+-r minimal.in
+fsspec>=2026.4,<2027
+s3fs>=2026.4,<2027
+xarray>=2026.4,<2027
+zarr>=3.1,<3.2
