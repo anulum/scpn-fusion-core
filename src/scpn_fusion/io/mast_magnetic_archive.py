@@ -51,6 +51,7 @@ def build_mast_complete_magnetic_archive_envelope(
         Exact tracked parent provenance manifest containing every source object.
     shot_archive_root:
         Local root of the fully materialised ``<shot>.zarr`` archive.
+
     Returns
     -------
     MastCompleteMagneticArchiveEnvelope
