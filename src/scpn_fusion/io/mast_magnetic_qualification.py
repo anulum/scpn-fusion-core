@@ -17,7 +17,6 @@ from pathlib import Path
 from typing import Any, cast
 
 import numpy as np
-import yaml  # type: ignore[import-untyped]  # PyYAML does not ship inline types
 from numpy.typing import NDArray
 
 from .mast_magnetic_archive import MastMagneticArchiveDependencyError
@@ -537,6 +536,12 @@ def _open_zarr_group(path: Path) -> Any:
 
 
 def _parse_mapping(data: bytes) -> JsonObject:
+    try:
+        import yaml  # type: ignore[import-untyped]  # PyYAML does not ship inline types
+    except ImportError as exc:
+        raise MastMagneticArchiveDependencyError(
+            "MAST qualification requires Python >=3.11 and scpn-fusion[mast]"
+        ) from exc
     try:
         decoded = yaml.safe_load(data)
     except yaml.YAMLError as exc:
