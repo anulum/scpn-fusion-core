@@ -14,6 +14,7 @@
       "docs/FUTURE_APPLICATIONS.md",
       "docs/IEC_61508_ROADMAP.md",
       "docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md",
+      "docs/MAST_COMPLETE_MAGNETIC_ARCHIVE.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
       "docs/ONBOARDING.md",
@@ -1241,8 +1242,32 @@
         "path": "src/scpn_fusion/core/lh_transition.py"
       },
       {
+        "name": "MastCompleteMagneticArchiveEnvelope",
+        "path": "src/scpn_fusion/io/mast_magnetic_archive_codec.py"
+      },
+      {
         "name": "MastIngestor",
         "path": "src/scpn_fusion/io/mast_ingestor.py"
+      },
+      {
+        "name": "MastMagneticArchiveAcquisitionError",
+        "path": "src/scpn_fusion/io/mast_magnetic_archive_acquisition.py"
+      },
+      {
+        "name": "MastMagneticArchiveDependencyError",
+        "path": "src/scpn_fusion/io/mast_magnetic_archive.py"
+      },
+      {
+        "name": "MastMagneticArchiveValidationError",
+        "path": "src/scpn_fusion/io/mast_magnetic_archive_codec.py"
+      },
+      {
+        "name": "MastMagneticDiagnosticQualification",
+        "path": "src/scpn_fusion/io/mast_magnetic_qualification_codec.py"
+      },
+      {
+        "name": "MastMagneticDiagnosticQualificationError",
+        "path": "src/scpn_fusion/io/mast_magnetic_qualification_codec.py"
       },
       {
         "name": "MaxwellEvolutionConfig",
@@ -2860,6 +2885,11 @@
       "src/scpn_fusion/io/machine_conditioned_surrogate_cli.py",
       "src/scpn_fusion/io/machine_conditioned_surrogate_training.py",
       "src/scpn_fusion/io/mast_ingestor.py",
+      "src/scpn_fusion/io/mast_magnetic_archive.py",
+      "src/scpn_fusion/io/mast_magnetic_archive_acquisition.py",
+      "src/scpn_fusion/io/mast_magnetic_archive_codec.py",
+      "src/scpn_fusion/io/mast_magnetic_qualification.py",
+      "src/scpn_fusion/io/mast_magnetic_qualification_codec.py",
       "src/scpn_fusion/io/omas_free_boundary_inputs.py",
       "src/scpn_fusion/io/recoverable_npy_dataset.py",
       "src/scpn_fusion/io/safe_loaders.py",
@@ -2963,15 +2993,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 64,
-    "github_workflows": 15,
+    "capability_documentation_pages": 65,
+    "github_workflows": 16,
     "optional_extras": 14,
     "public_api_exports": 2,
-    "public_documentation_pages": 64,
-    "python_capability_classes": 620,
-    "python_capability_source_modules": 356,
+    "public_documentation_pages": 65,
+    "python_capability_classes": 626,
+    "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
-    "test_files": 638
+    "test_files": 645
   },
   "documentation": {
     "public_pages": [
@@ -2987,6 +3017,7 @@
       "docs/FUTURE_APPLICATIONS.md",
       "docs/IEC_61508_ROADMAP.md",
       "docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md",
+      "docs/MAST_COMPLETE_MAGNETIC_ARCHIVE.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
       "docs/ONBOARDING.md",
@@ -3101,6 +3132,7 @@
       ".github/workflows/docs.yml",
       ".github/workflows/freegs-strict.yml",
       ".github/workflows/freegsnke-inverse.yml",
+      ".github/workflows/mast-complete-magnetic-archive.yml",
       ".github/workflows/pre-commit.yml",
       ".github/workflows/publish.yml",
       ".github/workflows/pypi-downloads.yml",
@@ -3486,6 +3518,13 @@
       "tests/test_machine_conditioned_surrogate_training.py",
       "tests/test_marfe.py",
       "tests/test_mast_ingestor_acquisition.py",
+      "tests/test_mast_magnetic_archive.py",
+      "tests/test_mast_magnetic_archive_acquisition.py",
+      "tests/test_mast_magnetic_archive_codec.py",
+      "tests/test_mast_magnetic_archive_validation.py",
+      "tests/test_mast_magnetic_qualification.py",
+      "tests/test_mast_magnetic_qualification_codec.py",
+      "tests/test_mast_magnetic_qualification_validation.py",
       "tests/test_mast_validation_tools.py",
       "tests/test_mc_dropout_uncertainty.py",
       "tests/test_mesh_convergence_study.py",
