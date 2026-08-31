@@ -20,6 +20,7 @@ import argparse
 import ast
 import importlib
 import json
+import re
 import subprocess
 import sys
 from collections.abc import Iterable
@@ -47,6 +48,7 @@ DEFAULT_MARKDOWN_OUTPUT = Path("docs/_generated/capability_snapshot.md")
 DEFAULT_CONFIG = Path("tools/capability_manifest.toml")
 DEFAULT_SCHEMA_PATH = Path("schemas/capability_manifest.schema.json")
 DEFAULT_README = Path("README.md")
+DEFAULT_PROJECT_OVERVIEW = Path("docs/PROJECT_OVERVIEW.md")
 DEFAULT_MARKER_START = "<!-- capability-snapshot:start -->"
 DEFAULT_MARKER_END = "<!-- capability-snapshot:end -->"
 DEFAULT_PROJECT_LABEL = "SCPN Fusion Core"
@@ -68,6 +70,13 @@ DEFAULT_TESTS_ROOT = Path("tests")
 DEFAULT_DOCS_ROOT = Path("docs")
 DEFAULT_WORKFLOWS_ROOT = Path(".github/workflows")
 DEFAULT_RUST_WORKSPACE = Path("scpn-fusion-rs")
+PROJECT_OVERVIEW_INVENTORY_PATTERN = re.compile(
+    r"\| Static inventory \| "
+    r"\d+ Rust crates, "
+    r"\d+ Python capability modules, "
+    r"\d+ Python test files, and "
+    r"\d+ public documentation pages \|"
+)
 
 
 def _default_labels() -> dict[str, str]:
@@ -97,6 +106,7 @@ class CapabilityManifestConfig:
     readme_path: Path
     readme_marker_start: str
     readme_marker_end: str
+    project_overview_path: Path | None
     package_root: Path
     capability_sources: tuple[Path, ...]
     capability_docs: Path
@@ -133,6 +143,7 @@ def load_config(repo: Path, config_path: Path | None = None) -> CapabilityManife
         raw = tomllib.loads(path.read_text(encoding="utf-8"))
     paths = raw.get("paths", {})
     readme = raw.get("readme", {})
+    overview = raw.get("project_overview", {})
     labels = _default_labels()
     labels.update({str(key): str(value) for key, value in raw.get("labels", {}).items()})
     return CapabilityManifestConfig(
@@ -143,6 +154,11 @@ def load_config(repo: Path, config_path: Path | None = None) -> CapabilityManife
         readme_path=Path(readme.get("path", DEFAULT_README.as_posix())),
         readme_marker_start=str(readme.get("marker_start", DEFAULT_MARKER_START)),
         readme_marker_end=str(readme.get("marker_end", DEFAULT_MARKER_END)),
+        project_overview_path=(
+            Path(str(overview.get("path", DEFAULT_PROJECT_OVERVIEW.as_posix())))
+            if overview.get("enabled", False)
+            else None
+        ),
         package_root=Path(paths.get("package_root", DEFAULT_PACKAGE_ROOT.as_posix())),
         capability_sources=_configured_paths(
             paths,
@@ -361,6 +377,46 @@ def refresh_readme_block(
     return readme_path
 
 
+def render_project_overview_inventory(manifest: dict[str, Any]) -> str:
+    """Render the public overview row from canonical manifest counts."""
+    counts = manifest["counts"]
+    return (
+        "| Static inventory | "
+        f"{counts['rust_workspace_crates']} Rust crates, "
+        f"{counts['python_capability_source_modules']} Python capability modules, "
+        f"{counts['test_files']} Python test files, and "
+        f"{counts['public_documentation_pages']} public documentation pages |"
+    )
+
+
+def refresh_project_overview_inventory(
+    repo: Path,
+    manifest: dict[str, Any],
+    *,
+    config: CapabilityManifestConfig,
+) -> Path | None:
+    """Refresh the configured overview inventory row, if enabled."""
+    if config.project_overview_path is None:
+        return None
+    overview_path = repo / config.project_overview_path
+    if not overview_path.exists():
+        raise RuntimeError(f"missing project overview: {config.project_overview_path}")
+    text = overview_path.read_text(encoding="utf-8")
+    if len(PROJECT_OVERVIEW_INVENTORY_PATTERN.findall(text)) != 1:
+        raise RuntimeError(
+            f"{config.project_overview_path} must contain exactly one static inventory row"
+        )
+    refreshed, replacements = PROJECT_OVERVIEW_INVENTORY_PATTERN.subn(
+        render_project_overview_inventory(manifest),
+        text,
+        count=1,
+    )
+    if replacements != 1:  # Defensive: the exact-one guard above owns this invariant.
+        raise RuntimeError(f"failed to refresh {config.project_overview_path}")
+    overview_path.write_text(refreshed, encoding="utf-8")
+    return overview_path
+
+
 def write_outputs(
     manifest: dict[str, Any],
     *,
@@ -383,7 +439,7 @@ def refresh_outputs(
     markdown_output: Path | None = None,
     update_readme: bool = True,
 ) -> tuple[Path, Path, Path | None]:
-    """Regenerate JSON, Markdown, and optionally the README snapshot."""
+    """Regenerate inventory outputs and optionally public prose projections."""
     manifest = build_capability_manifest(repo, config)
     json_path, markdown_path = write_outputs(
         manifest,
@@ -397,6 +453,7 @@ def refresh_outputs(
             render_markdown_snapshot(manifest),
             config=config,
         )
+        refresh_project_overview_inventory(repo, manifest, config=config)
     return json_path, markdown_path, readme_path
 
 
@@ -469,6 +526,18 @@ def assert_outputs_current(
         readme_path = repo / config.readme_path
         if not _readme_block_matches(readme_path, expected_markdown, config=config):
             errors.append(f"stale README capability block: {config.readme_path}")
+        if config.project_overview_path is not None:
+            overview_path = repo / config.project_overview_path
+            expected_inventory = render_project_overview_inventory(manifest)
+            if not overview_path.exists():
+                errors.append(f"missing project overview: {config.project_overview_path}")
+            elif PROJECT_OVERVIEW_INVENTORY_PATTERN.findall(
+                overview_path.read_text(encoding="utf-8")
+            ) != [expected_inventory]:
+                errors.append(
+                    "stale project overview capability inventory: "
+                    f"{config.project_overview_path}"
+                )
     if errors:
         raise RuntimeError("; ".join(errors))
 
@@ -744,7 +813,11 @@ def main(argv: Iterable[str] | None = None) -> int:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--markdown-output", type=Path)
-    parser.add_argument("--no-readme", action="store_true")
+    parser.add_argument(
+        "--no-readme",
+        action="store_true",
+        help="skip README and other configured public prose projections",
+    )
     parser.add_argument("--validate", type=Path)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(list(argv) if argv is not None else None)
@@ -780,6 +853,8 @@ def main(argv: Iterable[str] | None = None) -> int:
     print(f"Wrote {markdown_path}")
     if readme_path is not None:
         print(f"Refreshed {readme_path}")
+        if config.project_overview_path is not None:
+            print(f"Refreshed {repo / config.project_overview_path}")
     return 0
 
 

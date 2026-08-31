@@ -37,6 +37,10 @@ path = "README.md"
 marker_start = "<!-- capability-snapshot:start -->"
 marker_end = "<!-- capability-snapshot:end -->"
 
+[project_overview]
+enabled = true
+path = "docs/PROJECT_OVERVIEW.md"
+
 [labels]
 version = "Package version"
 public_api_exports = "Public API exports"

@@ -547,12 +547,20 @@ def test_refresh_helpers_write_outputs_and_reject_missing_readme_markers() -> No
             markdown_output=repo / "custom/snapshot.md",
         )
         readme_path = tool.refresh_readme_block(repo, "fresh snapshot", config=config)
+        overview_path = tool.refresh_project_overview_inventory(
+            repo,
+            manifest,
+            config=config,
+        )
 
         assert json.loads(json_path.read_text(encoding="utf-8"))["project_label"]
         assert "Portable Fusion Project Capability Inventory" in markdown_path.read_text(
             encoding="utf-8"
         )
         assert "fresh snapshot" in readme_path.read_text(encoding="utf-8")
+        assert overview_path is not None
+        overview = overview_path.read_text(encoding="utf-8")
+        assert "1 Python test files" in overview
 
         readme_path.write_text("# Missing markers\n", encoding="utf-8")
         with pytest.raises(RuntimeError, match="missing capability snapshot markers"):
@@ -591,6 +599,22 @@ def test_output_drift_checks_report_missing_stale_and_readme_errors() -> None:
         with pytest.raises(RuntimeError, match="stale README capability block"):
             tool.assert_outputs_current(repo, config=config)
         tool.assert_outputs_current(repo, config=config, check_readme=False)
+
+        _write_file(
+            repo / config.readme_path,
+            "# Portable Fusion Project\n\n"
+            "<!-- capability-snapshot:start -->\nstale\n"
+            "<!-- capability-snapshot:end -->\n",
+        )
+        tool.refresh_outputs(repo, config=config)
+        assert config.project_overview_path is not None
+        overview_path = repo / config.project_overview_path
+        overview_path.write_text("# Missing inventory row\n", encoding="utf-8")
+        manifest = tool.build_capability_manifest(repo, config)
+        with pytest.raises(RuntimeError, match="stale project overview capability inventory"):
+            tool.assert_outputs_current(repo, config=config)
+        with pytest.raises(RuntimeError, match="exactly one static inventory row"):
+            tool.refresh_project_overview_inventory(repo, manifest, config=config)
 
 
 def test_inventory_helper_fallbacks_cover_optional_and_missing_surfaces() -> None:
@@ -635,7 +659,7 @@ def test_inventory_helper_fallbacks_cover_optional_and_missing_surfaces() -> Non
             repo=repo,
             exclude_parts=("internal",),
             display_root=repo / "docs",
-        ) == ["public.md"]
+        ) == ["PROJECT_OVERVIEW.md", "public.md"]
 
         _write_file(repo / "fallback-rs/Cargo.toml", "[workspace]\nmembers = 'not-a-list'\n")
         _write_file(
@@ -796,6 +820,15 @@ def _write_portable_fixture(repo: Path) -> None:
                 'marker_start = "<!-- capability-snapshot:start -->"',
                 'marker_end = "<!-- capability-snapshot:end -->"',
                 "",
+                "[project_overview]",
+                "enabled = true",
+                'path = "docs/PROJECT_OVERVIEW.md"',
+                "",
             ]
         ),
+    )
+    _write_file(
+        repo / "docs/PROJECT_OVERVIEW.md",
+        "| Static inventory | 0 Rust crates, 0 Python capability modules, "
+        "0 Python test files, and 0 public documentation pages | Source |\n",
     )
