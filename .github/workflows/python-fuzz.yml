@@ -41,6 +41,10 @@ jobs:
             max_len: 1048576
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        env:
+          GIT_CONFIG_COUNT: "1"
+          GIT_CONFIG_KEY_0: init.defaultBranch
+          GIT_CONFIG_VALUE_0: main
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
@@ -55,12 +59,19 @@ jobs:
           python -m pip install --require-hashes -r requirements/fuzz.txt
           python -m pip install --no-deps -e .
       - name: Run bounded Atheris campaign
-        run: >-
-          python fuzz/fuzz_${{ matrix.target }}.py
-          -atheris_runs=512
-          -max_len=${{ matrix.max_len }}
-          -timeout=10
-          -rss_limit_mb=2048
+        shell: bash
+        run: |
+          sanitizer="$(python -c 'import atheris; print(atheris.path())')/asan_with_fuzzer.so"
+          if [[ ! -r "${sanitizer}" ]]; then
+            echo "Atheris ASan/libFuzzer runtime is unavailable: ${sanitizer}" >&2
+            exit 1
+          fi
+          ASAN_OPTIONS=detect_leaks=0 LD_PRELOAD="${sanitizer}" \
+            python fuzz/fuzz_${{ matrix.target }}.py \
+              -atheris_runs=512 \
+              -max_len=${{ matrix.max_len }} \
+              -timeout=10 \
+              -rss_limit_mb=2048
       - name: Upload crash reproducer
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1

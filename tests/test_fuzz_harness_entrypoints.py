@@ -171,8 +171,13 @@ def test_python_fuzz_workflow_is_nightly_complete_and_bounded() -> None:
         "-atheris_runs=512",
         "-timeout=10",
         "-rss_limit_mb=2048",
+        "asan_with_fuzzer.so",
+        "ASAN_OPTIONS=detect_leaks=0",
+        'LD_PRELOAD="${sanitizer}"',
         "requirements/fuzz.txt",
         'SCPN_DISABLE_JULIA: "1"',
+        "GIT_CONFIG_KEY_0: init.defaultBranch",
+        "GIT_CONFIG_VALUE_0: main",
         "if: failure()",
     ):
         assert token in text
