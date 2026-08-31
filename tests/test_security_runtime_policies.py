@@ -209,10 +209,18 @@ def test_scorecard_sarif_file_requires_tracked_policy_anchors(tmp_path: Path) ->
     assert path.read_text(encoding="utf-8") == original
 
 
-def test_scorecard_workflow_sanitizes_before_upload() -> None:
-    """Both the artifact and code-scanning upload consume sanitized SARIF."""
+def test_scorecard_workflow_is_publishable_and_sanitizes_code_scanning_upload() -> None:
+    """Keep the attested producer uses-only and sanitize its downstream SARIF."""
     workflow = (ROOT / ".github/workflows/scorecard.yml").read_text(encoding="utf-8")
+    analysis_at = workflow.index("  analysis:")
+    scorecard_at = workflow.index("uses: ossf/scorecard-action@")
+    raw_artifact_at = workflow.index("name: scorecard-raw-results")
+    upload_job_at = workflow.index("  upload-sarif:")
     sanitize_at = workflow.index("python tools/sanitize_scorecard_sarif.py results.sarif")
-    artifact_at = workflow.index("uses: actions/upload-artifact@")
+    sanitized_artifact_at = workflow.index("name: scorecard-results\n", sanitize_at)
     sarif_at = workflow.index("uses: github/codeql-action/upload-sarif@")
-    assert sanitize_at < artifact_at < sarif_at
+
+    analysis_job = workflow[analysis_at:upload_job_at]
+    assert "run:" not in analysis_job
+    assert scorecard_at < raw_artifact_at < upload_job_at
+    assert upload_job_at < sanitize_at < sanitized_artifact_at < sarif_at
