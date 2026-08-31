@@ -48,18 +48,49 @@ The current upstream witness identifies its FAIR-MAST ingestion tree as
 `dirty`. That state is retained as evidence and cannot be presented as a clean
 upstream release, even though every served object is independently hash-bound.
 
-## Deliberate fail-closed boundary
+## Diagnostic qualification companion
 
-Some diagnostic signal and geometry coordinate cardinalities differ in the
-source archive. The contract preserves those arrays independently and does not
-invent positional correspondence. Calibration, event-clock mapping, validity,
-quality, uncertainty, and observation operators remain unresolved. Therefore
-the envelope is not eligible for phase inference, classification, semantic
-ingress, execution, or actuation.
+The immutable archive envelope remains the raw-source contract. A separate
+`mast-magnetic-diagnostic-qualification.v1` document now reproduces every fact
+that the exact FAIR-MAST ingestion mapping and complete shot can support:
 
-This is full acquisition fidelity, not full diagnostic qualification. Later
-qualification requires authoritative channel mapping, calibration, uncertainty,
-quality, and event-identity evidence without weakening this raw-source contract.
+- all 72 arrays are classified by role and all 11 measurements are covered;
+- every configured signal channel has per-channel and aggregate finite, NaN,
+  infinite, zero, unique-level, and minimum-positive-level-spacing statistics;
+- the applied scale, target-unit conversion intent, background sample range,
+  selected source, source channel list, shot validity range, and IMAS quantity
+  path are recorded for every measurement;
+- all four coordinate arrays are verified against the upstream Level-2
+  interpolation definitions;
+- all available signal-to-geometry identifiers are compared explicitly.
+
+These facts are derived from the exact upstream mapping at revision
+`ab435c799d892956fb042d55391f7d1be0c950e6`, whose tracked tree state is
+`dirty`. The four coordinates are therefore described as Level-2 archive grids,
+not raw instrument clocks. The saddle background correction `[0, 10]` is
+recorded as the sample-index range actually used by the ingestion code, not as
+a time interval.
+
+The source does not provide calibration lineage, transfer functions, provider
+quality flags, uncertainty, raw-instrument-clock relations, or a facility event
+identifier. Geometry associations are identifier correspondences only because
+the ingestion implementation does not establish a physical join. FAIR-MAST
+issue 211 reports numerical-resolution and saddle-NaN behaviour for shot 29980;
+the qualification records that limitation but does not assume it applies to
+the tracked shot 27707. Unsupported fields remain explicitly unresolved.
+
+The archive and qualification documents remain permanently review-only. They do
+not infer a plasma phase, classify a regime, enter semantic control ingress,
+execute a command, or actuate hardware. Full fidelity here means complete
+source/evidence accounting and explicit unknowns; it never means inventing
+missing authority.
+
+## Upstream evidence
+
+- [UKAEA FAIR-MAST repository](https://github.com/ukaea/fair-mast/)
+- [Pinned FAIR-MAST ingestion mapping](https://raw.githubusercontent.com/ukaea/fair-mast-ingestion/ab435c799d892956fb042d55391f7d1be0c950e6/mappings/level2/mast.yml)
+- [UKAEA MAST magnetic diagnostics publication record](https://scientific-publications.ukaea.uk/papers/mast-magnetic-diagnostics/)
+- [FAIR-MAST issue 211](https://github.com/ukaea/fair-mast/issues/211), retained with applicability to shot 27707 explicitly unassumed
 
 ## Reproduction
 
@@ -68,11 +99,13 @@ Install the isolated Python 3.12 profile and run the exact complete-group gate:
 ```bash
 python -m pip install --require-hashes -r requirements/mast.txt
 python -m pip install --no-deps -e .
-python validation/verify_mast_complete_magnetic_archive.py \
-  --report artifacts/mast-complete-magnetic-archive.json
+python validation/verify_mast_magnetic_diagnostic_qualification.py \
+  --report artifacts/mast-magnetic-diagnostic-qualification.json
 ```
 
 The dedicated `Complete FAIR-MAST Magnetic Archive` workflow performs that
-download-and-decode proof on every push and pull request. Raw Zarr objects are
-not committed; the repository retains the complete source manifest, canonical
-envelope, schema, hashes, provenance, and reproduction command.
+single authentic acquisition, complete archive verification, pinned mapping
+download, and byte-identical qualification reproduction on every push and pull
+request. Raw Zarr objects are not committed; the repository retains the source
+manifest, canonical archive and qualification documents, schemas, hashes,
+provenance, and reproduction command.

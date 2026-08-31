@@ -68,10 +68,14 @@ pages for signatures and the linked tests/reports for behavioral guarantees.
 `scpn_fusion.io` exports `acquire_mast_complete_magnetic_archive`,
 `build_mast_complete_magnetic_archive_envelope`,
 `verify_mast_complete_magnetic_archive_source`, and
-`decode_mast_complete_magnetic_archive_envelope`. These surfaces preserve and
-verify the complete native magnetic group. The returned envelope is permanently
-review-only until separate authoritative channel, calibration, clock, quality,
-uncertainty, event-identity, and observation-operator evidence is supplied. See
+`decode_mast_complete_magnetic_archive_envelope`. The companion public surfaces
+`build_mast_magnetic_diagnostic_qualification`,
+`verify_mast_magnetic_diagnostic_qualification`, and
+`decode_mast_magnetic_diagnostic_qualification` reproduce complete applied
+mapping/transform, archive-grid, empirical-quality, identifier-correspondence,
+validity, and unresolved-field evidence. Both contracts are permanently
+review-only and grant no phase, classification, execution, or actuation
+authority. See
 [`MAST_COMPLETE_MAGNETIC_ARCHIVE.md`](MAST_COMPLETE_MAGNETIC_ARCHIVE.md).
 
 ### Full runaway kinetic solver

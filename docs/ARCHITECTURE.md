@@ -243,7 +243,7 @@ The repository can ingest the following external formats:
 | **NPZ** | `io/tokamak_disruption_archive`, `tokamak_synthetic_archive`, weights loaders | shot time-series, disruption flags, neural weights (loaded via DoS-bounded `safe_loaders`, no pickle) |
 | **ITPA CSV** | `io/tokamak_archive` | H-mode confinement reference (Ip, BT, H98y2, κ, δ, τ_E) |
 | **MDSplus (live)** | `io/tokamak_archive.fetch_mdsplus_profiles` | live facility data (β_N, q95, τ_E, contours, toroidal modes) — optional dependency |
-| **Zarr v3 / S3 (FAIR MAST)** | `io/mast_magnetic_archive*` | complete, hash-bound MAST magnetic groups with every object, array, native clock, attribute, licence and qualification boundary; Python ≥3.11 optional profile |
+| **Zarr v3 / S3 (FAIR MAST)** | `io/mast_magnetic_archive*`, `io/mast_magnetic_qualification*` | complete, hash-bound MAST magnetic groups plus source-derived mapping, transform, Level-2 grid, empirical-quality, identifier-correspondence and explicit unresolved-field evidence; Python ≥3.11 optional profile |
 | **JSON config** | `core/fusion_kernel`, CLI modes | FusionKernel config (grid, coils, boundary, plasma profiles); bounded depth/size |
 
 `io/safe_loaders.py` enforces size bounds and disables pickle on all JSON/NPZ loads.
@@ -260,7 +260,8 @@ contract is documented in
 |---|---|---|
 | **IMAS IDS (JSON)** | `io/imas_connector_storage.write_ids`, `validation/torax_imas_interchange.py` | serialized equilibrium/core_profiles/summary/core_transport IDS, including the tracked TORAX basic-config `core_profiles` fixture |
 | **GEQDSK** | `core/eqdsk.write_geqdsk` | EFIT-format equilibrium |
-| **Canonical JSON magnetic archive envelope** | `io/mast_magnetic_archive*` | complete FAIR-MAST object/array/clock evidence with source and producer digests, unresolved qualification, and review-only authority |
+| **Canonical JSON magnetic archive envelope** | `io/mast_magnetic_archive*` | complete FAIR-MAST object/array/archive-grid evidence with source and producer digests and review-only authority |
+| **Canonical JSON magnetic diagnostic qualification** | `io/mast_magnetic_qualification*` | all archive arrays and measurement channels, applied ingestion transforms, Level-2 grid provenance, empirical quality, identifier-only geometry correspondence, source validity, explicit unknowns, and review-only authority |
 | **`.scpnctl.json`** | `scpn/artifact.save_artifact` | compiled SNN controller artifact (topology + weights + readout + packed bitstreams) |
 | **NPZ** | surrogate/training modules | neural weights, surrogate datasets |
 | **PNG figures** | `diagnostics/`, `ui/dashboard_generator` | tomography reconstructions, sensor geometry, Poincaré maps |

@@ -4,6 +4,16 @@
 
 ### Added
 
+- Add a source-reproducible FAIR-MAST magnetic diagnostic qualification bound to
+  the complete shot 27707 archive envelope and exact upstream ingestion mapping.
+  The canonical witness classifies all 72 arrays, covers all 11 measurements and
+  132 signal channels, records applied transforms and source shot ranges,
+  verifies all four Level-2 archive grids, measures aggregate and per-channel
+  quality, and records identifier-only geometry correspondence. Missing physical
+  joins, calibration lineage, raw-clock relations, event identity, transfer
+  functions, provider flags, and uncertainties stay explicit and fail closed;
+  the evidence is permanently review-only and grants no phase or actuation
+  authority.
 - Add a generic complete FAIR-MAST magnetic archive contract with atomic
   acquisition, full object and decoded-array verification, canonical JSON
   transport, JSON Schema, all native clocks, exact Zarr v3 metadata, licence

@@ -1,0 +1,329 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://anulum.li/schemas/scpn-fusion-core/mast-magnetic-diagnostic-qualification.v1.json",
+  "title": "SCPN Fusion Core FAIR-MAST magnetic diagnostic qualification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["payload", "payload_sha256", "schema", "schema_version"],
+  "properties": {
+    "schema": {"const": "scpn-fusion-core.mast-magnetic-diagnostic-qualification.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "payload_sha256": {"$ref": "#/$defs/sha256"},
+    "payload": {"$ref": "#/$defs/payload"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullablePositiveInteger": {"type": ["integer", "null"], "minimum": 1},
+    "nullableString": {"type": ["string", "null"]},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archive_envelope_sha256",
+        "archive_observation_id",
+        "array_inventory",
+        "authority",
+        "channel_geometry_evidence",
+        "clock_evidence",
+        "completeness",
+        "event_identity",
+        "external_limitations",
+        "facility",
+        "ingestion_mapping",
+        "measurement_evidence",
+        "producer_project",
+        "qualification_summary",
+        "reactor_configuration",
+        "shot_id",
+        "source_archive"
+      ],
+      "properties": {
+        "archive_envelope_sha256": {"$ref": "#/$defs/sha256"},
+        "archive_observation_id": {
+          "type": "string",
+          "pattern": "^mast-[1-9][0-9]*-complete-magnetics-[0-9a-f]{16}$"
+        },
+        "array_inventory": {
+          "type": "array",
+          "minItems": 72,
+          "maxItems": 72,
+          "items": {"$ref": "#/$defs/arrayInventory"}
+        },
+        "authority": {"$ref": "#/$defs/authority"},
+        "channel_geometry_evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/channelGeometry"}
+        },
+        "clock_evidence": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {"$ref": "#/$defs/clock"}
+        },
+        "completeness": {"$ref": "#/$defs/completeness"},
+        "event_identity": {"$ref": "#/$defs/eventIdentity"},
+        "external_limitations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {"$ref": "#/$defs/externalLimitation"}
+        },
+        "facility": {"const": "MAST"},
+        "ingestion_mapping": {"$ref": "#/$defs/ingestionMapping"},
+        "measurement_evidence": {
+          "type": "array",
+          "minItems": 11,
+          "maxItems": 11,
+          "items": {"$ref": "#/$defs/measurement"}
+        },
+        "producer_project": {"const": "SCPN-FUSION-CORE"},
+        "qualification_summary": {"$ref": "#/$defs/qualificationSummary"},
+        "reactor_configuration": {"const": "spherical_tokamak"},
+        "shot_id": {"type": "integer", "minimum": 1},
+        "source_archive": {"const": "FAIR-MAST"}
+      }
+    },
+    "authority": {
+      "const": {
+        "actionable": false,
+        "classification_performed": false,
+        "direct_actuation": false,
+        "execution_permitted": false,
+        "phase_inference_performed": false,
+        "review_only": true
+      }
+    },
+    "arrayInventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["clock_dimensions", "dimension_names", "name", "role", "shape"],
+      "properties": {
+        "clock_dimensions": {"type": "array", "items": {"type": "string"}},
+        "dimension_names": {"type": "array", "items": {"type": "string"}},
+        "name": {"type": "string", "minLength": 1},
+        "role": {
+          "enum": ["channel_coordinate", "clock", "geometry", "measurement", "shot_identity"]
+        },
+        "shape": {"type": "array", "items": {"type": "integer", "minimum": 0}}
+      }
+    },
+    "channelGeometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archive_channel_id",
+        "geometry_channel_id",
+        "geometry_coordinate",
+        "identifier_match_method",
+        "measurement_array",
+        "physical_mapping_claimed"
+      ],
+      "properties": {
+        "archive_channel_id": {"type": "string", "minLength": 1},
+        "geometry_channel_id": {"$ref": "#/$defs/nullableString"},
+        "geometry_coordinate": {"$ref": "#/$defs/nullableString"},
+        "identifier_match_method": {
+          "enum": [
+            "casefold_exact",
+            "numeric_suffix_normalised",
+            "prefix_normalised",
+            "unavailable_in_archive"
+          ]
+        },
+        "measurement_array": {"type": "string", "minLength": 1},
+        "physical_mapping_claimed": {"const": false}
+      }
+    },
+    "clock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archive_grid_reproduced",
+        "dropna",
+        "first_value_s",
+        "grid_origin",
+        "interpolation_method",
+        "last_value_s",
+        "name",
+        "sample_count",
+        "source_clock_relation_claimed",
+        "start_s",
+        "step_s"
+      ],
+      "properties": {
+        "archive_grid_reproduced": {"const": true},
+        "dropna": {"const": true},
+        "first_value_s": {"type": "number"},
+        "grid_origin": {"const": "level2_interpolation"},
+        "interpolation_method": {"const": "zero"},
+        "last_value_s": {"type": "number"},
+        "name": {"enum": ["time", "time_mirnov", "time_omaha", "time_saddle"]},
+        "sample_count": {"type": "integer", "minimum": 1},
+        "source_clock_relation_claimed": {"const": false},
+        "start_s": {"type": "number"},
+        "step_s": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "completeness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "archive_array_count",
+        "archive_arrays_classified",
+        "channel_record_count",
+        "clock_count",
+        "measurement_count",
+        "measurements_analysed"
+      ],
+      "properties": {
+        "archive_array_count": {"const": 72},
+        "archive_arrays_classified": {"const": true},
+        "channel_record_count": {"type": "integer", "minimum": 1},
+        "clock_count": {"const": 4},
+        "measurement_count": {"const": 11},
+        "measurements_analysed": {"const": true}
+      }
+    },
+    "eventIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "event_time_epoch", "shot_id", "state"],
+      "properties": {
+        "event_id": {"type": "null"},
+        "event_time_epoch": {"type": "null"},
+        "shot_id": {"type": "integer", "minimum": 1},
+        "state": {"const": "shot_only_event_unresolved"}
+      }
+    },
+    "externalLimitation": {
+      "const": {
+        "applicability_to_shot": "not_assumed",
+        "issue": 211,
+        "reported_shot_id": 29980,
+        "scope": "reported_level2_numeric_resolution_and_saddle_nan",
+        "url": "https://github.com/ukaea/fair-mast/issues/211"
+      }
+    },
+    "ingestionMapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dataset_license_name",
+        "dataset_license_url",
+        "mapping_path",
+        "mapping_sha256",
+        "mapping_url",
+        "source_revision",
+        "source_tree_state"
+      ],
+      "properties": {
+        "dataset_license_name": {"const": "Creative Commons 4.0 BY-SA"},
+        "dataset_license_url": {"type": "string", "format": "uri"},
+        "mapping_path": {"const": "mappings/level2/mast.yml"},
+        "mapping_sha256": {"$ref": "#/$defs/sha256"},
+        "mapping_url": {"type": "string", "format": "uri"},
+        "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "source_tree_state": {"enum": ["clean", "dirty"]}
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applied_background_sample_range",
+        "applied_scale",
+        "archive_channel_ids",
+        "array_name",
+        "calibration_lineage_state",
+        "channel_quality",
+        "clock_name",
+        "configured_source_channels",
+        "empirical_quality",
+        "imas_quantity_path",
+        "observation_operator_state",
+        "provider_quality_flags_supplied",
+        "source_name",
+        "source_shot_max",
+        "source_shot_min",
+        "source_valid_for_shot",
+        "target_units",
+        "uncertainty_supplied",
+        "units"
+      ],
+      "properties": {
+        "applied_background_sample_range": {
+          "type": ["array", "null"],
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {"type": "integer", "minimum": 0}
+        },
+        "applied_scale": {"type": "number"},
+        "archive_channel_ids": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "array_name": {"type": "string", "minLength": 1},
+        "calibration_lineage_state": {"const": "not_supplied"},
+        "channel_quality": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["archive_channel_id", "quality"],
+            "properties": {
+              "archive_channel_id": {"type": "string", "minLength": 1},
+              "quality": {"$ref": "#/$defs/quality"}
+            }
+          }
+        },
+        "clock_name": {"enum": ["time", "time_mirnov", "time_omaha", "time_saddle"]},
+        "configured_source_channels": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "empirical_quality": {"$ref": "#/$defs/quality"},
+        "imas_quantity_path": {"$ref": "#/$defs/nullableString"},
+        "observation_operator_state": {"const": "imas_quantity_path_only_transfer_function_not_supplied"},
+        "provider_quality_flags_supplied": {"const": false},
+        "source_name": {"type": "string", "minLength": 1},
+        "source_shot_max": {"$ref": "#/$defs/nullablePositiveInteger"},
+        "source_shot_min": {"$ref": "#/$defs/nullablePositiveInteger"},
+        "source_valid_for_shot": {"const": true},
+        "target_units": {"$ref": "#/$defs/nullableString"},
+        "uncertainty_supplied": {"const": false},
+        "units": {"$ref": "#/$defs/nullableString"}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finite_count",
+        "infinite_count",
+        "minimum_positive_level_spacing_hex",
+        "nan_count",
+        "nan_fraction",
+        "sample_count",
+        "unique_finite_value_count",
+        "zero_count"
+      ],
+      "properties": {
+        "finite_count": {"type": "integer", "minimum": 0},
+        "infinite_count": {"type": "integer", "minimum": 0},
+        "minimum_positive_level_spacing_hex": {"$ref": "#/$defs/nullableString"},
+        "nan_count": {"type": "integer", "minimum": 0},
+        "nan_fraction": {"type": "number", "minimum": 0, "maximum": 1},
+        "sample_count": {"type": "integer", "minimum": 1},
+        "unique_finite_value_count": {"type": "integer", "minimum": 0},
+        "zero_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "qualificationSummary": {
+      "const": {
+        "calibration_state": "applied_transforms_recorded_lineage_unavailable",
+        "channel_geometry_mapping_state": "identifier_correspondence_only",
+        "event_identity_state": "shot_only_event_unresolved",
+        "observation_operator_state": "quantity_paths_only_transfer_functions_unavailable",
+        "provider_quality_state": "not_supplied",
+        "source_clock_relationship_state": "derived_archive_grids_no_instrument_clock_relation",
+        "uncertainty_state": "not_supplied",
+        "validity_state": "source_shot_ranges_only"
+      }
+    }
+  }
+}

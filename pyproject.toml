@@ -84,6 +84,7 @@ benchmark = [
 ]
 mast = [
     "fsspec>=2026.4,<2027; python_version >= '3.11'",
+    "pyyaml>=6.0,<7; python_version >= '3.11'",
     "s3fs>=2026.4,<2027; python_version >= '3.11'",
     "xarray>=2026.4,<2027; python_version >= '3.11'",
     "zarr>=3.1,<3.2; python_version >= '3.11'",
@@ -112,6 +113,7 @@ full = [
     "omas>=0.70",
     "maturin>=1.14.1,<2.0",
     "fsspec>=2026.4,<2027; python_version >= '3.11'",
+    "pyyaml>=6.0,<7; python_version >= '3.11'",
     "s3fs>=2026.4,<2027; python_version >= '3.11'",
     "xarray>=2026.4,<2027; python_version >= '3.11'",
     "zarr>=3.1,<3.2; python_version >= '3.11'",

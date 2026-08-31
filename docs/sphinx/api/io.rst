@@ -28,6 +28,21 @@ authority.
    :undoc-members:
    :show-inheritance:
 
+The separate qualification surface derives every supported mapping, applied
+transform, Level-2 archive-grid, empirical-quality, identifier-correspondence,
+source-validity and unresolved-field fact without granting phase or actuation
+authority.
+
+.. automodule:: scpn_fusion.io.mast_magnetic_qualification_codec
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+.. automodule:: scpn_fusion.io.mast_magnetic_qualification
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 IMAS Connector
 ----------------
 
