@@ -449,6 +449,10 @@ files = [
     "tests/test_download_efit_geqdsk.py",
     "tools/export_zenodo_dataset.py",
     "tests/test_export_zenodo_dataset.py",
+    "tools/sanitize_scorecard_sarif.py",
+    "tests/test_security_runtime_policies.py",
+    "tools/validate_cyclonedx_sbom.py",
+    "tests/test_cyclonedx_sbom_validator.py",
     # Complete top-level tool strict cohort
     "tools/acquire_mast_level2_panel.py",
     "tools/check_gpu.py",

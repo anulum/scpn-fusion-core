@@ -10,20 +10,34 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
-
-from cyclonedx.schema import OutputFormat, SchemaVersion
-from cyclonedx.validation import make_schemabased_validator
 
 
 class SbomValidationError(ValueError):
     """Raised when an SBOM cannot be admitted as valid CycloneDX JSON."""
 
 
-def _schema_version(payload: Any, *, path: Path) -> SchemaVersion:
+def _cyclonedx_runtime() -> tuple[Any, Any, Any]:
+    """Load the build-only CycloneDX runtime when validation is requested."""
+    try:
+        schema_module = importlib.import_module("cyclonedx.schema")
+        validation_module = importlib.import_module("cyclonedx.validation")
+    except ImportError as exc:
+        raise SbomValidationError(
+            "CycloneDX validation requires the hash-pinned requirements/build.txt profile"
+        ) from exc
+    return (
+        schema_module.OutputFormat,
+        schema_module.SchemaVersion,
+        validation_module.make_schemabased_validator,
+    )
+
+
+def _schema_version(payload: Any, *, path: Path, schema_version_type: Any) -> Any:
     """Resolve the declared CycloneDX version without accepting coercions."""
     if not isinstance(payload, dict):
         raise SbomValidationError(f"{path}: root must be a JSON object")
@@ -33,14 +47,14 @@ def _schema_version(payload: Any, *, path: Path) -> SchemaVersion:
     if not isinstance(declared, str):
         raise SbomValidationError(f"{path}: specVersion must be a string")
     try:
-        return SchemaVersion.from_version(declared)
+        return schema_version_type.from_version(declared)
     except (TypeError, ValueError) as exc:
         raise SbomValidationError(
             f"{path}: unsupported CycloneDX specVersion {declared!r}"
         ) from exc
 
 
-def validate_sbom(path: Path) -> SchemaVersion:
+def validate_sbom(path: Path) -> Any:
     """Validate one UTF-8 JSON document against its declared CycloneDX schema."""
     try:
         document = path.read_text(encoding="utf-8")
@@ -51,8 +65,9 @@ def validate_sbom(path: Path) -> SchemaVersion:
     except json.JSONDecodeError as exc:
         raise SbomValidationError(f"{path}: malformed JSON: {exc}") from exc
 
-    schema_version = _schema_version(payload, path=path)
-    validator = make_schemabased_validator(OutputFormat.JSON, schema_version)
+    output_format, schema_version_type, validator_factory = _cyclonedx_runtime()
+    schema_version = _schema_version(payload, path=path, schema_version_type=schema_version_type)
+    validator = validator_factory(output_format.JSON, schema_version)
     errors = validator.validate_str(document, all_errors=True)
     if errors is not None:
         details = "; ".join(str(error) for error in errors)

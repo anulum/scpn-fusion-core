@@ -43,6 +43,7 @@ jobs:
         run: |
           pip install --require-hashes -r requirements/build.txt
           pip install --no-deps -e .
+          python -m pytest -q tests/test_cyclonedx_sbom_validator.py
           mkdir -p artifacts
           cyclonedx-py environment --of JSON \
             -o artifacts/sbom-python.cdx.json
