@@ -20,6 +20,11 @@ concurrency:
   group: pypi-downloads-metrics
   cancel-in-progress: false
 
+env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+
 jobs:
   snapshot:
     if: github.ref == 'refs/heads/main'

@@ -19,6 +19,9 @@ permissions:
   contents: read
 
 env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
   FREEGS_SOURCE_URL: https://github.com/freegs-plasma/freegs.git
   FREEGS_SOURCE_COMMIT: 9fbec2056b4322ea253bb5614896d549365163f3
 

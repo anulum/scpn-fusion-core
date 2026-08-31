@@ -41,6 +41,9 @@ permissions:
   contents: read
 
 env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
   FREEGSNKE_SOURCE_URL: https://github.com/FusionComputingLab/freegsnke.git
   FREEGSNKE_SOURCE_COMMIT: 00b79a08fbb6e642ac5ed2e440383cc5962e0358
   FREEGSNKE_WHEEL_URL: https://files.pythonhosted.org/packages/e4/e8/94d2c77d2a7834ec0393504d35e053ff6a99bec99405b66d4828ec18c167/freegsnke-3.0.1-py3-none-any.whl

@@ -15,6 +15,12 @@ from pathlib import Path
 import pytest
 
 from tools.validate_cyclonedx_sbom import SbomValidationError, validate_sbom
+from tools.sanitize_scorecard_sarif import (
+    PLACEHOLDER_URI,
+    ScorecardSarifError,
+    sanitize_file,
+    sanitize_scorecard_sarif,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -138,3 +144,85 @@ def test_security_and_sbom_workflows_are_warning_clean() -> None:
     assert "python tools/validate_cyclonedx_sbom.py" in sbom
     assert "artifacts/sbom-python.cdx.json" in sbom
     assert "artifacts/sbom-rust/*.cdx.json" in sbom
+
+
+def test_every_checkout_workflow_configures_default_branch() -> None:
+    """Every checkout is protected from Git's runner-local branch-name hint."""
+    workflow_dir = ROOT / ".github/workflows"
+    violations: list[str] = []
+    for path in sorted(workflow_dir.glob("*.yml")):
+        workflow = path.read_text(encoding="utf-8")
+        if "uses: actions/checkout@" not in workflow:
+            continue
+        for setting in (
+            'GIT_CONFIG_COUNT: "1"',
+            "GIT_CONFIG_KEY_0: init.defaultBranch",
+            "GIT_CONFIG_VALUE_0: main",
+        ):
+            if setting not in workflow:
+                violations.append(f"{path.name}: missing {setting}")
+    assert not violations, "\n".join(violations)
+
+
+def _scorecard_sarif(*locations: object) -> dict[str, object]:
+    return {
+        "version": "2.1.0",
+        "runs": [{"results": [{"locations": list(locations)}]}],
+    }
+
+
+def test_scorecard_sarif_removes_only_placeholder_locations() -> None:
+    """Repository-only findings lose the invalid upstream pseudo-URI."""
+    real_location = {"physicalLocation": {"artifactLocation": {"uri": "src/scpn_fusion/core.py"}}}
+    placeholder = {"physicalLocation": {"artifactLocation": {"uri": PLACEHOLDER_URI}}}
+    payload = _scorecard_sarif(placeholder, real_location)
+
+    assert sanitize_scorecard_sarif(payload) == 1
+    result = payload["runs"][0]["results"][0]  # type: ignore[index]
+    assert result["locations"] == [real_location]
+
+
+def test_scorecard_sarif_removes_empty_locations_member() -> None:
+    """A result with no file association remains valid as a global result."""
+    placeholder = {"physicalLocation": {"artifactLocation": {"uri": PLACEHOLDER_URI}}}
+    payload = _scorecard_sarif(placeholder)
+
+    assert sanitize_scorecard_sarif(payload) == 1
+    result = payload["runs"][0]["results"][0]  # type: ignore[index]
+    assert "locations" not in result
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        [],
+        {"version": "2.0.0", "runs": []},
+        {"version": "2.1.0", "runs": {}},
+        {"version": "2.1.0", "runs": [{"results": {}}]},
+    ],
+)
+def test_scorecard_sarif_rejects_invalid_structure(payload: object) -> None:
+    """Malformed or unexpected SARIF fails closed before mutation."""
+    with pytest.raises(ScorecardSarifError):
+        sanitize_scorecard_sarif(payload)
+
+
+def test_scorecard_sarif_file_replacement_is_deterministic(tmp_path: Path) -> None:
+    """The CLI-facing file operation emits stable UTF-8 JSON."""
+    placeholder = {"physicalLocation": {"artifactLocation": {"uri": PLACEHOLDER_URI}}}
+    path = tmp_path / "results.sarif"
+    path.write_text(json.dumps(_scorecard_sarif(placeholder)), encoding="utf-8")
+
+    assert sanitize_file(path) == 1
+    first = path.read_text(encoding="utf-8")
+    assert sanitize_file(path) == 0
+    assert path.read_text(encoding="utf-8") == first
+
+
+def test_scorecard_workflow_sanitizes_before_upload() -> None:
+    """Both the artifact and code-scanning upload consume sanitized SARIF."""
+    workflow = (ROOT / ".github/workflows/scorecard.yml").read_text(encoding="utf-8")
+    sanitize_at = workflow.index("python tools/sanitize_scorecard_sarif.py results.sarif")
+    artifact_at = workflow.index("uses: actions/upload-artifact@")
+    sarif_at = workflow.index("uses: github/codeql-action/upload-sarif@")
+    assert sanitize_at < artifact_at < sarif_at
