@@ -9,7 +9,12 @@
 from __future__ import annotations
 
 import ast
+import json
 from pathlib import Path
+
+import pytest
+
+from tools.validate_cyclonedx_sbom import SbomValidationError, validate_sbom
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -74,3 +79,62 @@ def test_subprocess_calls_do_not_enable_shell_mode() -> None:
             if isinstance(shell_kw.value, ast.Constant) and shell_kw.value.value is True:
                 violations.append(f"{path}:{node.lineno} subprocess.{node.func.attr}(shell=True)")
     assert not violations, "\n".join(violations)
+
+
+def _write_sbom(tmp_path: Path, payload: object) -> Path:
+    """Write one deterministic SBOM fixture for schema-validation tests."""
+    path = tmp_path / "sbom.cdx.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+def test_cyclonedx_validator_accepts_declared_valid_schema(tmp_path: Path) -> None:
+    """A complete minimal CycloneDX document is admitted."""
+    path = _write_sbom(
+        tmp_path,
+        {
+            "bomFormat": "CycloneDX",
+            "specVersion": "1.6",
+            "serialNumber": "urn:uuid:12345678-1234-4234-8234-123456789abc",
+            "version": 1,
+            "components": [],
+        },
+    )
+
+    assert validate_sbom(path).to_version() == "1.6"
+
+
+@pytest.mark.parametrize(
+    ("payload", "message"),
+    [
+        ([], "root must be a JSON object"),
+        ({"bomFormat": "SPDX", "specVersion": "1.6"}, "bomFormat"),
+        ({"bomFormat": "CycloneDX", "specVersion": 1.6}, "specVersion must be"),
+        ({"bomFormat": "CycloneDX", "specVersion": "99.0"}, "unsupported"),
+        (
+            {"bomFormat": "CycloneDX", "specVersion": "1.6", "version": 0},
+            "validation failed",
+        ),
+    ],
+)
+def test_cyclonedx_validator_rejects_invalid_documents(
+    tmp_path: Path, payload: object, message: str
+) -> None:
+    """Format, version, and schema violations all fail closed."""
+    with pytest.raises(SbomValidationError, match=message):
+        validate_sbom(_write_sbom(tmp_path, payload))
+
+
+def test_security_and_sbom_workflows_are_warning_clean() -> None:
+    """Scheduled security workflows configure Git and validate every SBOM."""
+    security = (ROOT / ".github/workflows/security-audit.yml").read_text(encoding="utf-8")
+    sbom = (ROOT / ".github/workflows/sbom.yml").read_text(encoding="utf-8")
+
+    for workflow in (security, sbom):
+        assert 'GIT_CONFIG_COUNT: "1"' in workflow
+        assert "GIT_CONFIG_KEY_0: init.defaultBranch" in workflow
+        assert "GIT_CONFIG_VALUE_0: main" in workflow
+    assert "--no-validate" not in sbom
+    assert "python tools/validate_cyclonedx_sbom.py" in sbom
+    assert "artifacts/sbom-python.cdx.json" in sbom
+    assert "artifacts/sbom-rust/*.cdx.json" in sbom

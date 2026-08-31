@@ -22,6 +22,11 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+
 jobs:
   cyclonedx-sbom:
     name: CycloneDX SBOM (Python + Rust)
@@ -39,7 +44,7 @@ jobs:
           pip install --require-hashes -r requirements/build.txt
           pip install --no-deps -e .
           mkdir -p artifacts
-          cyclonedx-py environment --of JSON --no-validate \
+          cyclonedx-py environment --of JSON \
             -o artifacts/sbom-python.cdx.json
 
       - name: Install Rust toolchain
@@ -61,6 +66,12 @@ jobs:
             exit 1
           fi
           echo "Rust SBOM files generated: $count"
+
+      - name: Validate all CycloneDX SBOMs
+        run: >-
+          python tools/validate_cyclonedx_sbom.py
+          artifacts/sbom-python.cdx.json
+          artifacts/sbom-rust/*.cdx.json
 
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
