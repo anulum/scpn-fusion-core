@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Mapping
+from importlib import import_module
 from pathlib import Path, PurePosixPath
 from typing import Any, cast
 
@@ -459,7 +460,7 @@ def _nonfinite_count(values: NDArray[Any]) -> int:
 
 def _open_zarr_v3_group(magnetic_root: Path) -> Any:
     try:
-        import zarr
+        zarr = import_module("zarr")
     except ImportError as exc:
         raise MastMagneticArchiveDependencyError(
             "complete FAIR-MAST ingestion requires Python >=3.11 and scpn-fusion[mast]"
