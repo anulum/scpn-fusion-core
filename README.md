@@ -98,7 +98,7 @@ status (details and artifact paths in [RESULTS.md](RESULTS.md)):
 | Replication on the public head, fresh instance | 13.44 ms |
 | Batched per-solve, warm (B=16/64/256, H100) | 13.6 / 13.0 / 14.6 ms |
 | Compiled vs eager fixed-point equivalence (span-rel) | 1.988e-9 |
-| Adjoint coil gradient vs warm finite difference | ≤ 2.253e-06 relative |
+| Adjoint coil gradient vs warm finite difference | ≤ 2.284e-06 relative |
 | DIII-D 145419 full-domain / shell-pinned ψ RMS (span-rel) | 1.91 % / 0.070 % |
 
 Smoothness by construction (softmax axis/X-point extraction keeps the coupled

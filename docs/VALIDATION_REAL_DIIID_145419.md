@@ -145,7 +145,7 @@ values, strong and weak coil, 100 A–3 kA step sweep, hash-pinned environment) 
 | quantity | agreement with FD (measured, this artefact) |
 |---|---|
 | profile gradients ∂/∂p′, ∂/∂FF′ | < 2 × 10⁻³ (33²), ~2.4 × 10⁻⁵ (65², preconditioned) |
-| coil-current gradients | **≤ 2.253 × 10⁻⁶ relative** at 100–300 A steps, on both the tested strong and weak coil |
+| coil-current gradients | **≤ 2.284 × 10⁻⁶ relative** at 100–300 A steps, on both the tested strong and weak coil |
 
 A historical "coil gradient ≈ 3 %" figure in earlier notes was traced to **finite-difference
 truncation error** (a 3 kA step is a ~0.5 % coil perturbation, where the axis-flux response

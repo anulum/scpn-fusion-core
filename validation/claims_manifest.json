@@ -428,7 +428,7 @@
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
-          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.987756"
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.987757"
         }
       ]
     },
@@ -442,35 +442,35 @@
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/warm_start_forward.json",
-          "pattern": "\"129x129_warm_mg_richardson2\"\\s*:\\s*3\\.951544"
+          "pattern": "\"129x129_warm_mg_richardson2\"\\s*:\\s*3\\.951583"
         }
       ]
     },
     {
       "id": "results_predictive_forward_batched_equivalence",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Batched element \u2261 single solve \\(span-rel\\) \\| \u2264 7\\.830e-15",
+      "source_pattern": "\\| Batched element \u2261 single solve \\(span-rel\\) \\| \u2264 8\\.488e-15",
       "evidence_files": [
         "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/batched_forward_amortisation.json",
-          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*7\\.829847"
+          "pattern": "\"max_element_equivalence_span_rel\"\\s*:\\s*8\\.487316"
         }
       ]
     },
     {
       "id": "results_predictive_forward_adjoint",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.253e-06 relative",
+      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.284e-06 relative",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.253e-06 relative"
+          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.284e-06 relative"
         }
       ]
     },
@@ -540,35 +540,35 @@
       "evidence_patterns": [
         {
           "file": "artifacts/rung2_mg_preconditioner/compiled_forward_speedup.json",
-          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.987756"
+          "pattern": "\"fixed_point_equivalence_span_rel_33sq\"\\s*:\\s*1\\.987757"
         }
       ]
     },
     {
       "id": "readme_predictive_forward_adjoint_current",
       "source_file": "README.md",
-      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.253e-06 relative \\|",
+      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.284e-06 relative \\|",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.253e-06 relative"
+          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.284e-06 relative"
         }
       ]
     },
     {
       "id": "validation_real_diiid_adjoint_current",
       "source_file": "docs/VALIDATION_REAL_DIIID_145419.md",
-      "source_pattern": "\\| coil-current gradients \\| \\*\\*\u2264 2\\.253 \u00d7 10\u207b\u2076 relative\\*\\* at 100\u2013300 A steps",
+      "source_pattern": "\\| coil-current gradients \\| \\*\\*\u2264 2\\.284 \u00d7 10\u207b\u2076 relative\\*\\* at 100\u2013300 A steps",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.253e-06 relative"
+          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.284e-06 relative"
         }
       ]
     },
