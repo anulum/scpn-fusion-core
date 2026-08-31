@@ -1332,7 +1332,7 @@
       "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/.",
       "license_redistributable": true,
       "path": "mast/disruption_shots/MAGNETIC_ARCHIVE_ENVELOPE.json",
-      "sha256": "5c5aafecc1b53382456defdf8c6a3d803bd5e413b06b016f340886f607b50bb6",
+      "sha256": "37e7ac792543b9471d8f2d344eef6919a1b798c5dbbc8716d755792725bfea74",
       "size_bytes": 232920,
       "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
       "source_type": "source_derived_reference_evidence"
@@ -1360,7 +1360,7 @@
       "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/.",
       "license_redistributable": true,
       "path": "mast/disruption_shots/MAGNETIC_DIAGNOSTIC_QUALIFICATION.json",
-      "sha256": "f0d5a50b74ab8b82fb96c7d2eda14456c464e7613e306df9d3761c4bf3c4035c",
+      "sha256": "a3b37793594390267dcbaf998d851aade2cb92d612fc290a3aa19fe86e0ae83c",
       "size_bytes": 92279,
       "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
       "source_type": "source_derived_reference_evidence"
@@ -4696,7 +4696,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-08-31T20:41:11.789523+00:00",
+  "generated_at_utc": "2026-08-31T21:43:13.043839+00:00",
   "license_registry": [
     {
       "attribution_required": true,
