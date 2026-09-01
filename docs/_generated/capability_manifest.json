@@ -3001,7 +3001,7 @@
     "python_capability_classes": 626,
     "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
-    "test_files": 648
+    "test_files": 649
   },
   "documentation": {
     "public_pages": [
@@ -3267,6 +3267,7 @@
       "tests/test_download_mast_labelled_shots.py",
       "tests/test_dream_fluid_parity.py",
       "tests/test_dream_full_kinetic_execution_custody.py",
+      "tests/test_dream_full_kinetic_parity.py",
       "tests/test_dream_reference_execution_request.py",
       "tests/test_dynamic_burn_model.py",
       "tests/test_elm_model.py",
