@@ -96,7 +96,7 @@
       "65x65_warm_mg_richardson2": null
     }
   },
-  "generated_utc": "2026-08-31T23:29:36+00:00",
+  "generated_utc": "2026-09-01T22:28:35+00:00",
   "jax_version": "0.7.1",
   "method": "base solve at nominal coil currents; perturb all coil currents by +0.5% (the documented in-basin FD-validation scale); warm solve = psi_init=base with the standard current ramp retained for cross-grid nonlinear stability; correctness = warm solve agrees with the COLD solve of the perturbed problem at span-relative tolerance",
   "provenance": {
@@ -116,7 +116,7 @@
     ],
     "logic_sources_sha256": "f0b3c48632a1766eb43121cd51bd4eba9a329c9869e8ec3b5bc21ecbae3a9701",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "6bb8e039cb99ee814d61279046b23139c3585785f520b64886facbd141ddbc6a"
+    "pinned_requirements_sha256": "56b28e8213664e79c78900541dc7003b88f5de5a585e2e47bdd8645099083134"
   },
   "settings": {
     "n_iter": 180,
@@ -129,66 +129,66 @@
     "host": "aaarthuus (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
     "rows": [
       {
-        "cold_median_ms": 360.40174297522753,
+        "cold_median_ms": 272.347047997755,
         "cold_ms": [
-          366.17998394649476,
-          360.40174297522753,
-          337.54160499665886
+          272.347047997755,
+          276.16509899962693,
+          258.2078849954996
         ],
         "grid": "33x33",
-        "warm_median_ms": 140.83996403496712,
-        "warm_mg_richardson2_median_ms": 126.46027293521911,
+        "warm_median_ms": 97.10985100537073,
+        "warm_mg_richardson2_median_ms": 85.06779700110201,
         "warm_mg_richardson2_ms": [
-          126.46027293521911,
-          134.57449804991484,
-          124.19127603061497
+          86.61881699663354,
+          85.06779700110201,
+          68.49411300208885
         ],
         "warm_ms": [
-          133.86061298660934,
-          140.83996403496712,
-          153.67280098143965
+          97.10985100537073,
+          94.86114500032272,
+          107.70754900295287
         ]
       },
       {
-        "cold_median_ms": 1265.8424379769713,
+        "cold_median_ms": 988.1477949966211,
         "cold_ms": [
-          1265.8424379769713,
-          1235.9033490065485,
-          1294.1023330204189
+          997.0658969978103,
+          988.1477949966211,
+          951.2555830006022
         ],
         "grid": "65x65",
-        "warm_median_ms": 596.3077599881217,
-        "warm_mg_richardson2_median_ms": 1166.0359560046345,
+        "warm_median_ms": 452.10312999552116,
+        "warm_mg_richardson2_median_ms": 995.0653720006812,
         "warm_mg_richardson2_ms": [
-          1166.0359560046345,
-          1119.8701489483938,
-          1208.4300329443067
+          917.851566002355,
+          995.0653720006812,
+          1001.0753559981822
         ],
         "warm_ms": [
-          616.0946079762653,
-          569.3238949170336,
-          596.3077599881217
+          452.10312999552116,
+          449.84417000523536,
+          512.8550139997969
         ]
       },
       {
-        "cold_median_ms": 3267.825962975621,
+        "cold_median_ms": 2978.6702139972476,
         "cold_ms": [
-          3267.825962975621,
-          3337.4248170293868,
-          3050.0972990412265
+          2978.6702139972476,
+          2996.0160740010906,
+          2910.449281000183
         ],
         "grid": "129x129",
-        "warm_median_ms": 1618.81983501371,
-        "warm_mg_richardson2_median_ms": 1276.6942359739915,
+        "warm_median_ms": 1527.6981930001057,
+        "warm_mg_richardson2_median_ms": 1172.2720440011472,
         "warm_mg_richardson2_ms": [
-          1238.3988020010293,
-          1306.9906489690766,
-          1276.6942359739915
+          1172.2720440011472,
+          1141.954203005298,
+          1280.9495200053789
         ],
         "warm_ms": [
-          1618.81983501371,
-          1589.0291010728106,
-          1678.9479380240664
+          1411.2886200018693,
+          1554.9728409969248,
+          1527.6981930001057
         ]
       }
     ]

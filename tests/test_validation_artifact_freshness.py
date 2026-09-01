@@ -388,7 +388,7 @@ def test_tracked_artifact_matches_pinned_requirements(
         PYTHONPATH=src:. $PINNED_PY validation/measure_compiled_forward_speedup.py
         PYTHONPATH=src:. $PINNED_PY validation/measure_warm_start_forward.py
         PYTHONPATH=src:. $PINNED_PY validation/measure_batched_forward.py
-        PYTHONPATH=src:. $PINNED_PY validation/benchmark_disruption_transfer_generalization.py --strict
+        PYTHONPATH=src:. $PINNED_PY validation/benchmark_disruption_transfer_generalization.py --commit-evidence --strict
         PYTHONPATH=src:. $PINNED_PY tools/sweep_disruption_threshold.py
     """
     artifact = json.loads((REPO / artifact_rel).read_text(encoding="utf-8"))

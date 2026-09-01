@@ -21,7 +21,7 @@
     ],
     "logic_sources_sha256": "8d96e8b329867b09d91a2278f2eadf2625c12de71701ef2cc377295118e6f0b6",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "6bb8e039cb99ee814d61279046b23139c3585785f520b64886facbd141ddbc6a"
+    "pinned_requirements_sha256": "56b28e8213664e79c78900541dc7003b88f5de5a585e2e47bdd8645099083134"
   },
   "disclosure": "reproduction lanes are warm-started from the EFIT psi and use reference-derived normalisation anchors (psi_axis, psi_bnd, plasma-region Ip) - they are consistency/reproduction checks, not blind prediction or independent branch selection; the cold-start lane demonstrates that limitation explicitly",
   "operator": {
