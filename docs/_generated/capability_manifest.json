@@ -3001,7 +3001,7 @@
     "python_capability_classes": 626,
     "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
-    "test_files": 649
+    "test_files": 650
   },
   "documentation": {
     "public_pages": [
@@ -3231,6 +3231,7 @@
       "tests/test_deeponet_solver_warm_start.py",
       "tests/test_deeponet_training_modules.py",
       "tests/test_density_controller.py",
+      "tests/test_dependabot_python_runtime.py",
       "tests/test_deprecated_default_lane_guard.py",
       "tests/test_detachment_controller.py",
       "tests/test_deterministic_cpu_gpu_sim_runtime_benchmark.py",
