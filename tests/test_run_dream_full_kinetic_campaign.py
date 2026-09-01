@@ -41,6 +41,22 @@ from validation.dream_full_kinetic_execution_custody import (
 )
 
 h5py = importlib.import_module("h5py")
+TEST_DREAMI = Path("/usr/bin/false")
+
+
+def _prepare_campaign(
+    *,
+    campaign_root: Path,
+    run_id: str,
+    dream_root: Path = DEFAULT_DREAM_ROOT,
+    dreami: Path | None = None,
+) -> dict[str, Any]:
+    return prepare_campaign(
+        campaign_root=campaign_root,
+        run_id=run_id,
+        dream_root=dream_root,
+        dreami=TEST_DREAMI if dreami is None else dreami,
+    )
 
 
 def _install_output_provider(campaign_dir: Path, *, exit_status: int = 14) -> Path:
@@ -92,7 +108,7 @@ def _bind_executable(campaign_dir: Path, executable: Path) -> None:
 
 
 def _prepare_failed_campaign(campaign_root: Path, run_id: str) -> tuple[Path, dict[str, Any]]:
-    manifest = prepare_campaign(campaign_root=campaign_root, run_id=run_id)
+    manifest = _prepare_campaign(campaign_root=campaign_root, run_id=run_id)
     campaign_dir = Path(manifest["campaign_dir"])
     _bind_executable(campaign_dir, Path("/usr/bin/false"))
     failed = execute_campaign(campaign_dir, heartbeat_seconds=0.01)
@@ -134,7 +150,7 @@ def durable_campaign_root() -> Generator[Path, None, None]:
 def test_prepare_freezes_real_settings_without_starting_solver(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(
+    manifest = _prepare_campaign(
         campaign_root=durable_campaign_root,
         run_id="settings-only",
     )
@@ -156,13 +172,13 @@ def test_prepare_freezes_real_settings_without_starting_solver(
             output = b"".join(handle["output/filename"][()].reshape(-1).tolist()).decode()
             assert output == member["partial_output_path"]
     with pytest.raises(FileExistsError, match="campaign already exists"):
-        prepare_campaign(campaign_root=durable_campaign_root, run_id="settings-only")
+        _prepare_campaign(campaign_root=durable_campaign_root, run_id="settings-only")
 
 
 def test_execute_reaps_real_failure_and_stops_before_superfine(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="reaping-failure")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="reaping-failure")
     campaign_dir = Path(manifest["campaign_dir"])
     failing_executable = Path("/usr/bin/false")
     _bind_executable(campaign_dir, failing_executable)
@@ -182,7 +198,7 @@ def test_execute_reaps_real_failure_and_stops_before_superfine(
 def test_failed_attempt_is_archived_before_safe_retry(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="recover-failure")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="recover-failure")
     campaign_dir = Path(manifest["campaign_dir"])
     _bind_executable(campaign_dir, Path("/usr/bin/false"))
     failed = execute_campaign(campaign_dir, heartbeat_seconds=0.01)
@@ -211,7 +227,7 @@ def test_failed_attempt_is_archived_before_safe_retry(
 def test_reconcile_resumes_an_interrupted_attempt_archive_journal(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="resume-archive")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="resume-archive")
     campaign_dir = Path(manifest["campaign_dir"])
     _bind_executable(campaign_dir, Path("/usr/bin/false"))
     failed = execute_campaign(campaign_dir, heartbeat_seconds=0.01)
@@ -309,7 +325,7 @@ def test_reconcile_rejects_archived_artifact_digest_drift(
 
 
 def test_reconcile_rejects_prepared_campaign(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="prepared-reconcile")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="prepared-reconcile")
     with pytest.raises(ValueError, match="not reconcilable from status"):
         reconcile_campaign(Path(manifest["campaign_dir"]))
 
@@ -323,7 +339,7 @@ def test_launch_command_rejects_terminal_campaign(durable_campaign_root: Path) -
 def test_status_treats_missing_same_boot_pid_as_stale(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="missing-pid")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="missing-pid")
     campaign_dir = Path(manifest["campaign_dir"])
     current_boot = campaign_status(campaign_dir)["current_boot_id"]
     manifest.update(
@@ -341,7 +357,7 @@ def test_status_treats_missing_same_boot_pid_as_stale(
 def test_supervisor_signal_is_forwarded_and_recorded_as_interruption(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="signal-forwarding")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="signal-forwarding")
     campaign_dir = Path(manifest["campaign_dir"])
     _bind_executable(campaign_dir, _install_sleeping_provider(campaign_dir))
     process = subprocess.Popen(  # nosec B603
@@ -383,7 +399,7 @@ def test_supervisor_signal_is_forwarded_and_recorded_as_interruption(
 def test_execute_promotes_both_complete_outputs_sequentially(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="complete-family")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="complete-family")
     campaign_dir = Path(manifest["campaign_dir"])
     provider = _install_output_provider(campaign_dir)
     _bind_executable(campaign_dir, provider)
@@ -420,7 +436,7 @@ def test_execute_promotes_both_complete_outputs_sequentially(
 def test_execute_accepts_clean_exit_but_rejects_missing_output(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="missing-output")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="missing-output")
     campaign_dir = Path(manifest["campaign_dir"])
     _bind_executable(campaign_dir, Path("/usr/bin/true"))
 
@@ -433,7 +449,7 @@ def test_execute_accepts_clean_exit_but_rejects_missing_output(
 
 
 def test_execute_rejects_nonpositive_heartbeat(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="heartbeat-guard")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="heartbeat-guard")
     with pytest.raises(ValueError, match="heartbeat interval"):
         execute_campaign(Path(manifest["campaign_dir"]), heartbeat_seconds=0.0)
 
@@ -441,7 +457,7 @@ def test_execute_rejects_nonpositive_heartbeat(durable_campaign_root: Path) -> N
 def test_execute_rejects_unreconciled_output_candidate(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="existing-output")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="existing-output")
     campaign_dir = Path(manifest["campaign_dir"])
     Path(manifest["resolutions"]["veryfine"]["partial_output_path"]).touch()
     with pytest.raises(FileExistsError, match="unreconciled output"):
@@ -452,9 +468,9 @@ def test_prepare_rejects_invalid_identity_and_unpinned_checkout(
     durable_campaign_root: Path,
 ) -> None:
     with pytest.raises(ValueError, match="run-id"):
-        prepare_campaign(campaign_root=durable_campaign_root, run_id="INVALID ID")
+        _prepare_campaign(campaign_root=durable_campaign_root, run_id="INVALID ID")
     with pytest.raises(ValueError, match="pinned"):
-        prepare_campaign(
+        _prepare_campaign(
             campaign_root=durable_campaign_root,
             run_id="wrong-source",
             dream_root=ROOT,
@@ -463,7 +479,7 @@ def test_prepare_rejects_invalid_identity_and_unpinned_checkout(
 
 
 def test_campaign_rejects_schema_drift(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="schema-drift")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="schema-drift")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["schema"] = "wrong"
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -472,7 +488,7 @@ def test_campaign_rejects_schema_drift(durable_campaign_root: Path) -> None:
 
 
 def test_campaign_rejects_custody_schema_drift(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="custody-schema")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="custody-schema")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["custody_schema"] = "wrong"
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -481,7 +497,7 @@ def test_campaign_rejects_custody_schema_drift(durable_campaign_root: Path) -> N
 
 
 def test_campaign_rejects_invalid_stored_run_identity(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="run-identity")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="run-identity")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["run_id"] = "INVALID ID"
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -490,7 +506,7 @@ def test_campaign_rejects_invalid_stored_run_identity(durable_campaign_root: Pat
 
 
 def test_campaign_rejects_detached_stored_run_identity(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="run-directory")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="run-directory")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["run_id"] = "different-valid-id"
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -499,7 +515,7 @@ def test_campaign_rejects_detached_stored_run_identity(durable_campaign_root: Pa
 
 
 def test_campaign_rejects_invalid_campaign_status(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="campaign-status")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="campaign-status")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["status"] = "unknown"
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -508,7 +524,7 @@ def test_campaign_rejects_invalid_campaign_status(durable_campaign_root: Path) -
 
 
 def test_campaign_rejects_detached_manifest(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="detached")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="detached")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["campaign_dir"] = str(durable_campaign_root)
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -517,7 +533,7 @@ def test_campaign_rejects_detached_manifest(durable_campaign_root: Path) -> None
 
 
 def test_campaign_rejects_resolution_order_drift(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="order-drift")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="order-drift")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["resolution_order"] = ["superfine", "veryfine"]
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -526,7 +542,7 @@ def test_campaign_rejects_resolution_order_drift(durable_campaign_root: Path) ->
 
 
 def test_campaign_rejects_dreami_digest_drift(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="binary-drift")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="binary-drift")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["dream"]["dreami_sha256"] = "0" * 64
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -535,7 +551,7 @@ def test_campaign_rejects_dreami_digest_drift(durable_campaign_root: Path) -> No
 
 
 def test_campaign_rejects_member_path_escape(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="path-escape")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="path-escape")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["resolutions"]["veryfine"]["process_log_path"] = str(
         durable_campaign_root / "escaped.log"
@@ -548,7 +564,7 @@ def test_campaign_rejects_member_path_escape(durable_campaign_root: Path) -> Non
 def test_campaign_rejects_resolution_membership_drift(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="member-drift")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="member-drift")
     campaign_dir = Path(manifest["campaign_dir"])
     del manifest["resolutions"]["superfine"]
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -557,7 +573,7 @@ def test_campaign_rejects_resolution_membership_drift(
 
 
 def test_campaign_rejects_non_object_member(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="member-type")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="member-type")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["resolutions"]["veryfine"] = []
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -566,7 +582,7 @@ def test_campaign_rejects_non_object_member(durable_campaign_root: Path) -> None
 
 
 def test_campaign_rejects_invalid_member_status(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="member-status")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="member-status")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["resolutions"]["veryfine"]["status"] = "unknown"
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -575,7 +591,7 @@ def test_campaign_rejects_invalid_member_status(durable_campaign_root: Path) -> 
 
 
 def test_campaign_rejects_invalid_attempt_registry(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="attempt-type")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="attempt-type")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["resolutions"]["veryfine"]["attempts"] = ["not-an-object"]
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -586,7 +602,7 @@ def test_campaign_rejects_invalid_attempt_registry(durable_campaign_root: Path) 
 def test_status_uses_boot_and_process_identity_before_reconciliation(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="process-identity")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="process-identity")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest_path = campaign_dir / "campaign.json"
     status = campaign_status(campaign_dir)
@@ -618,7 +634,7 @@ def test_status_uses_boot_and_process_identity_before_reconciliation(
 def test_status_marks_running_state_stale_after_reboot(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="reboot-stale")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="reboot-stale")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest.update(status="running", execution_boot_id="pre-reboot-boot-id")
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -643,6 +659,8 @@ def test_prepare_cli_publishes_machine_readable_manifest(
                 str(durable_campaign_root),
                 "--run-id",
                 "prepare-cli",
+                "--dreami",
+                str(TEST_DREAMI),
             ]
         )
         == 0
@@ -656,7 +674,7 @@ def test_status_cli_reports_frozen_member_order(
     durable_campaign_root: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="status-cli")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="status-cli")
     assert main(["status", "--campaign-dir", manifest["campaign_dir"]]) == 0
     payload = json.loads(capsys.readouterr().out)
     assert list(payload["resolutions"]) == ["superfine", "veryfine"]
@@ -667,7 +685,7 @@ def test_launch_dry_run_cli_does_not_submit_systemd_unit(
     durable_campaign_root: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="launch-preview")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="launch-preview")
     campaign_dir = Path(manifest["campaign_dir"])
     expected = campaign_launch_command(campaign_dir)
 
@@ -684,7 +702,7 @@ def test_execute_cli_reaps_backend_and_prints_terminal_state(
     durable_campaign_root: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="execute-cli")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="execute-cli")
     campaign_dir = Path(manifest["campaign_dir"])
     _bind_executable(campaign_dir, Path("/usr/bin/true"))
 
@@ -699,7 +717,7 @@ def test_reconcile_cli_archives_terminal_attempt_and_prints_prepared_state(
     durable_campaign_root: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="reconcile-cli")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="reconcile-cli")
     campaign_dir = Path(manifest["campaign_dir"])
     _bind_executable(campaign_dir, Path("/usr/bin/false"))
     assert execute_campaign(campaign_dir, heartbeat_seconds=0.01)["status"] == "failed"
@@ -715,7 +733,7 @@ def test_prepare_rejects_non_executable_backend(durable_campaign_root: Path) -> 
     backend = durable_campaign_root / "not-executable"
     backend.write_text("not executable\n", encoding="utf-8")
     with pytest.raises(ValueError, match="not an executable"):
-        prepare_campaign(
+        _prepare_campaign(
             campaign_root=durable_campaign_root,
             run_id="non-executable",
             dreami=backend,
@@ -725,7 +743,7 @@ def test_prepare_rejects_non_executable_backend(durable_campaign_root: Path) -> 
 def test_execute_rejects_lost_backend_execute_permission(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="lost-execute-bit")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="lost-execute-bit")
     campaign_dir = Path(manifest["campaign_dir"])
     provider = _install_sleeping_provider(campaign_dir)
     _bind_executable(campaign_dir, provider)
@@ -737,7 +755,7 @@ def test_execute_rejects_lost_backend_execute_permission(
 def test_execute_rejects_dream_source_revision_drift(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="source-revision")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="source-revision")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["dream"]["commit"] = "0" * 40
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -748,7 +766,7 @@ def test_execute_rejects_dream_source_revision_drift(
 def test_execute_rejects_campaign_source_digest_drift(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="source-digest")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="source-digest")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["source_digests"] = {}
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -757,7 +775,7 @@ def test_execute_rejects_campaign_source_digest_drift(
 
 
 def test_execute_rejects_settings_digest_drift(durable_campaign_root: Path) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="settings-digest")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="settings-digest")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["resolutions"]["veryfine"]["settings_sha256"] = "0" * 64
     atomic_write_json(campaign_dir / "campaign.json", manifest)
@@ -768,7 +786,7 @@ def test_execute_rejects_settings_digest_drift(durable_campaign_root: Path) -> N
 def test_execute_rejects_deck_manifest_digest_drift(
     durable_campaign_root: Path,
 ) -> None:
-    manifest = prepare_campaign(campaign_root=durable_campaign_root, run_id="deck-digest")
+    manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="deck-digest")
     campaign_dir = Path(manifest["campaign_dir"])
     manifest["resolutions"]["veryfine"]["deck_manifest_sha256"] = "0" * 64
     atomic_write_json(campaign_dir / "campaign.json", manifest)

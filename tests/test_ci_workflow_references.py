@@ -113,7 +113,5 @@ def test_ci_materializes_the_pinned_dream_api_for_custody_tests() -> None:
     assert "ref: ecdd5e146537c77602c9d7cc76b36100200e4b9a" in checkout
     assert "path: data/external/full_fidelity_public_sources/repos/dream" in checkout
     assert "persist-credentials: false" in checkout
-    assert "Install non-running DREAM executable fixture" in checkout
-    assert "/usr/bin/false" in checkout
     assert checkout_start < workflow.index("Python preflight release gate")
     assert checkout_start < workflow.index("Run release test suite")

@@ -244,9 +244,6 @@ def test_frozen_deck_enables_every_required_full_kinetic_term(tmp_path: Path) ->
         output=output,
     )
     settings.save(str(settings_path))
-    dreami = DREAM_ROOT / "build/iface/dreami"
-    assert dreami.is_file()
-    assert sha256_file(dreami) == DREAMI_SHA256
 
     with h5py.File(settings_path, "r") as handle:
         assert int(handle["radialgrid/nr"][0]) == 4
@@ -261,6 +258,14 @@ def test_frozen_deck_enables_every_required_full_kinetic_term(tmp_path: Path) ->
         assert np.all(handle["solver/tolerance/reltols"][()] == 2.0e-8)
         requested = b"".join(handle["other/include"][()].tolist()).decode()
         assert tuple(requested.split(";")) == REQUESTED_OTHER_QUANTITIES
+
+
+@pytest.mark.skipif(
+    not (DREAM_ROOT / "build/iface/dreami").is_file(),
+    reason="locked compiled DREAM runtime absent",
+)
+def test_frozen_dream_runtime_binary_matches_lock() -> None:
+    assert sha256_file(DREAM_ROOT / "build/iface/dreami") == DREAMI_SHA256
 
 
 def test_real_dream_output_closes_native_full_distribution_residual() -> None:

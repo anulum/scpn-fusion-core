@@ -42,7 +42,11 @@ def durable_campaign_root() -> Generator[Path, None, None]:
 
 
 def _failed_campaign(campaign_root: Path, run_id: str) -> tuple[Path, dict[str, Any]]:
-    manifest = prepare_campaign(campaign_root=campaign_root, run_id=run_id)
+    manifest = prepare_campaign(
+        campaign_root=campaign_root,
+        run_id=run_id,
+        dreami=Path("/usr/bin/false"),
+    )
     campaign_dir = Path(manifest["campaign_dir"])
     executable = Path("/usr/bin/false")
     manifest["dream"]["dreami_path"] = str(executable)
