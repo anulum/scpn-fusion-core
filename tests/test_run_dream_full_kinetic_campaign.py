@@ -123,6 +123,7 @@ def _write_collecting_archive(
 @pytest.fixture
 def durable_campaign_root() -> Generator[Path, None, None]:
     parent = ROOT / "data/external"
+    parent.mkdir(parents=True, exist_ok=True)
     path = Path(tempfile.mkdtemp(prefix="dream-custody-test-", dir=parent))
     try:
         yield path

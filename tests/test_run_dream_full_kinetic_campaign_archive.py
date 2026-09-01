@@ -33,6 +33,7 @@ from validation.dream_full_kinetic_execution_custody import (
 @pytest.fixture
 def durable_campaign_root() -> Generator[Path, None, None]:
     parent = ROOT / "data/external"
+    parent.mkdir(parents=True, exist_ok=True)
     path = Path(tempfile.mkdtemp(prefix="dream-archive-test-", dir=parent))
     try:
         yield path
