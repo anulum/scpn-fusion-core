@@ -3001,7 +3001,7 @@
     "python_capability_classes": 626,
     "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
-    "test_files": 645
+    "test_files": 648
   },
   "documentation": {
     "public_pages": [
@@ -3266,6 +3266,7 @@
       "tests/test_download_efit_geqdsk.py",
       "tests/test_download_mast_labelled_shots.py",
       "tests/test_dream_fluid_parity.py",
+      "tests/test_dream_full_kinetic_execution_custody.py",
       "tests/test_dream_reference_execution_request.py",
       "tests/test_dynamic_burn_model.py",
       "tests/test_elm_model.py",
@@ -3633,6 +3634,8 @@
       "tests/test_rmf_phase_lock.py",
       "tests/test_rmse_dashboard.py",
       "tests/test_run_diagnostics.py",
+      "tests/test_run_dream_full_kinetic_campaign.py",
+      "tests/test_run_dream_full_kinetic_campaign_archive.py",
       "tests/test_run_native_docs.py",
       "tests/test_run_real_data_strict_gate.py",
       "tests/test_run_ruff_docstrings.py",
