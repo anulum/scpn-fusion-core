@@ -385,11 +385,25 @@
     },
     {
       "id": "dream_reference_runaway",
-      "glob": "dream/*.json",
+      "glob": "dream/dream_fluid_runaway_reference.json",
       "source_type": "derived_reference_artifact",
       "source": "Fluid runaway same-case time series exported from a really-executed DREAM run (https://github.com/chalmersplasmatheory/DREAM, doi:10.1016/j.cpc.2021.108098) built from source in external/DREAM and driven by validation/dream_reference_runner.py; the artifact embeds the DREAM git SHA and settings SHA-256.",
       "license": "citation-required",
       "citation": "Hoppe, M., Embreus, O., F\u00fcl\u00f6p, T., DREAM: A fluid-kinetic framework for tokamak disruption runaway electron simulations, Comput. Phys. Commun. 268, 108098 (2021), doi:10.1016/j.cpc.2021.108098."
+    },
+    {
+      "id": "dream_full_kinetic_radial_parity_deck",
+      "glob": "dream/full_kinetic_radial_parity_deck.py",
+      "source_type": "repository_solver_input_deck",
+      "source": "Repository-maintained frozen input-deck builder for full-kinetic radial DREAM parity validation; it drives an external official DREAM executable and contains no upstream DREAM code, data, or solver output.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "dream_full_kinetic_radial_parity_lock",
+      "glob": "dream/full_kinetic_radial_parity_lock.json",
+      "source_type": "repository_solver_custody_lock",
+      "source": "Repository-maintained custody lock binding the full-kinetic radial parity deck checksum, source revision, frozen settings inputs, resolution ladder, output contract, thresholds, and pre-publication source-format amendment.",
+      "license": "AGPL-3.0-or-later"
     },
     {
       "id": "replay_certificate",

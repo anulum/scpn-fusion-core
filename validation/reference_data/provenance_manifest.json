@@ -119,6 +119,28 @@
       "total_bytes": 381655
     },
     {
+      "file_count": 1,
+      "id": "dream_full_kinetic_radial_parity_deck",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "source": "Repository-maintained frozen input-deck builder for full-kinetic radial DREAM parity validation; it drives an external official DREAM executable and contains no upstream DREAM code, data, or solver output.",
+      "source_type": "repository_solver_input_deck",
+      "total_bytes": 10734
+    },
+    {
+      "file_count": 1,
+      "id": "dream_full_kinetic_radial_parity_lock",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "source": "Repository-maintained custody lock binding the full-kinetic radial parity deck checksum, source revision, frozen settings inputs, resolution ladder, output contract, thresholds, and pre-publication source-format amendment.",
+      "source_type": "repository_solver_custody_lock",
+      "total_bytes": 5638
+    },
+    {
       "citation": "Hoppe, M., Embreus, O., F\u00fcl\u00f6p, T., DREAM: A fluid-kinetic framework for tokamak disruption runaway electron simulations, Comput. Phys. Commun. 268, 108098 (2021), doi:10.1016/j.cpc.2021.108098.",
       "file_count": 1,
       "id": "dream_reference_runaway",
@@ -293,7 +315,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 26242
+      "total_bytes": 27169
     },
     {
       "file_count": 1,
@@ -475,7 +497,7 @@
       "total_bytes": 12073
     }
   ],
-  "file_count": 341,
+  "file_count": 343,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -870,6 +892,30 @@
       "size_bytes": 15343,
       "source": "Fluid runaway same-case time series exported from a really-executed DREAM run (https://github.com/chalmersplasmatheory/DREAM, doi:10.1016/j.cpc.2021.108098) built from source in external/DREAM and driven by validation/dream_reference_runner.py; the artifact embeds the DREAM git SHA and settings SHA-256.",
       "source_type": "derived_reference_artifact"
+    },
+    {
+      "dataset_id": "dream_full_kinetic_radial_parity_deck",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "dream/full_kinetic_radial_parity_deck.py",
+      "sha256": "f1e7a627b175174aabecb52eb5592a345b16684c96d5fb8e1128f169ae57ef58",
+      "size_bytes": 10734,
+      "source": "Repository-maintained frozen input-deck builder for full-kinetic radial DREAM parity validation; it drives an external official DREAM executable and contains no upstream DREAM code, data, or solver output.",
+      "source_type": "repository_solver_input_deck"
+    },
+    {
+      "dataset_id": "dream_full_kinetic_radial_parity_lock",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "dream/full_kinetic_radial_parity_lock.json",
+      "sha256": "3d465c76ae9223121401b6d5c4dc6cbaa4b02f28d8e470e368c7304b86501cd6",
+      "size_bytes": 5638,
+      "source": "Repository-maintained custody lock binding the full-kinetic radial parity deck checksum, source revision, frozen settings inputs, resolution ladder, output contract, thresholds, and pre-publication source-format amendment.",
+      "source_type": "repository_solver_custody_lock"
     },
     {
       "citation": "Snyder P. B. et al., A first-principles predictive model of the pedestal height and width: development, testing and ITER optimization with the EPED model, Nucl. Fusion 51, 103016 (2011); Snyder P. B. et al., Phys. Plasmas 16, 056118 (2009).",
@@ -1409,8 +1455,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "f5583af460efb3d0c5f96b6faba13f6a9e608ccdccc633d7c25ba7701d8392fe",
-      "size_bytes": 22257,
+      "sha256": "6409c2888713ede1fd39ab0ba736fbb5cb88f692e9b5071d2103145b395777f1",
+      "size_bytes": 23184,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -4696,7 +4742,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-08-31T22:09:41.120171+00:00",
+  "generated_at_utc": "2026-09-01T17:57:28.304457+00:00",
   "license_registry": [
     {
       "attribution_required": true,
