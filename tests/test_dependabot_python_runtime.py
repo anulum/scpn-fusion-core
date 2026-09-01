@@ -21,8 +21,10 @@ def _version_tuple(value: str) -> tuple[int, ...]:
 
 def test_dependabot_runtime_matches_the_hash_lock_generation_lane() -> None:
     selected = (ROOT / ".python-version").read_text(encoding="utf-8").strip()
+    updater_selected = (ROOT / "requirements/.python-version").read_text(encoding="utf-8").strip()
     components = selected.split(".")
 
+    assert updater_selected == selected
     assert len(components) == 3
     assert all(component.isdigit() for component in components)
     assert components[:2] == ["3", "12"]
