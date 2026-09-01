@@ -740,16 +740,72 @@ grid convergence is capped at `relative_l2 <= 0.15`, while scaling requires
 finite positive rank/grid/timing metadata, at least `64` phase cells, and
 `wall_time_s <= 86400`.
 
-The DREAM execution lane is tracked in
+The DREAM execution-request adapter is tracked in
 [`validation/reports/dream_reference_execution_request.md`](../validation/reports/dream_reference_execution_request.md).
-It generates the public `examples/2kinetic/dream_settings.h5` deck from the
-cached DREAM source when available; clean checkouts preserve the committed
-settings-deck checksum as tracked evidence when the external cache is absent.
-The report records a fail-closed backend blocker on this machine: PETSc and the
-compiled DREAM `iface/dreami` executable are not installed. Once a runner
-provides that backend, rerun
-`uv run --no-sync python tools/run_dream_reference_artifact.py` to execute the
-same deck and produce a candidate output HDF5 for conversion.
+The independent full-kinetic campaign uses the pinned DREAM source and binary,
+but its multi-day raw outputs stay outside Git. Prepare a durable campaign
+without starting the solver with:
+
+```bash
+python -m tools.run_dream_full_kinetic_campaign prepare \
+  --run-id <operator-approved-run-id>
+```
+
+Preparation freezes both veryfine and superfine settings, binary/source/deck
+digests, output destinations and the strict execution order under the
+monorepo-root evidence store. Volatile roots such as `/tmp`, `/var/tmp`,
+`/run` and `/dev/shm` are rejected. Preview the exact custody-checked service
+command without submitting it with:
+
+```bash
+python -m tools.run_dream_full_kinetic_campaign launch \
+  --campaign-dir <durable-campaign-directory> \
+  --dry-run
+```
+
+After separate operator approval, launch the continuously reaping
+user-systemd supervisor with:
+
+```bash
+python -m tools.run_dream_full_kinetic_campaign launch \
+  --campaign-dir <durable-campaign-directory>
+```
+
+The supervisor writes atomic state and heartbeat updates, durable combined
+process logs and observed exit/signal receipts. A resolution output remains
+`output.partial.h5` until its exact commit, physics flags, grids, time history,
+all requested operator/auxiliary datasets, shapes, finiteness and active
+physics channels pass the full HDF5 custody inspection. Only then is it
+atomically promoted to `output.h5`; superfine cannot start before veryfine is
+promoted. Exit status `0` or DREAM status `14` is accepted only when that full
+output inspection passes.
+
+Inspect state without changing it with:
+
+```bash
+python -m tools.run_dream_full_kinetic_campaign status \
+  --campaign-dir <durable-campaign-directory>
+```
+
+The status contract distinguishes a live run using the boot ID and both
+supervisor and child PID/start-tick identities. It reports stale same-boot and
+reboot-stale state without turning a partial file into evidence. A failed,
+interrupted or stale campaign must be reconciled before retry:
+
+```bash
+python -m tools.run_dream_full_kinetic_campaign reconcile \
+  --campaign-dir <durable-campaign-directory>
+```
+
+Reconciliation refuses a live supervisor or child, revalidates every already
+promoted output, and moves each incomplete partial output, process log and
+receipt into `attempts/attempt-NNNN/`. The archive journal records byte counts,
+SHA-256 digests and the pre-reconciliation member state; collection itself is
+resumable after a crash. Only after that archive is durably registered are
+non-completed members returned to `prepared` for a separately approved launch.
+Successful custody still does not admit physical parity: the separate
+convergence and native-comparison report must pass every frozen scientific
+gate.
 
 The production-scale decomposition contract is tracked in
 [`validation/reports/production_decomposition_contract.md`](../validation/reports/production_decomposition_contract.md).
