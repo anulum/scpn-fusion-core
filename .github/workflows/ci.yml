@@ -256,6 +256,19 @@ jobs:
         with:
           fetch-depth: 0
           lfs: false
+      - name: Checkout pinned DREAM Python API fixture
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: chalmersplasmatheory/DREAM
+          ref: ecdd5e146537c77602c9d7cc76b36100200e4b9a
+          path: data/external/full_fidelity_public_sources/repos/dream
+          fetch-depth: 1
+          lfs: false
+          persist-credentials: false
+      - name: Install non-running DREAM executable fixture
+        run: |
+          install -D -m 0755 /usr/bin/false \
+            data/external/full_fidelity_public_sources/repos/dream/build/iface/dreami
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:

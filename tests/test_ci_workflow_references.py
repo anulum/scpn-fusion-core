@@ -97,3 +97,23 @@ def test_ci_does_not_rerun_hypothesis_file_after_full_suite() -> None:
     assert 'timeout --signal=TERM 75m pytest tests/ -q -m "not experimental"' in workflow
     assert "tests/test_hypothesis_properties.py" not in workflow
     assert "--hypothesis-seed" not in workflow
+
+
+def test_ci_materializes_the_pinned_dream_api_for_custody_tests() -> None:
+    """Portable custody tests use the exact upstream API, not host-local data."""
+    workflow = _workflow_text()
+    checkout_start = workflow.index("- name: Checkout pinned DREAM Python API fixture")
+    checkout_end = workflow.index(
+        "- name: Set up Python ${{ matrix.python-version }}", checkout_start
+    )
+    checkout = workflow[checkout_start:checkout_end]
+
+    assert "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1" in checkout
+    assert "repository: chalmersplasmatheory/DREAM" in checkout
+    assert "ref: ecdd5e146537c77602c9d7cc76b36100200e4b9a" in checkout
+    assert "path: data/external/full_fidelity_public_sources/repos/dream" in checkout
+    assert "persist-credentials: false" in checkout
+    assert "Install non-running DREAM executable fixture" in checkout
+    assert "/usr/bin/false" in checkout
+    assert checkout_start < workflow.index("Python preflight release gate")
+    assert checkout_start < workflow.index("Run release test suite")

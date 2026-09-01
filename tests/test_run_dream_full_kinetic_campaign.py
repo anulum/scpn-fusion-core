@@ -48,7 +48,7 @@ def _install_output_provider(campaign_dir: Path, *, exit_status: int = 14) -> Pa
     provider.write_text(
         "\n".join(
             (
-                f"#!{ROOT / '.venv/bin/python'}",
+                f"#!{sys.executable}",
                 "import sys",
                 "import time",
                 "from pathlib import Path",
@@ -76,7 +76,7 @@ def _install_output_provider(campaign_dir: Path, *, exit_status: int = 14) -> Pa
 def _install_sleeping_provider(campaign_dir: Path) -> Path:
     provider = campaign_dir / "sleeping-dream-provider"
     provider.write_text(
-        "\n".join((f"#!{ROOT / '.venv/bin/python'}", "import time", "time.sleep(30)", "")),
+        "\n".join((f"#!{sys.executable}", "import time", "time.sleep(30)", "")),
         encoding="utf-8",
     )
     provider.chmod(0o700)
