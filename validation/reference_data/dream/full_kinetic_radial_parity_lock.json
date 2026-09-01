@@ -1,0 +1,139 @@
+{
+  "case": {
+    "argon_charge_state": 1,
+    "argon_density_m3": 1e+17,
+    "avalanche_cutoff_mc": 0.02,
+    "cold_temperature_ev": 1000.0,
+    "electric_field_v_per_m": 1.0,
+    "free_electron_density_m3": 5e+19,
+    "magnetic_field_t": 5.0,
+    "magnetic_perturbation": 0.001,
+    "minor_radius_m": 0.22,
+    "p_max_mc": 8.0,
+    "p_min_mc": 0.02,
+    "seed_runaway_density_m3": 100000000000000.0,
+    "simulation_time_s": 0.0002,
+    "wall_radius_m": 0.22
+  },
+  "deck_sha256": "f1e7a627b175174aabecb52eb5592a345b16684c96d5fb8e1128f169ae57ef58",
+  "deck_source_format_amended_at": "2026-09-01T19:35:00+02:00",
+  "deck_source_format_amendment": "Applied Ruff-only source formatting before first publication; physics, numerical settings, thresholds, resolution values and frozen settings files are unchanged.",
+  "deck_source_format_prior_sha256": "3dd06b4534d72cd147925ad0d4243cbd8ed286bb629f6aae8e9b03ef943ef1b5",
+  "dream_commit": "ecdd5e146537c77602c9d7cc76b36100200e4b9a",
+  "frozen_at": "2026-08-28T18:26:36+02:00",
+  "frozen_before_fine_output": true,
+  "amended_at": "2026-08-28T18:52:41+02:00",
+  "amended_before_fine_output": true,
+  "amendment": "Added algebraic radial-loss and current-moment reconstruction gates after confirming the requested diagnostics are present; no deck, grid, case, existing threshold, or output was changed.",
+  "relocked_at": "2026-08-28T19:12:15+02:00",
+  "relocked_before_ultrafine_output": true,
+  "revision_3_relocked_at": "2026-08-30T07:35:00+02:00",
+  "revision_3_relocked_before_outputs": true,
+  "convergence_family_revision": 3,
+  "convergence_family_reason": "The second frozen 6/8/10-radius family passed every completeness, custody, native-parity, state-convergence and improvement gate, but the unchanged growth and operator-coefficient errors remained 0.0307814375 and 0.253850537. Revision 3 uses the already authenticated 10-radius member followed by new 12- and 14-radius members with proportionally refined momentum, pitch and time grids. Both new settings and their hashes were frozen before either output existed; no physics or threshold changed.",
+  "solver_tolerances": {
+    "default_relative": 2e-08,
+    "f_re_relative": 2e-08,
+    "f_re_absolute": 1000.0,
+    "n_re_relative": 2e-08,
+    "n_re_absolute": 1000.0,
+    "j_re_relative": 2e-08,
+    "j_re_absolute": 1e-06
+  },
+  "aborted_preoutput_receipt": {
+    "resolution": {
+      "nr": 10,
+      "nxi": 40,
+      "np": 100,
+      "nt": 20
+    },
+    "elapsed_wall_seconds": 74.31,
+    "process_exit_status": 130,
+    "output_created": false,
+    "reason": "Stopped before first output after proving the reused 8-radius artifact would fail the unchanged native-density residual gate."
+  },
+  "prior_family_receipt": {
+    "all_pass": false,
+    "report_sha256": "f65c3fe5f1fab6469814dc6c1e4b5a400fa7d58bcc18e5f3777196925ad4b73e",
+    "failed_gates": [
+      "native_density_residual",
+      "distribution_converged",
+      "growth_converged",
+      "operator_coefficients_converged",
+      "state_convergence_improves"
+    ],
+    "output_sha256": {
+      "coarse": "3c499a2728b563103821b5889fc27e55bd4efd6b6a4e7fa5b3cc44216ee79766",
+      "medium": "4ba6c73b3b2f58005d82ccbccda5028ca5e44377a10a4022aed4c13c675f1fda",
+      "fine": "3539200000badace5f6c9cda6384a204e1101b14b8c5283d8e439b0c15ba2ccf"
+    }
+  },
+  "revision_2_receipt": {
+    "all_pass": false,
+    "report_sha256": "7ef826937b2c8f876a0aa9f3af1c9f9c8ce4063c42b5022e15dc6bceb02feb28",
+    "failed_gates": [
+      "growth_converged",
+      "operator_coefficients_converged"
+    ],
+    "metrics": {
+      "growth_ratio_absolute_error": 0.030781437522775512,
+      "maximum_operator_coefficient_relative_l2": 0.2538505371969087
+    },
+    "output_sha256": {
+      "coarse": "73b527048edb13c357d72b23f85ec106e349c47b1f6b97b21c2c58cf70ceee32",
+      "medium": "f754d10d7741ae87b01622f70319df3f94b0b6d7ae83f90bada1e56b52c356b9",
+      "fine": "a6159276522c81b231ac7d16f265019acd68a06e7f71000a0a6c3f3e5352d763"
+    }
+  },
+  "physics": {
+    "avalanche": "kinetic Rosenbluth-Putvinski",
+    "bremsstrahlung": "stopping-power radiation reaction",
+    "collision_frequency": "full partially screened",
+    "coordinates": [
+      "radius",
+      "momentum",
+      "pitch"
+    ],
+    "radial_geometry": "upstream 2kinetic cylindrical geometry",
+    "radial_transport": "kinetic Rechester-Rosenbluth diffusion",
+    "synchrotron": "kinetic radiation-reaction advection"
+  },
+  "resolutions": {
+    "coarse": {
+      "np": 100,
+      "nr": 10,
+      "nt": 20,
+      "nxi": 40,
+      "settings_sha256": "24bd5fe3acf4090d4b749aa63232536bf9a37f3493f5f5dacc5e6d433398c0cb"
+    },
+    "fine": {
+      "np": 140,
+      "nr": 14,
+      "nt": 28,
+      "nxi": 56,
+      "settings_sha256": "c7885e47aa417ac2bb33cc23fe7c5a5e16c557d4a9b5f18d3877690eb8c27cd6"
+    },
+    "medium": {
+      "np": 120,
+      "nr": 12,
+      "nt": 24,
+      "nxi": 48,
+      "settings_sha256": "a3314d9dffdf6fc50eec6cea0da143f5aaa985839615db1cbe346011bbf64ff3"
+    }
+  },
+  "schema": "scpn-fusion.dream-full-kinetic-radial-lock.v2",
+  "thresholds": {
+    "avalanche_source_reconstruction_max": 1e-12,
+    "convergence_improvement_ratio_max": 1.0,
+    "current_convergence_error_max": 0.1,
+    "density_convergence_error_max": 0.05,
+    "distribution_convergence_error_max": 0.25,
+    "growth_convergence_error_max": 0.02,
+    "native_density_residual_max": 0.0002,
+    "native_distribution_residual_max": 5e-07,
+    "operator_convergence_error_max": 0.25,
+    "pitch_advection_reconstruction_max": 1e-07,
+    "radial_loss_reconstruction_max": 1e-12,
+    "current_moment_reconstruction_max": 1e-07
+  }
+}
