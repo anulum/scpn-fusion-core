@@ -3014,7 +3014,7 @@
     "python_capability_classes": 629,
     "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
-    "test_files": 655
+    "test_files": 656
   },
   "documentation": {
     "public_pages": [
@@ -3591,6 +3591,7 @@
       "tests/test_packaging_contract.py",
       "tests/test_paper001_evidence_contract.py",
       "tests/test_paper002_evidence_contract.py",
+      "tests/test_paper003_evidence_contract.py",
       "tests/test_parser_input_hardening.py",
       "tests/test_pedestal.py",
       "tests/test_pellet_injection.py",

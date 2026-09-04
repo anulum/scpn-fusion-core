@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN-FUSION-CORE — extended-abstract citation metadata.
+cff-version: 1.2.0
+message: "If you use this review draft and its software artefacts, use the preferred citation."
+type: software
+title: "Supporting materials for the stochastic Petri-net control extended abstract"
+authors:
+  - family-names: "Sotek"
+    given-names: "Miroslav"
+    orcid: "https://orcid.org/0009-0009-3560-0851"
+repository-code: "https://github.com/anulum/scpn-fusion-core"
+url: "https://www.anulum.li"
+version: "review-2026-09-04"
+date-released: 2026-09-04
+preferred-citation:
+  type: conference-paper
+  title: "Evidence-Bounded Stochastic Petri Net Control in SCPN-Fusion-Core: Reduced-Order Results and Open Validation Gaps"
+  authors:
+    - family-names: "Sotek"
+      given-names: "Miroslav"
+      orcid: "https://orcid.org/0009-0009-3560-0851"
+  year: 2026

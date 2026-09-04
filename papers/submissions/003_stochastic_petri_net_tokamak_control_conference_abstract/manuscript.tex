@@ -1,0 +1,109 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — evidence-bounded extended abstract.
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[margin=1in]{geometry}
+\bibliographystyle{unsrtnat}
+
+\title{Evidence-Bounded Stochastic Petri Net Control in SCPN-Fusion-Core:\\
+Reduced-Order Results and Open Validation Gaps}
+\author{Miroslav \v{S}otek\\
+\small Anulum Research, \url{https://www.anulum.li}\\
+\small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
+\small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
+\date{Extended-abstract review draft --- 4 September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+SCPN-Fusion-Core is an open-source Python--Rust research toolkit combining
+axisymmetric equilibrium, reduced-order transport and control experiments.  We
+report an evidence-bounded snapshot of its stochastic-Petri-net control path at
+software commit \texttt{02d45ec3f25b}; the full revision is recorded in the
+paper metadata.  The production compiler maps each Petri-net transition to one
+threshold-configured leaky integrate-and-fire unit when the optional
+\texttt{sc\_neurocore} backend is available, and retains a deterministic float
+compatibility path.  Continuous markings are clipped to $[0,1]$ and actuator
+readout is magnitude- and slew-bounded.  This source-level compiler contract is
+distinct from the vertical-control experiment below: that benchmark compares
+the implemented PID, \texttt{LQRController} and \texttt{SpikingControllerPool}
+directly and does not execute a compiled Petri artifact.
+
+On a deterministic reduced-order vertical-instability model with growth rate
+$200\,\mathrm{s}^{-1}$, a 5 mm disturbance and a 1 kHz update, PID and LQR settle
+in 25 ms and 39 ms, respectively.  The spiking controller does not stabilise the
+case, reaches 159.683 mm peak displacement and has no settling time.  Its
+internal dynamics lag the 5 ms instability e-folding time.  This negative result
+rules out a fast-VDE performance claim for the current SNN.
+
+The equilibrium evidence is similarly bounded.  A provenance-bound same-case,
+warm-start reproduction of public DIII-D EFIT shot 145419 at 2100 ms reaches
+1.908\% deep-region RMS poloidal-flux error after 21 accelerated iterations,
+whereas a plasma-free cold start remains at 126.788\% deep RMS and cannot select
+the physical branch.  These are reproduction and failure-characterisation
+results, not blind prediction.  The current pointwise SPARC artifact records
+16/16 gated rows on the neural backend, but only 8/16 also pass the adapted
+source contract.  The pointwise gate does not supply the same-case external-coil
+description required for predictive free-boundary reconstruction.
+We therefore make no claim of experimental plasma control, production PCS
+readiness, portable hardware speed, or free-boundary SPARC prediction.
+
+The contribution is the auditable boundary itself: implemented neuro-symbolic
+software, deterministic reduced-order experiments, provenance-carrying evidence,
+and explicit failure semantics.  Required next steps are independently sourced
+coil and diagnostic inputs, shot- and device-disjoint validation, calibrated
+uncertainty and out-of-domain detection, hardware synthesis and measurement,
+and fair same-case comparisons against established control and equilibrium
+workflows.
+\end{abstract}
+
+\noindent\textbf{Keywords:} stochastic Petri net; spiking neural network;
+tokamak control; Grad--Shafranov; reduced-order validation; negative result
+
+\section*{Methods and evidence boundary}
+
+The Petri-net formulation follows the standard bipartite place--transition
+structure \citep{Petri1962,Murata1989}; the spiking paths use leaky
+integrate-and-fire dynamics \citep{Maass1997}.  The compiler and vertical
+controller are two separately audited software surfaces.  No evidence in this
+package establishes an end-to-end Petri-to-spiking vertical-control execution.
+The vertical benchmark is a deterministic ordinary-differential-equation
+simulation, not a plasma discharge.  Hardware latency and radiation response
+have not been measured.
+
+The DIII-D EFIT reference \citep{Lao1985} is distributed through the public OMAS
+sample data.  The equilibrium reproduction uses reference-derived flux anchors
+and a measured external-source description.  The cold-start failure demonstrates
+why this cannot be described as independent reconstruction.  SPARC reference
+files \citep{Creely2020} remain useful test inputs, but their presence does not
+establish experimental accuracy for every subsystem.
+
+The package carries exact byte copies of the three cited JSON records, their
+source revisions, Git blob identities and SHA-256 digests in
+\texttt{evidence/evidence\_manifest.json}.  The deterministic generator validates
+the reported scalars and the implementation-source digests.  These checks
+repackage existing results; no fresh discharge, equilibrium or controller run
+was performed for this draft.
+
+\section*{Availability and status}
+
+Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  This is
+a venue-neutral review draft and has not been submitted to a venue.  No DOI has
+been reserved and the manuscript-content licence has not yet been selected by
+the author.  Reproduction instructions and the machine-readable claim boundary
+are included in this submission directory.
+
+\bibliography{references}
+\end{document}

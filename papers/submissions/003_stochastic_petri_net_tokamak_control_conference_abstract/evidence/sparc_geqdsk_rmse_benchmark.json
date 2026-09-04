@@ -1,0 +1,4833 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "Metadata-enriched SCPN-FUSION-CORE SPARC pointwise benchmark evidence.",
+  "schema_version": "sparc-geqdsk-rmse-benchmark.v2",
+  "benchmark_id": "sparc-pointwise-rmse",
+  "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
+  "generated_at_utc": "2026-08-26T16:44:27.724185+00:00",
+  "mode": "reference_geqdsk",
+  "reference_case_count": 18,
+  "machine_counts": {
+    "diiid": 5,
+    "jet": 5,
+    "sparc": 8
+  },
+  "nrmse_threshold": 0.05,
+  "require_neural_backend": false,
+  "strict_source_contract": false,
+  "strict_adapted_source_contract": false,
+  "all_cases_neural_backend": false,
+  "gate_row_count": 16,
+  "reference_role_counts": {
+    "diagnostic": 20,
+    "gate": 16
+  },
+  "reference_class_counts": {
+    "public_efit_reference": 16,
+    "synthetic_proxy_reference": 20
+  },
+  "solver_mode_counts": {
+    "raw_geqdsk_profile_source_fixed_boundary": 36
+  },
+  "debug_methodology_steps": [
+    "attribute",
+    "normalise",
+    "solve",
+    "residual",
+    "classify",
+    "blockers"
+  ],
+  "debug_stage_counts": {
+    "attribute": {
+      "pass": 36
+    },
+    "normalise": {
+      "blocked": 28,
+      "pass": 8
+    },
+    "solve": {
+      "pass": 26,
+      "blocked": 10
+    },
+    "residual": {
+      "blocked": 28,
+      "pass": 8
+    },
+    "classify": {
+      "pass": 36
+    },
+    "blockers": {
+      "blocked": 28,
+      "pass": 8
+    }
+  },
+  "debug_first_blocker_counts": {
+    "normalise": 28
+  },
+  "adapted_source_contract_row_count": 8,
+  "adapted_source_contract_pass_count": 8,
+  "gate_adapted_source_contract_pass_count": 8,
+  "cases": [
+    {
+      "name": "diiid_hmode_1p5MA",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.015913,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=273.771521",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_hmode_1p5MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.9722123707,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.10191316027053737,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.9138667762401856,
+        "gs_profile_source_abs_max": 18.002671607396543,
+        "gs_profile_source_points": 1677,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.7558575138495662,
+        "gs_profile_source_best_fit_rel_l2": 0.7588249519877138,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_hmode_1p5MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.015913,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.9138667762401856,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.7588249519877138,
+            "best_fit_scale": 0.7558575138495662
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "diiid_hmode_2MA",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.048928,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=184.700904",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_hmode_2MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 1.441116609,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.10191316027053737,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 2.0541109202445265,
+        "gs_profile_source_abs_max": 30.6851981654852,
+        "gs_profile_source_points": 1615,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 1.6768775012857051,
+        "gs_profile_source_best_fit_rel_l2": 0.7564456062962912,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_hmode_2MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.048928,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 2.0541109202445265,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.7564456062962912,
+            "best_fit_scale": 1.6768775012857051
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "diiid_lmode_1MA",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.015375,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=511.327063",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_lmode_1MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.5205521081,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.10191316027053737,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.8249526870607725,
+        "gs_profile_source_abs_max": 23.14303831597051,
+        "gs_profile_source_points": 1751,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.22545791679535276,
+        "gs_profile_source_best_fit_rel_l2": 0.7831608580299327,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_lmode_1MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.015375,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.8249526870607725,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7831608580299327,
+            "best_fit_scale": 0.22545791679535276
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "diiid_negdelta",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.016875,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=494.596401",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_negdelta.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.538286279,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.09421875000000024,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.7347483720010811,
+        "gs_profile_source_abs_max": 13.111901719216476,
+        "gs_profile_source_points": 1493,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.5232302416649368,
+        "gs_profile_source_best_fit_rel_l2": 0.7301146563700239,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_negdelta.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.016875,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.7347483720010811,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.7301146563700239,
+            "best_fit_scale": 0.5232302416649368
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "diiid_snowflake",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.015792,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=441.410173",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_snowflake.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.6029991909,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1058651534977291,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.8086453675908478,
+        "gs_profile_source_abs_max": 20.84235060437189,
+        "gs_profile_source_points": 1811,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.2710742638665963,
+        "gs_profile_source_best_fit_rel_l2": 0.7906974414526258,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_snowflake.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.015792,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.8086453675908478,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7906974414526258,
+            "best_fit_scale": 0.2710742638665963
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_dt_3p5MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.197265,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=93.833294",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_dt_3p5MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 3.079715123,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1828885433790657,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.782553130540517,
+        "gs_profile_source_abs_max": 32.823451667980784,
+        "gs_profile_source_points": 1637,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.3048384171433423,
+        "gs_profile_source_best_fit_rel_l2": 0.7625858596045417,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_dt_3p5MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.197265,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.782553130540517,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7625858596045417,
+            "best_fit_scale": 0.3048384171433423
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_high_ip_4p8MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.243074,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=72.555425",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_high_ip_4p8MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 3.983812401,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1793162615897739,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.7714019485934877,
+        "gs_profile_source_abs_max": 26.899413380990058,
+        "gs_profile_source_points": 1603,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.5378676488842061,
+        "gs_profile_source_best_fit_rel_l2": 0.7541346783345965,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_high_ip_4p8MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.243074,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.7714019485934877,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.7541346783345965,
+            "best_fit_scale": 0.5378676488842061
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_hmode_3MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.170999,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=109.463558",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_hmode_3MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 2.63975582,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1828885433790657,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.819719455743476,
+        "gs_profile_source_abs_max": 37.59901597142258,
+        "gs_profile_source_points": 1637,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.2239629187695424,
+        "gs_profile_source_best_fit_rel_l2": 0.7625858597007508,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_hmode_3MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.170999,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.819719455743476,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7625858597007508,
+            "best_fit_scale": 0.2239629187695424
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_hybrid_2p5MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.134877,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=134.467541",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_hybrid_2p5MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 2.148758117,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1828885433790657,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.867770186084563,
+        "gs_profile_source_abs_max": 45.862436905552606,
+        "gs_profile_source_points": 1643,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.15072406142741224,
+        "gs_profile_source_best_fit_rel_l2": 0.7635153888929184,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_hybrid_2p5MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.134877,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.867770186084563,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7635153888929184,
+            "best_fit_scale": 0.15072406142741224
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_lmode_2MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.085548,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=173.841338",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_lmode_2MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 1.661990492,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1828885433790657,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.9125688339103226,
+        "gs_profile_source_abs_max": 60.7587088716233,
+        "gs_profile_source_points": 1617,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.09394022518270395,
+        "gs_profile_source_best_fit_rel_l2": 0.7569052218522474,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_lmode_2MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.085548,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.9125688339103226,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7569052218522474,
+            "best_fit_scale": 0.09394022518270395
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "lmode_hv",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.002521,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "lmode_hv.geqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 13.364610975000002,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": -0.046875,
+        "axis_error_m": 0.01814838576232245,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.00044322319041538726,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.5400193151860853,
+        "gs_profile_source_abs_max": 59.45981621605519,
+        "gs_profile_source_points": 6259,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.4122672316100718,
+        "gs_profile_source_best_fit_rel_l2": 0.8302711717971851,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "no_named_adapter",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_adapted_source_rel_l2": 1.5400193151860853,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "no_named_adapter",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "lmode_hv.geqdsk",
+          "adapter": "no_named_adapter",
+          "applied_scale": 1.0,
+          "provenance": "public_sparc_named_adapter_no_match",
+          "error": "no recognized public SPARC convention mapping"
+        },
+        "psi_span": 13.364610975000002,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": -0.046875,
+        "axis_error_m": 0.01814838576232245,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.00044322319041538726,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.5400193151860853,
+        "gs_profile_source_abs_max": 59.45981621605519,
+        "gs_profile_source_points": 6259,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.4122672316100718,
+        "gs_profile_source_best_fit_rel_l2": 0.8302711717971851,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "lmode_hv.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "no_named_adapter",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.002521,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 1.5400193151860853,
+            "raw_source_rel_l2": 1.5400193151860853,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.8302711717971851,
+            "best_fit_scale": -0.4122672316100718
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": true
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "lmode_vh",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.001548,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "lmode_vh.geqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 12.96363138,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": -0.046875,
+        "axis_error_m": 0.008396551838552148,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.0002926411903267185,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.6972791472261823,
+        "gs_profile_source_abs_max": 126.0926539474286,
+        "gs_profile_source_points": 6209,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.5170811543373629,
+        "gs_profile_source_best_fit_rel_l2": 0.8271506387250349,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "no_named_adapter",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_adapted_source_rel_l2": 1.6972791472261823,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "no_named_adapter",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "lmode_vh.geqdsk",
+          "adapter": "no_named_adapter",
+          "applied_scale": 1.0,
+          "provenance": "public_sparc_named_adapter_no_match",
+          "error": "no recognized public SPARC convention mapping"
+        },
+        "psi_span": 12.96363138,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": -0.046875,
+        "axis_error_m": 0.008396551838552148,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.0002926411903267185,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.6972791472261823,
+        "gs_profile_source_abs_max": 126.0926539474286,
+        "gs_profile_source_points": 6209,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.5170811543373629,
+        "gs_profile_source_best_fit_rel_l2": 0.8271506387250349,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "lmode_vh.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "no_named_adapter",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.001548,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 1.6972791472261823,
+            "raw_source_rel_l2": 1.6972791472261823,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.8271506387250349,
+            "best_fit_scale": -0.5170811543373629
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": true
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "lmode_vv",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.000505,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "lmode_vv.geqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 13.276195727,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.020559850670355376,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.00048490642578487503,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.5837665609808012,
+        "gs_profile_source_abs_max": 118.85786642371507,
+        "gs_profile_source_points": 6194,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.44352128057739765,
+        "gs_profile_source_best_fit_rel_l2": 0.8266647342072928,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "no_named_adapter",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_adapted_source_rel_l2": 1.5837665609808012,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "no_named_adapter",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "lmode_vv.geqdsk",
+          "adapter": "no_named_adapter",
+          "applied_scale": 1.0,
+          "provenance": "public_sparc_named_adapter_no_match",
+          "error": "no recognized public SPARC convention mapping"
+        },
+        "psi_span": 13.276195727,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.020559850670355376,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.00048490642578487503,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.5837665609808012,
+        "gs_profile_source_abs_max": 118.85786642371507,
+        "gs_profile_source_points": 6194,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.44352128057739765,
+        "gs_profile_source_best_fit_rel_l2": 0.8266647342072928,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "lmode_vv.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "no_named_adapter",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.000505,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 1.5837665609808012,
+            "raw_source_rel_l2": 1.5837665609808012,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.8266647342072928,
+            "best_fit_scale": -0.44352128057739765
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": true
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "sparc_1300",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.016707,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1300.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.5817987284,
+        "axis_r_m": 1.7000000000000002,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.004078507502710245,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 1.6616021191025143e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 6.356217206761932,
+        "gs_profile_source_abs_max": 18.629262027158667,
+        "gs_profile_source_points": 1355,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 3.592217635406243,
+        "gs_profile_source_best_fit_rel_l2": 0.8502975474146026,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "no_named_adapter",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_adapted_source_rel_l2": 6.356217206761932,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "no_named_adapter",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1300.eqdsk",
+          "adapter": "no_named_adapter",
+          "applied_scale": 1.0,
+          "provenance": "public_sparc_named_adapter_no_match",
+          "error": "no recognized public SPARC convention mapping"
+        },
+        "psi_span": 0.5817987284,
+        "axis_r_m": 1.7000000000000002,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.004078507502710245,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 1.6616021191025143e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 6.356217206761932,
+        "gs_profile_source_abs_max": 18.629262027158667,
+        "gs_profile_source_points": 1355,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 3.592217635406243,
+        "gs_profile_source_best_fit_rel_l2": 0.8502975474146026,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1300.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "no_named_adapter",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.016707,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 6.356217206761932,
+            "raw_source_rel_l2": 6.356217206761932,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.8502975474146026,
+            "best_fit_scale": 3.592217635406243
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": true
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "sparc_1305",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.002658,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1305.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 3.9734529629999997,
+        "axis_r_m": 1.85,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.007472862024166274,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 0.00011222858409357176,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 5.271291171263865,
+        "gs_profile_source_abs_max": 21.697888652067768,
+        "gs_profile_source_points": 2847,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 6.254474698571119,
+        "gs_profile_source_best_fit_rel_l2": 0.06711554441838792,
+        "gs_profile_source_best_fit_convention": "scaled_by_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": true,
+      "geqdsk_adapted_source_convention_adapter": "scaled_by_2pi",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": true,
+      "geqdsk_adapted_source_rel_l2": 0.06711557597701709,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "canonical",
+        "source_convention_adapter": "scaled_by_2pi",
+        "source_convention_adapter_pass": true,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1305.eqdsk",
+          "adapter": "scaled_by_2pi",
+          "applied_scale": 6.283185307179586,
+          "provenance": "public_sparc_named_adapter",
+          "public_case": "sparc_1305.eqdsk"
+        },
+        "psi_span": 3.9734529629999997,
+        "axis_r_m": 1.85,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.007472862024166274,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 0.00011222858409357176,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.06711557597701709,
+        "gs_profile_source_abs_max": 3.3845573407402494,
+        "gs_profile_source_points": 2847,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.9954305647208406,
+        "gs_profile_source_best_fit_rel_l2": 0.0671155444183711,
+        "gs_profile_source_best_fit_convention": "canonical"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1305.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": true,
+            "adapter": "scaled_by_2pi",
+            "adapter_pass": true,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "none",
+          "stage": "normalise",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.002658,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 0.06711557597701709,
+            "raw_source_rel_l2": 5.271291171263865,
+            "source_threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "residual",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_2pi",
+            "best_fit_rel_l2": 0.06711554441838792,
+            "best_fit_scale": 6.254474698571119
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [],
+            "row_passes": true
+          },
+          "next_action": "none",
+          "stage": "blockers",
+          "status": "pass"
+        }
+      ],
+      "geqdsk_debug_first_blocker": null
+    },
+    {
+      "name": "sparc_1310",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.00293,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1310.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 6.621026929,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0020941887952169963,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 5.969164666455337e-06,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 5.244402387052161,
+        "gs_profile_source_abs_max": 22.860635952721594,
+        "gs_profile_source_points": 3341,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 6.186032870272184,
+        "gs_profile_source_best_fit_rel_l2": 0.1251423976657886,
+        "gs_profile_source_best_fit_convention": "scaled_by_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": true,
+      "geqdsk_adapted_source_convention_adapter": "scaled_by_2pi",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": true,
+      "geqdsk_adapted_source_rel_l2": 0.12514255732480695,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "canonical",
+        "source_convention_adapter": "scaled_by_2pi",
+        "source_convention_adapter_pass": true,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1310.eqdsk",
+          "adapter": "scaled_by_2pi",
+          "applied_scale": 6.283185307179586,
+          "provenance": "public_sparc_named_adapter",
+          "public_case": "sparc_1310.eqdsk"
+        },
+        "psi_span": 6.621026929,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0020941887952169963,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 5.969164666455337e-06,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.12514255732480695,
+        "gs_profile_source_abs_max": 5.821725518423276,
+        "gs_profile_source_points": 3341,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.984537709432763,
+        "gs_profile_source_best_fit_rel_l2": 0.12514239766581134,
+        "gs_profile_source_best_fit_convention": "canonical"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1310.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": true,
+            "adapter": "scaled_by_2pi",
+            "adapter_pass": true,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "none",
+          "stage": "normalise",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.00293,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 0.12514255732480695,
+            "raw_source_rel_l2": 5.244402387052161,
+            "source_threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "residual",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_2pi",
+            "best_fit_rel_l2": 0.1251423976657886,
+            "best_fit_scale": 6.186032870272184
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [],
+            "row_passes": true
+          },
+          "next_action": "none",
+          "stage": "blockers",
+          "status": "pass"
+        }
+      ],
+      "geqdsk_debug_first_blocker": null
+    },
+    {
+      "name": "sparc_1315",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.001832,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1315.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 6.443885443999999,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.004451652138767841,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 2.8219620224467405e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 5.23495547483606,
+        "gs_profile_source_abs_max": 22.901760270739327,
+        "gs_profile_source_points": 3288,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 6.162854852268796,
+        "gs_profile_source_best_fit_rel_l2": 0.13912785115847529,
+        "gs_profile_source_best_fit_convention": "scaled_by_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": true,
+      "geqdsk_adapted_source_convention_adapter": "scaled_by_2pi",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": true,
+      "geqdsk_adapted_source_rel_l2": 0.13912800572950793,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "canonical",
+        "source_convention_adapter": "scaled_by_2pi",
+        "source_convention_adapter_pass": true,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1315.eqdsk",
+          "adapter": "scaled_by_2pi",
+          "applied_scale": 6.283185307179586,
+          "provenance": "public_sparc_named_adapter",
+          "public_case": "sparc_1315.eqdsk"
+        },
+        "psi_span": 6.443885443999999,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.004451652138767841,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 2.8219620224467405e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.13912800572950793,
+        "gs_profile_source_abs_max": 7.135808443085067,
+        "gs_profile_source_points": 3288,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.9808488132964482,
+        "gs_profile_source_best_fit_rel_l2": 0.13912785115846368,
+        "gs_profile_source_best_fit_convention": "canonical"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1315.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": true,
+            "adapter": "scaled_by_2pi",
+            "adapter_pass": true,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "none",
+          "stage": "normalise",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.001832,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 0.13912800572950793,
+            "raw_source_rel_l2": 5.23495547483606,
+            "source_threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "residual",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_2pi",
+            "best_fit_rel_l2": 0.13912785115847529,
+            "best_fit_scale": 6.162854852268796
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [],
+            "row_passes": true
+          },
+          "next_action": "none",
+          "stage": "blockers",
+          "status": "pass"
+        }
+      ],
+      "geqdsk_debug_first_blocker": null
+    },
+    {
+      "name": "sparc_1349",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "65x65",
+      "nrmse": 0.001144,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1349.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 6.1420658889999995,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.026562500000000044,
+        "axis_error_m": 0.009525967971450331,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 7.206565478125352e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 5.258592480922596,
+        "gs_profile_source_abs_max": 22.662936718961607,
+        "gs_profile_source_points": 3007,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 6.221999005070796,
+        "gs_profile_source_best_fit_rel_l2": 0.09904308547326218,
+        "gs_profile_source_best_fit_convention": "scaled_by_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": true,
+      "geqdsk_adapted_source_convention_adapter": "scaled_by_2pi",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": true,
+      "geqdsk_adapted_source_rel_l2": 0.09904311148644905,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "canonical",
+        "source_convention_adapter": "scaled_by_2pi",
+        "source_convention_adapter_pass": true,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1349.eqdsk",
+          "adapter": "scaled_by_2pi",
+          "applied_scale": 6.283185307179586,
+          "provenance": "public_sparc_named_adapter",
+          "public_case": "sparc_1349.eqdsk"
+        },
+        "psi_span": 6.1420658889999995,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.026562500000000044,
+        "axis_error_m": 0.009525967971450331,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 7.206565478125352e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.09904311148644905,
+        "gs_profile_source_abs_max": 8.797604287732353,
+        "gs_profile_source_points": 3007,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.990261897569841,
+        "gs_profile_source_best_fit_rel_l2": 0.09904308547331973,
+        "gs_profile_source_best_fit_convention": "canonical"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1349.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": true,
+            "adapter": "scaled_by_2pi",
+            "adapter_pass": true,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "none",
+          "stage": "normalise",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.001144,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 0.09904311148644905,
+            "raw_source_rel_l2": 5.258592480922596,
+            "source_threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "residual",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_2pi",
+            "best_fit_rel_l2": 0.09904308547326218,
+            "best_fit_scale": 6.221999005070796
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [],
+            "row_passes": true
+          },
+          "next_action": "none",
+          "stage": "blockers",
+          "status": "pass"
+        }
+      ],
+      "geqdsk_debug_first_blocker": null
+    },
+    {
+      "name": "diiid_hmode_1p5MA",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.0151,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=272.688678",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_hmode_1p5MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.9722123707,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.10191316027053737,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.9138667762401856,
+        "gs_profile_source_abs_max": 18.002671607396543,
+        "gs_profile_source_points": 1677,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.7558575138495662,
+        "gs_profile_source_best_fit_rel_l2": 0.7588249519877138,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_hmode_1p5MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.0151,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.9138667762401856,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.7588249519877138,
+            "best_fit_scale": 0.7558575138495662
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "diiid_hmode_2MA",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.048627,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=183.970819",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_hmode_2MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 1.441116609,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.10191316027053737,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 2.0541109202445265,
+        "gs_profile_source_abs_max": 30.6851981654852,
+        "gs_profile_source_points": 1615,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 1.6768775012857051,
+        "gs_profile_source_best_fit_rel_l2": 0.7564456062962912,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_hmode_2MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.048627,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 2.0541109202445265,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.7564456062962912,
+            "best_fit_scale": 1.6768775012857051
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "diiid_lmode_1MA",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.014604,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=509.304049",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_lmode_1MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.5205521081,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.10191316027053737,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.8249526870607725,
+        "gs_profile_source_abs_max": 23.14303831597051,
+        "gs_profile_source_points": 1751,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.22545791679535276,
+        "gs_profile_source_best_fit_rel_l2": 0.7831608580299327,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_lmode_1MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.014604,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.8249526870607725,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7831608580299327,
+            "best_fit_scale": 0.22545791679535276
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "diiid_negdelta",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.016009,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=492.641308",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_negdelta.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.538286279,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.09421875000000024,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.7347483720010811,
+        "gs_profile_source_abs_max": 13.111901719216476,
+        "gs_profile_source_points": 1493,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.5232302416649368,
+        "gs_profile_source_best_fit_rel_l2": 0.7301146563700239,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_negdelta.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.016009,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.7347483720010811,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.7301146563700239,
+            "best_fit_scale": 0.5232302416649368
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "diiid_snowflake",
+      "machine": "diiid",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.014997,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=439.664171",
+      "backend_requirement_satisfied": true,
+      "source_file": "diiid_snowflake.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.6029991909,
+        "axis_r_m": 1.67,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1058651534977291,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.8086453675908478,
+        "gs_profile_source_abs_max": 20.84235060437189,
+        "gs_profile_source_points": 1811,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.2710742638665963,
+        "gs_profile_source_best_fit_rel_l2": 0.7906974414526258,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "diiid",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "diiid_snowflake.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.014997,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.8086453675908478,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7906974414526258,
+            "best_fit_scale": 0.2710742638665963
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_dt_3p5MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.198023,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=93.453100",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_dt_3p5MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 3.079715123,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1828885433790657,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.782553130540517,
+        "gs_profile_source_abs_max": 32.823451667980784,
+        "gs_profile_source_points": 1637,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.3048384171433423,
+        "gs_profile_source_best_fit_rel_l2": 0.7625858596045417,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_dt_3p5MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.198023,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.782553130540517,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7625858596045417,
+            "best_fit_scale": 0.3048384171433423
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_high_ip_4p8MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.244093,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=72.260838",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_high_ip_4p8MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 3.983812401,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1793162615897739,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.7714019485934877,
+        "gs_profile_source_abs_max": 26.899413380990058,
+        "gs_profile_source_points": 1603,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.5378676488842061,
+        "gs_profile_source_best_fit_rel_l2": 0.7541346783345965,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_high_ip_4p8MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.244093,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.7714019485934877,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.7541346783345965,
+            "best_fit_scale": 0.5378676488842061
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_hmode_3MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.171614,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=109.020352",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_hmode_3MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 2.63975582,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1828885433790657,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.819719455743476,
+        "gs_profile_source_abs_max": 37.59901597142258,
+        "gs_profile_source_points": 1637,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.2239629187695424,
+        "gs_profile_source_best_fit_rel_l2": 0.7625858597007508,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_hmode_3MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.171614,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.819719455743476,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7625858597007508,
+            "best_fit_scale": 0.2239629187695424
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_hybrid_2p5MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.135273,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=133.923467",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_hybrid_2p5MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 2.148758117,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1828885433790657,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.867770186084563,
+        "gs_profile_source_abs_max": 45.862436905552606,
+        "gs_profile_source_points": 1643,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.15072406142741224,
+        "gs_profile_source_best_fit_rel_l2": 0.7635153888929184,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_hybrid_2p5MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.135273,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.867770186084563,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7635153888929184,
+            "best_fit_scale": 0.15072406142741224
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "jet_lmode_2MA",
+      "machine": "jet",
+      "reference_class": "synthetic_proxy_reference",
+      "reference_role": "diagnostic",
+      "gated": false,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.085565,
+      "threshold": 0.05,
+      "passes": false,
+      "surrogate_backend": "reduced_order_proxy",
+      "fallback_reason": "RuntimeError: surrogate_out_of_domain_nrmse=173.138478",
+      "backend_requirement_satisfied": true,
+      "source_file": "jet_lmode_2MA.geqdsk",
+      "geqdsk_contract_pass": false,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": false,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 1.661990492,
+        "axis_r_m": 2.96,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0,
+        "axis_tolerance_m": 0.1828885433790657,
+        "axis_psi_error_fraction": 1.0,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.9125688339103226,
+        "gs_profile_source_abs_max": 60.7587088716233,
+        "gs_profile_source_points": 1617,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.09394022518270395,
+        "gs_profile_source_best_fit_rel_l2": 0.7569052218522474,
+        "gs_profile_source_best_fit_convention": "scaled_by_inv_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "not_evaluated",
+      "geqdsk_adapted_solver_mode": "not_evaluated",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "jet",
+            "reference_class": "synthetic_proxy_reference",
+            "source_file": "jet_lmode_2MA.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "not_evaluated",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.085565,
+            "surrogate_backend": "reduced_order_proxy",
+            "threshold": 0.05
+          },
+          "next_action": "debug_profile_source_fixed_boundary_reconstruction",
+          "stage": "solve",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": Infinity,
+            "raw_source_rel_l2": 0.9125688339103226,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_inv_2pi",
+            "best_fit_rel_l2": 0.7569052218522474,
+            "best_fit_scale": 0.09394022518270395
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "solve",
+              "residual"
+            ],
+            "row_passes": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "lmode_hv",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.002109,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "lmode_hv.geqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 13.364610975000002,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": -0.046875,
+        "axis_error_m": 0.01814838576232245,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.00044322319041538726,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.5400193151860853,
+        "gs_profile_source_abs_max": 59.45981621605519,
+        "gs_profile_source_points": 6259,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.4122672316100718,
+        "gs_profile_source_best_fit_rel_l2": 0.8302711717971851,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "no_named_adapter",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_adapted_source_rel_l2": 1.5400193151860853,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "no_named_adapter",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "lmode_hv.geqdsk",
+          "adapter": "no_named_adapter",
+          "applied_scale": 1.0,
+          "provenance": "public_sparc_named_adapter_no_match",
+          "error": "no recognized public SPARC convention mapping"
+        },
+        "psi_span": 13.364610975000002,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": -0.046875,
+        "axis_error_m": 0.01814838576232245,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.00044322319041538726,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.5400193151860853,
+        "gs_profile_source_abs_max": 59.45981621605519,
+        "gs_profile_source_points": 6259,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.4122672316100718,
+        "gs_profile_source_best_fit_rel_l2": 0.8302711717971851,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "lmode_hv.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "no_named_adapter",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.002109,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 1.5400193151860853,
+            "raw_source_rel_l2": 1.5400193151860853,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.8302711717971851,
+            "best_fit_scale": -0.4122672316100718
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": true
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "lmode_vh",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.001464,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "lmode_vh.geqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 12.96363138,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": -0.046875,
+        "axis_error_m": 0.008396551838552148,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.0002926411903267185,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.6972791472261823,
+        "gs_profile_source_abs_max": 126.0926539474286,
+        "gs_profile_source_points": 6209,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.5170811543373629,
+        "gs_profile_source_best_fit_rel_l2": 0.8271506387250349,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "no_named_adapter",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_adapted_source_rel_l2": 1.6972791472261823,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "no_named_adapter",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "lmode_vh.geqdsk",
+          "adapter": "no_named_adapter",
+          "applied_scale": 1.0,
+          "provenance": "public_sparc_named_adapter_no_match",
+          "error": "no recognized public SPARC convention mapping"
+        },
+        "psi_span": 12.96363138,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": -0.046875,
+        "axis_error_m": 0.008396551838552148,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.0002926411903267185,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.6972791472261823,
+        "gs_profile_source_abs_max": 126.0926539474286,
+        "gs_profile_source_points": 6209,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.5170811543373629,
+        "gs_profile_source_best_fit_rel_l2": 0.8271506387250349,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "lmode_vh.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "no_named_adapter",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.001464,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 1.6972791472261823,
+            "raw_source_rel_l2": 1.6972791472261823,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.8271506387250349,
+            "best_fit_scale": -0.5170811543373629
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": true
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "lmode_vv",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.000487,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "lmode_vv.geqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 13.276195727,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.020559850670355376,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.00048490642578487503,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.5837665609808012,
+        "gs_profile_source_abs_max": 118.85786642371507,
+        "gs_profile_source_points": 6194,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.44352128057739765,
+        "gs_profile_source_best_fit_rel_l2": 0.8266647342072928,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "no_named_adapter",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_adapted_source_rel_l2": 1.5837665609808012,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "no_named_adapter",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "lmode_vv.geqdsk",
+          "adapter": "no_named_adapter",
+          "applied_scale": 1.0,
+          "provenance": "public_sparc_named_adapter_no_match",
+          "error": "no recognized public SPARC convention mapping"
+        },
+        "psi_span": 13.276195727,
+        "axis_r_m": 1.8531250000000001,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.020559850670355376,
+        "axis_tolerance_m": 0.08081690460734395,
+        "axis_psi_error_fraction": 0.00048490642578487503,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 1.5837665609808012,
+        "gs_profile_source_abs_max": 118.85786642371507,
+        "gs_profile_source_points": 6194,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": -0.44352128057739765,
+        "gs_profile_source_best_fit_rel_l2": 0.8266647342072928,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "lmode_vv.geqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "no_named_adapter",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.000487,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 1.5837665609808012,
+            "raw_source_rel_l2": 1.5837665609808012,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.8266647342072928,
+            "best_fit_scale": -0.44352128057739765
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": true
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "sparc_1300",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.016139,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1300.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 0.5817987284,
+        "axis_r_m": 1.7000000000000002,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.004078507502710245,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 1.6616021191025143e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 6.356217206761932,
+        "gs_profile_source_abs_max": 18.629262027158667,
+        "gs_profile_source_points": 1355,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 3.592217635406243,
+        "gs_profile_source_best_fit_rel_l2": 0.8502975474146026,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_adapted_source_contract_pass": false,
+      "geqdsk_adapted_source_convention_adapter": "no_named_adapter",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": false,
+      "geqdsk_adapted_source_rel_l2": 6.356217206761932,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "no_named_adapter",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1300.eqdsk",
+          "adapter": "no_named_adapter",
+          "applied_scale": 1.0,
+          "provenance": "public_sparc_named_adapter_no_match",
+          "error": "no recognized public SPARC convention mapping"
+        },
+        "psi_span": 0.5817987284,
+        "axis_r_m": 1.7000000000000002,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.004078507502710245,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 1.6616021191025143e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 6.356217206761932,
+        "gs_profile_source_abs_max": 18.629262027158667,
+        "gs_profile_source_points": 1355,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 3.592217635406243,
+        "gs_profile_source_best_fit_rel_l2": 0.8502975474146026,
+        "gs_profile_source_best_fit_convention": "unclassified_global_scale"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1300.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": false,
+            "adapter": "no_named_adapter",
+            "adapter_pass": false,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "normalise",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.016139,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 6.356217206761932,
+            "raw_source_rel_l2": 6.356217206761932,
+            "source_threshold": 0.05
+          },
+          "next_action": "inspect_operator_source_residual_budget",
+          "stage": "residual",
+          "status": "blocked"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "unclassified_global_scale",
+            "best_fit_rel_l2": 0.8502975474146026,
+            "best_fit_scale": 3.592217635406243
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [
+              "normalise",
+              "residual"
+            ],
+            "row_passes": true
+          },
+          "next_action": "select_or_add_source_convention_adapter",
+          "stage": "blockers",
+          "status": "blocked"
+        }
+      ],
+      "geqdsk_debug_first_blocker": {
+        "stage": "normalise",
+        "next_action": "select_or_add_source_convention_adapter"
+      }
+    },
+    {
+      "name": "sparc_1305",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.002564,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1305.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 3.9734529629999997,
+        "axis_r_m": 1.85,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.007472862024166274,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 0.00011222858409357176,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 5.271291171263865,
+        "gs_profile_source_abs_max": 21.697888652067768,
+        "gs_profile_source_points": 2847,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 6.254474698571119,
+        "gs_profile_source_best_fit_rel_l2": 0.06711554441838792,
+        "gs_profile_source_best_fit_convention": "scaled_by_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": true,
+      "geqdsk_adapted_source_convention_adapter": "scaled_by_2pi",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": true,
+      "geqdsk_adapted_source_rel_l2": 0.06711557597701709,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "canonical",
+        "source_convention_adapter": "scaled_by_2pi",
+        "source_convention_adapter_pass": true,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1305.eqdsk",
+          "adapter": "scaled_by_2pi",
+          "applied_scale": 6.283185307179586,
+          "provenance": "public_sparc_named_adapter",
+          "public_case": "sparc_1305.eqdsk"
+        },
+        "psi_span": 3.9734529629999997,
+        "axis_r_m": 1.85,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.007472862024166274,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 0.00011222858409357176,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.06711557597701709,
+        "gs_profile_source_abs_max": 3.3845573407402494,
+        "gs_profile_source_points": 2847,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.9954305647208406,
+        "gs_profile_source_best_fit_rel_l2": 0.0671155444183711,
+        "gs_profile_source_best_fit_convention": "canonical"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1305.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": true,
+            "adapter": "scaled_by_2pi",
+            "adapter_pass": true,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "none",
+          "stage": "normalise",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.002564,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 0.06711557597701709,
+            "raw_source_rel_l2": 5.271291171263865,
+            "source_threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "residual",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_2pi",
+            "best_fit_rel_l2": 0.06711554441838792,
+            "best_fit_scale": 6.254474698571119
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [],
+            "row_passes": true
+          },
+          "next_action": "none",
+          "stage": "blockers",
+          "status": "pass"
+        }
+      ],
+      "geqdsk_debug_first_blocker": null
+    },
+    {
+      "name": "sparc_1310",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.002888,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1310.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 6.621026929,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0020941887952169963,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 5.969164666455337e-06,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 5.244402387052161,
+        "gs_profile_source_abs_max": 22.860635952721594,
+        "gs_profile_source_points": 3341,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 6.186032870272184,
+        "gs_profile_source_best_fit_rel_l2": 0.1251423976657886,
+        "gs_profile_source_best_fit_convention": "scaled_by_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": true,
+      "geqdsk_adapted_source_convention_adapter": "scaled_by_2pi",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": true,
+      "geqdsk_adapted_source_rel_l2": 0.12514255732480695,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "canonical",
+        "source_convention_adapter": "scaled_by_2pi",
+        "source_convention_adapter_pass": true,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1310.eqdsk",
+          "adapter": "scaled_by_2pi",
+          "applied_scale": 6.283185307179586,
+          "provenance": "public_sparc_named_adapter",
+          "public_case": "sparc_1310.eqdsk"
+        },
+        "psi_span": 6.621026929,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.0020941887952169963,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 5.969164666455337e-06,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.12514255732480695,
+        "gs_profile_source_abs_max": 5.821725518423276,
+        "gs_profile_source_points": 3341,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.984537709432763,
+        "gs_profile_source_best_fit_rel_l2": 0.12514239766581134,
+        "gs_profile_source_best_fit_convention": "canonical"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1310.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": true,
+            "adapter": "scaled_by_2pi",
+            "adapter_pass": true,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "none",
+          "stage": "normalise",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.002888,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 0.12514255732480695,
+            "raw_source_rel_l2": 5.244402387052161,
+            "source_threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "residual",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_2pi",
+            "best_fit_rel_l2": 0.1251423976657886,
+            "best_fit_scale": 6.186032870272184
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [],
+            "row_passes": true
+          },
+          "next_action": "none",
+          "stage": "blockers",
+          "status": "pass"
+        }
+      ],
+      "geqdsk_debug_first_blocker": null
+    },
+    {
+      "name": "sparc_1315",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.001782,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1315.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 6.443885443999999,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.004451652138767841,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 2.8219620224467405e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 5.23495547483606,
+        "gs_profile_source_abs_max": 22.901760270739327,
+        "gs_profile_source_points": 3288,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 6.162854852268796,
+        "gs_profile_source_best_fit_rel_l2": 0.13912785115847529,
+        "gs_profile_source_best_fit_convention": "scaled_by_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": true,
+      "geqdsk_adapted_source_convention_adapter": "scaled_by_2pi",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": true,
+      "geqdsk_adapted_source_rel_l2": 0.13912800572950793,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "canonical",
+        "source_convention_adapter": "scaled_by_2pi",
+        "source_convention_adapter_pass": true,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1315.eqdsk",
+          "adapter": "scaled_by_2pi",
+          "applied_scale": 6.283185307179586,
+          "provenance": "public_sparc_named_adapter",
+          "public_case": "sparc_1315.eqdsk"
+        },
+        "psi_span": 6.443885443999999,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.0,
+        "axis_error_m": 0.004451652138767841,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 2.8219620224467405e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.13912800572950793,
+        "gs_profile_source_abs_max": 7.135808443085067,
+        "gs_profile_source_points": 3288,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.9808488132964482,
+        "gs_profile_source_best_fit_rel_l2": 0.13912785115846368,
+        "gs_profile_source_best_fit_convention": "canonical"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1315.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": true,
+            "adapter": "scaled_by_2pi",
+            "adapter_pass": true,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "none",
+          "stage": "normalise",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.001782,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 0.13912800572950793,
+            "raw_source_rel_l2": 5.23495547483606,
+            "source_threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "residual",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_2pi",
+            "best_fit_rel_l2": 0.13912785115847529,
+            "best_fit_scale": 6.162854852268796
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [],
+            "row_passes": true
+          },
+          "next_action": "none",
+          "stage": "blockers",
+          "status": "pass"
+        }
+      ],
+      "geqdsk_debug_first_blocker": null
+    },
+    {
+      "name": "sparc_1349",
+      "machine": "sparc",
+      "reference_class": "public_efit_reference",
+      "reference_role": "gate",
+      "gated": true,
+      "solver_mode": "raw_geqdsk_profile_source_fixed_boundary",
+      "grid": "129x129",
+      "nrmse": 0.001017,
+      "threshold": 0.05,
+      "passes": true,
+      "surrogate_backend": "neural_equilibrium",
+      "fallback_reason": null,
+      "backend_requirement_satisfied": true,
+      "source_file": "sparc_1349.eqdsk",
+      "geqdsk_contract_pass": true,
+      "geqdsk_source_contract_pass": false,
+      "geqdsk_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "raw_canonical",
+        "source_convention_adapter": "not_applied",
+        "source_convention_adapter_pass": false,
+        "source_convention_metadata": {},
+        "psi_span": 6.1420658889999995,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.026562500000000044,
+        "axis_error_m": 0.009525967971450331,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 7.206565478125352e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 5.258592480922596,
+        "gs_profile_source_abs_max": 22.662936718961607,
+        "gs_profile_source_points": 3007,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 6.221999005070796,
+        "gs_profile_source_best_fit_rel_l2": 0.09904308547326218,
+        "gs_profile_source_best_fit_convention": "scaled_by_2pi"
+      },
+      "geqdsk_adapted_source_contract_pass": true,
+      "geqdsk_adapted_source_convention_adapter": "scaled_by_2pi",
+      "geqdsk_adapted_solver_mode": "adapted_geqdsk_profile_source_fixed_boundary",
+      "geqdsk_adapted_source_convention_adapter_pass": true,
+      "geqdsk_adapted_source_rel_l2": 0.09904311148644905,
+      "geqdsk_adapted_contract": {
+        "geqdsk_contract_pass": true,
+        "source_convention": "canonical",
+        "source_convention_adapter": "scaled_by_2pi",
+        "source_convention_adapter_pass": true,
+        "source_convention_metadata": {
+          "requested_mode": "public_sparc_named_adapter",
+          "source_file": "sparc_1349.eqdsk",
+          "adapter": "scaled_by_2pi",
+          "applied_scale": 6.283185307179586,
+          "provenance": "public_sparc_named_adapter",
+          "public_case": "sparc_1349.eqdsk"
+        },
+        "psi_span": 6.1420658889999995,
+        "axis_r_m": 1.875,
+        "axis_z_m": 0.026562500000000044,
+        "axis_error_m": 0.009525967971450331,
+        "axis_tolerance_m": 0.054715394671541684,
+        "axis_psi_error_fraction": 7.206565478125352e-05,
+        "axis_index_interior": true,
+        "boundary_inside_grid": true,
+        "profiles_finite": true,
+        "q_finite_nonzero": true,
+        "geqdsk_source_contract_pass": false,
+        "gs_profile_source_rel_l2": 0.09904311148644905,
+        "gs_profile_source_abs_max": 8.797604287732353,
+        "gs_profile_source_points": 3007,
+        "gs_profile_source_threshold": 0.05,
+        "gs_profile_source_ok": false,
+        "gs_profile_source_best_fit_scale": 0.990261897569841,
+        "gs_profile_source_best_fit_rel_l2": 0.09904308547331973,
+        "gs_profile_source_best_fit_convention": "canonical"
+      },
+      "geqdsk_debug_trace": [
+        {
+          "evidence": {
+            "machine": "sparc",
+            "reference_class": "public_efit_reference",
+            "source_file": "sparc_1349.eqdsk"
+          },
+          "next_action": "none",
+          "stage": "attribute",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_contract_pass": true,
+            "adapter": "scaled_by_2pi",
+            "adapter_pass": true,
+            "raw_source_contract_pass": false
+          },
+          "next_action": "none",
+          "stage": "normalise",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "backend_requirement_satisfied": true,
+            "nrmse": 0.001017,
+            "surrogate_backend": "neural_equilibrium",
+            "threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "solve",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "adapted_source_rel_l2": 0.09904311148644905,
+            "raw_source_rel_l2": 5.258592480922596,
+            "source_threshold": 0.05
+          },
+          "next_action": "none",
+          "stage": "residual",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "best_fit_convention": "scaled_by_2pi",
+            "best_fit_rel_l2": 0.09904308547326218,
+            "best_fit_scale": 6.221999005070796
+          },
+          "next_action": "none",
+          "stage": "classify",
+          "status": "pass"
+        },
+        {
+          "evidence": {
+            "blocked_stages": [],
+            "row_passes": true
+          },
+          "next_action": "none",
+          "stage": "blockers",
+          "status": "pass"
+        }
+      ],
+      "geqdsk_debug_first_blocker": null
+    }
+  ],
+  "passes": true,
+  "runtime_s": 4.69
+}

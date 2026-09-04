@@ -1,0 +1,40 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "controllers": {
+    "LQR": {
+      "outcome": "stabilises_this_model",
+      "peak_abs_displacement_mm": 5.2,
+      "settling_ms": 39.0
+    },
+    "PID": {
+      "outcome": "stabilises_this_model",
+      "peak_abs_displacement_mm": 5.0,
+      "settling_ms": 25.0
+    },
+    "SNN": {
+      "outcome": "diverges",
+      "peak_abs_displacement_mm": 159.68272099657466,
+      "settling_ms": null
+    }
+  },
+  "experiment": "deterministic reduced-order vertical instability response",
+  "generator": "figures/fig_vertical_stability.py",
+  "generator_sha256": "b4edec6af3b89a66af80af6da002a8286fcdb3df558b5f1c0050d3fd1ad475b8",
+  "orcid": "0009-0009-3560-0851",
+  "plant": {
+    "coil_coupling": 0.5,
+    "current_limit_a": 10000.0,
+    "duration_s": 0.06,
+    "gamma_per_s": 200.0,
+    "kick_m": 0.005,
+    "kick_time_s": 0.01,
+    "normalised_effective_mass": 1.0,
+    "step_s": 0.001
+  },
+  "projectDescription": "SCPN-FUSION-CORE reduced-order vertical-stability evidence.",
+  "schema_version": "1.0"
+}

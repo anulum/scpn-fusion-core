@@ -247,6 +247,9 @@ build_submission() {
         if [[ -f figures/generate_figures.py ]]; then
             PYTHONPATH=../../../src ../../../.venv/bin/python figures/generate_figures.py
         fi
+        if [[ -f generate_evidence_manifest.py ]]; then
+            PYTHONPATH=../../../src ../../../.venv/bin/python generate_evidence_manifest.py
+        fi
         pdflatex -interaction=nonstopmode -halt-on-error manuscript.tex >/dev/null
         bibtex manuscript >/dev/null
         pdflatex -interaction=nonstopmode -halt-on-error manuscript.tex >/dev/null

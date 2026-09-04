@@ -1,0 +1,33 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE extended-abstract review metadata.",
+  "schema_version": "2.0",
+  "catalogue_id": "003",
+  "status": "review_draft_not_submitted",
+  "title": "Evidence-Bounded Stochastic Petri Net Control in SCPN-Fusion-Core: Reduced-Order Results and Open Validation Gaps",
+  "author": {
+    "name": "Miroslav Sotek",
+    "orcid": "0009-0009-3560-0851"
+  },
+  "repository_revision": "02d45ec3f25b79e0a232bb44a327cbcc845ca133",
+  "companion_catalogue_ids": ["001", "002"],
+  "evidence_files": [
+    "evidence/evidence_manifest.json",
+    "evidence/vertical_stability_reduced_order.json",
+    "evidence/real_diiid_145419_validation.json",
+    "evidence/sparc_geqdsk_rmse_benchmark.json"
+  ],
+  "claim_status": {
+    "petri_compiler": "source_level_implementation_contract",
+    "vertical_control": "independent_reduced_order_negative_snn_result",
+    "diiid": "same_case_warm_start_reproduction",
+    "sparc": "pointwise_gate_with_partial_adapted_source_contract"
+  },
+  "doi": null,
+  "manuscript_content_license": null
+}
