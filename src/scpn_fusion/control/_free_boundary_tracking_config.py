@@ -206,12 +206,13 @@ class _FreeBoundaryTrackingConfigMixin(_FreeBoundaryTrackingState):
         actuators: list[FirstOrderActuator] = []
         for idx in range(self.n_coils):
             limit = float(self.coil_current_limits[idx])
+            slew_limit = float(self.coil_slew_limits[idx])
             actuator = FirstOrderActuator(
                 tau_s=self.coil_actuator_tau_s,
                 dt_s=self.control_dt_s,
-                u_min=-limit,
-                u_max=limit,
-                rate_limit=float(self.coil_slew_limits[idx]),
+                u_min=None if np.isposinf(limit) else -limit,
+                u_max=None if np.isposinf(limit) else limit,
+                rate_limit=None if np.isposinf(slew_limit) else slew_limit,
             )
             actuator.state = float(self.coils.currents[idx])
             actuator.set_delay_buffer(

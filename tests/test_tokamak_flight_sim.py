@@ -528,6 +528,125 @@ def test_first_order_actuator_default_limits_are_physical() -> None:
     assert act.rate_limit == pytest.approx(1.0)
 
 
+@pytest.mark.parametrize("lower", [None, -0.5])
+@pytest.mark.parametrize("upper", [None, 0.5])
+@pytest.mark.parametrize("rate", [None, 0.25])
+@pytest.mark.parametrize("command_delay,measurement_delay", [(0, 0), (2, 3)])
+def test_first_order_actuator_optional_limits_preserve_delayed_trajectory(
+    lower: float | None,
+    upper: float | None,
+    rate: float | None,
+    command_delay: int,
+    measurement_delay: int,
+) -> None:
+    """Optional bounds preserve lag, slew and both delays against a scalar recurrence."""
+    actuator = FirstOrderActuator(
+        tau_s=0.05,
+        dt_s=0.05,
+        u_min=lower,
+        u_max=upper,
+        rate_limit=rate,
+        command_delay_steps=command_delay,
+        delay_steps=measurement_delay,
+    )
+    commands = [2.0] * 6 + [-3.0] * 8 + [0.0] * 5
+    queued = [0.0] * command_delay
+    states = [0.0] * measurement_delay
+    state = 0.0
+    for command in commands:
+        bounded = command
+        if lower is not None:
+            bounded = max(lower, bounded)
+        if upper is not None:
+            bounded = min(upper, bounded)
+        queued.append(bounded)
+        delta = (queued.pop(0) - state) / 2.0
+        if rate is not None:
+            delta = max(-rate * 0.05, min(rate * 0.05, delta))
+        state += delta
+        states.append(state)
+        assert actuator.step(command) == pytest.approx(state, abs=1e-15)
+        assert actuator.get_measurement() == pytest.approx(states[-1 - measurement_delay])
+    assert actuator.faults == 0
+
+
+@pytest.mark.parametrize("parameter", ["u_min", "u_max", "rate_limit"])
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), -float("inf")])
+def test_first_order_actuator_rejects_nonfinite_numeric_limits(
+    parameter: str, invalid: float
+) -> None:
+    """None is the only unbounded sentinel; numeric NaN and infinities still reject."""
+    limits: dict[str, float | None] = {"u_min": None, "u_max": None, "rate_limit": None}
+    limits[parameter] = invalid
+    with pytest.raises(ValueError, match=parameter):
+        FirstOrderActuator(
+            tau_s=0.05,
+            dt_s=0.05,
+            u_min=limits["u_min"],
+            u_max=limits["u_max"],
+            rate_limit=limits["rate_limit"],
+        )
+
+
+@pytest.mark.parametrize(
+    "lower,upper,rate", [(1.0, 1.0, None), (2.0, 1.0, None), (None, None, 0.0), (None, None, -1.0)]
+)
+def test_first_order_actuator_rejects_invalid_finite_limits(
+    lower: float | None, upper: float | None, rate: float | None
+) -> None:
+    """Optional bounds do not admit reversed intervals or nonpositive slew rates."""
+    with pytest.raises(ValueError):
+        FirstOrderActuator(tau_s=0.05, dt_s=0.05, u_min=lower, u_max=upper, rate_limit=rate)
+
+
+@pytest.mark.parametrize("command", [float("nan"), float("inf"), -float("inf")])
+def test_first_order_actuator_unbounded_fault_holds_and_recovers(command: float) -> None:
+    """An unbounded channel holds finite state on invalid input and resumes its lag."""
+    actuator = FirstOrderActuator(
+        tau_s=0.05, dt_s=0.05, u_min=None, u_max=None, rate_limit=None, delay_steps=1
+    )
+    assert actuator.step(4.0) == 2.0
+    assert actuator.get_measurement() == 0.0
+    assert actuator.step(command) == 2.0
+    assert actuator.get_measurement() == 2.0
+    assert actuator.faults == 1
+    assert actuator.step(-4.0) == -1.0
+    assert actuator.get_measurement() == 2.0
+    assert actuator.faults == 1
+
+
+@pytest.mark.parametrize(
+    "noise,measurement_delay,command_delay,seed",
+    [
+        (float("nan"), 0, 0, None),
+        (-0.1, 0, 0, None),
+        (0.0, -1, 0, None),
+        (0.0, True, 0, None),
+        (0.0, 0, -1, None),
+        (0.0, 0, True, None),
+        (0.0, 0, 0, -1),
+        (0.0, 0, 0, 2**64),
+        (0.0, 0, 0, True),
+    ],
+)
+def test_first_order_actuator_unbounded_limits_retain_configuration_guards(
+    noise: float, measurement_delay: int, command_delay: int, seed: int | None
+) -> None:
+    """Unbounded channels still reject invalid noise, delays and random seeds."""
+    with pytest.raises(ValueError):
+        FirstOrderActuator(
+            tau_s=0.05,
+            dt_s=0.05,
+            u_min=None,
+            u_max=None,
+            rate_limit=None,
+            sensor_noise_std=noise,
+            delay_steps=measurement_delay,
+            command_delay_steps=command_delay,
+            rng_seed=seed,
+        )
+
+
 def test_pid_step_ignores_nonfinite_error() -> None:
     """A non-finite error returns a safe zero command and never latches err_sum."""
     ctrl = IsoFluxController(config_file="dummy.json", kernel_factory=_DummyKernel, verbose=False)

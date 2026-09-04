@@ -141,7 +141,7 @@ class FirstOrderActuator:
 
     Models a realistic coil power supply for tokamak control:
     - First-order lag: u_applied(s) = 1/(tau*s+1) * u_cmd
-    - Coil current rate limit: abs(du/dt) <= rate_limit [MA/s]
+    - Rate limit: abs(du/dt) <= rate_limit in command units per second
     - Sensor noise: additive Gaussian on measurement
     - Measurement delay: pure transport delay on feedback signal
 
@@ -151,10 +151,13 @@ class FirstOrderActuator:
         Actuator time constant [s].
     dt_s : float
         Simulation timestep [s].
-    u_min, u_max : float
-        Absolute saturation limits [MA]. Default +/-0.05 (50 kA).
-    rate_limit : float
-        Maximum current rate of change [MA/s]. Default 1.0.
+    u_min, u_max : float or None
+        Finite saturation limits in command units; ``None`` disables that side
+        for an unbounded simulation. Defaults are +/-0.05 MA (50 kA) for
+        flight-simulator current offsets. Numeric NaN and infinity are invalid.
+    rate_limit : float or None
+        Positive finite maximum change in command units per second, or ``None``
+        for unbounded simulated slew. Default 1.0 MA/s for flight offsets.
     sensor_noise_std : float
         Standard deviation of additive sensor noise. Default 0.0 (disabled).
     delay_steps : int
@@ -165,6 +168,19 @@ class FirstOrderActuator:
     rng_seed : int or None
         Random seed for reproducible noise (None = random).
 
+    Notes
+    -----
+    Commands, state, saturation and sensor noise must use the same units.
+    The flight simulator uses MA offsets, free-boundary tracking uses A, and
+    the heating channel uses dimensionless beta. No unit conversion occurs
+    here. Unbounded simulation channels do not define physical device limits.
+
+    Raises
+    ------
+    ValueError
+        If a supplied numeric limit is nonfinite, finite bounds are unordered,
+        the slew rate is nonpositive, or timing/noise configuration is invalid.
+
     """
 
     def __init__(
@@ -172,9 +188,9 @@ class FirstOrderActuator:
         *,
         tau_s: float,
         dt_s: float,
-        u_min: float = -0.05,
-        u_max: float = 0.05,
-        rate_limit: float = 1.0,
+        u_min: float | None = -0.05,
+        u_max: float | None = 0.05,
+        rate_limit: float | None = 1.0,
         sensor_noise_std: float = 0.0,
         delay_steps: int = 0,
         command_delay_steps: int = 0,
@@ -189,13 +205,19 @@ class FirstOrderActuator:
             raise ValueError("dt_s must be finite and > 0.")
         self.tau_s = tau_s
         self.dt_s = dt_s
-        self.u_min = float(u_min)
-        self.u_max = float(u_max)
-        if not np.isfinite(self.u_min) or not np.isfinite(self.u_max) or self.u_min >= self.u_max:
-            raise ValueError("u_min and u_max must be finite with u_min < u_max.")
-        self.rate_limit = float(rate_limit)
-        if not np.isfinite(self.rate_limit) or self.rate_limit <= 0.0:
-            raise ValueError("rate_limit must be finite and > 0.")
+        self.u_min = None if u_min is None else float(u_min)
+        self.u_max = None if u_max is None else float(u_max)
+        if self.u_min is not None and not np.isfinite(self.u_min):
+            raise ValueError("u_min must be finite or None.")
+        if self.u_max is not None and not np.isfinite(self.u_max):
+            raise ValueError("u_max must be finite or None.")
+        if self.u_min is not None and self.u_max is not None and self.u_min >= self.u_max:
+            raise ValueError("u_min must be less than u_max when both are supplied.")
+        self.rate_limit = None if rate_limit is None else float(rate_limit)
+        if self.rate_limit is not None and (
+            not np.isfinite(self.rate_limit) or self.rate_limit <= 0.0
+        ):
+            raise ValueError("rate_limit must be finite and > 0, or None.")
         self.sensor_noise_std = float(sensor_noise_std)
         if not np.isfinite(self.sensor_noise_std) or self.sensor_noise_std < 0.0:
             raise ValueError("sensor_noise_std must be finite and >= 0.")
@@ -237,7 +259,12 @@ class FirstOrderActuator:
             self._delay_buffer.append(self.state)
             return self.state
 
-        self._command_buffer.append(float(np.clip(command, self.u_min, self.u_max)))
+        bounded_command = (
+            float(np.clip(command, self.u_min, self.u_max))
+            if self.u_min is not None or self.u_max is not None
+            else float(command)
+        )
+        self._command_buffer.append(bounded_command)
         u_cmd = (
             self._command_buffer.popleft()
             if len(self._command_buffer) > self.command_delay_steps
@@ -248,12 +275,17 @@ class FirstOrderActuator:
 
         # Rate limiting (coil current slew rate)
         du = u_new - self.state
-        max_du = self.rate_limit * self.dt_s
-        if abs(du) > max_du:
-            du = np.sign(du) * max_du
-            u_new = self.state + du
+        if self.rate_limit is not None:
+            max_du = self.rate_limit * self.dt_s
+            if abs(du) > max_du:
+                du = np.sign(du) * max_du
+                u_new = self.state + du
 
-        self.state = float(np.clip(u_new, self.u_min, self.u_max))
+        self.state = (
+            float(np.clip(u_new, self.u_min, self.u_max))
+            if self.u_min is not None or self.u_max is not None
+            else float(u_new)
+        )
 
         # Update delay buffer
         self._delay_buffer.append(self.state)

@@ -54,6 +54,13 @@ class FreeBoundaryTrackingController(
     This path keeps the full Grad-Shafranov kernel in the loop instead of
     replacing it with a reduced-order plant.
 
+    Coil currents and ``CoilSet.current_limits`` are in A; ``coil_slew_limits``
+    is in A/s. Absent current or slew limits leave that simulated constraint
+    unbounded. Supplied limits must be finite and positive. Internal infinity
+    sentinels for absent limits map to the actuator's explicit ``None`` limits;
+    they do not relax validation of numeric NaN or infinity in configuration.
+    Physical device operation requires independently specified finite limits.
+
     Examples
     --------
     >>> from scpn_fusion.control.free_boundary_tracking import run_free_boundary_tracking

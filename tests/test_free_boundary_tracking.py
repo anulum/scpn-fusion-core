@@ -10,11 +10,13 @@
 from __future__ import annotations
 
 import json
+from functools import partial
 from typing import Any, cast
 from pathlib import Path
 
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
 import scpn_fusion.control._free_boundary_tracking_config as tracking_config
 import scpn_fusion.control._free_boundary_tracking_control as tracking_control
@@ -153,7 +155,7 @@ class _DummyFreeBoundaryKernel:
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
         }
 
-    def _sample_flux_at_points(self, points: np.ndarray) -> np.ndarray:
+    def _sample_flux_at_points(self, points: NDArray[np.float64]) -> NDArray[np.float64]:
         pts = np.asarray(points, dtype=np.float64)
         if pts.shape == self._boundary_points.shape and np.allclose(pts, self._boundary_points):
             return self._state[:3].copy()
@@ -161,7 +163,7 @@ class _DummyFreeBoundaryKernel:
             return self._state[6:].copy()
         raise ValueError("Unexpected probe points for dummy free-boundary kernel.")
 
-    def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, _psi: NDArray[np.float64]) -> tuple[tuple[float, float], float]:
         return (float(self._state[3]), float(self._state[4])), float(self._state[5])
 
     def _interp_psi(self, r_pt: float, z_pt: float) -> float:
@@ -321,13 +323,13 @@ class _PriorityConflictKernel:
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
         }
 
-    def _sample_flux_at_points(self, points: np.ndarray) -> np.ndarray:
+    def _sample_flux_at_points(self, points: NDArray[np.float64]) -> NDArray[np.float64]:
         pts = np.asarray(points, dtype=np.float64)
         if pts.shape == self._boundary_points.shape and np.allclose(pts, self._boundary_points):
             return self._state[:1].copy()
         raise ValueError("Unexpected probe points for priority-conflict kernel.")
 
-    def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, _psi: NDArray[np.float64]) -> tuple[tuple[float, float], float]:
         return (float(self._x_target[0]), float(self._x_target[1])), float(self._state[3])
 
     def _interp_psi(self, r_pt: float, z_pt: float) -> float:
@@ -397,13 +399,13 @@ class _ProtectedObjectiveKernel:
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
         }
 
-    def _sample_flux_at_points(self, points: np.ndarray) -> np.ndarray:
+    def _sample_flux_at_points(self, points: NDArray[np.float64]) -> NDArray[np.float64]:
         pts = np.asarray(points, dtype=np.float64)
         if pts.shape == self._boundary_points.shape and np.allclose(pts, self._boundary_points):
             return self._state[:1].copy()
         raise ValueError("Unexpected probe points for protected-objective kernel.")
 
-    def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, _psi: NDArray[np.float64]) -> tuple[tuple[float, float], float]:
         return (float(self._x_target[0]), float(self._x_target[1])), float(self._state[3])
 
     def _interp_psi(self, r_pt: float, z_pt: float) -> float:
@@ -473,13 +475,13 @@ class _ZeroAuthorityKernel:
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
         }
 
-    def _sample_flux_at_points(self, points: np.ndarray) -> np.ndarray:
+    def _sample_flux_at_points(self, points: NDArray[np.float64]) -> NDArray[np.float64]:
         pts = np.asarray(points, dtype=np.float64)
         if pts.shape == self._boundary_points.shape and np.allclose(pts, self._boundary_points):
             return self._state[:1].copy()
         raise ValueError("Unexpected probe points for zero-authority kernel.")
 
-    def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, _psi: NDArray[np.float64]) -> tuple[tuple[float, float], float]:
         return (float(self._x_target[0]), float(self._x_target[1])), float(self._state[3])
 
     def _interp_psi(self, r_pt: float, z_pt: float) -> float:
@@ -549,13 +551,13 @@ class _WithinToleranceKernel:
             "final_diff": float(np.linalg.norm(self._response_matrix @ currents)),
         }
 
-    def _sample_flux_at_points(self, points: np.ndarray) -> np.ndarray:
+    def _sample_flux_at_points(self, points: NDArray[np.float64]) -> NDArray[np.float64]:
         pts = np.asarray(points, dtype=np.float64)
         if pts.shape == self._boundary_points.shape and np.allclose(pts, self._boundary_points):
             return self._state[:1].copy()
         raise ValueError("Unexpected probe points for within-tolerance kernel.")
 
-    def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, _psi: NDArray[np.float64]) -> tuple[tuple[float, float], float]:
         return (float(self._x_target[0]), float(self._x_target[1])), float(self._state[3])
 
     def _interp_psi(self, r_pt: float, z_pt: float) -> float:
@@ -619,13 +621,13 @@ class _HeadroomAllocationKernel:
             "final_diff": float(np.linalg.norm(self._response_matrix @ delta_currents)),
         }
 
-    def _sample_flux_at_points(self, points: np.ndarray) -> np.ndarray:
+    def _sample_flux_at_points(self, points: NDArray[np.float64]) -> NDArray[np.float64]:
         pts = np.asarray(points, dtype=np.float64)
         if pts.shape == self._boundary_points.shape and np.allclose(pts, self._boundary_points):
             return self._state.copy()
         raise ValueError("Unexpected probe points for headroom-allocation kernel.")
 
-    def find_x_point(self, _psi: np.ndarray) -> tuple[tuple[float, float], float]:
+    def find_x_point(self, _psi: NDArray[np.float64]) -> tuple[tuple[float, float], float]:
         return (4.2, -1.4), 0.0
 
     def _interp_psi(self, r_pt: float, z_pt: float) -> float:
@@ -666,6 +668,7 @@ def _write_real_kernel_tracking_config(path: Path) -> Path:
         tol=1e-2,
         optimize_shape=False,
     )
+    assert coils.target_flux_points is not None
     flux_targets = kernel._sample_flux_at_points(coils.target_flux_points)
     free_boundary_cfg = cast(dict[str, Any], cfg["free_boundary"])
     free_boundary_cfg["target_flux_values"] = [float(v) for v in flux_targets]
@@ -729,7 +732,8 @@ def test_free_boundary_tracking_reports_recovery_activation_rate_and_lag() -> No
 
 
 def test_free_boundary_tracking_is_deterministic_for_fixed_inputs() -> None:
-    kwargs = dict(
+    run_tracking = partial(
+        run_free_boundary_tracking,
         config_file="dummy.json",
         shot_steps=6,
         gain=0.85,
@@ -737,8 +741,8 @@ def test_free_boundary_tracking_is_deterministic_for_fixed_inputs() -> None:
         kernel_factory=_DummyFreeBoundaryKernel,
         stop_on_convergence=False,
     )
-    a = run_free_boundary_tracking(**kwargs)
-    b = run_free_boundary_tracking(**kwargs)
+    a = run_tracking()
+    b = run_tracking()
     for key in (
         "final_tracking_error_norm",
         "mean_tracking_error_norm",
@@ -902,7 +906,8 @@ def test_controller_uses_safe_current_fallback_when_configured() -> None:
 
 
 def test_objective_observer_reduces_persistent_disturbance_error() -> None:
-    kwargs = dict(
+    run_tracking = partial(
+        run_free_boundary_tracking,
         config_file="dummy.json",
         shot_steps=4,
         gain=0.18,
@@ -914,15 +919,13 @@ def test_objective_observer_reduces_persistent_disturbance_error() -> None:
         physics_cfg = cast(dict[str, Any], kernel.cfg.setdefault("physics", {}))
         physics_cfg["drift_scale"] = 1.0
 
-    baseline = run_free_boundary_tracking(
+    baseline = run_tracking(
         kernel_factory=_DummyFreeBoundaryKernel,
         disturbance_callback=disturbance,
-        **kwargs,
     )
-    observed = run_free_boundary_tracking(
+    observed = run_tracking(
         kernel_factory=_ObserverKernel,
         disturbance_callback=disturbance,
-        **kwargs,
     )
 
     assert baseline["observer_enabled"] is False
@@ -961,24 +964,22 @@ def test_controller_reports_hidden_true_metrics_under_measurement_distortion() -
 
 
 def test_measurement_compensation_restores_true_tracking_baseline() -> None:
-    kwargs = dict(
+    run_tracking = partial(
+        run_free_boundary_tracking,
         config_file="dummy.json",
         shot_steps=4,
         gain=0.18,
         verbose=False,
         stop_on_convergence=False,
     )
-    baseline = run_free_boundary_tracking(
+    baseline = run_tracking(
         kernel_factory=_DummyFreeBoundaryKernel,
-        **kwargs,
     )
-    distorted = run_free_boundary_tracking(
+    distorted = run_tracking(
         kernel_factory=_MeasurementDistortionKernel,
-        **kwargs,
     )
-    corrected = run_free_boundary_tracking(
+    corrected = run_tracking(
         kernel_factory=_MeasurementCorrectedKernel,
-        **kwargs,
     )
 
     assert distorted["measurement_compensation_enabled"] is False
@@ -1007,7 +1008,8 @@ def test_measurement_compensation_restores_true_tracking_baseline() -> None:
 
 
 def test_latency_compensation_reduces_delayed_observation_error() -> None:
-    kwargs = dict(
+    run_tracking = partial(
+        run_free_boundary_tracking,
         config_file="dummy.json",
         shot_steps=4,
         gain=0.18,
@@ -1020,15 +1022,13 @@ def test_latency_compensation_reduces_delayed_observation_error() -> None:
         physics_cfg = cast(dict[str, Any], kernel.cfg.setdefault("physics", {}))
         physics_cfg["drift_scale"] = drift_schedule[min(step, len(drift_schedule) - 1)]
 
-    delayed = run_free_boundary_tracking(
+    delayed = run_tracking(
         kernel_factory=_MeasurementLatencyKernel,
         disturbance_callback=disturbance,
-        **kwargs,
     )
-    compensated = run_free_boundary_tracking(
+    compensated = run_tracking(
         kernel_factory=_MeasurementLatencyCompensatedKernel,
         disturbance_callback=disturbance,
-        **kwargs,
     )
 
     assert delayed["measurement_latency_enabled"] is True
@@ -1198,3 +1198,57 @@ def test_run_free_boundary_tracking_with_real_kernel_smoke(tmp_path: Path) -> No
     assert np.isfinite(summary["final_tracking_error_norm"])
     assert np.isfinite(summary["mean_tracking_error_norm"])
     assert summary["max_abs_coil_current"] <= 5.0e4 + 1e-9
+
+
+@pytest.mark.parametrize("bounded_current", [False, True])
+@pytest.mark.parametrize("bounded_slew", [False, True])
+def test_real_kernel_tracking_optional_limits_preserve_fallback_trajectory(
+    tmp_path: Path, bounded_current: bool, bounded_slew: bool
+) -> None:
+    """Real tracking recovers towards safe currents with optional limits in amperes."""
+    cfg_path = _write_real_kernel_tracking_config(tmp_path / "tracking_limits.json")
+    cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+    cfg["free_boundary"]["current_limits"] = [5.0e4, 5.0e4] if bounded_current else None
+    cfg["free_boundary_tracking"] = {
+        "control_dt_s": 0.05,
+        "coil_actuator_tau_s": 0.05,
+        "coil_slew_limits": [0.2, 0.1] if bounded_slew else None,
+        "supervisor_limits": {"max_abs_coil_current": 0.0},
+        "fallback_currents": [0.0, 0.0],
+    }
+    cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+    controller = FreeBoundaryTrackingController(str(cfg_path), verbose=False)
+    expected = np.array([2.0, -1.0])
+    np.testing.assert_array_equal(controller.coils.currents, expected)
+
+    for _ in range(2):
+        expected_peaks = []
+        for _ in range(3):
+            delta = -expected / 2.0
+            if bounded_slew:
+                delta = np.clip(delta, [-0.01, -0.005], [0.01, 0.005])
+            expected += delta
+            expected_peaks.append(float(np.max(np.abs(expected))))
+        summary = controller.run_tracking_shot(shot_steps=3, stop_on_convergence=False)
+        assert summary["steps"] == 3
+        np.testing.assert_allclose(controller.coils.currents, expected, rtol=0.0, atol=1e-14)
+        np.testing.assert_allclose(controller.history["max_abs_coil_current"], expected_peaks)
+        assert all(controller.history["fallback_active"])
+        assert all(controller.history["supervisor_intervened"])
+
+
+@pytest.mark.parametrize("field", ["current_limits", "coil_slew_limits"])
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), -float("inf"), 0.0, -1.0])
+def test_real_kernel_tracking_rejects_explicit_invalid_limits(
+    tmp_path: Path, field: str, invalid: float
+) -> None:
+    """Public tracking rejects invalid numeric limits instead of treating them as absent."""
+    cfg_path = _write_real_kernel_tracking_config(tmp_path / "invalid_tracking_limits.json")
+    cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+    if field == "current_limits":
+        cfg["free_boundary"][field] = [invalid, 5.0e4]
+    else:
+        cfg["free_boundary_tracking"] = {field: [invalid, 0.2]}
+    cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
+    with pytest.raises(ValueError, match=field):
+        FreeBoundaryTrackingController(str(cfg_path), verbose=False)
