@@ -25,11 +25,11 @@
       "source_file": "README.md",
       "source_pattern": "Rust PID kernel latency \\| \\*\\*0\\.52 us P50\\*\\*",
       "evidence_files": [
-        "validation/reports/stress_test_campaign.json"
+        "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json"
       ],
       "evidence_patterns": [
         {
-          "file": "validation/reports/stress_test_campaign.json",
+          "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
           "pattern": "\"Rust-PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*[0-9eE+\\-.]+"
         }
       ]
@@ -53,11 +53,11 @@
       "source_file": "README.md",
       "source_pattern": "Disruption rate \\(1,000-shot sim campaign\\) \\| \\*\\*0%\\*\\* \\(Rust-PID\\)",
       "evidence_files": [
-        "validation/reports/stress_test_campaign.json"
+        "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json"
       ],
       "evidence_patterns": [
         {
-          "file": "validation/reports/stress_test_campaign.json",
+          "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
           "pattern": "\"Rust-PID\"[\\s\\S]*\"disruption_rate\"\\s*:\\s*0\\.0"
         }
       ]

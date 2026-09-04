@@ -27,6 +27,7 @@
       "docs/SAFETY_TRACEABILITY_MATRIX.md",
       "docs/SOLVER_TUNING_GUIDE.md",
       "docs/STREAMLIT_DEMO_PLAYBOOK.md",
+      "docs/STRESS_CAMPAIGN.md",
       "docs/SURROGATE_UQ_CARDS.md",
       "docs/VALIDATION_AGAINST_ITER.md",
       "docs/VALIDATION_REAL_DIIID_145419.md",
@@ -3005,15 +3006,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 65,
+    "capability_documentation_pages": 66,
     "github_workflows": 16,
     "optional_extras": 14,
     "public_api_exports": 2,
-    "public_documentation_pages": 65,
+    "public_documentation_pages": 66,
     "python_capability_classes": 629,
     "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
-    "test_files": 650
+    "test_files": 654
   },
   "documentation": {
     "public_pages": [
@@ -3042,6 +3043,7 @@
       "docs/SAFETY_TRACEABILITY_MATRIX.md",
       "docs/SOLVER_TUNING_GUIDE.md",
       "docs/STREAMLIT_DEMO_PLAYBOOK.md",
+      "docs/STRESS_CAMPAIGN.md",
       "docs/SURROGATE_UQ_CARDS.md",
       "docs/VALIDATION_AGAINST_ITER.md",
       "docs/VALIDATION_REAL_DIIID_145419.md",
@@ -3587,6 +3589,7 @@
       "tests/test_optional_import_probe_contracts.py",
       "tests/test_orbit_following.py",
       "tests/test_packaging_contract.py",
+      "tests/test_paper002_evidence_contract.py",
       "tests/test_parser_input_hardening.py",
       "tests/test_pedestal.py",
       "tests/test_pellet_injection.py",
@@ -3706,6 +3709,9 @@
       "tests/test_stellarator_geometry.py",
       "tests/test_stellarator_snn_stability_control_validation.py",
       "tests/test_stress_campaign.py",
+      "tests/test_stress_campaign_contract.py",
+      "tests/test_stress_campaign_policies.py",
+      "tests/test_stress_campaign_recovery.py",
       "tests/test_structure.py",
       "tests/test_studio_exactness.py",
       "tests/test_studio_manifest.py",
