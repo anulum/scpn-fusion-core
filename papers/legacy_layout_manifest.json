@@ -1,0 +1,575 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "claim_boundary": {
+    "historical_only": "unused legacy figures remain reproducible historical Git objects and are not evidence for the current manuscripts",
+    "not_claimed": "successor manuscripts, figures and bibliographies were corrected or regenerated; byte equivalence with legacy content is not claimed",
+    "preserved": "every retired byte remains addressable by source revision, Git blob, SHA-256 and retrieval command"
+  },
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "current_packages": [
+    "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver",
+    "papers/submissions/002_neuromorphic_vertical_stability_control",
+    "papers/submissions/003_stochastic_petri_net_tokamak_control_conference_abstract"
+  ],
+  "files": {
+    "papers/arxiv_submission_b/figures/fig_compilation_pipeline.pdf": {
+      "byte_size": 74154,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "46d6250e56376ab453f8c43828e94b12c18786dd",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_compilation_pipeline.pdf",
+      "sha256": "dfccff0bb6addc60ff9eaeffdd331e877118564263a929db5b8183f54a78f36c",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_compilation_pipeline.pdf"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_compilation_pipeline.py": {
+      "byte_size": 5580,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "9f3c2ba57b3026d21e285374ea3ca832c9cb1c28",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_compilation_pipeline.py",
+      "sha256": "587abaef4deee727f38c8281da399cf943b6cd378c9278131f6ceb96b265777f",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_compilation_pipeline.py"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_gs_convergence.pdf": {
+      "byte_size": 44654,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "acfde526d677455cc4be067ddb6326a68d56281c",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_gs_convergence.pdf",
+      "sha256": "4028c7803700f43e9d18043439593c54636f5c05f414b04abf96e629e7a0aada",
+      "successor_paths": []
+    },
+    "papers/arxiv_submission_b/figures/fig_gs_convergence.py": {
+      "byte_size": 3360,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "42bd49d9cf8c915b07ac49712091394f514b6c8a",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_gs_convergence.py",
+      "sha256": "5d338352984a562c6e0bbc8b83a7f2734074c70445926aa72eb3dbe09019e8a9",
+      "successor_paths": []
+    },
+    "papers/arxiv_submission_b/figures/fig_inverse_reconstruction.pdf": {
+      "byte_size": 192274,
+      "disposition": "rewritten_and_regenerated_for_package_001",
+      "git_blob_oid_sha1": "3ff63e1282750ddbf02a6247ec2da370eb60c596",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_inverse_reconstruction.pdf",
+      "sha256": "5a61cebd63456c51eb91c43059485b8fddd282e4809a0adefb453df183dc14a2",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_inverse_reconstruction.pdf"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_inverse_reconstruction.py": {
+      "byte_size": 5392,
+      "disposition": "rewritten_and_regenerated_for_package_001",
+      "git_blob_oid_sha1": "a3b143f2c2a78ce1b17b0b6116613206cef9420e",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_inverse_reconstruction.py",
+      "sha256": "3569051033ed6fd4ea064cacd9db1ae11ebe41659a213aef931e125f804e8901",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_inverse_reconstruction.py"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_latency_comparison.pdf": {
+      "byte_size": 30621,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "f93a70197781a6b9dc39e055cad1556066eda708",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_latency_comparison.pdf",
+      "sha256": "8b38e1a641927483f2ff19aa1bb21bcfc87a63b3196c632e11b649810f5a43b7",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_latency_comparison.pdf"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_latency_comparison.py": {
+      "byte_size": 3766,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "6a55dea0e9aaf58a5f87ce062d9412bf299c9e13",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_latency_comparison.py",
+      "sha256": "dd2073d846c34c9d265f9674c1f53ed5d15995556fa2b952611ab263b0b4fa1c",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_latency_comparison.py"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_lif_neuron.pdf": {
+      "byte_size": 81945,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "bff23ce29c023766eec897e84d90b729bfabd0b6",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_lif_neuron.pdf",
+      "sha256": "ef5fb7dd475bd51af3effbcbb30be4c4b98badf1dedfebab102a22530fd2365e",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_lif_neuron.pdf"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_lif_neuron.py": {
+      "byte_size": 5662,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "0a499b733069512bda9673f07f7242ad13d5a2c0",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_lif_neuron.py",
+      "sha256": "21cf8f618675aed5fa8d08c5e25e9906aa8570c749b5b176f5e6d4fffb57c929",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_lif_neuron.py"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_neural_surrogate.pdf": {
+      "byte_size": 74106,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "73291209995bfcb6ad28747ad019157051ed47a9",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_neural_surrogate.pdf",
+      "sha256": "8d377502ff471c049a3e4a844b23b2259e66c2ff5df599dbd8075208064b9756",
+      "successor_paths": []
+    },
+    "papers/arxiv_submission_b/figures/fig_neural_surrogate.py": {
+      "byte_size": 4583,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "268611e9b5e0bed1fbaab0113b5c212db43e9edf",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_neural_surrogate.py",
+      "sha256": "7eea0c147a2a97331b833c6f6296e2c1e63c55bffc60e468f256dcdbfa1f9968",
+      "successor_paths": []
+    },
+    "papers/arxiv_submission_b/figures/fig_performance_scaling.pdf": {
+      "byte_size": 53290,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "f72d722bd13622cd6210eb9204edac8ac6deacdd",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_performance_scaling.pdf",
+      "sha256": "6973b36a5b4dbe2508f17174fb35eac4fc71541280a474604501ea5f38c64df8",
+      "successor_paths": []
+    },
+    "papers/arxiv_submission_b/figures/fig_performance_scaling.py": {
+      "byte_size": 3371,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "9a1cce0311c6a0d4b9b218aea8424d4945bdfcbc",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_performance_scaling.py",
+      "sha256": "6cf87383f1914ed7179f84d907304e766ff117825d07ef314b40fc224dfbccca",
+      "successor_paths": []
+    },
+    "papers/arxiv_submission_b/figures/fig_petri_net.pdf": {
+      "byte_size": 56121,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "06b4c7db9618a69dcc4f0b002fe8b68d055a4500",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_petri_net.pdf",
+      "sha256": "d21e0617fdc515bd9ef886a1e5b9839b51b8cd061880801cb43fee56f283efbf",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_petri_net.pdf"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_petri_net.py": {
+      "byte_size": 7248,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "62199f1d5991739968af5893c4f85b7b8593c93e",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_petri_net.py",
+      "sha256": "6db9b5520349b77e6185e8863f97a927e4096ba77721ae417bdc961b8365111c",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_petri_net.py"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_radiation_tolerance.pdf": {
+      "byte_size": 22870,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "b4e0b22aba069fe5aa58f1f812f9a6cb92bdaeb6",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_radiation_tolerance.pdf",
+      "sha256": "70d74dd123029daaf3e67efe3890dffbe564f58441f6d656de1456bbb1085b96",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_radiation_tolerance.pdf"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_radiation_tolerance.py": {
+      "byte_size": 4622,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "67195bcb612979be8f2ac784a561c62ecf10ab39",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_radiation_tolerance.py",
+      "sha256": "e8ac8a238e2be4a22d8ff3f1d0c5970c8bd2aa4c381b80aa0a6c85f020bf1dd2",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_radiation_tolerance.py"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_sparc_equilibrium.pdf": {
+      "byte_size": 246582,
+      "disposition": "rewritten_and_regenerated_for_package_001",
+      "git_blob_oid_sha1": "8e4b702a09b7b02aa11949f6d1805f8502abdc8c",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_sparc_equilibrium.pdf",
+      "sha256": "3bd1388c6492051c9acbe4b17a16e765fbea7eb8a632edf33fb946793e31ac3a",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_sparc_equilibrium.pdf"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_sparc_equilibrium.py": {
+      "byte_size": 6443,
+      "disposition": "rewritten_and_regenerated_for_package_001",
+      "git_blob_oid_sha1": "e87199b3a50c3591d71d68474ec529d3d1eff7cc",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_sparc_equilibrium.py",
+      "sha256": "90aad897e6e0eb92a20d8d811f0bf046afead8fa7c3823915d063121973c8116",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_sparc_equilibrium.py"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_validation_rmse.pdf": {
+      "byte_size": 52497,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "a86bfa8ed5a8db6979607c68054df5fc7b7d2b91",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_validation_rmse.pdf",
+      "sha256": "6ca208b14aacc4adec7697e82a2fa1cebab4f7353b280bec58fc82c9ddb651a9",
+      "successor_paths": []
+    },
+    "papers/arxiv_submission_b/figures/fig_validation_rmse.py": {
+      "byte_size": 4277,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "dd9221e1f20fc88d236a696938fd13e3f60a735b",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_validation_rmse.py",
+      "sha256": "42573f506133d5e700576a81d86c7713ecd07344056c284dcdb8403d83f13292",
+      "successor_paths": []
+    },
+    "papers/arxiv_submission_b/figures/fig_vertical_stability.pdf": {
+      "byte_size": 26270,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "217c1f90dad059bd62e1902bbbfe89be814e4f65",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_vertical_stability.pdf",
+      "sha256": "f2db6b89f5ad3c9082fa08bca3947cc48142a25bdc62bafda76d826844cd2f37",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_vertical_stability.pdf"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/fig_vertical_stability.py": {
+      "byte_size": 5463,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "8ea3437cc71c14784b64d687b617e5127ef648f6",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/fig_vertical_stability.py",
+      "sha256": "67d251a0449b43b18b09cf18ff604eb40834248d1403a89b0f75da1afb530f07",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_vertical_stability.py"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/generate_all_figures.py": {
+      "byte_size": 3404,
+      "disposition": "replaced_by_package_specific_generators",
+      "git_blob_oid_sha1": "ce25d60f4bd64e31b6a62acf24b7bec3c1c0f956",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/generate_all_figures.py",
+      "sha256": "f23bdf762538cce8058d52114616ed0c6dcf3673f84c5cbfb6171ef05cb7204f",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/generate_figures.py",
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/generate_figures.py"
+      ]
+    },
+    "papers/arxiv_submission_b/figures/style.py": {
+      "byte_size": 3334,
+      "disposition": "split_into_package_specific_figure_styles",
+      "git_blob_oid_sha1": "f83551d4526b8399a5c7770d54c39efe59ae75a9",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/figures/style.py",
+      "sha256": "dc8ebf1c7597a527f0aa1abc554a736436f45520f93b778cbcf6b23155318256",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/style.py",
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/style.py"
+      ]
+    },
+    "papers/arxiv_submission_b/paper_b_snn_controller.bbl": {
+      "byte_size": 4678,
+      "disposition": "generated_auxiliary_reproducible_from_package",
+      "git_blob_oid_sha1": "6e02272610969b2d2d44ca9bd24005ec80ced3d6",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/paper_b_snn_controller.bbl",
+      "sha256": "100c65a528822424e3ff749ba29d4370f83e6b202e6376996bba1a52edb58344",
+      "successor_paths": []
+    },
+    "papers/arxiv_submission_b/paper_b_snn_controller.tex": {
+      "byte_size": 48836,
+      "disposition": "rewritten_as_evidence_bounded_manuscript",
+      "git_blob_oid_sha1": "75204187579d422aef3107a119b726efa4f1209e",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/paper_b_snn_controller.tex",
+      "sha256": "25ea87fad8a37278c79854f2c03959759764028090ae6cb9d5941e285af3c82a",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/manuscript.tex"
+      ]
+    },
+    "papers/arxiv_submission_b/scpn_fusion.bib": {
+      "byte_size": 21162,
+      "disposition": "split_into_package_specific_bibliographies",
+      "git_blob_oid_sha1": "74dddac0b1136055e057eee49e18ff8b85d5fb0a",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/arxiv_submission_b/scpn_fusion.bib",
+      "sha256": "4c0d5e2a208ca1fd752b782d1516746c628e4a543c733019cf98c46b593e4152",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/references.bib"
+      ]
+    },
+    "papers/figures/fig_compilation_pipeline.pdf": {
+      "byte_size": 74154,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "46d6250e56376ab453f8c43828e94b12c18786dd",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_compilation_pipeline.pdf",
+      "sha256": "dfccff0bb6addc60ff9eaeffdd331e877118564263a929db5b8183f54a78f36c",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_compilation_pipeline.pdf"
+      ]
+    },
+    "papers/figures/fig_compilation_pipeline.py": {
+      "byte_size": 5580,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "9f3c2ba57b3026d21e285374ea3ca832c9cb1c28",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_compilation_pipeline.py",
+      "sha256": "587abaef4deee727f38c8281da399cf943b6cd378c9278131f6ceb96b265777f",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_compilation_pipeline.py"
+      ]
+    },
+    "papers/figures/fig_gs_convergence.pdf": {
+      "byte_size": 44654,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "acfde526d677455cc4be067ddb6326a68d56281c",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_gs_convergence.pdf",
+      "sha256": "4028c7803700f43e9d18043439593c54636f5c05f414b04abf96e629e7a0aada",
+      "successor_paths": []
+    },
+    "papers/figures/fig_gs_convergence.py": {
+      "byte_size": 3360,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "42bd49d9cf8c915b07ac49712091394f514b6c8a",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_gs_convergence.py",
+      "sha256": "5d338352984a562c6e0bbc8b83a7f2734074c70445926aa72eb3dbe09019e8a9",
+      "successor_paths": []
+    },
+    "papers/figures/fig_inverse_reconstruction.pdf": {
+      "byte_size": 192274,
+      "disposition": "rewritten_and_regenerated_for_package_001",
+      "git_blob_oid_sha1": "3ff63e1282750ddbf02a6247ec2da370eb60c596",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_inverse_reconstruction.pdf",
+      "sha256": "5a61cebd63456c51eb91c43059485b8fddd282e4809a0adefb453df183dc14a2",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_inverse_reconstruction.pdf"
+      ]
+    },
+    "papers/figures/fig_inverse_reconstruction.py": {
+      "byte_size": 5392,
+      "disposition": "rewritten_and_regenerated_for_package_001",
+      "git_blob_oid_sha1": "a3b143f2c2a78ce1b17b0b6116613206cef9420e",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_inverse_reconstruction.py",
+      "sha256": "3569051033ed6fd4ea064cacd9db1ae11ebe41659a213aef931e125f804e8901",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_inverse_reconstruction.py"
+      ]
+    },
+    "papers/figures/fig_latency_comparison.pdf": {
+      "byte_size": 30621,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "f93a70197781a6b9dc39e055cad1556066eda708",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_latency_comparison.pdf",
+      "sha256": "8b38e1a641927483f2ff19aa1bb21bcfc87a63b3196c632e11b649810f5a43b7",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_latency_comparison.pdf"
+      ]
+    },
+    "papers/figures/fig_latency_comparison.py": {
+      "byte_size": 5563,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "92e410197b15ab395b676bb947041ec6619ef692",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_latency_comparison.py",
+      "sha256": "a0dc55d3e048fb0e862bd86c9270b45e098b9e6ba00e68052b24ba81ba5cd3eb",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_latency_comparison.py"
+      ]
+    },
+    "papers/figures/fig_lif_neuron.pdf": {
+      "byte_size": 81945,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "bff23ce29c023766eec897e84d90b729bfabd0b6",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_lif_neuron.pdf",
+      "sha256": "ef5fb7dd475bd51af3effbcbb30be4c4b98badf1dedfebab102a22530fd2365e",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_lif_neuron.pdf"
+      ]
+    },
+    "papers/figures/fig_lif_neuron.py": {
+      "byte_size": 5662,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "0a499b733069512bda9673f07f7242ad13d5a2c0",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_lif_neuron.py",
+      "sha256": "21cf8f618675aed5fa8d08c5e25e9906aa8570c749b5b176f5e6d4fffb57c929",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_lif_neuron.py"
+      ]
+    },
+    "papers/figures/fig_neural_surrogate.pdf": {
+      "byte_size": 74106,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "73291209995bfcb6ad28747ad019157051ed47a9",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_neural_surrogate.pdf",
+      "sha256": "8d377502ff471c049a3e4a844b23b2259e66c2ff5df599dbd8075208064b9756",
+      "successor_paths": []
+    },
+    "papers/figures/fig_neural_surrogate.py": {
+      "byte_size": 4583,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "268611e9b5e0bed1fbaab0113b5c212db43e9edf",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_neural_surrogate.py",
+      "sha256": "7eea0c147a2a97331b833c6f6296e2c1e63c55bffc60e468f256dcdbfa1f9968",
+      "successor_paths": []
+    },
+    "papers/figures/fig_performance_scaling.pdf": {
+      "byte_size": 53290,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "f72d722bd13622cd6210eb9204edac8ac6deacdd",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_performance_scaling.pdf",
+      "sha256": "6973b36a5b4dbe2508f17174fb35eac4fc71541280a474604501ea5f38c64df8",
+      "successor_paths": []
+    },
+    "papers/figures/fig_performance_scaling.py": {
+      "byte_size": 3371,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "9a1cce0311c6a0d4b9b218aea8424d4945bdfcbc",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_performance_scaling.py",
+      "sha256": "6cf87383f1914ed7179f84d907304e766ff117825d07ef314b40fc224dfbccca",
+      "successor_paths": []
+    },
+    "papers/figures/fig_petri_net.pdf": {
+      "byte_size": 56121,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "06b4c7db9618a69dcc4f0b002fe8b68d055a4500",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_petri_net.pdf",
+      "sha256": "d21e0617fdc515bd9ef886a1e5b9839b51b8cd061880801cb43fee56f283efbf",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_petri_net.pdf"
+      ]
+    },
+    "papers/figures/fig_petri_net.py": {
+      "byte_size": 7248,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "62199f1d5991739968af5893c4f85b7b8593c93e",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_petri_net.py",
+      "sha256": "6db9b5520349b77e6185e8863f97a927e4096ba77721ae417bdc961b8365111c",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_petri_net.py"
+      ]
+    },
+    "papers/figures/fig_radiation_tolerance.pdf": {
+      "byte_size": 22870,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "b4e0b22aba069fe5aa58f1f812f9a6cb92bdaeb6",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_radiation_tolerance.pdf",
+      "sha256": "70d74dd123029daaf3e67efe3890dffbe564f58441f6d656de1456bbb1085b96",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_radiation_tolerance.pdf"
+      ]
+    },
+    "papers/figures/fig_radiation_tolerance.py": {
+      "byte_size": 3339,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "eea424a3d91e5f2d2efa87446c2b7a893f65db71",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_radiation_tolerance.py",
+      "sha256": "b16736915788e00a7a19bb1b3ed15021833b87f5fee5227dd324e9ed7c85eaf3",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_radiation_tolerance.py"
+      ]
+    },
+    "papers/figures/fig_sparc_equilibrium.pdf": {
+      "byte_size": 246582,
+      "disposition": "rewritten_and_regenerated_for_package_001",
+      "git_blob_oid_sha1": "8e4b702a09b7b02aa11949f6d1805f8502abdc8c",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_sparc_equilibrium.pdf",
+      "sha256": "3bd1388c6492051c9acbe4b17a16e765fbea7eb8a632edf33fb946793e31ac3a",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_sparc_equilibrium.pdf"
+      ]
+    },
+    "papers/figures/fig_sparc_equilibrium.py": {
+      "byte_size": 6443,
+      "disposition": "rewritten_and_regenerated_for_package_001",
+      "git_blob_oid_sha1": "e87199b3a50c3591d71d68474ec529d3d1eff7cc",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_sparc_equilibrium.py",
+      "sha256": "90aad897e6e0eb92a20d8d811f0bf046afead8fa7c3823915d063121973c8116",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_sparc_equilibrium.py"
+      ]
+    },
+    "papers/figures/fig_validation_rmse.pdf": {
+      "byte_size": 52497,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "a86bfa8ed5a8db6979607c68054df5fc7b7d2b91",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_validation_rmse.pdf",
+      "sha256": "6ca208b14aacc4adec7697e82a2fa1cebab4f7353b280bec58fc82c9ddb651a9",
+      "successor_paths": []
+    },
+    "papers/figures/fig_validation_rmse.py": {
+      "byte_size": 4277,
+      "disposition": "historical_only_not_used_by_current_manuscripts",
+      "git_blob_oid_sha1": "dd9221e1f20fc88d236a696938fd13e3f60a735b",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_validation_rmse.py",
+      "sha256": "42573f506133d5e700576a81d86c7713ecd07344056c284dcdb8403d83f13292",
+      "successor_paths": []
+    },
+    "papers/figures/fig_vertical_stability.pdf": {
+      "byte_size": 26270,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "547e8868d612b0f62b48000b0a7fa32e35bdedf9",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_vertical_stability.pdf",
+      "sha256": "f2fa1a90c70ffc5839f5d39bcaf31a5b1658ba6eaf490b6f9e7bda50ada08d14",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_vertical_stability.pdf"
+      ]
+    },
+    "papers/figures/fig_vertical_stability.py": {
+      "byte_size": 6869,
+      "disposition": "rewritten_and_regenerated_for_package_002",
+      "git_blob_oid_sha1": "7ac6045dfdb823bea5b4624994c88cfbd7477760",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/fig_vertical_stability.py",
+      "sha256": "46888cbedee244299883a02c48d12a679b6295bd32f10788eec0980bab5179fe",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_vertical_stability.py"
+      ]
+    },
+    "papers/figures/generate_all_figures.py": {
+      "byte_size": 3404,
+      "disposition": "replaced_by_package_specific_generators",
+      "git_blob_oid_sha1": "ce25d60f4bd64e31b6a62acf24b7bec3c1c0f956",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/generate_all_figures.py",
+      "sha256": "f23bdf762538cce8058d52114616ed0c6dcf3673f84c5cbfb6171ef05cb7204f",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/generate_figures.py",
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/generate_figures.py"
+      ]
+    },
+    "papers/figures/style.py": {
+      "byte_size": 3334,
+      "disposition": "split_into_package_specific_figure_styles",
+      "git_blob_oid_sha1": "f83551d4526b8399a5c7770d54c39efe59ae75a9",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/figures/style.py",
+      "sha256": "dc8ebf1c7597a527f0aa1abc554a736436f45520f93b778cbcf6b23155318256",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/style.py",
+        "papers/submissions/002_neuromorphic_vertical_stability_control/figures/style.py"
+      ]
+    },
+    "papers/paper_a_equilibrium_solver.tex": {
+      "byte_size": 41269,
+      "disposition": "rewritten_as_evidence_bounded_manuscript",
+      "git_blob_oid_sha1": "e6082e89f0a746edf20b703fed9f2cba6ce0a2a5",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/paper_a_equilibrium_solver.tex",
+      "sha256": "daab9730402ca3904225b264440f264e73b40ec1289276cbf3593c7c2ec48a3f",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/manuscript.tex"
+      ]
+    },
+    "papers/paper_b_snn_controller.tex": {
+      "byte_size": 48836,
+      "disposition": "rewritten_as_evidence_bounded_manuscript",
+      "git_blob_oid_sha1": "75204187579d422aef3107a119b726efa4f1209e",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/paper_b_snn_controller.tex",
+      "sha256": "25ea87fad8a37278c79854f2c03959759764028090ae6cb9d5941e285af3c82a",
+      "successor_paths": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/manuscript.tex"
+      ]
+    },
+    "papers/scpn_fusion.bib": {
+      "byte_size": 21162,
+      "disposition": "split_into_package_specific_bibliographies",
+      "git_blob_oid_sha1": "74dddac0b1136055e057eee49e18ff8b85d5fb0a",
+      "retrieval_command": "git show f960da9934167fcf95f1c3b8e29fa203f7361fab:papers/scpn_fusion.bib",
+      "sha256": "4c0d5e2a208ca1fd752b782d1516746c628e4a543c733019cf98c46b593e4152",
+      "successor_paths": [
+        "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/references.bib",
+        "papers/submissions/002_neuromorphic_vertical_stability_control/references.bib"
+      ]
+    }
+  },
+  "orcid": "0009-0009-3560-0851",
+  "projectDescription": "SCPN-FUSION-CORE legacy paper-layout custody manifest.",
+  "retired_path_count": 58,
+  "schema_version": "1.0",
+  "source_revision": "f960da9934167fcf95f1c3b8e29fa203f7361fab"
+}

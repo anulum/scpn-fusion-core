@@ -16,7 +16,7 @@ near real plant hardware?
 |---|---|---|
 | Tagged package release | `4.0.0` | `pyproject.toml`, `CITATION.cff`, `CHANGELOG.md` |
 | Release focus | Differentiable predictive free-boundary equilibrium, exact adjoint gradients, batched JAX execution, and OMAS/IMAS interchange | v4.0.0 release notes and `RESULTS.md` |
-| Static inventory | 13 Rust crates, 361 Python capability modules, 656 Python test files, and 66 public documentation pages | `docs/_generated/capability_snapshot.md` |
+| Static inventory | 13 Rust crates, 361 Python capability modules, 657 Python test files, and 66 public documentation pages | `docs/_generated/capability_snapshot.md` |
 | Full-fidelity status | Not complete; external same-case and production-scale rows remain fail-closed | `validation/reports/full_fidelity_end_to_end_campaign.md` |
 | Safety status | Research and assurance-roadmap material; no IEC 61508 or SIL certification claim | `docs/IEC_61508_ROADMAP.md` |
 

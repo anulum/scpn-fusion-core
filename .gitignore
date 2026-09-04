@@ -60,6 +60,7 @@ artifacts/job_*.exit
 *.npz
 *.gif
 *.png
+!papers/submissions/**/*.png
 data/mast_cache/
 data/mast_runs/
 !docs/**/*.png
@@ -127,6 +128,17 @@ papers/*.fls
 papers/*.toc
 papers/*.pdf
 papers/*.tar.gz
+papers/submissions/**/*.aux
+papers/submissions/**/*.bbl
+papers/submissions/**/*.blg
+papers/submissions/**/*.bcf
+papers/submissions/**/*.fdb_latexmk
+papers/submissions/**/*.fls
+papers/submissions/**/*.log
+papers/submissions/**/*.out
+papers/submissions/**/*.run.xml
+papers/submissions/**/*.synctex.gz
+papers/submissions/**/*.toc
 
 # Accidental nested repository mirror from local tooling/worktree mistakes
 03_CODE/SCPN-Fusion-Core/

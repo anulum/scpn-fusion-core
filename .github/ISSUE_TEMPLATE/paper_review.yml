@@ -20,7 +20,7 @@ body:
     attributes:
       label: Paper or Document
       description: File path or external link
-      placeholder: "papers/paper_b_snn_controller.tex"
+      placeholder: "papers/submissions/002_neuromorphic_vertical_stability_control/manuscript.tex"
     validations:
       required: true
   - type: input

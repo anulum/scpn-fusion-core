@@ -280,13 +280,14 @@ main() {
     local package_name
     local found=0
 
-    for command_name in bibtex cffconvert jq pdffonts pdflatex pdftotext rg sha256sum; do
+    for command_name in bibtex cffconvert git jq pdffonts pdflatex pdftotext rg sha256sum; do
         require_command "${command_name}"
     done
     if [[ ! -x "${PYTHON_BIN}" ]]; then
         echo "Error: project Python is unavailable: ${PYTHON_BIN}" >&2
         exit 1
     fi
+    "${PYTHON_BIN}" "${SCRIPT_DIR}/generate_legacy_layout_manifest.py" --check
 
     PAPER_VERIFY_ROOT="$(mktemp -d "${PAPER_VERIFY_PREFIX}XXXXXX")"
     export PAPER_VERIFY_ROOT
