@@ -12,8 +12,26 @@ General print-ready settings for vector manuscript figures.
 All figure scripts import this module for consistent appearance.
 """
 
+import logging
+
 import matplotlib as mpl
 import numpy as np
+
+
+class _UnixFontTimestampFilter(logging.Filter):
+    """Silence fontTools' harmless Unix-epoch normalization diagnostic."""
+
+    _MESSAGE_SUFFIX = "timestamp seems very low; regarding as unix timestamp"
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Keep every fontTools record except the known epoch diagnostic."""
+        return not record.getMessage().endswith(self._MESSAGE_SUFFIX)
+
+
+# Some distribution fonts encode ``head`` dates as Unix timestamps. fontTools
+# normalizes those values before embedding; the verifier separately checks that
+# every output font is embedded and that regenerated PDFs are byte-identical.
+logging.getLogger("fontTools.ttLib.tables._h_e_a_d").addFilter(_UnixFontTimestampFilter())
 
 # ---------------------------------------------------------------------------
 # Global rcParams — serif fonts, proper sizing, high DPI
@@ -24,13 +42,11 @@ STYLE = {
     "font.serif": ["Times New Roman", "DejaVu Serif", "Computer Modern Roman"],
     "font.size": 10,
     "mathtext.fontset": "cm",
-
     # Axes
     "axes.labelsize": 11,
     "axes.titlesize": 12,
     "axes.linewidth": 0.8,
     "axes.grid": False,
-
     # Ticks
     "xtick.labelsize": 9,
     "ytick.labelsize": 9,
@@ -46,24 +62,20 @@ STYLE = {
     "ytick.minor.visible": True,
     "xtick.top": True,
     "ytick.right": True,
-
     # Legend
     "legend.fontsize": 9,
     "legend.frameon": True,
     "legend.framealpha": 0.9,
     "legend.edgecolor": "0.7",
     "legend.fancybox": False,
-
     # Lines
     "lines.linewidth": 1.5,
     "lines.markersize": 5,
-
     # Figure
     "figure.dpi": 150,
     "savefig.dpi": 300,
     "savefig.bbox": "tight",
     "savefig.pad_inches": 0.05,
-
     # PDF backend for text-as-paths (safer for journal submission)
     "pdf.fonttype": 42,
     "ps.fonttype": 42,
@@ -78,8 +90,8 @@ def apply_style():
 # ---------------------------------------------------------------------------
 # Journal column widths (inches)
 # ---------------------------------------------------------------------------
-SINGLE_COL = 3.5    # single-column figure
-DOUBLE_COL = 7.0    # double-column figure
+SINGLE_COL = 3.5  # single-column figure
+DOUBLE_COL = 7.0  # double-column figure
 GOLDEN = (1 + np.sqrt(5)) / 2  # golden ratio ~ 1.618
 
 
@@ -93,14 +105,14 @@ def figsize(width=SINGLE_COL, ratio=1.0 / GOLDEN):
 # ---------------------------------------------------------------------------
 # Colourblind-safe palette (Wong 2011, Nature Methods 8, 441)
 COLORS = {
-    "blue":    "#0072B2",
-    "orange":  "#E69F00",
-    "green":   "#009E73",
-    "red":     "#D55E00",
-    "purple":  "#CC79A7",
-    "cyan":    "#56B4E9",
-    "yellow":  "#F0E442",
-    "black":   "#000000",
+    "blue": "#0072B2",
+    "orange": "#E69F00",
+    "green": "#009E73",
+    "red": "#D55E00",
+    "purple": "#CC79A7",
+    "cyan": "#56B4E9",
+    "yellow": "#F0E442",
+    "black": "#000000",
 }
 
 # Ordered list for sequential use
