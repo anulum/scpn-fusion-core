@@ -15,6 +15,12 @@ from pathlib import Path
 import pytest
 
 from validation import collect_results
+from validation import stress_test_campaign
+from validation.stress_campaign_contract import (
+    CampaignResults,
+    ControllerMetrics,
+    StressScenario,
+)
 
 
 def test_real_shot_loader_reads_json_object(
@@ -41,3 +47,36 @@ def test_real_shot_loader_rejects_non_object_root(
 
     with pytest.raises(ValueError, match="JSON object with string keys"):
         collect_results.load_real_shot_validation()
+
+
+def test_controller_collector_preserves_lane_status_and_scenario_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The compact collector cannot hide unavailable lanes or scenario identity."""
+    scenario = StressScenario(master_seed=31)
+    lane = ControllerMetrics(
+        name="H-infinity",
+        requested_episodes=5,
+        scenario_digest=scenario.digest,
+        evaluation_contract_digest="contract-digest",
+        policy_implementation="test.hinf",
+        status="unavailable",
+        reason="research_gate_disabled",
+    )
+    results = CampaignResults(
+        {"H-infinity": lane},
+        scenario=scenario,
+        campaign_identity={"digest": "campaign-digest"},
+    )
+    monkeypatch.setattr(stress_test_campaign, "run_campaign", lambda **kwargs: results)
+
+    compact = collect_results.run_controller_campaign(quick=True)
+
+    assert compact is not None
+    assert compact["scenario_digest"] == scenario.digest
+    assert compact["campaign_identity_digest"] == "campaign-digest"
+    assert compact["controllers"]["H-infinity"]["status"] == "unavailable"
+    assert compact["controllers"]["H-infinity"]["policy_implementation"] == "test.hinf"
+    assert compact["controllers"]["H-infinity"]["mean_tracking_reward_m"] is None
+    assert compact["controllers"]["H-infinity"]["mean_abs_z_error_m"] is None
+    assert compact["controllers"]["H-infinity"]["comparable"] is False

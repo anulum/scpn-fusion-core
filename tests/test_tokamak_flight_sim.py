@@ -15,8 +15,11 @@ import numpy as np
 import pytest
 
 from scpn_fusion.control.tokamak_flight_sim import (
+    CoilCurrentOffsetCommand,
+    ControlObservation,
     FirstOrderActuator,
     IsoFluxController,
+    map_axis_commands_to_coil_offsets,
     run_flight_sim,
 )
 
@@ -77,6 +80,9 @@ def test_run_flight_sim_returns_finite_summary_without_plot() -> None:
         "final_beta_scale",
         "mean_abs_r_error",
         "mean_abs_z_error",
+        "disrupted",
+        "t_disruption_s",
+        "simulated_duration_s",
         "mean_abs_radial_actuator_lag",
         "mean_abs_vertical_actuator_lag",
         "mean_abs_heating_actuator_lag",
@@ -96,6 +102,31 @@ def test_run_flight_sim_returns_finite_summary_without_plot() -> None:
     assert np.isfinite(summary["mean_abs_radial_actuator_lag"])
     assert np.isfinite(summary["mean_abs_vertical_actuator_lag"])
     assert np.isfinite(summary["mean_abs_heating_actuator_lag"])
+    assert summary["t_disruption_s"] <= summary["simulated_duration_s"]
+
+
+def test_flight_sim_reports_first_disruption_time_from_trajectory() -> None:
+    """Disruption timing is derived from the first threshold crossing, not a placeholder."""
+
+    class OffsetTargetKernel(_DummyKernel):
+        """Place the requested axis outside the dummy plant's reachable range."""
+
+        def __init__(self, config_file: str) -> None:
+            super().__init__(config_file)
+            self.cfg["target"] = {"R_axis": 7.0, "Z_axis": 0.0}
+
+    summary = run_flight_sim(
+        config_file="dummy.json",
+        shot_duration=8,
+        seed=9,
+        save_plot=False,
+        verbose=False,
+        control_dt_s=0.05,
+        kernel_factory=OffsetTargetKernel,
+    )
+
+    assert summary["disrupted"] is True
+    assert summary["t_disruption_s"] == pytest.approx(0.0)
 
 
 def test_run_flight_sim_is_deterministic_for_fixed_seed() -> None:
@@ -182,12 +213,12 @@ def test_isoflux_controller_rejects_invalid_heating_and_limit_controls() -> None
             verbose=False,
             heating_actuator_tau_s=0.0,
         )
-    with pytest.raises(ValueError, match="actuator_current_delta_limit"):
+    with pytest.raises(ValueError, match="actuator_current_offset_limit_ma"):
         IsoFluxController(
             config_file="dummy.json",
             kernel_factory=_DummyKernel,
             verbose=False,
-            actuator_current_delta_limit=0.0,
+            actuator_current_offset_limit_ma=0.0,
         )
     with pytest.raises(ValueError, match="heating_beta_max"):
         IsoFluxController(
@@ -235,6 +266,111 @@ def test_first_order_actuator_measurement_includes_noise() -> None:
     act.step(0.5)
     measurement = act.get_measurement()
     assert np.isfinite(measurement)
+
+
+def test_first_order_actuator_applies_exact_command_transport_delay() -> None:
+    """A command reaches the lag element only after the configured delay."""
+    actuator = FirstOrderActuator(
+        tau_s=1.0e-9,
+        dt_s=1.0,
+        u_min=-1.0,
+        u_max=1.0,
+        rate_limit=10.0,
+        command_delay_steps=2,
+    )
+
+    assert actuator.step(1.0) == pytest.approx(0.0)
+    assert actuator.step(1.0) == pytest.approx(0.0)
+    assert actuator.step(1.0) == pytest.approx(1.0)
+
+
+def test_isoflux_stress_scenario_is_seeded_and_reported() -> None:
+    """The public runtime applies reproducible noise and reports exact delay units."""
+    common: dict[str, Any] = {
+        "config_file": "dummy.json",
+        "shot_duration": 12,
+        "save_plot": False,
+        "verbose": False,
+        "kernel_factory": _DummyKernel,
+        "measurement_noise_std_m": 0.03,
+        "actuator_delay_s": 0.10,
+        "control_dt_s": 0.05,
+    }
+    first = run_flight_sim(seed=71, **common)
+    replay = run_flight_sim(seed=71, **common)
+    different_seed = run_flight_sim(seed=72, **common)
+
+    assert first["measurement_noise_std_m"] == pytest.approx(0.03)
+    assert first["actuator_delay_s"] == pytest.approx(0.10)
+    assert first["actuator_delay_steps"] == 2
+    assert first["realized_measurement_noise_rms_m"] > 0.0
+    assert first["realized_measurement_noise_rms_m"] == replay["realized_measurement_noise_rms_m"]
+    assert first["mean_abs_radial_actuator_lag"] == replay["mean_abs_radial_actuator_lag"]
+    assert first["mean_abs_vertical_actuator_lag"] == replay["mean_abs_vertical_actuator_lag"]
+    assert (first["mean_abs_radial_actuator_lag"], first["mean_abs_vertical_actuator_lag"]) != (
+        different_seed["mean_abs_radial_actuator_lag"],
+        different_seed["mean_abs_vertical_actuator_lag"],
+    )
+
+
+def test_stress_inputs_materially_change_consumed_noise_and_actuator_trajectory() -> None:
+    """Noise amplitude and command delay each change their public runtime surface."""
+    noiseless = run_flight_sim(
+        "dummy.json",
+        shot_duration=6,
+        save_plot=False,
+        verbose=False,
+        kernel_factory=_DummyKernel,
+        measurement_noise_std_m=0.0,
+        seed=23,
+    )
+    noisy = run_flight_sim(
+        "dummy.json",
+        shot_duration=6,
+        save_plot=False,
+        verbose=False,
+        kernel_factory=_DummyKernel,
+        measurement_noise_std_m=0.03,
+        seed=23,
+    )
+    assert noiseless["realized_measurement_noise_rms_m"] == 0.0
+    assert noisy["realized_measurement_noise_rms_m"] > 0.0
+    assert noiseless["disturbance_trace_digest"] != noisy["disturbance_trace_digest"]
+
+    class ConstantPolicy:
+        """Command one observable full-coil offset setpoint."""
+
+        def step(self, _observation: ControlObservation) -> CoilCurrentOffsetCommand:
+            return CoilCurrentOffsetCommand((0.0, 0.0, 0.04, 0.0, 0.0))
+
+    controllers = [
+        IsoFluxController(
+            "dummy.json",
+            kernel_factory=_DummyKernel,
+            verbose=False,
+            actuator_tau_s=1.0e-12,
+            actuator_delay_s=delay,
+            control_dt_s=0.05,
+        )
+        for delay in (0.0, 0.10)
+    ]
+    for controller in controllers:
+        controller.run_shot(shot_duration=3, save_plot=False, control_policy=ConstantPolicy())
+    immediate = np.asarray(controllers[0].history["coil_current_offset_applied_ma"])
+    delayed = np.asarray(controllers[1].history["coil_current_offset_applied_ma"])
+    assert immediate[:, 2] == pytest.approx((0.04, 0.04, 0.04))
+    assert delayed[:, 2] == pytest.approx((0.0, 0.0, 0.04))
+
+
+def test_isoflux_rejects_fractional_command_delay_step() -> None:
+    """The runtime never silently rounds a requested physical delay."""
+    with pytest.raises(ValueError, match="integer multiple"):
+        IsoFluxController(
+            "dummy.json",
+            kernel_factory=_DummyKernel,
+            control_dt_s=0.05,
+            actuator_delay_s=0.075,
+        )
 
 
 def test_run_flight_sim_renders_plot(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -385,11 +521,11 @@ def test_first_order_actuator_holds_on_inf_command() -> None:
 
 
 def test_first_order_actuator_default_limits_are_physical() -> None:
-    """The default saturation is a physical coil-current scale, not 1e9 A."""
+    """The default offset saturation is 0.05 MA (50 kA), not a unit error."""
     act = FirstOrderActuator(tau_s=0.05, dt_s=0.05)
-    assert act.u_max == pytest.approx(5.0e4)
-    assert act.u_min == pytest.approx(-5.0e4)
-    assert abs(act.u_max) < 1.0e6  # not the old non-physical default
+    assert act.u_max == pytest.approx(0.05)
+    assert act.u_min == pytest.approx(-0.05)
+    assert act.rate_limit == pytest.approx(1.0)
 
 
 def test_pid_step_ignores_nonfinite_error() -> None:
@@ -406,8 +542,184 @@ def test_pid_step_ignores_nonfinite_error() -> None:
     assert pid["err_sum"] == 4.0
 
 
-def test_isoflux_default_current_delta_limit_is_physical() -> None:
-    """The controller's default actuator saturation is physical (50 kA), not 1e9 A."""
+def test_isoflux_default_current_offset_limit_is_physical() -> None:
+    """The controller's default current-offset saturation is 0.05 MA."""
     ctrl = IsoFluxController(config_file="dummy.json", kernel_factory=_DummyKernel, verbose=False)
-    assert ctrl._act_radial.u_max == pytest.approx(5.0e4)
-    assert ctrl._act_radial.u_max < 1.0e6
+    assert ctrl._act_radial.u_max == pytest.approx(0.05)
+
+
+def test_axis_mapping_uses_pf3_and_differential_pf1_pf5_offsets() -> None:
+    """The public axis adapter preserves the declared ITER PF-coil convention."""
+    command = map_axis_commands_to_coil_offsets(7, 0.02, -0.01)
+    assert command.coil_current_offsets_ma == pytest.approx((0.01, 0.0, 0.02, 0.0, -0.01, 0.0, 0.0))
+
+
+def test_full_coil_policy_runs_once_per_step_from_shared_observation() -> None:
+    """One policy call drives every coil through the same actuator transfer layer."""
+
+    class RecordingPolicy:
+        """Record observations and command fixed full-coil offsets."""
+
+        def __init__(self) -> None:
+            self.observations: list[ControlObservation] = []
+
+        def step(self, observation: ControlObservation) -> CoilCurrentOffsetCommand:
+            self.observations.append(observation)
+            return CoilCurrentOffsetCommand((0.01, 0.02, 0.03, 0.04, 0.05))
+
+    policy = RecordingPolicy()
+    ctrl = IsoFluxController(
+        config_file="dummy.json",
+        kernel_factory=_DummyKernel,
+        verbose=False,
+        actuator_tau_s=1.0e-9,
+        actuator_current_offset_limit_ma=0.05,
+        control_dt_s=0.05,
+        measurement_noise_std_m=0.01,
+        rng_seed=17,
+    )
+    summary = ctrl.run_shot(shot_duration=3, save_plot=False, control_policy=policy)
+
+    assert [item.step_index for item in policy.observations] == [0, 1, 2]
+    assert all(item.control_dt_s == pytest.approx(0.05) for item in policy.observations)
+    assert len(summary["control_policy_latency_us"]) == 3
+    assert summary["mean_control_policy_latency_us"] >= 0.0
+    assert summary["simulation_wall_time_us"] >= sum(summary["control_policy_latency_us"])
+    assert ctrl.history["coil_current_offset_cmd_ma"][0] == pytest.approx(
+        (0.01, 0.02, 0.03, 0.04, 0.05)
+    )
+    assert [coil["current"] for coil in ctrl.kernel.cfg["coils"]] == pytest.approx(
+        (0.01, 0.02, 0.03, 0.04, 0.05), rel=1.0e-6, abs=1.0e-9
+    )
+
+
+def test_policy_offsets_are_relative_to_immutable_initial_currents() -> None:
+    """A constant actuator offset is not accumulated into coil current every step."""
+
+    class ConstantPolicy:
+        """Return one fixed radial offset setpoint."""
+
+        def step(self, _observation: ControlObservation) -> CoilCurrentOffsetCommand:
+            return CoilCurrentOffsetCommand((0.0, 0.0, 0.04, 0.0, 0.0))
+
+    ctrl = IsoFluxController(
+        config_file="dummy.json",
+        kernel_factory=_DummyKernel,
+        verbose=False,
+        actuator_tau_s=1.0e-9,
+        actuator_current_offset_limit_ma=0.05,
+        control_dt_s=0.05,
+    )
+    ctrl.run_shot(shot_duration=5, save_plot=False, control_policy=ConstantPolicy())
+
+    assert ctrl.kernel.cfg["coils"][2]["current"] == pytest.approx(0.04, rel=1.0e-6)
+
+
+def test_magnetic_actuator_metrics_use_ma_and_seconds() -> None:
+    """Full-coil offset effort and command tracking retain physical dimensions."""
+
+    class ConstantPolicy:
+        """Return known full-coil offset setpoints."""
+
+        def step(self, _observation: ControlObservation) -> CoilCurrentOffsetCommand:
+            return CoilCurrentOffsetCommand((0.01, -0.02, 0.03, -0.04, 0.05))
+
+    ctrl = IsoFluxController(
+        config_file="dummy.json",
+        kernel_factory=_DummyKernel,
+        verbose=False,
+        actuator_tau_s=1.0e-12,
+        actuator_current_offset_limit_ma=0.05,
+        control_dt_s=0.05,
+    )
+    summary = ctrl.run_shot(shot_duration=2, save_plot=False, control_policy=ConstantPolicy())
+
+    expected_integral_ma_s = 2 * 0.05 * (0.01 + 0.02 + 0.03 + 0.04 + 0.05)
+    assert summary["magnetic_actuator_absolute_current_offset_integral_ma_s"] == pytest.approx(
+        expected_integral_ma_s, rel=1.0e-8
+    )
+    assert summary["mean_abs_coil_current_offset_tracking_error_ma"] == pytest.approx(
+        0.0, abs=1.0e-10
+    )
+
+
+def test_disturbance_trace_digest_identifies_consumed_two_channel_trace() -> None:
+    """The summary binds the exact materialized R/Z noise samples to a digest."""
+    common: dict[str, Any] = {
+        "config_file": "dummy.json",
+        "shot_duration": 6,
+        "save_plot": False,
+        "verbose": False,
+        "kernel_factory": _DummyKernel,
+        "measurement_noise_std_m": 0.02,
+    }
+    first = run_flight_sim(seed=101, **common)
+    replay = run_flight_sim(seed=101, **common)
+    different = run_flight_sim(seed=102, **common)
+
+    assert first["disturbance_trace_sample_count"] == 6
+    assert len(first["disturbance_trace_digest"]) == 64
+    assert first["disturbance_trace_digest"] == replay["disturbance_trace_digest"]
+    assert first["disturbance_trace_digest"] != different["disturbance_trace_digest"]
+
+
+def test_disruption_detects_final_post_actuation_state_at_shot_end() -> None:
+    """A threshold crossing caused by the last command is timed at the shot endpoint."""
+
+    class NearThresholdKernel(_DummyKernel):
+        """Set a target that crosses the disruption threshold only after inward motion."""
+
+        def __init__(self, config_file: str) -> None:
+            super().__init__(config_file)
+            self.cfg["target"] = {"R_axis": 6.58, "Z_axis": 0.0}
+
+        def solve_equilibrium(self) -> None:
+            """Resolve the dummy equilibrium with MA-scale PF3 sensitivity."""
+            self._ticks += 1
+            radial_drive_ma = float(self.cfg["coils"][2]["current"])
+            center_r = 6.1 + 0.05 * np.tanh(radial_drive_ma / 0.005)
+            ir = int(np.argmin(np.abs(self.R - center_r)))
+            iz = int(np.argmin(np.abs(self.Z)))
+            self.Psi.fill(-1.0)
+            self.Psi[iz, ir] = 1.0
+
+    class InwardPolicy:
+        """Apply the maximum inward PF3 offset."""
+
+        def step(self, observation: ControlObservation) -> CoilCurrentOffsetCommand:
+            return map_axis_commands_to_coil_offsets(len(observation.coil_currents_ma), -0.05, 0.0)
+
+    ctrl = IsoFluxController(
+        config_file="dummy.json",
+        kernel_factory=NearThresholdKernel,
+        verbose=False,
+        actuator_tau_s=1.0e-12,
+        control_dt_s=0.05,
+    )
+    summary = ctrl.run_shot(shot_duration=1, save_plot=False, control_policy=InwardPolicy())
+
+    assert summary["disrupted"] is True
+    assert summary["t_disruption_s"] == pytest.approx(0.05)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        CoilCurrentOffsetCommand((0.0, 0.0)),
+        CoilCurrentOffsetCommand((0.0, 0.0, float("nan"), 0.0, 0.0)),
+    ],
+)
+def test_policy_rejects_incomplete_or_nonfinite_full_coil_commands(
+    command: CoilCurrentOffsetCommand,
+) -> None:
+    """The public policy boundary fails closed on invalid full-coil vectors."""
+
+    class InvalidPolicy:
+        """Return the supplied invalid command through the public policy surface."""
+
+        def step(self, _observation: ControlObservation) -> CoilCurrentOffsetCommand:
+            return command
+
+    ctrl = IsoFluxController(config_file="dummy.json", kernel_factory=_DummyKernel, verbose=False)
+    with pytest.raises(ValueError, match="control policy"):
+        ctrl.run_shot(shot_duration=1, save_plot=False, control_policy=InvalidPolicy())

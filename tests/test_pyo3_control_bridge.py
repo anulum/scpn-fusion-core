@@ -116,6 +116,84 @@ class TestPyRustFlightSim:
         sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 10000.0)
         assert sim is not None
 
+    def test_rust_pid_policy_is_two_axis_stateful_and_resettable(self):
+        policy = scpn_fusion_rs.PyRustIsoFluxController(5.9, -2.1)
+        first = policy.step(5.8, -2.0)
+        second = policy.step(5.8, -2.0)
+
+        assert len(first) == 2
+        assert first[0] > 0.0
+        assert first[1] < 0.0
+        assert second != first
+        policy.reset()
+        assert policy.step(5.8, -2.0) == pytest.approx(first)
+
+    def test_stress_scenario_constructor_is_applied_and_replayable(self):
+        common = {
+            "target_r": 6.2,
+            "target_z": 0.0,
+            "control_hz": 10000.0,
+            "measurement_noise_std_m": 0.05,
+            "actuator_delay_s": 0.01,
+            "measurement_seed": 81,
+        }
+        first = scpn_fusion_rs.PyRustFlightSim(**common)
+        replay = scpn_fusion_rs.PyRustFlightSim(**common)
+
+        assert first.measurement_noise_std_m == pytest.approx(0.05)
+        assert first.actuator_delay_s == pytest.approx(0.01)
+        first_report = first.run_shot(0.02)
+        replay_report = replay.run_shot(0.02)
+        assert first_report.r_history == replay_report.r_history
+        assert first_report.realized_measurement_noise_rms_m > 0.0
+        assert first_report.realized_measurement_noise_rms_m == pytest.approx(
+            replay_report.realized_measurement_noise_rms_m
+        )
+
+        with pytest.raises(RuntimeError, match="integer multiple"):
+            scpn_fusion_rs.PyRustFlightSim(
+                target_r=6.2,
+                target_z=0.0,
+                control_hz=10000.0,
+                measurement_noise_std_m=0.05,
+                actuator_delay_s=0.00015,
+                measurement_seed=81,
+            )
+
+    def test_registered_rust_stress_runner_applies_scenario_end_to_end(self):
+        from scpn_fusion._data_paths import default_iter_config_path
+        from validation.stress_campaign_contract import StressScenario
+        from validation.stress_test_campaign import CONTROLLERS, build_evaluation_contract
+
+        scenario = StressScenario(
+            measurement_noise_std_m=0.025,
+            actuator_delay_s=0.08,
+            master_seed=7,
+        )
+        episode_seed = scenario.episode_seed(4)
+        config_path = default_iter_config_path()
+        evaluation_contract = build_evaluation_contract(
+            config_path, surrogate=True, scenario=scenario
+        )
+        episode = CONTROLLERS["Rust-PID"](
+            config_path,
+            shot_duration=1,
+            surrogate=True,
+            scenario=scenario,
+            episode_index=4,
+            episode_seed=episode_seed,
+            evaluation_contract_digest=evaluation_contract["digest"],
+        )
+
+        assert episode.seed == episode_seed
+        assert episode.scenario_digest == scenario.digest
+        # One 1 s surrogate episode contains 200 independent R/Z samples; its
+        # realized RMS is stochastic and need not equal the population sigma.
+        assert episode.realized_measurement_noise_rms_m == pytest.approx(0.025, rel=0.20)
+        assert 0.0 <= episode.t_disruption_s <= 1.0
+        assert episode.evaluation_contract_digest == evaluation_contract["digest"]
+        assert episode.control_policy_latency_us
+
     def test_run_shot_returns_valid_report(self):
         sim = scpn_fusion_rs.PyRustFlightSim(6.2, 0.0, 10000.0)
         report = sim.run_shot(0.1)  # 0.1s @ 10kHz = 1000 steps
@@ -125,6 +203,7 @@ class TestPyRustFlightSim:
         assert np.isfinite(report.mean_abs_r_error)
         assert np.isfinite(report.mean_abs_z_error)
         assert isinstance(report.disrupted, bool)
+        assert 0.0 < report.t_disruption_s <= report.duration_s
         assert len(report.r_history) == 1000
         assert len(report.z_history) == 1000
         assert 0 <= report.vessel_contact_events <= report.steps

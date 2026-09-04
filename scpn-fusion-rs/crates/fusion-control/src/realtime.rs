@@ -76,11 +76,13 @@ impl RtcDriver {
             r_err_sum: 0.0,
             z_err_sum: 0.0,
             disrupted: false,
+            first_disruption_step: None,
             max_beta: self.sim.curr_beta,
             max_heating_mw: self.sim.curr_heating_mw,
             vessel_contact_events: 0,
             pf_constraint_events: 0,
             heating_constraint_events: 0,
+            measurement_noise_squared_sum: 0.0,
         };
 
         for step_idx in 0..steps {
@@ -109,12 +111,17 @@ impl RtcDriver {
             aggregate.r_err_sum += step.r_error;
             aggregate.z_err_sum += step.z_error;
             aggregate.disrupted |= step.disrupted;
+            if step.disrupted && aggregate.first_disruption_step.is_none() {
+                aggregate.first_disruption_step = Some(step_idx);
+            }
             aggregate.max_step_time_us = aggregate.max_step_time_us.max(step.step_time_us);
             aggregate.max_beta = aggregate.max_beta.max(step.beta);
             aggregate.max_heating_mw = aggregate.max_heating_mw.max(step.heating_mw);
             aggregate.vessel_contact_events += usize::from(step.vessel_contact);
             aggregate.pf_constraint_events += usize::from(step.pf_constraint_active);
             aggregate.heating_constraint_events += usize::from(step.heating_constraint_active);
+            aggregate.measurement_noise_squared_sum +=
+                step.radial_measurement_noise_m.powi(2) + step.vertical_measurement_noise_m.powi(2);
             next_tick += step_duration;
         }
 

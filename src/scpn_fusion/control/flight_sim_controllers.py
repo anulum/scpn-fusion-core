@@ -224,3 +224,70 @@ def get_flight_sim_lqr_controller(
     C2 = np.array([[1.0, 0.0]])
 
     return LQRController(A, B2, C2, Q_diag=Q_diag, R_diag=R_diag)
+
+
+def _offset_setpoint_state_space(
+    position_sensitivity: float,
+    actuator_tau: float,
+    error_relaxation_rate: float = 0.1,
+) -> tuple[
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
+    """Return the error/actuator model for a coil-current offset setpoint.
+
+    With position ``p = p0 + g*a`` and actuator
+    ``da/dt = (u-a)/tau``, the tracking-error observer uses
+    ``de/dt = -lambda*e + (g/tau)*a - (g/tau)*u + w``. The positive
+    relaxation rate makes the disturbance-estimation mode detectable instead
+    of leaving a marginal algebraic state in the Riccati synthesis. The signed
+    sensitivity captures both radial and differential vertical PF conventions.
+    """
+    sensitivity = float(position_sensitivity)
+    tau = float(actuator_tau)
+    if not np.isfinite(sensitivity) or sensitivity == 0.0:
+        raise ValueError("position_sensitivity must be finite and non-zero.")
+    if not np.isfinite(tau) or tau <= 0.0:
+        raise ValueError("actuator_tau must be finite and > 0.")
+    relaxation = float(error_relaxation_rate)
+    if not np.isfinite(relaxation) or relaxation <= 0.0:
+        raise ValueError("error_relaxation_rate must be finite and > 0.")
+    inv_tau = 1.0 / tau
+    A = np.array([[-relaxation, sensitivity * inv_tau], [0.0, -inv_tau]])
+    B2 = np.array([[-sensitivity * inv_tau], [inv_tau]])
+    C2 = np.array([[1.0, 0.0]])
+    return A, B2, C2
+
+
+def get_flight_sim_offset_hinf_controller(
+    position_sensitivity: float,
+    actuator_tau: float = 0.06,
+    observer_q_scale: float = 100.0,
+    enforce_robust_feasibility: bool = False,
+) -> HInfinityController:
+    """Build H-infinity control for the MA offset-setpoint actuator contract."""
+    A, B2, C2 = _offset_setpoint_state_space(position_sensitivity, actuator_tau)
+    B1 = np.array([[1.0], [0.0]])
+    C1 = np.array([[1.0, 0.0], [0.0, 0.01]])
+    controller = HInfinityController(
+        A,
+        B1,
+        B2,
+        C1,
+        C2,
+        enforce_robust_feasibility=enforce_robust_feasibility,
+    )
+    controller.observer_q_scale = float(observer_q_scale)
+    return controller
+
+
+def get_flight_sim_offset_lqr_controller(
+    position_sensitivity: float,
+    actuator_tau: float = 0.06,
+    Q_diag: float = 10.0,
+    R_diag: float = 0.01,
+) -> LQRController:
+    """Build LQR control for the MA offset-setpoint actuator contract."""
+    A, B2, C2 = _offset_setpoint_state_space(position_sensitivity, actuator_tau)
+    return LQRController(A, B2, C2, Q_diag=Q_diag, R_diag=R_diag)

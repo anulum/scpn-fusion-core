@@ -12,7 +12,37 @@
 
 use pyo3::prelude::*;
 
-use fusion_control::flight_sim::RustFlightSim;
+use fusion_control::{flight_sim::RustFlightSim, pid::IsoFluxController};
+
+/// Rust-native two-axis PID policy for use with an external common plant.
+#[pyclass]
+pub(crate) struct PyRustIsoFluxController {
+    inner: IsoFluxController,
+}
+
+#[pymethods]
+impl PyRustIsoFluxController {
+    /// Construct the canonical radial and vertical PID loops.
+    #[new]
+    fn new(target_r: f64, target_z: f64) -> PyResult<Self> {
+        let inner = IsoFluxController::new(target_r, target_z)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;
+        Ok(Self { inner })
+    }
+
+    /// Compute radial and vertical commands from one shared position observation.
+    fn step(&mut self, measured_r: f64, measured_z: f64) -> PyResult<(f64, f64)> {
+        self.inner
+            .step(measured_r, measured_z)
+            .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))
+    }
+
+    /// Clear both PID integrators and derivative histories.
+    fn reset(&mut self) {
+        self.inner.pid_r.reset();
+        self.inner.pid_z.reset();
+    }
+}
 
 #[pyclass]
 pub(crate) struct PySimulationReport {
@@ -49,6 +79,10 @@ pub(crate) struct PySimulationReport {
     #[pyo3(get)]
     pub disrupted: bool,
     #[pyo3(get)]
+    pub t_disruption_s: f64,
+    #[pyo3(get)]
+    pub realized_measurement_noise_rms_m: f64,
+    #[pyo3(get)]
     pub r_history: Vec<f64>,
     #[pyo3(get)]
     pub z_history: Vec<f64>,
@@ -76,6 +110,10 @@ pub(crate) struct PyStepMetrics {
     pub pf_constraint_active: bool,
     #[pyo3(get)]
     pub heating_constraint_active: bool,
+    #[pyo3(get)]
+    pub radial_measurement_noise_m: f64,
+    #[pyo3(get)]
+    pub vertical_measurement_noise_m: f64,
 }
 
 #[pyclass]
@@ -112,6 +150,8 @@ fn to_py_simulation_report(
         retained_steps: report.retained_steps,
         history_truncated: report.history_truncated,
         disrupted: report.disrupted,
+        t_disruption_s: report.t_disruption_s,
+        realized_measurement_noise_rms_m: report.realized_measurement_noise_rms_m,
         r_history: report.r_history,
         z_history: report.z_history,
         ip_history: report.ip_history,
@@ -129,6 +169,8 @@ fn to_py_step_metrics(step: fusion_control::flight_sim::StepMetrics) -> PyStepMe
         vessel_contact: step.vessel_contact,
         pf_constraint_active: step.pf_constraint_active,
         heating_constraint_active: step.heating_constraint_active,
+        radial_measurement_noise_m: step.radial_measurement_noise_m,
+        vertical_measurement_noise_m: step.vertical_measurement_noise_m,
     }
 }
 
@@ -150,11 +192,42 @@ pub(crate) struct PyRustFlightSim {
 #[pymethods]
 impl PyRustFlightSim {
     #[new]
-    #[pyo3(signature = (target_r=6.2, target_z=0.0, control_hz=10000.0))]
-    fn new(target_r: f64, target_z: f64, control_hz: f64) -> PyResult<Self> {
-        let inner = RustFlightSim::new(target_r, target_z, control_hz)
-            .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
+    #[pyo3(signature = (
+        target_r=6.2,
+        target_z=0.0,
+        control_hz=10000.0,
+        measurement_noise_std_m=0.0,
+        actuator_delay_s=0.05,
+        measurement_seed=0
+    ))]
+    fn new(
+        target_r: f64,
+        target_z: f64,
+        control_hz: f64,
+        measurement_noise_std_m: f64,
+        actuator_delay_s: f64,
+        measurement_seed: u64,
+    ) -> PyResult<Self> {
+        let inner = RustFlightSim::new_with_stress_scenario(
+            target_r,
+            target_z,
+            control_hz,
+            measurement_noise_std_m,
+            actuator_delay_s,
+            measurement_seed,
+        )
+        .map_err(|e| pyo3::exceptions::PyRuntimeError::new_err(e.to_string()))?;
         Ok(Self { inner })
+    }
+
+    #[getter]
+    fn measurement_noise_std_m(&self) -> f64 {
+        self.inner.measurement_noise_std_m
+    }
+
+    #[getter]
+    fn actuator_delay_s(&self) -> f64 {
+        self.inner.actuator_delay_s
     }
 
     #[pyo3(signature = (shot_duration_s, deterministic=false))]

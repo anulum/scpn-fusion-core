@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+from typing import Callable
+
 import numpy as np
 import pytest
 
@@ -17,6 +19,8 @@ from scpn_fusion.control.flight_sim_controllers import (
     get_flight_sim_controller,
     get_flight_sim_controller_v2,
     get_flight_sim_lqr_controller,
+    get_flight_sim_offset_hinf_controller,
+    get_flight_sim_offset_lqr_controller,
 )
 
 
@@ -88,3 +92,27 @@ def test_flight_sim_v2_rejects_nonpositive_actuator_tau() -> None:
 def test_flight_sim_lqr_rejects_nonpositive_sample_dt() -> None:
     with pytest.raises(ValueError, match="sample_dt must be > 0"):
         get_flight_sim_lqr_controller(sample_dt=0.0)
+
+
+@pytest.mark.parametrize("sensitivity", [0.567, -0.05])
+def test_offset_setpoint_hinf_and_lqr_support_signed_pf_sensitivity(
+    sensitivity: float,
+) -> None:
+    """Both axes synthesize against setpoint offsets without an integrator model."""
+    hinf = get_flight_sim_offset_hinf_controller(sensitivity)
+    lqr = get_flight_sim_offset_lqr_controller(sensitivity)
+
+    assert hinf.is_stable
+    assert np.isfinite(hinf.step(0.01, 0.05))
+    assert np.isfinite(lqr.step(0.01, 0.05))
+
+
+@pytest.mark.parametrize(
+    "factory", [get_flight_sim_offset_hinf_controller, get_flight_sim_offset_lqr_controller]
+)
+def test_offset_setpoint_controllers_reject_zero_sensitivity(
+    factory: Callable[[float], object],
+) -> None:
+    """An uncontrollable axis cannot be silently synthesized."""
+    with pytest.raises(ValueError, match="non-zero"):
+        factory(0.0)

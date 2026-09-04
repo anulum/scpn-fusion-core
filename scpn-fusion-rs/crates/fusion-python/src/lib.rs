@@ -19,7 +19,9 @@ use bindings::equilibrium::{
     measure_magnetics, multigrid_vcycle, shafranov_bv, solve_coil_currents, PyEquilibriumResult,
     PyFusionKernel, PyInverseResult, PyInverseSolver, PyThermodynamicsResult,
 };
-use bindings::flight::{PyFlightState, PyRustFlightSim, PySimulationReport, PyStepMetrics};
+use bindings::flight::{
+    PyFlightState, PyRustFlightSim, PyRustIsoFluxController, PySimulationReport, PyStepMetrics,
+};
 use bindings::frc::{
     py_rotating_frc_bvp_acceptance_status, py_solve_frc_equilibrium,
     py_solve_rotating_frc_equilibrium,
@@ -60,6 +62,7 @@ fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<PyInverseResult>()?;
     m.add_class::<PyPlantModel>()?;
     m.add_class::<PyRustFlightSim>()?;
+    m.add_class::<PyRustIsoFluxController>()?;
     m.add_class::<PySimulationReport>()?;
     m.add_class::<PyStepMetrics>()?;
     m.add_class::<PyFlightState>()?;

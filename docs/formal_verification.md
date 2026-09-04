@@ -112,11 +112,16 @@ limits, plasma current ramp rates).
 
 **Verification**: The `disruption_contracts.py:run_disruption_episode()`
 lane enforces bounded state/risk signals and computes p95 uncertainty
-intervals for risk, wall-damage index, and TBR proxy. The
-`stress_test_campaign.py` runs 100+ episodes verifying constraint
-satisfaction under stochastic disturbances.
+intervals for risk, wall-damage index, and TBR proxy. The unit-explicit,
+scenario-bound behavior of `stress_test_campaign.py` is documented in
+[Controller stress campaign](STRESS_CAMPAIGN.md). Simulation evidence is valid
+only for lanes marked `complete`; the campaign records physical disruption
+independently and refuses promotion comparisons involving failed, unavailable,
+partial, cross-scenario, cross-contract, or cross-trace lanes. A complete
+surrogate campaign is explicitly wiring-only and promotion-ineligible. This is
+simulation evidence, not a machine proof of disruption avoidance.
 
-**Status**: VERIFIED (by simulation).
+**Status**: TESTED BY SIMULATION (scenario- and result-dependent).
 
 ## 5. Stability (Lyapunov)
 

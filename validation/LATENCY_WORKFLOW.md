@@ -1,10 +1,19 @@
-# Replicable controller-latency measurement workflow
+<!--
+SPDX-License-Identifier: AGPL-3.0-or-later
+Commercial license available
+© Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+© Code 2020–2026 Miroslav Šotek. All rights reserved.
+ORCID: 0009-0009-3560-0851
+Contact: www.anulum.li | protoscience@anulum.li
+-->
 
-This is the reproducible workflow behind the per-update controller latencies reported
-in Paper B (Table 5) and `RESULTS.md`. It measures the wall-clock per-control-step
-latency of each available controller and records a **host-provenance block** so every
-number is attributable to the machine that produced it — never a hard-coded or
-fabricated value.
+# Replicable control-policy latency workflow
+
+This workflow records the latency of exactly one policy call per plant step on
+the common stress-campaign plant. It does not measure a different plant for any
+controller and does not treat simulation wall time as policy latency. Every
+number is bound to the host, software, scenario, evaluation contract, policy
+implementation, episode seed, and exact disturbance trace that produced it.
 
 ## Run it
 
@@ -15,29 +24,33 @@ python validation/stress_test_campaign.py \
     --seed 42 \
     --output validation/reports/stress_test_campaign.json
 
-# Quick smoke (CI): 10 episodes
+# Ten-episode development run; not promotion evidence
 python validation/stress_test_campaign.py --quick --output /tmp/stress_quick.json
 ```
 
-Controllers run when their optional dependency is importable (`MPC` / `NMPC-JAX` need
-JAX; `Nengo-SNN` needs Nengo; `Rust-PID` needs the `scpn_fusion_rs` wheel; `H-infinity`
-is an opt-in research lane behind `--enable-hinf-research`). Absent controllers are
-skipped, so the artifact records exactly what the host could measure.
+The complete seven-lane registry is always present. A missing dependency,
+disabled H-infinity research gate, or uncalibrated NMPC lane is serialized as
+`unavailable` with null timing aggregates, and makes the command exit with
+status 2. It is never silently skipped. See
+[`docs/STRESS_CAMPAIGN.md`](../docs/STRESS_CAMPAIGN.md) for the controller and
+physical contracts.
 
 ## What the artifact contains
 
 ```jsonc
 {
   "provenance": {
-    "schema": "scpn-fusion-core.stress_test_campaign_provenance.v1",
+    "schema": "scpn-fusion-core.stress-test-campaign-provenance.v3",
     "timestamp_utc": "...",
     "git_sha": "...",
     "host":     { "cpu_model": "...", "machine": "...", "platform": "...", "logical_cpus": N },
     "software": { "python": "...", "numpy": "...", "jax": "...", "nengo": "...", "scpn_fusion_rs": "present|absent" },
-    "methodology": { "n_episodes": N, "shot_duration_s": N, "seed": N|null,
-                     "latency_metric": "per-control-step wall time (perf_counter_ns), p50/p95/p99 over episodes", ... }
+    "methodology": { "n_episodes": N, "shot_duration_s": N, "seed": N,
+                     "latency_metric": "exactly one policy step", ... }
   },
-  "controllers": { "<name>": { "p50_latency_us": ..., "p95_latency_us": ..., "p99_latency_us": ..., ... } },
+  "campaign_status": "complete|complete_wiring_only|incomplete",
+  "promotion_eligible": false,
+  "controllers": { "<name>": { "p50_control_policy_latency_us": ..., ... } },
   "hinf_graduation": { ... }
 }
 ```
@@ -55,10 +68,11 @@ python validation/stress_test_campaign.py --episodes 200 --seed 42 \
     --output stress_test_campaign.<host-tag>.json
 ```
 
-Compare the two `provenance.host` blocks and the per-controller `p50_latency_us`.
-Latency is host-dependent, so absolute numbers differ between machines — but the
-relative ordering (e.g. Rust-PID ≪ Python-PID ≪ float SNN ≪ NMPC-JAX) is
-hardware-independent and is the claim that should be reproduced.
+Compare the two `provenance.host` blocks and policy-latency distributions only
+after verifying identical scenario, evaluation-contract, implementation, and
+trace digests. Absolute values and relative ordering are both host- and
+implementation-dependent; neither may be generalized without multi-host
+evidence.
 
 ## Provenance discipline
 
@@ -66,5 +80,7 @@ hardware-independent and is the claim that should be reproduced.
   FPGA/Loihi estimates) must be labelled *projected* and kept out of the measured bars.
 - Do not attribute measured numbers to a CPU the artifact did not record. Cite
   `provenance.host.cpu_model` verbatim.
-- Regenerate `RESULTS.md` / paper figures from the committed artifact rather than editing
-  numbers by hand.
+- A surrogate run is wiring-only even when computationally complete. It must not
+  update controller ranking, `RESULTS.md`, or publication figures.
+- Regenerate downstream tables from a promotion-eligible committed artifact;
+  never edit measurements by hand.

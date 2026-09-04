@@ -4,763 +4,456 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — source/config header compliance
-"""Tests for the controller stress-test campaign and RESULTS.md wiring."""
+# SCPN Fusion Core — Stress-campaign orchestration tests
+"""Focused public-workflow tests for the controller stress campaign."""
 
 from __future__ import annotations
 
-import sys
+import json
 from pathlib import Path
-from unittest.mock import patch
+from typing import Any
 
-import numpy as np
 import pytest
 
-# Ensure validation/ is importable
-repo_root = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(repo_root / "src"))
-sys.path.insert(0, str(repo_root))
+import validation.stress_test_campaign as campaign
+from validation.stress_campaign_contract import (
+    RESULT_SCHEMA,
+    CampaignResults,
+    ControllerMetrics,
+    EpisodeResult,
+    StressScenario,
+)
 
 
-# ── Campaign data structures ─────────────────────────────────────────
-
-
-def test_episode_result_dataclass():
-    """EpisodeResult should store all required fields."""
-    from validation.stress_test_campaign import EpisodeResult
-
-    ep = EpisodeResult(
-        mean_abs_r_error=0.02,
-        mean_abs_z_error=0.03,
-        reward=-0.05,
-        latency_us=50.0,
+def _successful_episode(
+    *,
+    scenario: StressScenario,
+    episode_index: int,
+    episode_seed: int,
+    evaluation_contract_digest: str = "test-contract",
+) -> EpisodeResult:
+    """Return a deterministic episode for orchestration-boundary tests."""
+    return EpisodeResult(
+        episode_index=episode_index,
+        seed=episode_seed,
+        scenario_digest=scenario.digest,
+        evaluation_contract_digest=evaluation_contract_digest,
+        disturbance_trace_digest=f"trace-{episode_index}",
+        realized_measurement_noise_rms_m=scenario.measurement_noise_std_m,
+        mean_abs_r_error_m=0.02 + episode_index * 0.001,
+        mean_abs_z_error_m=0.01,
+        tracking_reward_m=-0.03 - episode_index * 0.001,
+        control_policy_latency_us=[10.0 + episode_index],
+        simulation_wall_time_us=100.0,
         disrupted=False,
-        t_disruption=30.0,
-        energy_efficiency=0.95,
-    )
-    assert ep.mean_abs_r_error == 0.02
-    assert ep.disrupted is False
-    assert ep.energy_efficiency == 0.95
-
-
-def test_controller_metrics_dataclass():
-    """ControllerMetrics should have correct defaults."""
-    from validation.stress_test_campaign import ControllerMetrics
-
-    m = ControllerMetrics(name="test")
-    assert m.name == "test"
-    assert m.n_episodes == 0
-    assert m.mean_reward == 0.0
-    assert m.disruption_rate == 0.0
-    assert isinstance(m.episodes, list)
-
-
-# ── Summary table generation ─────────────────────────────────────────
-
-
-def test_generate_summary_table_format():
-    """generate_summary_table should produce a markdown table."""
-    from validation.stress_test_campaign import (
-        ControllerMetrics,
-        generate_summary_table,
+        t_disruption_s=1.0,
+        magnetic_actuator_absolute_current_offset_integral_ma_s=0.01,
+        mean_abs_coil_current_offset_tracking_error_ma=0.001,
     )
 
-    results = {
-        "PID": ControllerMetrics(
-            name="PID",
-            n_episodes=10,
-            mean_reward=-0.1,
-            std_reward=0.05,
-            mean_r_error=0.03,
-            p50_latency_us=40.0,
-            p95_latency_us=60.0,
-            p99_latency_us=80.0,
-            disruption_rate=0.1,
-            mean_def=0.9,
-            mean_energy_efficiency=0.85,
-        ),
-        "H-infinity": ControllerMetrics(
-            name="H-infinity",
-            n_episodes=10,
-            mean_reward=-0.08,
-            std_reward=0.04,
-            mean_r_error=0.02,
-            p50_latency_us=45.0,
-            p95_latency_us=70.0,
-            p99_latency_us=100.0,
-            disruption_rate=0.05,
-            mean_def=0.95,
-            mean_energy_efficiency=0.88,
-        ),
-    }
-    table = generate_summary_table(results)
-    assert "| PID" in table
-    assert "| H-infinity" in table
-    assert "Controller" in table
-    assert "Mean Reward" in table
-    # Should be multi-line
-    lines = table.strip().split("\n")
-    assert len(lines) >= 3  # header + separator + 2 data rows
 
+def _recording_runner(calls: list[dict[str, Any]]):
+    """Build a protocol-conforming runner that records the received scenario."""
 
-# ── run_controller_campaign wiring ───────────────────────────────────
-
-
-def test_run_controller_campaign_returns_dict():
-    """run_controller_campaign should return a dict with expected keys."""
-    from validation.stress_test_campaign import (
-        ControllerMetrics,
-    )
-
-    # Mock the campaign runner
-    mock_results = {
-        "PID": ControllerMetrics(
-            name="PID",
-            n_episodes=5,
-            mean_reward=-0.1,
-            std_reward=0.05,
-            mean_r_error=0.03,
-            p50_latency_us=40.0,
-            p95_latency_us=60.0,
-            p99_latency_us=80.0,
-            disruption_rate=0.1,
-            mean_def=0.9,
-            mean_energy_efficiency=0.85,
-        ),
-    }
-
-    with patch("validation.stress_test_campaign.run_campaign", return_value=mock_results):
-        from validation.collect_results import run_controller_campaign
-
-        result = run_controller_campaign(quick=True)
-
-    assert result is not None
-    assert "n_episodes" in result
-    assert "controllers" in result
-    assert "markdown_table" in result
-    assert "PID" in result["controllers"]
-
-
-def test_campaign_controller_fields():
-    """Each controller in campaign result should have all metric fields."""
-    from validation.stress_test_campaign import ControllerMetrics
-
-    mock_results = {
-        "PID": ControllerMetrics(
-            name="PID",
-            n_episodes=5,
-            mean_reward=-0.1,
-            std_reward=0.05,
-            mean_r_error=0.03,
-            p50_latency_us=40.0,
-            p95_latency_us=60.0,
-            p99_latency_us=80.0,
-            disruption_rate=0.1,
-            mean_def=0.9,
-            mean_energy_efficiency=0.85,
-        ),
-    }
-
-    with patch("validation.stress_test_campaign.run_campaign", return_value=mock_results):
-        from validation.collect_results import run_controller_campaign
-
-        result = run_controller_campaign(quick=True)
-
-    pid_data = result["controllers"]["PID"]
-    expected_keys = [
-        "n_episodes",
-        "mean_reward",
-        "std_reward",
-        "mean_r_error",
-        "p50_latency_us",
-        "p95_latency_us",
-        "p99_latency_us",
-        "disruption_rate",
-        "mean_def",
-        "mean_energy_efficiency",
-    ]
-    for key in expected_keys:
-        assert key in pid_data, f"Missing key: {key}"
-
-
-# ── RESULTS.md generation with campaign ──────────────────────────────
-
-
-def test_generate_results_md_includes_campaign():
-    """generate_results_md should include campaign table when provided."""
-    from validation.collect_results import generate_results_md
-
-    campaign = {
-        "n_episodes": 5,
-        "controllers": {
-            "PID": {"mean_reward": -0.1, "disruption_rate": 0.1},
-        },
-        "markdown_table": "| PID | 5 | ... |",
-    }
-    results = {
-        "hil": None,
-        "disruption": None,
-        "q10": None,
-        "tbr": None,
-        "ecrh": None,
-        "fb3d": None,
-        "surrogates": None,
-        "neural_eq": None,
-        "fokker_planck": None,
-        "spi_ablation": None,
-        "campaign": campaign,
-    }
-    md = generate_results_md(
-        hw="Test HW",
-        results=results,
-        elapsed_s=10.0,
-    )
-    assert "Controller Performance" in md
-    assert "PID" in md
-
-
-def test_generate_results_md_without_campaign():
-    """generate_results_md without campaign should not fail."""
-    from validation.collect_results import generate_results_md
-
-    results = {
-        "hil": None,
-        "disruption": None,
-        "q10": None,
-        "tbr": None,
-        "ecrh": None,
-        "fb3d": None,
-        "surrogates": None,
-        "neural_eq": None,
-        "fokker_planck": None,
-        "spi_ablation": None,
-        "campaign": None,
-    }
-    md = generate_results_md(
-        hw="Test HW",
-        results=results,
-        elapsed_s=10.0,
-    )
-    assert "SCPN Fusion Core" in md
-    assert "Controller Performance" not in md
-
-
-# ── Controller registry ──────────────────────────────────────────────
-
-
-def test_controllers_registry_has_pid_and_hinf():
-    """CONTROLLERS registry should always have PID and H-infinity."""
-    from validation.stress_test_campaign import CONTROLLERS
-
-    assert "PID" in CONTROLLERS
-    assert "H-infinity" in CONTROLLERS
-
-
-def test_controllers_registry_tracks_optional_mpc_lane():
-    """MPC lane should only be exposed when the optional dependency is present."""
-    import validation.stress_test_campaign as mod
-
-    if mod._mpc_available:
-        assert "MPC" in mod.CONTROLLERS
-    else:
-        assert "MPC" not in mod.CONTROLLERS
-
-
-def test_stress_hinf_episode_requires_explicit_research_gate(monkeypatch):
-    """H-infinity runner should fail-closed unless research gate is enabled."""
-    import validation.stress_test_campaign as mod
-
-    monkeypatch.delenv(mod.HINF_RESEARCH_ENV, raising=False)
-    with pytest.raises(RuntimeError, match="disabled by default"):
-        mod._run_hinf_episode(config_path="unused", shot_duration=10)
-
-
-def test_mpc_episode_requires_optional_dependency(monkeypatch):
-    """MPC episode runner should fail cleanly when optional deps are absent."""
-    import validation.stress_test_campaign as mod
-
-    monkeypatch.setattr(mod, "_mpc_available", False)
-    monkeypatch.setattr(mod, "ModelPredictiveController", None, raising=False)
-    monkeypatch.setattr(mod, "NeuralSurrogate", None, raising=False)
-    with pytest.raises(RuntimeError, match="MPC controller is unavailable"):
-        mod._run_mpc_episode(config_path="unused", shot_duration=30)
-
-
-def test_mpc_episode_with_mocked_dependencies(monkeypatch):
-    """MPC runner should emit a finite EpisodeResult when dependencies are mocked."""
-    import validation.stress_test_campaign as mod
-
-    class FakeKernel:
-        def __init__(self):
-            self.cfg = {"coils": [{"current": 0.0}, {"current": 0.0}]}
-            self.Psi = np.array([[0.0, 1.0], [0.2, 0.3]], dtype=np.float64)
-            self.R = np.array([5.8, 6.1], dtype=np.float64)
-            self.Z = np.array([-0.2, 0.1], dtype=np.float64)
-
-        def find_x_point(self, psi):
-            return np.array([5.0, -3.5], dtype=np.float64), 0.0
-
-    class FakeIsoFluxController:
-        def __init__(self, config_path, verbose=False, kernel_factory=None, control_dt_s=0.05):
-            self.kernel = FakeKernel()
-            self.pid_R = {"Kp": 2.0}
-            self.pid_step = lambda pid, err: float(err)
-
-        def run_shot(self, shot_duration: int, save_plot: bool = False):
-            _ = self.pid_step(self.pid_R, 0.1)
-            return {
-                "steps": float(shot_duration),
-                "mean_abs_r_error": 0.12,
-                "mean_abs_z_error": 0.09,
-                "mean_abs_radial_actuator_lag": 0.2,
+    def runner(
+        config_path: str | Path,
+        shot_duration: int = 30,
+        surrogate: bool = False,
+        *,
+        scenario: StressScenario,
+        episode_index: int,
+        episode_seed: int,
+        evaluation_contract_digest: str,
+    ) -> EpisodeResult:
+        calls.append(
+            {
+                "config_path": Path(config_path),
+                "shot_duration": shot_duration,
+                "surrogate": surrogate,
+                "scenario": scenario,
+                "episode_index": episode_index,
+                "episode_seed": episode_seed,
+                "evaluation_contract_digest": evaluation_contract_digest,
             }
+        )
+        return _successful_episode(
+            scenario=scenario,
+            episode_index=episode_index,
+            episode_seed=episode_seed,
+            evaluation_contract_digest=evaluation_contract_digest,
+        )
 
-    class FakeSurrogate:
-        def __init__(self, n_coils, n_state, verbose=False):
-            self.n_coils = n_coils
-            self.n_state = n_state
-
-        def train_on_kernel(self, kernel, perturbation: float = 1.0):
-            return None
-
-    class FakeMPC:
-        def __init__(
-            self,
-            surrogate_model,
-            target_state,
-            prediction_horizon=6,
-            learning_rate=0.25,
-            iterations=8,
-            action_limit=2.0,
-        ):
-            self.target_state = target_state
-
-        def plan_trajectory(self, state):
-            return np.array([0.4, 0.0], dtype=np.float64)
-
-    monkeypatch.setattr(mod, "_mpc_available", True)
-    monkeypatch.setattr(mod, "IsoFluxController", FakeIsoFluxController)
-    monkeypatch.setattr(mod, "NeuralSurrogate", FakeSurrogate, raising=False)
-    monkeypatch.setattr(mod, "ModelPredictiveController", FakeMPC, raising=False)
-
-    episode = mod._run_mpc_episode(config_path="unused", shot_duration=30, surrogate=False)
-    assert np.isfinite(episode.reward)
-    assert episode.t_disruption == 30.0
-    assert episode.energy_efficiency == pytest.approx(1.0 / 1.2, abs=1e-12)
+    return runner
 
 
-def test_build_isoflux_controller_surrogate_switch(monkeypatch):
-    """Controller builder should only inject kernel_factory in surrogate mode."""
-    import validation.stress_test_campaign as mod
+def test_campaign_applies_one_exact_scenario_to_every_episode(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The runner receives explicit disturbance units and stable per-episode seeds."""
+    calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(campaign, "CONTROLLERS", {"PID": _recording_runner(calls)})
 
-    calls = []
+    results = campaign.run_campaign(
+        n_episodes=3,
+        shot_duration=1,
+        controllers=["PID"],
+        measurement_noise_std_m=0.015,
+        actuator_delay_ms=50.0,
+        seed=91,
+        checkpoint_dir=tmp_path,
+    )
 
-    class DummyController:
-        pass
-
-    def fake_ctor(config_path, **kwargs):
-        calls.append(kwargs)
-        return DummyController()
-
-    monkeypatch.setattr(mod, "IsoFluxController", fake_ctor)
-
-    _ = mod._build_isoflux_controller("cfg.json", surrogate=False, dt=0.05)
-    _ = mod._build_isoflux_controller("cfg.json", surrogate=True, dt=0.01)
-
-    assert "kernel_factory" not in calls[0]
-    assert calls[0]["control_dt_s"] == 0.05
-    assert calls[1]["kernel_factory"] is mod.NeuralEquilibriumKernel
-    assert calls[1]["control_dt_s"] == 0.01
+    lane = results["PID"]
+    assert lane.status == "complete"
+    assert lane.comparable
+    assert [call["episode_index"] for call in calls] == [0, 1, 2]
+    assert len({call["episode_seed"] for call in calls}) == 3
+    assert all(call["scenario"].digest == results.scenario.digest for call in calls)
+    assert results.scenario.measurement_noise_std_m == pytest.approx(0.015)
+    assert results.scenario.actuator_delay_s == pytest.approx(0.05)
 
 
 @pytest.mark.parametrize(
-    ("kwargs", "expected"),
+    ("kwargs", "message"),
     [
-        ({"n_episodes": 0}, "n_episodes"),
-        ({"shot_duration": 0}, "shot_duration"),
-        ({"noise_level": -0.1}, "noise_level"),
-        ({"delay_ms": -1.0}, "delay_ms"),
+        ({"n_episodes": 1.5}, "n_episodes"),
+        ({"n_episodes": True}, "n_episodes"),
+        ({"shot_duration": 1.5}, "shot_duration"),
+        ({"controllers": []}, "at least one"),
+        ({"controllers": ["PID", "PID"]}, "duplicate"),
     ],
 )
-def test_run_campaign_rejects_invalid_inputs(kwargs, expected):
-    import validation.stress_test_campaign as mod
-
-    with pytest.raises(ValueError, match=expected):
-        mod.run_campaign(config_path="unused", **kwargs)
-
-
-def test_rust_pid_episode_non_disrupted_uses_full_duration_for_def(monkeypatch):
-    """Non-disrupted Rust episodes must report full-shot DEF support."""
-    import validation.stress_test_campaign as mod
-
-    class FakeReport:
-        steps = 100
-        duration_s = 30.0
-        mean_abs_r_error = 0.02
-        mean_abs_z_error = 0.03
-        disrupted = False
-        pf_constraint_events = 0
-        heating_constraint_events = 0
-        vessel_contact_events = 0
-
-    class FakeSim:
-        def __init__(self, target_r: float, target_z: float, control_hz: float) -> None:
-            pass
-
-        def run_shot(self, shot_duration: float) -> FakeReport:
-            return FakeReport()
-
-    monkeypatch.setattr(mod, "_rust_flight_sim_available", True)
-    monkeypatch.setattr(mod, "PyRustFlightSim", FakeSim, raising=False)
-    episode = mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
-    assert episode.disrupted is False
-    assert episode.t_disruption == 30.0
+def test_campaign_rejects_ambiguous_counts_and_controller_sets(
+    kwargs: dict[str, Any], message: str, tmp_path: Path
+) -> None:
+    """The public API never truncates counts or deduplicates requested lanes."""
+    with pytest.raises(ValueError, match=message):
+        campaign.run_campaign(seed=1, checkpoint_dir=tmp_path, **kwargs)
 
 
-def test_rust_pid_episode_clamps_disruption_time_to_shot_duration(monkeypatch):
-    """Disrupted Rust episodes should never report t_disruption above shot length."""
-    import validation.stress_test_campaign as mod
+def test_resume_requires_explicit_seed_and_existing_identity(tmp_path: Path) -> None:
+    """Recovery cannot silently create a fresh campaign after operator drift."""
+    with pytest.raises(ValueError, match="exact recorded --seed"):
+        campaign.run_campaign(
+            n_episodes=1,
+            shot_duration=1,
+            controllers=["PID"],
+            checkpoint_dir=tmp_path / "missing",
+            resume=True,
+        )
 
-    class FakeReport:
-        steps = 120
-        duration_s = 45.0
-        mean_abs_r_error = 0.8
-        mean_abs_z_error = 0.7
-        disrupted = True
-        pf_constraint_events = 0
-        heating_constraint_events = 0
-        vessel_contact_events = 0
-
-    class FakeSim:
-        def __init__(self, target_r: float, target_z: float, control_hz: float) -> None:
-            pass
-
-        def run_shot(self, shot_duration: float) -> FakeReport:
-            return FakeReport()
-
-    monkeypatch.setattr(mod, "_rust_flight_sim_available", True)
-    monkeypatch.setattr(mod, "PyRustFlightSim", FakeSim, raising=False)
-    episode = mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
-    assert episode.disrupted is True
-    assert episode.t_disruption == 30.0
+    with pytest.raises(FileNotFoundError, match="identity manifest"):
+        campaign.run_campaign(
+            n_episodes=1,
+            shot_duration=1,
+            controllers=["PID"],
+            seed=3,
+            checkpoint_dir=tmp_path / "missing",
+            resume=True,
+        )
 
 
-def test_rust_pid_episode_requires_rust_binding(monkeypatch):
-    """Calling Rust lane without binding should fail with explicit error."""
-    import validation.stress_test_campaign as mod
+def test_failed_lane_serializes_null_metrics_and_failure_details(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A backend exception cannot become a zero-error pseudo-measurement."""
 
-    monkeypatch.setattr(mod, "_rust_flight_sim_available", False)
-    monkeypatch.setattr(mod, "PyRustFlightSim", None, raising=False)
-    with pytest.raises(RuntimeError, match="Rust flight simulator is unavailable"):
-        mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
+    def failing_runner(
+        config_path: str | Path,
+        shot_duration: int = 30,
+        surrogate: bool = False,
+        *,
+        scenario: StressScenario,
+        episode_index: int,
+        episode_seed: int,
+        evaluation_contract_digest: str,
+    ) -> EpisodeResult:
+        raise RuntimeError(f"sensor frame missing at episode {episode_index}")
 
+    monkeypatch.setattr(campaign, "CONTROLLERS", {"PID": failing_runner})
+    results = campaign.run_campaign(
+        n_episodes=1,
+        shot_duration=1,
+        controllers=["PID"],
+        seed=12,
+        checkpoint_dir=tmp_path / "checkpoint",
+    )
+    output = tmp_path / "result.json"
+    provenance = campaign.collect_provenance(
+        n_episodes=1,
+        shot_duration=1,
+        seed=results.scenario.master_seed,
+        controllers=["PID"],
+        timestamp_utc="2026-09-04T12:00:00+00:00",
+        scenario=results.scenario,
+        campaign_identity=results.campaign_identity,
+    )
+    campaign.save_results_json(results, output, provenance)
+    payload = json.loads(output.read_text(encoding="utf-8"))
 
-def test_flight_sim_controller_factory():
-    """get_flight_sim_controller synthesizes a valid controller."""
-    from scpn_fusion.control.h_infinity_controller import get_flight_sim_controller
-
-    ctrl = get_flight_sim_controller(response_gain=0.05, actuator_tau=0.06)
-    assert ctrl.is_stable
-    assert ctrl.gamma > 1.0
-    assert np.all(np.isfinite(ctrl.F))
-    assert np.all(np.isfinite(ctrl.L_gain))
-
-
-def test_flight_sim_controller_closed_loop_converges():
-    """H-inf controller for flight-sim plant should drive error to zero."""
-    from scpn_fusion.control.h_infinity_controller import get_flight_sim_controller
-
-    ctrl = get_flight_sim_controller(response_gain=0.05, actuator_tau=0.06)
-    dt = 0.05
-    g = 0.05
-    tau = 0.06
-
-    # Simulate: x1=error, x2=actuator_state
-    x1, x2 = 0.3, 0.0  # initial 0.3m error
-    errors = [x1]
-    for _ in range(200):
-        u = ctrl.step(x1, dt)
-        # Discrete plant update (Euler)
-        dx1 = -g * x2
-        dx2 = (u - x2) / tau
-        x1 += dx1 * dt
-        x2 += dx2 * dt
-        errors.append(x1)
-
-    assert abs(errors[-1]) < 0.05 * abs(errors[0])
-
-
-def test_flight_sim_controller_both_channels():
-    """Radial and vertical controllers should both converge independently."""
-    from scpn_fusion.control.h_infinity_controller import get_flight_sim_controller
-
-    ctrl_R = get_flight_sim_controller(response_gain=0.05, actuator_tau=0.06)
-    ctrl_Z = get_flight_sim_controller(response_gain=0.02, actuator_tau=0.06)
-    dt = 0.05
-
-    for ctrl, g, e0 in [(ctrl_R, 0.05, 0.2), (ctrl_Z, 0.02, -0.15)]:
-        x1, x2 = e0, 0.0
-        for _ in range(300):
-            u = ctrl.step(x1, dt)
-            dx1 = -g * x2
-            dx2 = (u - x2) / 0.06
-            x1 += dx1 * dt
-            x2 += dx2 * dt
-        assert abs(x1) < 0.1 * abs(e0)
+    lane = payload["controllers"]["PID"]
+    assert lane["status"] == "failed"
+    assert lane["n_episodes"] == 0
+    assert lane["mean_tracking_reward_m"] is None
+    assert lane["p95_control_policy_latency_us"] is None
+    assert lane["failures"][0]["exception_type"] == "RuntimeError"
+    assert lane["failures"][0]["stage"] == "episode_runner"
+    assert "RuntimeError" in lane["failures"][0]["traceback_text"]
 
 
-def test_flight_sim_controller_rejects_invalid_params():
-    """Factory should reject non-physical parameter values."""
-    from scpn_fusion.control.h_infinity_controller import get_flight_sim_controller
+def test_result_writer_rejects_unbound_or_unprovenanced_input(tmp_path: Path) -> None:
+    """A v3 scientific report cannot carry null campaign identity or provenance."""
+    with pytest.raises(TypeError, match="CampaignResults"):
+        campaign.save_results_json({}, tmp_path / "plain.json", {"host": "test"})  # type: ignore[arg-type]
 
-    with pytest.raises(ValueError, match="response_gain"):
-        get_flight_sim_controller(response_gain=-1.0)
-    with pytest.raises(ValueError, match="actuator_tau"):
-        get_flight_sim_controller(actuator_tau=0.0)
+    scenario = StressScenario(master_seed=4)
+    results = CampaignResults(scenario=scenario, campaign_identity={"digest": "test"})
+    with pytest.raises(ValueError, match="provenance"):
+        campaign.save_results_json(results, tmp_path / "missing.json", {})
 
 
-def test_hinf_episode_uses_flight_sim_controller(monkeypatch):
-    """H-inf episode should use get_flight_sim_controller, not get_radial_robust_controller."""
-    import validation.stress_test_campaign as mod
+def test_resume_continues_after_last_atomic_episode_checkpoint(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """An interrupted campaign resumes without replaying a completed episode."""
+    first_calls: list[int] = []
 
-    monkeypatch.setenv(mod.HINF_RESEARCH_ENV, "1")
+    def interrupted_runner(
+        config_path: str | Path,
+        shot_duration: int = 30,
+        surrogate: bool = False,
+        *,
+        scenario: StressScenario,
+        episode_index: int,
+        episode_seed: int,
+        evaluation_contract_digest: str,
+    ) -> EpisodeResult:
+        first_calls.append(episode_index)
+        if episode_index == 1:
+            raise SystemExit("operator interruption")
+        return _successful_episode(
+            scenario=scenario,
+            episode_index=episode_index,
+            episode_seed=episode_seed,
+            evaluation_contract_digest=evaluation_contract_digest,
+        )
 
-    class FakeKernel:
-        def __init__(self, *a, **kw):
-            self.cfg = {"coils": [{"current": 0.0}] * 7, "physics": {}}
-            nr, nz = 5, 5
-            self.Psi = np.zeros((nz, nr))
-            self.Psi[2, 3] = 1.0
-            self.R = np.linspace(4.0, 8.0, nr)
-            self.Z = np.linspace(-4.0, 4.0, nz)
+    checkpoint_dir = tmp_path / "checkpoint"
+    monkeypatch.setattr(campaign, "CONTROLLERS", {"PID": interrupted_runner})
+    with pytest.raises(SystemExit, match="operator interruption"):
+        campaign.run_campaign(
+            n_episodes=2,
+            shot_duration=1,
+            controllers=["PID"],
+            seed=44,
+            checkpoint_dir=checkpoint_dir,
+        )
+    assert first_calls == [0, 1]
 
-        def solve_equilibrium(self):
-            pass
-
-        def find_x_point(self, psi):
-            return np.array([5.0, -3.5]), 0.0
-
-    monkeypatch.setattr(
-        mod,
-        "IsoFluxController",
-        lambda *a, **kw: _make_fake_iso(FakeKernel, kw.get("control_dt_s", 0.05)),
+    resumed_calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(campaign, "CONTROLLERS", {"PID": _recording_runner(resumed_calls)})
+    resumed = campaign.run_campaign(
+        n_episodes=2,
+        shot_duration=1,
+        controllers=["PID"],
+        seed=44,
+        checkpoint_dir=checkpoint_dir,
+        resume=True,
     )
 
-    ep = mod._run_hinf_episode(config_path="unused", shot_duration=5)
-    assert np.isfinite(ep.reward)
-    assert ep.mean_abs_r_error >= 0.0
+    assert [call["episode_index"] for call in resumed_calls] == [1]
+    assert [episode.episode_index for episode in resumed["PID"].episodes] == [0, 1]
+    assert resumed["PID"].status == "complete"
 
 
-def test_hinf_episode_vertical_command_uses_flight_sim_sign(monkeypatch):
-    """Positive vertical error should map to the flight-sim upward command."""
-    import validation.stress_test_campaign as mod
+def test_hinf_gate_is_an_explicit_unavailable_lane(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A disabled research controller emits status/reason and no metrics."""
+    monkeypatch.delenv(campaign.HINF_RESEARCH_ENV, raising=False)
+    results = campaign.run_campaign(
+        n_episodes=2,
+        shot_duration=1,
+        controllers=["H-infinity"],
+        seed=8,
+        checkpoint_dir=tmp_path,
+    )
 
-    commands = {}
-
-    class FakeIsoFluxController:
-        def __init__(self, *args, **kwargs):
-            self.pid_R = {"axis": "R"}
-            self.pid_Z = {"axis": "Z"}
-            self.pid_step = lambda pid, err: 0.0
-
-        def run_shot(self, shot_duration, save_plot=False):
-            commands["radial"] = float(self.pid_step(self.pid_R, 0.2))
-            commands["vertical"] = float(self.pid_step(self.pid_Z, 0.2))
-            stable = commands["radial"] > 0.0 and commands["vertical"] < 0.0
-            return {
-                "steps": int(shot_duration),
-                "mean_abs_r_error": 0.01 if stable else 1.0,
-                "mean_abs_z_error": 0.01 if stable else 1.0,
-                "mean_abs_radial_actuator_lag": 0.0,
-            }
-
-    monkeypatch.setenv(mod.HINF_RESEARCH_ENV, "1")
-    monkeypatch.setattr(mod, "IsoFluxController", FakeIsoFluxController)
-
-    ep = mod._run_hinf_episode(config_path="unused", shot_duration=1, surrogate=False)
-
-    assert ep.disrupted is False
-    assert commands["radial"] > 0.0
-    assert commands["vertical"] < 0.0
+    lane = results["H-infinity"]
+    assert lane.status == "unavailable"
+    assert lane.reason == f"research_gate_disabled:{campaign.HINF_RESEARCH_ENV}"
+    assert lane.n_episodes == 0
+    assert lane.mean_tracking_reward_m is None
+    progress = json.loads((tmp_path / "progress.json").read_text(encoding="utf-8"))
+    assert progress["remaining_episodes"] == 0
+    assert progress["unavailable_episodes"] == 2
 
 
-def _make_fake_iso(kernel_cls, dt):
-    """Build a minimal IsoFluxController stand-in for H-inf testing."""
+def test_summary_and_graduation_reject_incomplete_comparison() -> None:
+    """Operator and promotion outputs expose incomplete lanes as N/A/ineligible."""
+    scenario = StressScenario(master_seed=5)
+    pid = ControllerMetrics(
+        "PID", 1, scenario.digest, "test-contract", "test.pid", status="failed", reason="failure"
+    )
+    hinf = ControllerMetrics(
+        "H-infinity",
+        1,
+        scenario.digest,
+        "test-contract",
+        "test.hinf",
+        status="unavailable",
+        reason="gate",
+    )
+    results = {"PID": pid, "H-infinity": hinf}
 
-    class FakeIso:
-        def __init__(self):
-            self.kernel = kernel_cls()
-            self.pid_R = {"Kp": 2.0, "Ki": 0.1, "Kd": 0.5, "err_sum": 0, "last_err": 0}
-            self.pid_Z = {"Kp": 5.0, "Ki": 0.2, "Kd": 2.0, "err_sum": 0, "last_err": 0}
-
-        def pid_step(self, pid, err):
-            return float(err) * pid["Kp"]
-
-        def run_shot(self, shot_duration, save_plot=False):
-            return {
-                "steps": int(shot_duration),
-                "mean_abs_r_error": 0.08,
-                "mean_abs_z_error": 0.06,
-                "mean_abs_radial_actuator_lag": 0.1,
-            }
-
-    return FakeIso()
+    table = campaign.generate_summary_table(results)
+    graduation = campaign.derive_hinf_graduation_status(results)
+    assert "N/A" in table
+    assert graduation["eligible_for_default_lane"] is False
+    assert graduation["reason"] == "pid_or_hinf_lane_incomplete_or_incomparable"
 
 
-def test_main_forwards_config_path_to_run_campaign(monkeypatch):
-    """CLI --config-path must reach run_campaign as the config_path argument."""
-    import validation.stress_test_campaign as mod
+def test_campaign_rejects_cross_lane_disturbance_trace_drift() -> None:
+    """A completed lane set is incomparable when one trace digest diverges."""
+    scenario = StressScenario(master_seed=17)
+    identity = {
+        "digest": "test",
+        "payload": {
+            "evaluation_contract": {"payload": {"evidence_scope": "controller_comparison"}}
+        },
+    }
+    results = CampaignResults(scenario=scenario, campaign_identity=identity)
+    for name in ("PID", "LQR"):
+        lane = ControllerMetrics(name, 1, scenario.digest, "test-contract", f"test.{name}")
+        lane.episodes.append(
+            _successful_episode(
+                scenario=scenario,
+                episode_index=0,
+                episode_seed=scenario.episode_seed(0),
+            )
+        )
+        lane.finalize(1.0)
+        results[name] = lane
 
-    captured: dict[str, object] = {}
+    results["LQR"].episodes[0] = EpisodeResult(
+        **{
+            **results["LQR"].episodes[0].to_dict(),
+            "disturbance_trace_digest": "different-trace",
+        }
+    )
 
-    def fake_run_campaign(**kwargs):
+    assert not campaign.campaign_is_complete_and_comparable(results)
+    assert campaign.campaign_promotion_status(results) == (
+        False,
+        "campaign_incomplete_or_incomparable",
+    )
+
+
+def test_cli_parser_and_main_forward_full_scenario_contract(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Public CLI flags reach the campaign without global RNG mutation."""
+    captured: dict[str, Any] = {}
+    scenario = StressScenario(0.01, 0.025, 99)
+
+    def recording_campaign(**kwargs: Any) -> CampaignResults:
         captured.update(kwargs)
-        return {}
+        results = CampaignResults(scenario=scenario, campaign_identity={"digest": "test"})
+        lane = ControllerMetrics("PID", 1, scenario.digest, "test-contract", "test.pid")
+        lane.episodes.append(
+            _successful_episode(
+                scenario=scenario,
+                episode_index=0,
+                episode_seed=scenario.episode_seed(0),
+            )
+        )
+        lane.n_episodes = 1
+        lane.finalize(1.0)
+        results["PID"] = lane
+        return results
 
-    monkeypatch.setattr(mod, "run_campaign", fake_run_campaign)
-
-    mod.main(
+    monkeypatch.setattr(campaign, "run_campaign", recording_campaign)
+    result = campaign.main(
         [
-            "--config-path",
-            "custom.json",
-            "--quick",
+            "--episodes",
+            "2",
             "--controllers",
             "PID",
+            "--measurement-noise-std-m",
+            "0.01",
+            "--actuator-delay-ms",
+            "25",
+            "--seed",
+            "99",
+            "--checkpoint-dir",
+            str(tmp_path),
+            "--resume",
         ]
     )
 
-    assert captured["config_path"] == "custom.json"
-    assert captured["n_episodes"] == 10
+    assert isinstance(result, CampaignResults)
     assert captured["controllers"] == ["PID"]
+    assert captured["measurement_noise_std_m"] == pytest.approx(0.01)
+    assert captured["actuator_delay_ms"] == pytest.approx(25.0)
+    assert captured["seed"] == 99
+    assert captured["resume"] is True
 
 
-def test_main_defaults_config_path_to_none(monkeypatch):
-    """Without --config-path the entrypoint forwards None so run_campaign defaults."""
-    import validation.stress_test_campaign as mod
-
-    captured: dict[str, object] = {}
-
-    def fake_run_campaign(**kwargs):
-        captured.update(kwargs)
-        return {}
-
-    monkeypatch.setattr(mod, "run_campaign", fake_run_campaign)
-
-    mod.main(["--quick", "--controllers", "PID"])
-
-    assert captured["config_path"] is None
-
-
-def test_run_campaign_logs_traceback_on_episode_failure(monkeypatch, capsys):
-    """A failing episode must emit a full traceback, not only a one-line message."""
-    import validation.stress_test_campaign as mod
-
-    def exploding_episode(config_path, shot_duration, surrogate=False):
-        raise ValueError("synthetic shape mismatch")
-
-    monkeypatch.setattr(mod, "CONTROLLERS", {"PID": exploding_episode})
-
-    results = mod.run_campaign(n_episodes=1, controllers=["PID"], config_path="unused")
-
-    captured = capsys.readouterr()
-    assert "Episode 0 failed: synthetic shape mismatch" in captured.out
-    # traceback.print_exc() writes the stack to stderr.
-    assert "Traceback (most recent call last):" in captured.err
-    assert "ValueError: synthetic shape mismatch" in captured.err
-    assert "exploding_episode" in captured.err
-    assert results["PID"].n_episodes == 0
-
-
-def test_rust_pid_episode_energy_efficiency_tracks_constraint_events(monkeypatch):
-    """Rust lane should derive efficiency from constraint-event burden."""
-    import validation.stress_test_campaign as mod
-
-    class FakeReport:
-        steps = 100
-        duration_s = 30.0
-        mean_abs_r_error = 0.05
-        mean_abs_z_error = 0.04
-        disrupted = False
-        pf_constraint_events = 5
-        heating_constraint_events = 10
-        vessel_contact_events = 0
-
-    class FakeSim:
-        def __init__(self, target_r: float, target_z: float, control_hz: float) -> None:
-            pass
-
-        def run_shot(self, shot_duration: float) -> FakeReport:
-            return FakeReport()
-
-    monkeypatch.setattr(mod, "_rust_flight_sim_available", True)
-    monkeypatch.setattr(mod, "PyRustFlightSim", FakeSim, raising=False)
-    episode = mod._run_rust_pid_episode(config_path="unused", shot_duration=30)
-    assert episode.energy_efficiency == pytest.approx(0.85, abs=1e-12)
-
-
-# ── Provenance / replicable-workflow block ───────────────────────────
-
-
-def test_collect_provenance_records_real_host_and_software() -> None:
-    """The provenance block records the actual host CPU + software, never a fabricated one."""
-    from validation.stress_test_campaign import collect_provenance
-
-    prov = collect_provenance(
-        n_episodes=10,
-        shot_duration=30,
-        seed=42,
-        controllers=["PID", "Nengo-SNN"],
-        timestamp_utc="2026-07-16T21:00:00+00:00",
+def test_cli_exits_nonzero_for_failed_scientific_campaign(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Automation cannot mistake caught episode failures for campaign success."""
+    scenario = StressScenario(master_seed=99)
+    results = CampaignResults(scenario=scenario, campaign_identity={"digest": "test"})
+    results["PID"] = ControllerMetrics(
+        "PID",
+        1,
+        scenario.digest,
+        "test-contract",
+        "test.pid",
+        status="failed",
+        reason="episode_failure",
     )
-    assert prov["schema"] == "scpn-fusion-core.stress_test_campaign_provenance.v1"
-    assert prov["timestamp_utc"] == "2026-07-16T21:00:00+00:00"
-    # Host CPU model is read from the running machine and is a non-empty string.
-    assert isinstance(prov["host"]["cpu_model"], str) and prov["host"]["cpu_model"]
-    assert prov["host"]["logical_cpus"] is None or prov["host"]["logical_cpus"] >= 1
-    # Software versions captured for reproducibility.
-    assert prov["software"]["python"]
-    assert prov["software"]["numpy"] != "absent"
-    assert prov["methodology"]["n_episodes"] == 10
-    assert prov["methodology"]["seed"] == 42
-    assert prov["methodology"]["controllers"] == ["PID", "Nengo-SNN"]
+    monkeypatch.setattr(campaign, "run_campaign", lambda **kwargs: results)
+
+    with pytest.raises(SystemExit) as exc:
+        campaign.main(["--episodes", "1", "--controllers", "PID", "--seed", "99"])
+    assert exc.value.code == 2
 
 
-def test_save_results_json_includes_provenance(tmp_path: Path) -> None:
-    """save_results_json embeds the provenance block alongside the controller metrics."""
-    import json
-
-    from validation.stress_test_campaign import (
-        ControllerMetrics,
-        collect_provenance,
-        save_results_json,
-    )
-
-    results = {"PID": ControllerMetrics(name="PID", n_episodes=3, p50_latency_us=3431.0)}
-    prov = collect_provenance(
-        n_episodes=3,
-        shot_duration=30,
-        seed=None,
+def test_report_contains_schema_scenario_identity_and_complete_episode_records(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The public JSON report is self-describing and recovery-grade."""
+    calls: list[dict[str, Any]] = []
+    monkeypatch.setattr(campaign, "CONTROLLERS", {"PID": _recording_runner(calls)})
+    results = campaign.run_campaign(
+        n_episodes=1,
+        shot_duration=1,
         controllers=["PID"],
-        timestamp_utc="2026-07-16T21:00:00+00:00",
+        seed=101,
+        checkpoint_dir=tmp_path / "checkpoint",
     )
-    out = tmp_path / "campaign.json"
-    save_results_json(results, out, provenance=prov)
+    provenance = campaign.collect_provenance(
+        n_episodes=1,
+        shot_duration=1,
+        seed=results.scenario.master_seed,
+        controllers=["PID"],
+        timestamp_utc="2026-09-04T12:00:00+00:00",
+        scenario=results.scenario,
+        campaign_identity=results.campaign_identity,
+    )
+    output = tmp_path / "report.json"
+    campaign.save_results_json(results, output, provenance)
+    payload = json.loads(output.read_text(encoding="utf-8"))
 
-    payload = json.loads(out.read_text())
-    assert payload["provenance"]["schema"] == "scpn-fusion-core.stress_test_campaign_provenance.v1"
-    assert payload["provenance"]["host"]["cpu_model"]
-    assert payload["controllers"]["PID"]["p50_latency_us"] == 3431.0
-
-
-def test_save_results_json_without_provenance_is_backward_compatible(tmp_path: Path) -> None:
-    """Omitting provenance keeps the legacy two-argument call working (provenance is null)."""
-    import json
-
-    from validation.stress_test_campaign import ControllerMetrics, save_results_json
-
-    results = {"PID": ControllerMetrics(name="PID", n_episodes=1)}
-    out = tmp_path / "legacy.json"
-    save_results_json(results, out)
-    payload = json.loads(out.read_text())
-    assert payload["provenance"] is None
-    assert "PID" in payload["controllers"]
+    assert payload["schema"] == RESULT_SCHEMA
+    assert payload["scenario_digest"] == results.scenario.digest
+    assert payload["campaign_identity"]["digest"] == results.campaign_identity["digest"]
+    assert payload["campaign_status"] == "complete"
+    assert payload["campaign_complete"] is True
+    assert payload["promotion_eligible"] is True
+    assert payload["promotion_ineligibility_reason"] is None
+    assert payload["controllers"]["PID"]["status"] == "complete"
+    assert payload["controllers"]["PID"]["episodes"][0]["seed"] == calls[0]["episode_seed"]
+    assert provenance["schema"] == "scpn-fusion-core.stress-test-campaign-provenance.v3"

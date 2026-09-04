@@ -337,18 +337,38 @@ def run_controller_campaign(quick: bool = False) -> ResultMap | None:
     controllers: dict[str, ResultMap] = {}
     for name, m in results.items():
         controllers[name] = {
+            "status": m.status,
+            "reason": m.reason,
+            "requested_episodes": m.requested_episodes,
             "n_episodes": m.n_episodes,
-            "mean_reward": m.mean_reward,
-            "std_reward": m.std_reward,
-            "mean_r_error": m.mean_r_error,
-            "p50_latency_us": m.p50_latency_us,
-            "p95_latency_us": m.p95_latency_us,
-            "p99_latency_us": m.p99_latency_us,
+            "failed_episodes": m.failed_episodes,
+            "comparable": m.comparable,
+            "evaluation_contract_digest": m.evaluation_contract_digest,
+            "policy_implementation": m.policy_implementation,
+            "mean_tracking_reward_m": m.mean_tracking_reward_m,
+            "std_tracking_reward_m": m.std_tracking_reward_m,
+            "mean_abs_r_error_m": m.mean_abs_r_error_m,
+            "mean_abs_z_error_m": m.mean_abs_z_error_m,
+            "p50_control_policy_latency_us": m.p50_control_policy_latency_us,
+            "p95_control_policy_latency_us": m.p95_control_policy_latency_us,
+            "p99_control_policy_latency_us": m.p99_control_policy_latency_us,
             "disruption_rate": m.disruption_rate,
             "mean_def": m.mean_def,
-            "mean_energy_efficiency": m.mean_energy_efficiency,
+            "mean_magnetic_actuator_absolute_current_offset_integral_ma_s": (
+                m.mean_magnetic_actuator_absolute_current_offset_integral_ma_s
+            ),
+            "mean_abs_coil_current_offset_tracking_error_ma": (
+                m.mean_abs_coil_current_offset_tracking_error_ma
+            ),
         }
-    return {"n_episodes": n, "controllers": controllers, "markdown_table": table}
+    return {
+        "n_episodes": n,
+        "scenario": results.scenario.to_dict(),
+        "scenario_digest": results.scenario.digest,
+        "campaign_identity_digest": results.campaign_identity["digest"],
+        "controllers": controllers,
+        "markdown_table": table,
+    }
 
 
 # ── RESULTS.md generation ────────────────────────────────────────────

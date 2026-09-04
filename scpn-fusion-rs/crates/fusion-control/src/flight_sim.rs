@@ -16,6 +16,9 @@ use crate::pid::IsoFluxController;
 use crate::telemetry::TelemetrySuite;
 use fusion_types::error::{FusionError, FusionResult};
 use ndarray::Array1;
+use rand::rngs::StdRng;
+use rand::SeedableRng;
+use rand_distr::{Distribution, StandardNormal};
 use std::time::{Duration, Instant};
 
 /// Shot result metrics for analysis.
@@ -53,6 +56,10 @@ pub struct SimulationReport {
     pub history_truncated: bool,
     /// Whether any step met the local disruption heuristic.
     pub disrupted: bool,
+    /// First disruption time, or the full duration when undisrupted [s].
+    pub t_disruption_s: f64,
+    /// RMS of the realized radial and vertical measurement noise [m].
+    pub realized_measurement_noise_rms_m: f64,
     /// Retained major-radius history in metres.
     pub r_history: Vec<f64>,
     /// Retained vertical-position history in metres.
@@ -82,6 +89,10 @@ pub struct StepMetrics {
     pub pf_constraint_active: bool,
     /// Whether heating limits modified the heating request.
     pub heating_constraint_active: bool,
+    /// Realized radial position-measurement error [m].
+    pub radial_measurement_noise_m: f64,
+    /// Realized vertical position-measurement error [m].
+    pub vertical_measurement_noise_m: f64,
 }
 
 /// Running accumulators used to build a final shot report.
@@ -95,6 +106,8 @@ pub struct ShotAggregate {
     pub z_err_sum: f64,
     /// Whether any accumulated step was locally disruptive.
     pub disrupted: bool,
+    /// Index of the first locally disruptive step, when present.
+    pub first_disruption_step: Option<usize>,
     /// Maximum normalized beta observed.
     pub max_beta: f64,
     /// Maximum applied heating in megawatts.
@@ -105,6 +118,8 @@ pub struct ShotAggregate {
     pub pf_constraint_events: usize,
     /// Accumulated heating-constraint event count.
     pub heating_constraint_events: usize,
+    /// Sum of squared R/Z measurement-noise samples.
+    pub measurement_noise_squared_sum: f64,
 }
 
 /// High-speed simulation engine.
@@ -119,6 +134,12 @@ pub struct RustFlightSim {
     pub constraints: SafetyEnvelope,
     /// Control-period duration in seconds.
     pub control_dt: f64,
+    /// Standard deviation of independent radial/vertical position noise [m].
+    pub measurement_noise_std_m: f64,
+    /// Configured actuator command transport delay [s].
+    pub actuator_delay_s: f64,
+    measurement_seed: u64,
+    measurement_rng: StdRng,
     // Simulated state (Simplified Physics Model for high-speed loop)
     /// Current major radius in metres.
     pub curr_r: f64,
@@ -178,6 +199,30 @@ impl RustFlightSim {
     /// Returns an error for non-finite targets, non-positive frequency, or
     /// invalid dependent controller/delay configuration.
     pub fn new(target_r: f64, target_z: f64, control_hz: f64) -> FusionResult<Self> {
+        Self::new_with_stress_scenario(target_r, target_z, control_hz, 0.0, 0.05, 0)
+    }
+
+    /// Construct a simulator with an explicit stochastic measurement and delay scenario.
+    ///
+    /// `measurement_noise_std_m` is the standard deviation of independent,
+    /// zero-mean Gaussian radial and vertical position-measurement errors.
+    /// `actuator_delay_s` is a pure command transport delay before the existing
+    /// first-order actuator lag. The delay must resolve to an integer number of
+    /// control periods so the applied scenario is exact rather than silently
+    /// quantized.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error for invalid targets, frequency, disturbance values, or
+    /// a delay that is not an integer multiple of the control period.
+    pub fn new_with_stress_scenario(
+        target_r: f64,
+        target_z: f64,
+        control_hz: f64,
+        measurement_noise_std_m: f64,
+        actuator_delay_s: f64,
+        measurement_seed: u64,
+    ) -> FusionResult<Self> {
         if !target_r.is_finite() || !target_z.is_finite() {
             return Err(FusionError::ConfigError(
                 "target_r/target_z must be finite".to_string(),
@@ -188,7 +233,24 @@ impl RustFlightSim {
                 "control_hz must be finite and > 0".to_string(),
             ));
         }
+        if !measurement_noise_std_m.is_finite() || measurement_noise_std_m < 0.0 {
+            return Err(FusionError::ConfigError(
+                "measurement_noise_std_m must be finite and >= 0".to_string(),
+            ));
+        }
+        if !actuator_delay_s.is_finite() || actuator_delay_s < 0.0 {
+            return Err(FusionError::ConfigError(
+                "actuator_delay_s must be finite and >= 0".to_string(),
+            ));
+        }
         let control_dt = 1.0 / control_hz;
+        let delay_steps_float = actuator_delay_s * control_hz;
+        let delay_steps = delay_steps_float.round() as usize;
+        if (delay_steps_float - delay_steps as f64).abs() > 1.0e-9 {
+            return Err(FusionError::ConfigError(
+                "actuator_delay_s must be an integer multiple of the control period".to_string(),
+            ));
+        }
         let mut controller = IsoFluxController::new(target_r, target_z)?;
 
         // Scale gains from 100Hz baseline to current frequency to maintain stability
@@ -203,12 +265,15 @@ impl RustFlightSim {
 
         Ok(Self {
             controller,
-            // 50ms delay @ control_hz
-            delay_line: ActuatorDelayLine::new(2, (0.05 * control_hz) as usize, 0.5)
+            delay_line: ActuatorDelayLine::new(2, delay_steps, 0.5)
                 .map_err(|e| FusionError::ConfigError(e.to_string()))?,
             telemetry: TelemetrySuite::new(1_000_000), // 1M points capacity
             constraints: SafetyEnvelope::default(),
             control_dt,
+            measurement_noise_std_m,
+            actuator_delay_s,
+            measurement_seed,
+            measurement_rng: StdRng::seed_from_u64(measurement_seed),
             curr_r: target_r,
             curr_z: target_z,
             curr_ip_ma: 5.0,
@@ -238,6 +303,7 @@ impl RustFlightSim {
         self.telemetry.clear();
         self.delay_line.reset();
         self.pf_states.fill(0.0);
+        self.measurement_rng = StdRng::seed_from_u64(self.measurement_seed);
     }
 
     /// Restore the target-centered nominal plasma state for a fresh shot.
@@ -329,7 +395,13 @@ impl RustFlightSim {
         self.curr_z = self.curr_z.clamp(-6.0, 6.0);
 
         // 2. Control Action
-        let (requested_r, requested_z) = self.controller.step(self.curr_r, self.curr_z)?;
+        let radial_noise: f64 = StandardNormal.sample(&mut self.measurement_rng);
+        let vertical_noise: f64 = StandardNormal.sample(&mut self.measurement_rng);
+        let realized_radial_noise_m = self.measurement_noise_std_m * radial_noise;
+        let realized_vertical_noise_m = self.measurement_noise_std_m * vertical_noise;
+        let measured_r = self.curr_r + realized_radial_noise_m;
+        let measured_z = self.curr_z + realized_vertical_noise_m;
+        let (requested_r, requested_z) = self.controller.step(measured_r, measured_z)?;
 
         // 2b. Safety Enforcement (Hardening Task 1)
         let ctrl_r =
@@ -383,6 +455,8 @@ impl RustFlightSim {
             vessel_contact,
             pf_constraint_active,
             heating_constraint_active,
+            radial_measurement_noise_m: realized_radial_noise_m,
+            vertical_measurement_noise_m: realized_vertical_noise_m,
         })
     }
 
@@ -417,6 +491,12 @@ impl RustFlightSim {
             retained_steps,
             history_truncated,
             disrupted: aggregate.disrupted,
+            t_disruption_s: aggregate
+                .first_disruption_step
+                .map_or(shot_duration_s, |step| (step + 1) as f64 * self.control_dt),
+            realized_measurement_noise_rms_m: (aggregate.measurement_noise_squared_sum
+                / (2 * steps) as f64)
+                .sqrt(),
             r_history,
             z_history,
             ip_history,
@@ -441,11 +521,13 @@ impl RustFlightSim {
             r_err_sum: 0.0,
             z_err_sum: 0.0,
             disrupted: false,
+            first_disruption_step: None,
             max_beta: self.curr_beta,
             max_heating_mw: self.curr_heating_mw,
             vessel_contact_events: 0,
             pf_constraint_events: 0,
             heating_constraint_events: 0,
+            measurement_noise_squared_sum: 0.0,
         };
 
         let mut next_tick = Instant::now();
@@ -459,12 +541,17 @@ impl RustFlightSim {
             aggregate.r_err_sum += step.r_error;
             aggregate.z_err_sum += step.z_error;
             aggregate.disrupted |= step.disrupted;
+            if step.disrupted && aggregate.first_disruption_step.is_none() {
+                aggregate.first_disruption_step = Some(step_idx);
+            }
             aggregate.max_step_time_us = aggregate.max_step_time_us.max(step.step_time_us);
             aggregate.max_beta = aggregate.max_beta.max(step.beta);
             aggregate.max_heating_mw = aggregate.max_heating_mw.max(step.heating_mw);
             aggregate.vessel_contact_events += usize::from(step.vessel_contact);
             aggregate.pf_constraint_events += usize::from(step.pf_constraint_active);
             aggregate.heating_constraint_events += usize::from(step.heating_constraint_active);
+            aggregate.measurement_noise_squared_sum +=
+                step.radial_measurement_noise_m.powi(2) + step.vertical_measurement_noise_m.powi(2);
             next_tick += step_duration;
         }
 
@@ -482,6 +569,35 @@ mod tests {
     fn test_new_rejects_invalid_control_hz() {
         assert!(RustFlightSim::new(6.2, 0.0, 0.0).is_err());
         assert!(RustFlightSim::new(6.2, 0.0, f64::NAN).is_err());
+    }
+
+    #[test]
+    fn test_stress_scenario_replays_measurement_noise_by_seed() {
+        let mut first =
+            RustFlightSim::new_with_stress_scenario(6.2, 0.0, 10_000.0, 0.05, 0.0, 1942)
+                .expect("valid stress scenario");
+        let mut replay =
+            RustFlightSim::new_with_stress_scenario(6.2, 0.0, 10_000.0, 0.05, 0.0, 1942)
+                .expect("valid stress scenario replay");
+        let mut different_seed =
+            RustFlightSim::new_with_stress_scenario(6.2, 0.0, 10_000.0, 0.05, 0.0, 1943)
+                .expect("valid alternate seed");
+
+        let first_report = first.run_shot(0.02, false).expect("first shot");
+        let replay_report = replay.run_shot(0.02, false).expect("replay shot");
+        let different_report = different_seed
+            .run_shot(0.02, false)
+            .expect("alternate shot");
+
+        assert_eq!(first_report.r_history, replay_report.r_history);
+        assert_eq!(first_report.z_history, replay_report.z_history);
+        assert_ne!(first_report.r_history, different_report.r_history);
+    }
+
+    #[test]
+    fn test_stress_scenario_rejects_fractional_delay_step() {
+        let result = RustFlightSim::new_with_stress_scenario(6.2, 0.0, 10_000.0, 0.01, 0.00015, 7);
+        assert!(result.is_err());
     }
 
     #[test]
@@ -514,6 +630,8 @@ mod tests {
         assert!(report.heating_constraint_events <= report.steps);
         assert_eq!(report.retained_steps, report.steps);
         assert!(!report.history_truncated);
+        assert!(report.t_disruption_s > 0.0);
+        assert!(report.t_disruption_s <= report.duration_s);
     }
 
     #[test]
