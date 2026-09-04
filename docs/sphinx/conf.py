@@ -10,6 +10,7 @@
 # -----------------------------------------------------------------------
 """Sphinx configuration for SCPN-Fusion-Core documentation."""
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -159,9 +160,18 @@ napoleon_use_rtype = True
 # Intersphinx -- cross-link to upstream project docs
 # ---------------------------------------------------------------------------
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "python": (
+        "https://docs.python.org/3",
+        os.environ.get("SCPN_INTERSPHINX_PYTHON_INVENTORY"),
+    ),
+    "numpy": (
+        "https://numpy.org/doc/stable/",
+        os.environ.get("SCPN_INTERSPHINX_NUMPY_INVENTORY"),
+    ),
+    "scipy": (
+        "https://docs.scipy.org/doc/scipy/",
+        os.environ.get("SCPN_INTERSPHINX_SCIPY_INVENTORY"),
+    ),
 }
 
 # ---------------------------------------------------------------------------

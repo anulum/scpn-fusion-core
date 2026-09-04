@@ -15,7 +15,10 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 from collections.abc import Sequence
+from urllib.error import URLError
+from urllib.request import Request, urlopen
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -36,17 +39,29 @@ EXECUTABLES = {
     "cpp": "doxygen",
     "lean": "lake",
 }
+INTERSPHINX_INVENTORIES = {
+    "python": "https://docs.python.org/3/objects.inv",
+    "numpy": "https://numpy.org/doc/stable/objects.inv",
+    "scipy": "https://docs.scipy.org/doc/scipy/objects.inv",
+}
+INTERSPHINX_ATTEMPTS = 5
+INTERSPHINX_TIMEOUT_SECONDS = 20.0
+INTERSPHINX_MAX_BYTES = 16 * 1024 * 1024
 
 
 def _unavailable_reason(language: str) -> str | None:
     """Return the missing generator prerequisite for a language, if any."""
+    if language == "python":
+        if importlib.util.find_spec("sphinx") is None:
+            return "missing Python module sphinx"
+        if importlib.util.find_spec("sphinx_autodoc_typehints") is None:
+            return "missing Python module sphinx_autodoc_typehints"
+        return None
     executable = EXECUTABLES[language]
     if shutil.which(executable) is None:
         return f"missing executable {executable}"
     if language == "cpp" and shutil.which("dot") is None:
         return "missing executable dot"
-    if language == "python" and importlib.util.find_spec("sphinx_autodoc_typehints") is None:
-        return "missing Python module sphinx_autodoc_typehints"
     return None
 
 
@@ -69,16 +84,62 @@ def _run(
     )
 
 
+def _download_intersphinx_inventory(name: str, url: str, target: Path) -> bool:
+    """Fetch and validate one Sphinx inventory with bounded retries."""
+    request = Request(url, headers={"User-Agent": "SCPN-FUSION-CORE-docs/1"})
+    for attempt in range(1, INTERSPHINX_ATTEMPTS + 1):
+        try:
+            with urlopen(request, timeout=INTERSPHINX_TIMEOUT_SECONDS) as response:  # nosec B310
+                payload = response.read(INTERSPHINX_MAX_BYTES + 1)
+            if len(payload) > INTERSPHINX_MAX_BYTES:
+                raise ValueError("inventory exceeds the 16 MiB safety limit")
+            if not payload.startswith(b"# Sphinx inventory version "):
+                raise ValueError("response is not a Sphinx inventory")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            temporary = target.with_suffix(f"{target.suffix}.tmp")
+            temporary.write_bytes(payload)
+            temporary.replace(target)
+            print(f"[native-docs] {name}: inventory ready at {target}")
+            return True
+        except (OSError, URLError, ValueError) as error:
+            print(
+                f"[native-docs] {name}: inventory attempt "
+                f"{attempt}/{INTERSPHINX_ATTEMPTS} failed: {error}",
+                file=sys.stderr,
+            )
+            if attempt < INTERSPHINX_ATTEMPTS:
+                time.sleep(min(2 ** (attempt - 1), 8))
+    return False
+
+
+def _python_docs_environment() -> dict[str, str] | None:
+    """Return an environment backed by locally validated inventories."""
+    env = os.environ.copy()
+    inventory_dir = REPO_ROOT / "docs" / "sphinx" / "_build" / "intersphinx"
+    for name, url in INTERSPHINX_INVENTORIES.items():
+        target = inventory_dir / f"{name}.objects.inv"
+        if not _download_intersphinx_inventory(name, url, target):
+            return None
+        env[f"SCPN_INTERSPHINX_{name.upper()}_INVENTORY"] = str(target)
+    return env
+
+
 def _build_python_docs() -> int:
+    env = _python_docs_environment()
+    if env is None:
+        return 1
     return _run(
         (
-            "sphinx-build",
+            sys.executable,
+            "-m",
+            "sphinx",
             "-W",
             "-b",
             "html",
             "docs/sphinx",
             "docs/sphinx/_build/html",
-        )
+        ),
+        env=env,
     ).returncode
 
 
