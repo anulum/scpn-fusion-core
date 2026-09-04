@@ -1,26 +1,26 @@
 # Roadmap
 
-> Last updated: 2026-05-31. This roadmap reflects current priorities and may
+> Last updated: 2026-09-04. This roadmap reflects current priorities and may
 > change based on community feedback and validation results.
 
 Execution detail: maintained in local-only governance notes (not exposed in public docs).
 
-## Current Snapshot (2026-05-31)
+## Current Snapshot (2026-09-04)
 
 | Area | Current State | Tracking / Gate |
 |---|---|---|
-| Source modules | **263 capability source modules** in the generated public inventory | `tools/capability_manifest.py` |
-| Tests | **3,817 tests** and **389 Python test files** in the generated public inventory | `pytest tests/ -v` |
+| Source modules | **361 Python capability source modules** in the generated public inventory | `tools/capability_manifest.py` |
+| Tests | **650 Python test files** in the generated public inventory | `tools/capability_manifest.py` |
 | Release-readiness governance | Maintained in local-only governance notes; public docs expose only evidence-backed gates | Local-only governance gate |
 | Pretrained surrogates | **5/8 shipped** (62.5%): ITPA MLP, Neural EQ, QLKNN, FNO JAX, FNO legacy (deprecated) | `weights/pretrained_surrogates_manifest.json` |
 | QLKNN transport surrogate | **test_rel_L2 = 0.094** (GPU L40S, 500K samples, gated 1024×512×256, 911 epochs) | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence (JAX) | **val_rel_L2 = 0.055** (4-layer, modes=24, width=128, 5-channel input, 5000 equilibria) | `weights/fno_turbulence_jax.metrics.json` |
 | Validation pipeline | Legacy/local contract suite is tracked separately from fail-closed production-parity gates | `python validation/collect_results.py` |
-| Full-fidelity campaign | `not_full_fidelity`; local contracts ready, `0` accepted full-fidelity reference artefacts, external parity not ready | `python validation/full_fidelity_end_to_end_campaign.py` |
+| Full-fidelity campaign | `not_full_fidelity`; locally actionable contracts are ready, `1` public reference artefact is accepted, and required external parity remains incomplete | `python validation/full_fidelity_end_to_end_campaign.py` |
 | Real-data roadmap progress | 63.8% target completion: 18 equilibrium files, 8 SPARC, 53 transport shots, 24 machines, 16 disruption shots, 1 JET-DT | `tools/real_data_roadmap_progress.py` |
-| Enterprise hardening | **19/20 sections passing** (branch protection, labels, tool config, Docker healthcheck) | Local-only enterprise hardening criteria |
+| Enterprise hardening | Tier-0 workflow, provenance, security, and release checks remain fail-closed; exact-head status is revalidated for every release decision | Local-only enterprise hardening criteria |
 | DIII-D raw ingestion readiness | **Not ready yet** (strict lane blocks promotion) | `tools/run_real_data_strict_gate.py` + `real-data-strict.yml` |
-| FreeGS strict parity | Dedicated strict no-fallback lane available | `.github/workflows/freegs-strict.yml` |
+| FreeGS strict parity | **Accepted for two bounded public same-case examples**; no facility, PCS, safety, control, or real-time claim follows | `validation/reports/free_boundary_strict_parity_benchmark.md` |
 
 Roadmap KPI commands:
 
@@ -149,7 +149,7 @@ The Petri net -> SNN compiler targets NumPy today. v4.0 adds:
 - [x] EFIT source/operator convention diagnostics: source sign/component sweep plus operator flux-span and curvature-variant sweep
 - [x] Native same-case FreeGS public-example profile-source comparison with `psi_N` RMSE, axis, boundary, X-point, current-closure, and signed-q sanity reporting
 - [x] Dedicated fail-closed strict free-boundary parity gate consuming FreeGS public-example reconstruction and machine-metadata evidence
-- [ ] Strict acceptance: `psi_N` NRMSE < 5% against public EFIT/FreeGS same-case outputs with grid convergence and public coil/vacuum sidecars
+- [x] Strict acceptance: `psi_N` NRMSE < 5% against two bounded public FreeGS same-case outputs, with three-level grid convergence and public coil/vacuum sidecars. This does not admit facility-wide or control validation.
 
 ## v4.1 — Community & Integration (target: Q3 2026)
 
