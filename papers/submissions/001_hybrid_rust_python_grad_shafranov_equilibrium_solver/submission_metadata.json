@@ -1,0 +1,27 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE equilibrium-paper review metadata.",
+  "schema_version": "2.0",
+  "catalogue_id": "001",
+  "status": "review_draft_not_submitted",
+  "title": "SCPN-Fusion-Core: A Hybrid Rust-Python Grad-Shafranov Solver with Evidence-Bounded Reconstruction and Neural Fallback",
+  "author": {
+    "name": "Miroslav Sotek",
+    "orcid": "0009-0009-3560-0851"
+  },
+  "repository_revision": "476908debdd886d3a35bf0ae85216e684727adce",
+  "repository_revision_role": "evidence_revision",
+  "package_preparation_base_revision": "1999d9451694e312c5d35476c2f0ec37072aea31",
+  "evidence_files": [
+    "evidence/evidence_manifest.json",
+    "evidence/real_diiid_145419_validation.json",
+    "evidence/sparc_geqdsk_rmse_benchmark.json"
+  ],
+  "doi": null,
+  "manuscript_content_license": null
+}

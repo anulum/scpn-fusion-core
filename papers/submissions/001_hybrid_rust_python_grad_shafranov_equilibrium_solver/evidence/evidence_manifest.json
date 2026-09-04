@@ -1,0 +1,60 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE equilibrium-paper evidence manifest.",
+  "schema_version": "2.0",
+  "repository_revision": "476908debdd886d3a35bf0ae85216e684727adce",
+  "claim_boundary": {
+    "diiid": "warm-started same-case reproduction, not blind prediction",
+    "sparc": "16 of 16 gated pointwise neural rows pass; 8 of 16 also pass the adapted source contract; not free-boundary or experimental accuracy"
+  },
+  "source_custody": {
+    "real_diiid_145419_validation.json": {
+      "source_path": "artifacts/real_diiid_145419/real_145419_validation.json",
+      "source_revision": "476908debdd886d3a35bf0ae85216e684727adce",
+      "source_sha256": "04c87959264291894976cbbec7b2c9bddbbb5eb3d6d2027dd6e8eeb49f1c8b23",
+      "git_blob_oid_sha1": "41aaf842cdd71e892554aeec8eaf33889a9d1f48",
+      "packaging_transform": "seven structured Tier-0 fields added; scientific payload unchanged"
+    },
+    "sparc_geqdsk_rmse_benchmark.json": {
+      "source_path": "artifacts/sparc_geqdsk_rmse_benchmark.json",
+      "source_revision_context": "476908debdd886d3a35bf0ae85216e684727adce",
+      "generated_at_utc": "2026-08-26T16:44:27.724185+00:00",
+      "source_sha256": "c2eeeada47255ab3864b0d578e4740b60a30ac2f4a7cff80350aa8eac311dd4e",
+      "source_was_gitignored": true,
+      "authoritative_public_custody": "this paper-local evidence file; the historical source artifact was not tracked",
+      "packaging_transform": "seven structured Tier-0 fields added; scientific payload unchanged"
+    }
+  },
+  "generators": {
+    "validation/validate_real_diiid_145419.py": {
+      "sha256": "ce950534d1272ee4724c31f9b946df3caf65b1f6f5a4a508ffbdead6361bc076"
+    },
+    "validation/benchmark_sparc_geqdsk_rmse.py": {
+      "sha256": "bc6258a70af11299a9ae1ec8cff78d98e0b605cac64eef3eaf4cd35c6420ddc6"
+    },
+    "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_inverse_reconstruction.py": {
+      "sha256": "3e6d242a1d789f3548006cd1db37d18d01da42fd5fad8c7ab2f2e978e6b3f2c8"
+    },
+    "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/fig_sparc_equilibrium.py": {
+      "sha256": "9875d55797712d50a64662d0b94dae5482316133eab310fd7251f4f87994fe17"
+    },
+    "papers/submissions/001_hybrid_rust_python_grad_shafranov_equilibrium_solver/figures/generate_evidence_manifest.py": {
+      "sha256": "fb2765184ed034d54af58defabf0c5ce1409f507023df9e4aa36b754b17ff946"
+    }
+  },
+  "files": {
+    "real_diiid_145419_validation.json": {
+      "sha256": "444458af45e1ce2dd5d761c8baed718df28b44c21566583ee15a7ea724f3a5c6",
+      "role": "provenance-bound DIII-D same-case reproduction and honest negatives"
+    },
+    "sparc_geqdsk_rmse_benchmark.json": {
+      "sha256": "c45acd3fdb4a208ba86ab04f68e8ba5d5e994bcab3e911bcdcd1bea3a1fe8db8",
+      "role": "pointwise SPARC neural gate plus diagnostic fallback and source-contract rows"
+    }
+  }
+}

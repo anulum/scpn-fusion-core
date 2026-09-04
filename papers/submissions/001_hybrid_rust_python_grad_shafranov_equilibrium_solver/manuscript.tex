@@ -1,0 +1,281 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — equilibrium-solver review manuscript.
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage{placeins}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[margin=1in]{geometry}
+
+\bibliographystyle{unsrtnat}
+\newcommand{\dstar}{\ensuremath{\Delta^*}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\scpn}{\textsc{SCPN-Fusion-Core}}
+
+\title{SCPN-Fusion-Core: A Hybrid Rust--Python Grad--Shafranov Solver\\
+with Evidence-Bounded Reconstruction and Neural Fallback}
+\author{Miroslav \v{S}otek\\
+\small Anulum Research, \url{https://www.anulum.li}\\
+\small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
+\small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
+\date{Review draft --- 4 September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We describe the equilibrium-solver architecture of \scpn{}, an open-source
+Python and Rust toolkit for axisymmetric tokamak modelling.  The implementation
+contains fixed- and free-boundary Grad--Shafranov paths, Picard iteration,
+successive over-relaxation and multigrid components, synthetic inverse
+reconstruction, and an optional neural-surrogate path with explicit backend and
+fallback reporting.  This review draft deliberately separates implemented
+capability from demonstrated accuracy.  The packaged pointwise benchmark
+records 16/16 acceptance-gated SPARC rows on the neural backend under the
+declared pointwise error threshold.  Only 8/16 also pass the adapted
+source-convention contract, while diagnostic non-SPARC proxy rows remain
+outside that acceptance cohort.  This is not a free-boundary or
+experimental-accuracy result.  Separately, a provenance-bound
+\emph{same-case}, warm-start reproduction of DIII-D EFIT shot 145419 at 2100 ms
+has 1.908\% full-domain deep-region RMS flux error after 21
+Anderson-accelerated iterations.  The corresponding plasma-free cold start
+remains at 126.788\% deep RMS and cannot select the physical branch.  These are
+reproduction and failure-characterisation results, not blind equilibrium
+prediction.  Earlier quantitative accuracy and portable speedup claims are not
+retained because the current evidence does not support them under a common
+full-fidelity contract.  We report the useful
+software, the negative results, and the validation work still required.
+\end{abstract}
+
+\noindent\textbf{Keywords:} Grad--Shafranov equation; tokamak equilibrium;
+inverse reconstruction; Rust; Python; fail-closed surrogate; reproducibility
+
+\section{Scope and claim boundary}
+
+The Grad--Shafranov (GS) equation is the standard axisymmetric
+magnetohydrostatic equilibrium equation for a toroidal plasma
+\citep{Grad1958,Shafranov1966}.  Equilibrium reconstruction is mature and is
+served by established codes such as EFIT \citep{Lao1985,Lao1990} and FreeGS
+\citep{FREEGS2019}.  A new implementation therefore needs more than a broad
+feature list: it needs same-case numerical evidence, transparent conventions,
+failure semantics, and comparisons that hold input physics and tolerances fixed.
+
+This paper is a software and evidence report bound to evidence revision
+\code{476908debdd8}.  The full revision and the later package-preparation base
+are recorded in the paper metadata.  It does not claim that
+\scpn{} replaces EFIT, FreeGS, or a production plasma-control system.  It does
+not claim experimental predictive accuracy, a portable performance lead, or
+production free-boundary neural-surrogate admission.  Synthetic figures are labelled as illustrations;
+real-data quantities are tied to the packaged JSON evidence.
+
+\section{Mathematical formulation}
+
+In cylindrical coordinates $(R,\phi,Z)$, axisymmetric equilibrium satisfies
+\begin{equation}
+  \dstar\Psi = -\mu_0 R^2 p'(\Psi) - F(\Psi)F'(\Psi),
+  \label{eq:gs}
+\end{equation}
+where $\Psi$ is poloidal flux, $p$ is pressure and $F=RB_\phi$.  The elliptic
+operator is
+\begin{equation}
+  \dstar\Psi = R\frac{\partial}{\partial R}
+  \left(\frac{1}{R}\frac{\partial\Psi}{\partial R}\right)
+  + \frac{\partial^2\Psi}{\partial Z^2}.
+\end{equation}
+
+The source term depends nonlinearly on the flux through $p'$ and $FF'$.  The
+implementation therefore performs an outer fixed-point iteration: evaluate the
+source from the current flux, solve the linear elliptic problem, and relax the
+update.  Fixed-boundary and free-boundary problems share numerical components
+but do not have identical physical inputs.  In particular, a free-boundary
+reconstruction requires external-coil currents or an equivalent measured
+external-source description; omitting them changes the problem.
+
+\section{Implementation}
+
+\subsection{Hybrid architecture}
+
+The Python layer owns configuration, reference-data parsing, experiment
+orchestration and high-level analysis.  Numerical kernels are also available in
+a Rust workspace and are exposed to Python through PyO3 \citep{PyO3}.  The
+repository configures a hosted matrix for Python 3.10--3.12, Rust, the
+inter-language boundary, security checks and scientific gates.  This paper does
+not claim exact-head hosted success from that configuration alone.  Build and
+interface checks would not by themselves establish physical validity.
+
+\subsection{Forward solution}
+
+The discretisation represents Eq.~\eqref{eq:gs} on an $(R,Z)$ mesh.  The code
+contains red--black successive over-relaxation and multigrid components inside a
+Picard outer loop.  Boundary handling, sign conventions and normalisation are
+treated as explicit contracts because a low residual under the wrong source
+convention is not a valid equilibrium result.
+
+\subsection{Inverse reconstruction}
+
+The inverse path adjusts a finite parameter vector to reduce residuals between
+modelled and supplied diagnostic values.  It includes Tikhonov regularisation
+\citep{Tikhonov1977}, Huber loss \citep{Huber1964}, and Levenberg--Marquardt
+updates \citep{Levenberg1944,Marquardt1963}.  Figure~\ref{fig:inverse} is a
+deterministic synthetic probe example.  It illustrates the spatial input and
+residual layout; it does not execute the inverse solver or recover a real
+diagnostic system.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.96\linewidth]{figures/fig_inverse_reconstruction.pdf}
+  \caption{Deterministic manufactured inverse-reconstruction illustration.
+  Target flux, perturbed comparison flux and residual are generated from synthetic
+  probe locations.  This figure is not experimental validation.}
+  \label{fig:inverse}
+\end{figure}
+
+\subsection{Neural path and failure semantics}
+
+The repository contains a neural-equilibrium interface with explicit backend
+reporting.  The packaged pointwise artifact records 16 acceptance-gated SPARC
+rows, all executed on the neural backend and all passing the declared 5\% NRMSE
+threshold.  Eight of those 16 rows also pass the adapted source-convention
+contract.  Its diagnostic non-SPARC proxy rows are outside that gated cohort
+and may use a reduced-order fallback.  This establishes the bounded pointwise
+software gate only: it does not establish training-data origin, independent
+free-boundary prediction, experimental accuracy, uncertainty calibration or
+latency.  Those claims require immutable training provenance, device- or
+shot-disjoint calibration and test partitions, calibrated uncertainty and a
+same-case comparison against a production solver.
+
+\section{Evidence}
+
+\subsection{Illustrative SPARC-like geometry}
+
+Figure~\ref{fig:sparc-like} uses published SPARC-like geometry parameters
+\citep{Creely2020} in a dimensionless manufactured flux field.  It is useful for
+visualising a shaped geometry, but it is not a Grad--Shafranov solution, a
+solved SPARC discharge or part of the quantitative validation table.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.78\linewidth]{figures/fig_sparc_equilibrium.pdf}
+  \caption{Dimensionless manufactured flux in SPARC-like geometry.  The
+  geometry is illustrative; the contours are not a Grad--Shafranov solution,
+  experimental reconstruction or predictive reconstruction.}
+  \label{fig:sparc-like}
+\end{figure}
+
+\FloatBarrier
+
+\subsection{Real DIII-D same-case reproduction}
+
+The packaged evidence file
+\code{evidence/real\_diiid\_145419\_validation.json} identifies the reference as
+the public OMAS sample \code{g145419.02100}, DIII-D shot 145419 at 2100 ms, and
+records its SHA-256 hash, generator hash, dependency versions and modelling
+disclosure.  The reproduction lanes initialise from measured EFIT flux and use
+reference-derived normalisation anchors.  They are consistency tests, not blind
+prediction or independent branch selection.
+
+\begin{table}[ht]
+\centering
+\caption{Selected exact quantities from the packaged DIII-D evidence.  Errors
+are normalised by the reference poloidal-flux span.}
+\label{tab:diiid}
+\begin{tabular}{lrrr}
+\toprule
+Lane & Deep RMS & Global maximum & Iterations \\
+\midrule
+Warm-start, full-domain reproduction & 1.908\% & 3.908\% & 21 \\
+Warm-start, 4$\times$4 sub-cell source & 1.833\% & 3.729\% & 20 \\
+Plasma-free cold start & 126.788\% & 173.139\% & 1 \\
+Shell-pinned attribution diagnostic & 0.0697\% & 0.1741\% & 14 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The shell-pinned row uses additional measured information and is included only
+to localise the remaining mismatch; it is not a model improvement.  The cold
+start is the decisive negative result: fixed reference anchors leave the
+plasma-free state stationary, so the reproduction map cannot discover the
+physical branch.  Predictive free-boundary work remains blocked on complete
+external-coil input and independent branch-selection evidence.
+
+\subsection{SPARC and broader validation boundary}
+
+The packaged pointwise artifact records its neural backend, acceptance threshold
+and source-convention blockers.  All 16 gated rows pass the pointwise NRMSE and
+backend requirements, while only 8 of 16 pass the adapted source-convention
+contract.  The GEQDSK contract does not supply the same-case external-coil
+current description needed for a predictive free-boundary reconstruction.
+Consequently the result is not promoted to a free-boundary or
+experimental-accuracy claim.  Likewise,
+confinement-scaling and disruption datasets exercise different subsystems and
+do not validate the equilibrium reconstruction simply because they share the
+same repository.
+
+\section{Performance and comparisons}
+
+No current benchmark applies one full-fidelity numerical contract to the Python,
+Rust and external-solver lanes.  This paper therefore makes no hardware-neutral
+speed claim.  A publishable comparison must use the same equilibrium, source convention,
+boundary data, precision, convergence tolerance and failure accounting; report
+both cold and warm distributions; identify the CPU/GPU, compiler and thread
+settings; and retain divergent cases.  The same requirements apply to any
+comparison with FreeGS, EFIT or another community code.
+
+\section{Limitations and required validation}
+
+The current evidence leaves several important gaps:
+\begin{itemize}
+  \item the real-data result is warm-started same-case reproduction rather than
+        blind reconstruction;
+  \item one public DIII-D shot/time slice is not multi-machine validation;
+  \item external-coil currents are required for predictive free-boundary branch
+        selection and are not inferred from geometry alone;
+  \item SPARC source-convention and missing external-coil blockers remain visible;
+  \item the pointwise neural gate is not production or free-boundary admission;
+  \item no fair, current, same-case performance comparison is included;
+  \item no hardware-in-the-loop or production PCS claim is made.
+\end{itemize}
+
+\section{Reproducibility}
+
+The manuscript source, references, figure generators and evidence JSON are in
+this directory.  \code{BUILD.md} gives the exact LaTeX and figure commands.
+The manifest binds the DIII-D payload to a tracked source at evidence revision
+\code{476908debdd8}, including its Git object and exact file hash.  The SPARC
+source artifact was Git-ignored when generated; its exact source hash,
+generation time and generator hash are retained, and the paper-local JSON is
+therefore the authoritative public custody copy.  The final PDF is a review
+artefact generated from this source.  The manuscript-content licence has not
+yet been selected by the author; repository code retains its existing licence.
+
+\section{Conclusion}
+
+\scpn{} provides a substantial hybrid implementation of axisymmetric
+equilibrium workflows, but implementation breadth is not a substitute for
+validation.  The packaged DIII-D same-case result demonstrates a useful
+warm-start reproduction and, equally importantly, a plasma-free cold-start
+failure.  The gated SPARC pointwise result and diagnostic fallback behavior are
+reported without promoting either to free-boundary accuracy.  These boundaries define the next work: complete physical
+inputs, independent branch selection, multi-machine held-out evidence and fair
+same-case comparisons.
+
+\section*{Data and code availability}
+
+Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  This
+draft is bound to evidence revision \code{476908debdd8}; the full revision is
+recorded in the paper metadata.  Paper-local evidence and
+reproduction instructions are distributed beside the manuscript.
+
+{\scriptsize\bibliography{references}}
+\end{document}
