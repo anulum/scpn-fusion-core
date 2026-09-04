@@ -1,0 +1,350 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — neuromorphic-control review manuscript.
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[margin=1in]{geometry}
+
+\bibliographystyle{unsrtnat}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\scpn}{\textsc{SCPN-Fusion-Core}}
+
+\title{Neuromorphic Vertical Stability Control via Petri-Net-to-Spiking\\
+Compilation: A Reduced-Order Evaluation}
+\author{Miroslav \v{S}otek\\
+\small Anulum Research, \url{https://www.anulum.li}\\
+\small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
+\small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
+\date{Review draft --- 4 September 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We describe a software pipeline that maps continuous-marking stochastic Petri
+nets to leaky integrate-and-fire populations and a bounded actuator interface.
+The implementation makes the symbolic policy, compilation products and runtime
+state inspectable, but its current physical evidence is deliberately narrow.  We
+evaluate the implemented PID, observer-based LQR and push--pull spiking
+controllers on the same deterministic reduced-order vertical-instability model.
+For a growth rate of $200\,\mathrm{s}^{-1}$, a 5 mm kick and a 1 kHz control
+update, PID and LQR settle in 25 ms and 39 ms.  The real spiking controller does
+not stabilise the case and reaches approximately 160 mm peak displacement.  Its
+internal dynamics lag the 5 ms instability e-folding time.  This is a material
+negative result: the current SNN is not competitive for this fast-VDE case.
+
+We preserve the exact output of an earlier workstation-latency harness and
+explain why it is historical rather than ranking evidence.  Its tracked JSON
+contains five lane aggregates, but not the exact invocation episode count or
+seed; it also used different plant/action paths and accepted noise and delay
+arguments without injecting them.  A subsequent schema-v3 one-episode run
+demonstrates common scenario, full-coil action and policy-only timing wiring,
+but is explicitly promotion-ineligible: every completed lane crosses the
+disruption threshold at time zero and NMPC-JAX is unavailable.  We therefore
+pre-register, but do not execute, a fresh 200-episode real-kernel cohort with
+fail-closed admission gates.  No FPGA, neuromorphic-device or radiation
+experiment has been performed.
+\end{abstract}
+
+\noindent\textbf{Keywords:} Petri net; spiking neural network; tokamak
+vertical stability; neuromorphic control; stochastic computing; negative result
+
+\section{Motivation and boundary}
+
+Elongated tokamak plasmas can be unstable to the axisymmetric vertical mode,
+requiring active feedback on timescales set by the resistive structure and the
+closed-loop plant \citep{Lazarus1990,Humphreys2015}.  PID, state-space and
+model-predictive controllers are established engineering approaches
+\citep{Kolemen2014}.  Neuromorphic implementations are interesting only if
+their timing, robustness and verification properties are measured under a
+physically meaningful contract.
+
+This paper is bound to commit \code{8df066b60bf7}; the full revision is in the
+paper metadata.  The plant is a declared reduced-order ordinary differential
+equation.  The work is not a discharge
+experiment, hardware-in-the-loop validation, radiation test or production PCS.
+No comparison with an independently tuned facility controller is attempted.
+
+\section{Stochastic Petri-net representation}
+
+A continuous-marking Petri net is represented as
+\begin{equation}
+  \mathcal{N}=(P,T,W_{\mathrm{in}},W_{\mathrm{out}},\mathbf{m}_0),
+\end{equation}
+where $P$ and $T$ are finite sets of places and transitions,
+$W_{\mathrm{in}}$ and $W_{\mathrm{out}}$ are non-negative arc-weight matrices,
+and $\mathbf{m}_0\in[0,1]^{|P|}$ is the initial marking.  A transition is enabled
+when its weighted inputs satisfy a declared threshold.  Firing consumes and
+produces marking according to the two arc matrices, followed by the runtime's
+explicit bounded-domain policy.
+
+The construction is inspired by classical Petri-net semantics
+\citep{Petri1962,Murata1989}, while the continuous $[0,1]$ marking is chosen to
+align with stochastic-number representations \citep{Gaines1969,Alaghi2013}.
+Figure~\ref{fig:petri} shows the eight-place policy used as a software fixture.
+It is a control-policy graph, not a complete plasma model.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.88\linewidth]{figures/fig_petri_net.pdf}
+  \caption{Eight-place, four-transition Petri-net policy used by the compiler
+  fixture.  The diagram describes software state flow; it is not a facility
+  safety case.}
+  \label{fig:petri}
+\end{figure}
+
+\section{Compilation and runtime}
+
+The pipeline has three observable stages:
+\begin{enumerate}
+  \item a builder validates places, transitions, arcs, thresholds and initial
+        marking;
+  \item the compiler maps places and transitions to population and connection
+        structures, including stochastic bitstream representations;
+  \item the runtime injects observations, advances symbolic/spiking state and
+        decodes an action through the actuator boundary.
+\end{enumerate}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.96\linewidth]{figures/fig_compilation_pipeline.pdf}
+  \caption{Software compilation path from policy graph to runtime artefact.
+  Hardware targets are prospective; this draft reports software execution.}
+  \label{fig:pipeline}
+\end{figure}
+
+The neuron model follows a leaky integrate-and-fire form
+\citep{Maass1997},
+\begin{equation}
+  \tau_m\frac{dV}{dt}=-(V-V_{\mathrm{rest}})+RI(t),
+\end{equation}
+with threshold, reset and refractory behavior.  Figure~\ref{fig:lif} is a
+pedagogical deterministic trace; it is not a hardware waveform.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.78\linewidth]{figures/fig_lif_neuron.pdf}
+  \caption{Pedagogical LIF response generated by the paper-local script.}
+  \label{fig:lif}
+\end{figure}
+
+The public runtime validates finite inputs and clips decoded actions at the
+actuator boundary.  Software tests exercise builder validation, compilation,
+runtime behavior and safety interlocks.  They do not prove equivalence to an
+unbuilt FPGA or neuromorphic circuit.
+
+\section{Reduced-order vertical benchmark}
+
+\subsection{Plant and protocol}
+
+The benchmark uses the declared linearised vertical plant
+\begin{equation}
+  \ddot z = \gamma^2 z - \frac{k_{\mathrm{coil}}}{m_p}u,
+  \label{eq:plant}
+\end{equation}
+with $\gamma=200\,\mathrm{s}^{-1}$,
+$k_{\mathrm{coil}}=0.5$, $m_p=1$, a 1 ms integration/control step and a
+$\pm10$ kA command limit.  A 5 mm displacement is injected at 10 ms and the
+simulation runs for 60 ms.  The 5 ms open-loop e-folding time makes this a
+deliberately fast case.
+
+The PID gains are chosen from a stated second-order target.  The LQR lane uses
+the repository's observer-based state-space controller.  The SNN lane uses the
+actual 64-neuron push--pull \code{SpikingControllerPool}; it is not a relabelled
+PID trace.  All three trajectories are produced by
+\code{figures/fig\_vertical\_stability.py}.
+
+\subsection{Result}
+
+\begin{table}[ht]
+\centering
+\caption{Deterministic reduced-order response.  ``Settling'' is the first time
+after the last excursion outside the $\pm0.1$ mm band.}
+\label{tab:vde}
+\begin{tabular}{lrrl}
+\toprule
+Controller & Peak $|z|$ (mm) & Settling (ms) & Outcome \\
+\midrule
+PID, retuned & 5.00 & 25 & stabilises this model \\
+LQR with observer & 5.20 & 39 & stabilises this model \\
+Push--pull SNN & $\approx160$ & --- & diverges \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.92\linewidth]{figures/fig_vertical_stability.pdf}
+  \caption{Same-plant response of the implemented controllers.  The SNN curve
+  leaves the displayed range and peaks near 160 mm.  This is a reduced-order
+  numerical experiment, not a tokamak discharge.}
+  \label{fig:vde}
+\end{figure}
+
+The negative result is not a tuning footnote.  With the present dynamics, the
+spiking path reacts too slowly for the 5 ms instability time.  Faster synapses,
+a different coding scheme or a hybrid architecture may change the result, but
+those are new hypotheses requiring new predeclared experiments.
+
+\section{Evaluation-contract evolution}
+
+\subsection{Historical methodology and preserved output}
+
+The legacy result was first tracked at commit \code{1163ce454b75} and remains
+recoverable as Git blob \code{5616f192a7b4}; the exact source JSON has SHA-256
+\code{394be6c32a56\ldots}.  Table~\ref{tab:historical-latency} reproduces all
+five serialized p50/p95 values.  This preservation does not rehabilitate the
+old comparison.
+
+At implementation revision \code{476908debdd8}, Python PID and H-infinity used
+the Python equilibrium flight simulator, Rust-PID used a separate Rust
+reduced-order simulator, NMPC-JAX used an untrained random dynamics model and
+returned only its first scalar action, and Nengo-SNN received the scalar error
+as radial input with zero vertical input.  Latency covered a complete
+lane-specific \code{run\_shot} divided by reported steps, not one policy call.
+The harness accepted and printed its noise and delay arguments but did not pass
+them into episode runners.  It serialized neither a seed, a common disturbance
+trace, exact invocation episode count, failure ledger nor environment custody.
+The code default was 1000 episodes, but the exact invocation count that produced
+the tracked aggregate is unknown and is reported as unknown.
+
+\input{evidence/controller_latency_table.tex}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figures/fig_latency_comparison.pdf}
+  \caption{Historical legacy-harness output, p50 with a p95 whisker.  The
+  source values are preserved exactly, including the invalidated H-infinity
+  lane.  Different plant/action paths and an unknown invocation count prohibit
+  a current controller ranking.}
+  \label{fig:latency}
+\end{figure}
+
+\subsection{Why the contract changed}
+
+The historical data remain useful for auditability and for showing what the
+software emitted at that time.  They cannot support a speedup, accuracy,
+disruption, energy-efficiency or deployment claim because the lanes were not
+accuracy-equivalent.  The replacement contract consequently requires one plant,
+one R/Z observation, one full ordered coil-current-offset action in MA, the same
+actuator delay/lag/slew/saturation, one pre-materialized PCG64 disturbance trace
+per episode, exactly one timed policy call per control step, explicit failures,
+and digest-bound recovery.
+
+\subsection{Schema-v3 transition run}
+
+The exact schema-v3 report at \code{8df066b60bf7} is a one-episode surrogate
+wiring assessment, not a reduced-cost substitute for real-plant evidence.  Six
+lanes completed against the same disturbance digest; NMPC-JAX remained visibly
+unavailable because it lacks a calibrated dynamics artefact and held-out gate.
+Every completed lane had the same mean radial error (4.0387 m), mean vertical
+error (3.7877 m), disruption rate (1.0) and disruption time (0.0 s).  The last
+quantity proves that the present initial state is already outside the declared
+0.5 m criterion before actuation can discriminate between policies.
+
+\input{evidence/schema_v3_wiring_table.tex}
+
+The policy-only timings in Table~\ref{tab:wiring-latency} verify instrumentation
+and lane wiring only.  They cannot select a controller because the run has one
+episode, uses the non-promotable surrogate scope, starts disrupted and omits an
+admissible NMPC lane.
+
+\subsection{Pre-registered fresh cohort}
+
+The paper-local \code{fresh\_cohort\_protocol.json} freezes a 200-episode,
+seed-42, 30 s, real-FusionKernel comparison across PID, H-infinity, LQR, MPC,
+NMPC-JAX, LIF-NEF-SNN and Rust-PID.  The primary endpoints are disruption rate
+and radial/vertical tracking error; tracking reward, actuator effort and
+policy-only p50/p95/p99 latency are secondary.  Comparisons are paired by the
+per-episode disturbance-trace digest, failures remain failures, and no lane can
+be promoted from latency alone.
+
+The cohort is prepared but intentionally blocked.  Before execution, the
+real-kernel initial equilibrium must pass the predeclared time-zero criterion,
+NMPC-JAX must load a provenance-bound calibrated model with a disjoint held-out
+gate, and all seven lanes must be available.  The primary run then requires a
+dedicated unloaded host and the frozen recovery identity; an independent second
+host must reproduce scientific metrics while host-dependent timing is compared
+separately.  No long-running fresh cohort is reported in this manuscript.
+
+\section{Stochastic encoding and radiation boundary}
+
+In a unipolar stochastic code, a value $x\in[0,1]$ is represented by the
+fraction of ones in a bitstream of length $L$.  Independent streams allow an
+AND gate to estimate multiplication.  A single flipped bit changes the decoded
+value by at most $1/L$, an encoding-level sensitivity rather than a radiation
+qualification result.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/fig_radiation_tolerance.pdf}
+  \caption{Analytical encoding-error illustration.  The plotted arrays are not
+  irradiation measurements and do not establish device-level fault tolerance.}
+  \label{fig:radiation}
+\end{figure}
+
+No FPGA timing closure, power measurement, single-event-upset campaign or
+neuromorphic-device run is included.  Earlier quantitative hardware latency and
+power estimates are therefore absent from the results.
+
+\section{Limitations and next experiments}
+
+The current evidence is bounded by the following facts:
+\begin{itemize}
+  \item the fast-VDE SNN result is negative;
+  \item the plant is a deterministic reduced-order model and lacks a full
+        plasma, vessel, power-supply, sensor and communication stack;
+  \item the historical latency output lacks a serialized exact invocation
+        count, seed and common lane contract;
+  \item the schema-v3 transition run is a single wiring-only surrogate episode
+        whose completed lanes are disrupted at time zero;
+  \item NMPC-JAX has no calibrated dynamics artefact or held-out validation
+        gate and is therefore unavailable;
+  \item the pre-registered fresh cohort has not run and lacks independent
+        second-host reproduction;
+  \item symbolic/runtime tests are not a hardware refinement proof;
+  \item radiation and dedicated-hardware properties are unmeasured;
+  \item no experimental control, hardware-in-the-loop or production PCS claim
+        is made.
+\end{itemize}
+
+The next credible sequence is to freeze an accuracy-equivalent reduced-order
+controller cohort, reproduce it independently, add sensor/actuator and delay
+uncertainty, and only then synthesize and measure a hardware candidate.  A
+device experiment must report timing, power, numerical/control quality and fault
+injection together.
+
+\section{Reproducibility and availability}
+
+This directory contains the manuscript, bibliography, figure generators,
+generated figures, the Git-object-bound historical result, the exact schema-v3
+wiring assessment, the blocked fresh-cohort protocol, generated LaTeX tables
+and build instructions.  Code is available at
+\url{https://github.com/anulum/scpn-fusion-core}.  The review draft is bound to
+commit \code{8df066b60bf7}; the full revision is recorded in the paper metadata.  The
+manuscript-content licence has not yet been selected by the author; repository
+code retains its existing licence.
+
+\section{Conclusion}
+
+The Petri-net-to-spiking path is implemented and inspectable, but the current
+SNN does not stabilise the declared fast vertical-instability case.  This result
+keeps the software architecture distinct from demonstrated control performance.
+The paper-local evidence preserves the legacy record without treating it as a
+current ranking, exposes the failed schema-v3 admission state, and pre-registers
+the next accuracy-equivalent study without claiming that it has run.
+
+\bibliography{references}
+\end{document}

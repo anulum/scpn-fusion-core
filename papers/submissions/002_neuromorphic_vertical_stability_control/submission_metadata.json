@@ -1,0 +1,29 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE neuromorphic-paper review metadata.",
+  "schema_version": "1.0",
+  "catalogue_id": "002",
+  "status": "review_draft_not_submitted",
+  "title": "Neuromorphic Vertical Stability Control via Petri-Net-to-Spiking Compilation: A Reduced-Order Evaluation",
+  "author": {
+    "name": "Miroslav Sotek",
+    "orcid": "0009-0009-3560-0851"
+  },
+  "repository_revision": "8df066b60bf713d8b79af1714109fdff6a2ca355",
+  "evidence_files": [
+    "evidence/historical_controller_latency.json",
+    "evidence/schema_v3_wiring_assessment.json",
+    "evidence/fresh_cohort_protocol.json",
+    "evidence/controller_latency_table.tex",
+    "evidence/schema_v3_wiring_table.tex",
+    "evidence/vertical_stability_reduced_order.json",
+    "evidence/evidence_manifest.json"
+  ],
+  "doi": null,
+  "manuscript_content_license": null
+}

@@ -1,0 +1,60 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE schema-v3 controller wiring assessment.",
+  "schema": "scpn-fusion-core.paper002-schema-v3-wiring-assessment.v1",
+  "evidence_status": "wiring_only_not_promotion_eligible",
+  "source_custody": {
+    "path": "validation/reports/stress_test_campaign.json",
+    "repository_revision": "8df066b60bf713d8b79af1714109fdff6a2ca355",
+    "artifact_sha256": "aab54de6f5c751670df6b630d48c7face75b04ed2a834de043b3f950f4638371",
+    "campaign_identity_digest": "1f5b7cbd60b65b96bd60e5a053a1ab9a9282d0904f5ddf312571144300691960",
+    "scenario_digest": "ab598eb5bd1e28d2a894bf3366301ae534d6fb47529c5a600ffd2abe23f27ffa",
+    "evaluation_contract_digest": "eb5ec2b4ba4cadb67467da3cb7514f64a79ab8770dd0a8411db55c288790e977"
+  },
+  "request": {
+    "episodes_per_lane": 1,
+    "shot_duration_s": 1,
+    "master_seed": 20260904,
+    "measurement_noise_std_m": 0.01,
+    "actuator_delay_s": 0.05,
+    "plant_backend": "NeuralEquilibriumKernel",
+    "scope": "wiring_only"
+  },
+  "result": {
+    "campaign_complete": false,
+    "promotion_eligible": false,
+    "promotion_ineligibility_reason": "campaign_incomplete_or_incomparable",
+    "common_completed_lane_outcome": {
+      "mean_abs_r_error_m": 4.038744291227179,
+      "mean_abs_z_error_m": 3.7877449197722286,
+      "disruption_rate": 1.0,
+      "t_disruption_s": 0.0
+    },
+    "lanes": {
+      "PID": {"status": "complete", "p50_policy_latency_us": 19.4715, "p95_policy_latency_us": 30.854699999999998},
+      "Rust-PID": {"status": "complete", "p50_policy_latency_us": 16.598, "p95_policy_latency_us": 26.484449999999995},
+      "H-infinity": {"status": "complete", "p50_policy_latency_us": 80.41300000000001, "p95_policy_latency_us": 107.26649999999998},
+      "LQR": {"status": "complete", "p50_policy_latency_us": 65.4625, "p95_policy_latency_us": 88.52319999999999},
+      "MPC": {"status": "complete", "p50_policy_latency_us": 682.8050000000001, "p95_policy_latency_us": 802.0834},
+      "LIF-NEF-SNN": {"status": "complete", "p50_policy_latency_us": 2332.4825, "p95_policy_latency_us": 2925.64745},
+      "NMPC-JAX": {
+        "status": "unavailable",
+        "reason": "uncalibrated_dynamics_model:no_trained_artifact_or_held_out_gate",
+        "p50_policy_latency_us": null,
+        "p95_policy_latency_us": null
+      }
+    }
+  },
+  "interpretation": [
+    "The run verifies shared scenario identity, full-coil action wiring, paired disturbance traces and per-policy timing instrumentation.",
+    "The surrogate scope is explicitly ineligible for controller promotion.",
+    "All completed lanes cross the disruption threshold at time zero, before actuation can influence the state.",
+    "The identical control-quality aggregates therefore do not measure controller discrimination.",
+    "The latency samples are implementation wiring observations, not an accuracy-equivalent ranking cohort."
+  ]
+}

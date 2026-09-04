@@ -1,0 +1,25 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — generated schema-v3 wiring table.
+\begin{table}[ht]
+\centering
+\caption{One-episode schema-v3 wiring assessment. Policy-only timing is recorded, but the run is incomplete and promotion-ineligible.}
+\label{tab:wiring-latency}
+\begin{tabular}{llrr}
+\toprule
+Lane & Status & p50 ($\mu$s) & p95 ($\mu$s) \\
+\midrule
+PID & complete & 19.471 & 30.855 \\
+Rust-PID & complete & 16.598 & 26.484 \\
+H-infinity & complete & 80.413 & 107.266 \\
+LQR & complete & 65.463 & 88.523 \\
+MPC & complete & 682.805 & 802.083 \\
+LIF-NEF-SNN & complete & 2332.483 & 2925.647 \\
+NMPC-JAX & unavailable & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}

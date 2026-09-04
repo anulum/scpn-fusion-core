@@ -1,0 +1,100 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE historical controller-latency evidence.",
+  "schema": "scpn-fusion-core.paper002-historical-controller-latency.v1",
+  "evidence_status": "historical_non_comparable",
+  "source_custody": {
+    "path": "validation/reports/stress_test_campaign.json",
+    "first_recorded_commit": "1163ce454b7580191d725b8d9669f7925617e3c0",
+    "paper_reference_revision": "476908debdd886d3a35bf0ae85216e684727adce",
+    "last_checkpoint_revision": "62091a23fa3e3b6a13216b9df59059458e723782",
+    "git_blob_oid_sha1": "5616f192a7b41f2114777da76a16433a11818aef",
+    "artifact_sha256": "394be6c32a564f6ae1e93e9c39f33ab1ace3d68c591db91dfd89e81fcaa3f66d"
+  },
+  "methodology": {
+    "implementation_revision": "476908debdd886d3a35bf0ae85216e684727adce",
+    "implementation_path": "validation/stress_test_campaign.py",
+    "implementation_blob_oid_sha1": "c788b7939561184360568383de0cbf7e5a82ef4c",
+    "implementation_sha256": "5bb9535c6f61d57ab5fda9db1a24714f5686e7f4481e2445eb13cd532a5e0102",
+    "declared_default_episodes": 1000,
+    "exact_invocation_episode_count": null,
+    "declared_default_shot_duration_s": 30,
+    "exact_invocation_shot_duration_s": null,
+    "master_seed": null,
+    "latency_metric": "wall_clock_for_complete_run_shot_divided_by_reported_steps",
+    "aggregation": "one aggregate latency value per completed episode followed by p50_p95_p99_across_episode_values",
+    "host": "11th Gen Intel Core i5-11600K, 6 cores and 12 logical CPUs",
+    "host_isolation": "not_isolated",
+    "displayed_but_not_injected_parameters": {
+      "noise_level_default": 0.2,
+      "delay_ms_default": 50.0
+    },
+    "lane_contract_differences": [
+      "Python PID and H-infinity used the Python equilibrium flight simulator.",
+      "Rust-PID used a separate Rust reduced-order flight simulator rather than the common Python plant.",
+      "NMPC-JAX used an untrained random dynamics model and returned only its first scalar action.",
+      "Nengo-SNN received the current scalar error as its radial input and a forced zero vertical input.",
+      "No common per-episode disturbance trace, action basis, actuator model, policy-only timer, failure ledger or exact run identity was serialized."
+    ]
+  },
+  "results": {
+    "PID": {
+      "p50_latency_us": 3431.3758333333335,
+      "p95_latency_us": 3624.2502600000003,
+      "p99_latency_us": 3658.4025853333337,
+      "mean_reward_legacy_units": -0.0000023962572185574615,
+      "disruption_rate": 0.0,
+      "status": "historical_orientation_only"
+    },
+    "Rust-PID": {
+      "p50_latency_us": 0.522531,
+      "p95_latency_us": 0.6702369333333333,
+      "p99_latency_us": 0.69889832,
+      "mean_reward_legacy_units": -0.00014380206684172647,
+      "disruption_rate": 0.0,
+      "status": "historical_orientation_only_separate_plant"
+    },
+    "H-infinity": {
+      "p50_latency_us": 3227.1453666666666,
+      "p95_latency_us": 3606.87718,
+      "p99_latency_us": 3619.5501026666666,
+      "mean_reward_legacy_units": -10.133066725805051,
+      "disruption_rate": 1.0,
+      "status": "invalidated_stale_scalar_plant_calibration"
+    },
+    "NMPC-JAX": {
+      "p50_latency_us": 45450.299933333336,
+      "p95_latency_us": 49773.09164666667,
+      "p99_latency_us": 50582.80854266667,
+      "mean_reward_legacy_units": -0.000739435007268416,
+      "disruption_rate": 0.0,
+      "status": "historical_orientation_only_uncalibrated_random_dynamics"
+    },
+    "Nengo-SNN": {
+      "p50_latency_us": 23573.10943333333,
+      "p95_latency_us": 24736.161493333333,
+      "p99_latency_us": 24889.725312,
+      "mean_reward_legacy_units": -0.00000832701267471202,
+      "disruption_rate": 0.0,
+      "status": "historical_orientation_only_radial_input_only"
+    }
+  },
+  "admissibility": {
+    "may_support": [
+      "A historical account of what the legacy harness emitted.",
+      "Host-specific orientation for the exact legacy implementations under their different execution paths.",
+      "Motivation for replacing the legacy evaluation contract."
+    ],
+    "must_not_support": [
+      "A current controller ranking or speedup claim.",
+      "Accuracy-equivalent latency comparison.",
+      "Control-quality, disruption, energy-efficiency or deployment promotion.",
+      "Portable hardware, FPGA or neuromorphic-device performance."
+    ]
+  }
+}

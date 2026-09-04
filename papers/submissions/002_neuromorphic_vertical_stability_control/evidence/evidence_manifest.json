@@ -1,0 +1,67 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE neuromorphic-paper evidence manifest.",
+  "schema_version": "2.0",
+  "repository_revision": "8df066b60bf713d8b79af1714109fdff6a2ca355",
+  "evidence_layers": [
+    "historical_non_comparable",
+    "schema_v3_wiring_only",
+    "fresh_cohort_preregistration"
+  ],
+  "source_git_objects": {
+    "path": "validation/reports/stress_test_campaign.json",
+    "first_recorded_commit": "1163ce454b7580191d725b8d9669f7925617e3c0",
+    "paper_reference_revision": "476908debdd886d3a35bf0ae85216e684727adce",
+    "last_checkpoint_revision": "62091a23fa3e3b6a13216b9df59059458e723782",
+    "git_blob_oid_sha1": "5616f192a7b41f2114777da76a16433a11818aef",
+    "artifact_sha256": "394be6c32a564f6ae1e93e9c39f33ab1ace3d68c591db91dfd89e81fcaa3f66d"
+  },
+  "generators": {
+    "validation/stress_test_campaign.py": {
+      "sha256": "e288751f5b10f79274f9541f4a579deadf91ff4be238495055523bb022ed7d76"
+    },
+    "papers/submissions/002_neuromorphic_vertical_stability_control/figures/generate_latency_table.py": {
+      "sha256": "a5e899e582ca05d6b71c459da17691d129bfec413c203b5ba12856f96059f7f4"
+    },
+    "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_latency_comparison.py": {
+      "sha256": "d0350a543507b29499ab35ff63ef422212848858066686ba397b271c605513da"
+    },
+    "papers/submissions/002_neuromorphic_vertical_stability_control/figures/fig_vertical_stability.py": {
+      "sha256": "b4edec6af3b89a66af80af6da002a8286fcdb3df558b5f1c0050d3fd1ad475b8"
+    },
+    "papers/submissions/002_neuromorphic_vertical_stability_control/figures/generate_evidence_manifest.py": {
+      "sha256": "6eefbcf56dee4bac88bbd010a6c7697f405bacfc71994f1fc2b1a2b4c2a773d7"
+    }
+  },
+  "files": {
+    "historical_controller_latency.json": {
+      "sha256": "bcb6404a5589cf7f05919679d460bad2eedfbcba7bb5003571eb57113dbc9183",
+      "role": "exact legacy outputs plus Git-object custody and non-comparability boundary"
+    },
+    "schema_v3_wiring_assessment.json": {
+      "sha256": "e2cabab56b6049e36740bf89a1c85922f1d6f4e526425d3da07e16ad2b8c8c39",
+      "role": "exact summary of the incomplete one-episode shared-contract wiring run"
+    },
+    "fresh_cohort_protocol.json": {
+      "sha256": "50f82dde891ca1ff80a62f90434050d457aa4843c9c3cdcb3578e98ad85e6e86",
+      "role": "preregistered comparison request, blockers, endpoints and execution template"
+    },
+    "controller_latency_table.tex": {
+      "sha256": "b4668999d8e96afa612ec93906a07370985895f726382464556ee57be5d9e426",
+      "role": "generated historical non-comparable latency table"
+    },
+    "schema_v3_wiring_table.tex": {
+      "sha256": "38d944fe0bbfdab0ff3cd9135c11572522981f3168b1f8073ecfe2aa33c94975",
+      "role": "generated wiring-only policy-latency table"
+    },
+    "vertical_stability_reduced_order.json": {
+      "sha256": "185c36fa80443930fc3d0acb98c030eb6416a2ba0c20fcec027cbeac8bd460c1",
+      "role": "generated reduced-order fast-VDE controller-outcome record"
+    }
+  }
+}

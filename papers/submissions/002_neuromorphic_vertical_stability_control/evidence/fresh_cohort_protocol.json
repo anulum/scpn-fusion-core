@@ -1,0 +1,105 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE preregistered fresh controller-cohort protocol.",
+  "schema": "scpn-fusion-core.paper002-fresh-cohort-protocol.v1",
+  "status": "prepared_blocked_not_executable",
+  "protocol_revision": "8df066b60bf713d8b79af1714109fdff6a2ca355",
+  "inputs": {
+    "campaign_source_path": "validation/stress_test_campaign.py",
+    "campaign_source_sha256": "e288751f5b10f79274f9541f4a579deadf91ff4be238495055523bb022ed7d76",
+    "config_path": "validation/iter_config.json",
+    "config_sha256": "b608764c65051aa37a45289359300f59fb1640e5d7f56b0e24501e730e56a645",
+    "evaluation_contract_schema": "scpn-fusion-core.stress-evaluation-contract.v2",
+    "result_schema": "scpn-fusion-core.stress-campaign-results.v3"
+  },
+  "preregistered_request": {
+    "episodes_per_lane": 200,
+    "shot_duration_s": 30,
+    "master_seed": 42,
+    "measurement_noise_std_m": 0.01,
+    "actuator_delay_ms": 50.0,
+    "surrogate": false,
+    "required_scope": "controller_comparison",
+    "controllers_in_order": [
+      "PID",
+      "H-infinity",
+      "LQR",
+      "MPC",
+      "NMPC-JAX",
+      "LIF-NEF-SNN",
+      "Rust-PID"
+    ]
+  },
+  "pre_run_gates": [
+    {
+      "gate": "admissible_real_kernel_initial_state",
+      "status": "blocked",
+      "requirement": "The real FusionKernel initial equilibrium must be finite and within the predeclared 0.5 m radial and vertical error thresholds at time zero, or a physically justified initial-condition and disruption contract must be fixed before observing cohort outcomes.",
+      "current_evidence": "The schema-v3 wiring assessment records t_disruption_s=0.0 for every completed lane."
+    },
+    {
+      "gate": "calibrated_held_out_nmpc",
+      "status": "blocked",
+      "requirement": "NMPC-JAX must load an immutable calibrated dynamics artifact with training-data custody, a disjoint held-out validation split, calibration metrics, domain bounds and an exact artifact SHA-256.",
+      "current_evidence": "The current lane is unavailable because the random Xavier dynamics model has no trained artifact or held-out gate."
+    },
+    {
+      "gate": "complete_controller_registry",
+      "status": "blocked",
+      "requirement": "All seven preregistered lanes must be available; unavailable, failed or omitted lanes make the cohort incomplete.",
+      "current_evidence": "NMPC-JAX is unavailable in the schema-v3 wiring assessment."
+    },
+    {
+      "gate": "common_accuracy_contract",
+      "status": "implemented",
+      "requirement": "Every lane must use the same real plant, target, observations, full ordered coil-offset action, actuator dynamics, scenario and per-episode disturbance trace.",
+      "current_evidence": "The schema-v3 campaign binds these inputs through one evaluation-contract and campaign-identity digest."
+    },
+    {
+      "gate": "recovery_and_failure_custody",
+      "status": "implemented",
+      "requirement": "Atomic per-lane checkpoints, exact-seed resume, identity drift rejection, heartbeat metadata and complete traceback custody must remain enabled.",
+      "current_evidence": "The schema-v3 recovery contract and focused recovery tests provide this boundary."
+    },
+    {
+      "gate": "controlled_latency_environment",
+      "status": "required_at_execution",
+      "requirement": "Record the exact host and dependencies, use a dedicated unloaded host, declare CPU affinity and frequency-governor state, preserve cold-start separately, and derive reported policy timing from the same successful accuracy cohort.",
+      "current_evidence": "No controlled-host fresh cohort has been run."
+    },
+    {
+      "gate": "independent_reproduction",
+      "status": "required_after_primary_run",
+      "requirement": "Reproduce the frozen cohort identity on a second host; compare scientific metrics separately from host-dependent timing.",
+      "current_evidence": "No second-host schema-v3 cohort exists."
+    }
+  ],
+  "analysis_plan": {
+    "primary_endpoints": [
+      "disruption_rate",
+      "mean_abs_r_error_m",
+      "mean_abs_z_error_m"
+    ],
+    "secondary_endpoints": [
+      "tracking_reward_m",
+      "mean_magnetic_actuator_absolute_current_offset_integral_ma_s",
+      "mean_abs_coil_current_offset_tracking_error_ma",
+      "p50_p95_p99_control_policy_latency_us"
+    ],
+    "pairing": "Compare lanes episode-by-episode using the shared disturbance_trace_digest.",
+    "failure_policy": "Retain every failed and unavailable lane; do not impute zero error, zero latency or success.",
+    "promotion_policy": "No controller is promoted from latency alone, from a wiring-only surrogate run, or from an incomplete registry.",
+    "reporting": "Report point estimates, paired episode-level uncertainty intervals, raw failure counts and the complete predeclared cohort regardless of sign."
+  },
+  "execution_template": [
+    "export SCPN_ENABLE_HINF_RESEARCH=1",
+    "export PYTHONPATH=src",
+    ".venv/bin/python validation/stress_test_campaign.py --episodes 200 --shot-duration 30 --seed 42 --measurement-noise-std-m 0.01 --actuator-delay-ms 50 --enable-hinf-research --controllers PID,H-infinity,LQR,MPC,NMPC-JAX,LIF-NEF-SNN,Rust-PID --checkpoint-dir <durable-checkpoint-directory> --output <fresh-cohort-result.json>"
+  ],
+  "execution_authority": "Do not run until every pre-run gate is implemented and verified and adequate compute capacity is explicitly assigned."
+}

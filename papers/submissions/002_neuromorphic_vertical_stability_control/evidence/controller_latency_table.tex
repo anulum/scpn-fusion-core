@@ -1,0 +1,25 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — generated historical-latency table.
+\begin{table}[ht]
+\centering
+\caption{Historical legacy-harness latency output. The exact invocation episode count was not serialized; lanes are not accuracy-equivalent.}
+\label{tab:historical-latency}
+\begin{tabular}{lrr}
+\toprule
+Legacy lane & p50 ($\mu$s) & p95 ($\mu$s) \\
+\midrule
+PID & 3431.376 & 3624.250 \\
+Rust-PID & 0.523 & 0.670 \\
+H-infinity$^{\dagger}$ & 3227.145 & 3606.877 \\
+NMPC-JAX & 45450.300 & 49773.092 \\
+Nengo-SNN & 23573.109 & 24736.161 \\
+\bottomrule
+\end{tabular}
+\vspace{2pt}
+\parbox{0.92\linewidth}{\footnotesize $^{\dagger}$Invalidated stale scalar-plant calibration. All other rows remain historical orientation only.}
+\end{table}
