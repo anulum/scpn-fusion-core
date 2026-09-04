@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import sys
 import time
+import zlib
 from collections.abc import Sequence
 from urllib.error import URLError
 from urllib.request import Request, urlopen
@@ -40,9 +41,17 @@ EXECUTABLES = {
     "lean": "lake",
 }
 INTERSPHINX_INVENTORIES = {
-    "python": "https://docs.python.org/3/objects.inv",
-    "numpy": "https://numpy.org/doc/stable/objects.inv",
-    "scipy": "https://docs.scipy.org/doc/scipy/objects.inv",
+    "python": ("https://docs.python.org/3/objects.inv",),
+    "numpy": ("https://numpy.org/doc/stable/objects.inv",),
+    "scipy": (
+        "https://scipy.github.io/devdocs/objects.inv",
+        "https://docs.scipy.org/doc/scipy/objects.inv",
+    ),
+}
+INTERSPHINX_PROJECTS = {
+    "python": "Python",
+    "numpy": "NumPy",
+    "scipy": "SciPy",
 }
 INTERSPHINX_ATTEMPTS = 5
 INTERSPHINX_TIMEOUT_SECONDS = 20.0
@@ -84,31 +93,59 @@ def _run(
     )
 
 
-def _download_intersphinx_inventory(name: str, url: str, target: Path) -> bool:
-    """Fetch and validate one Sphinx inventory with bounded retries."""
-    request = Request(url, headers={"User-Agent": "SCPN-FUSION-CORE-docs/1"})
-    for attempt in range(1, INTERSPHINX_ATTEMPTS + 1):
-        try:
-            with urlopen(request, timeout=INTERSPHINX_TIMEOUT_SECONDS) as response:  # nosec B310
-                payload = response.read(INTERSPHINX_MAX_BYTES + 1)
-            if len(payload) > INTERSPHINX_MAX_BYTES:
-                raise ValueError("inventory exceeds the 16 MiB safety limit")
-            if not payload.startswith(b"# Sphinx inventory version "):
-                raise ValueError("response is not a Sphinx inventory")
-            target.parent.mkdir(parents=True, exist_ok=True)
-            temporary = target.with_suffix(f"{target.suffix}.tmp")
-            temporary.write_bytes(payload)
-            temporary.replace(target)
-            print(f"[native-docs] {name}: inventory ready at {target}")
-            return True
-        except (OSError, URLError, ValueError) as error:
-            print(
-                f"[native-docs] {name}: inventory attempt "
-                f"{attempt}/{INTERSPHINX_ATTEMPTS} failed: {error}",
-                file=sys.stderr,
-            )
-            if attempt < INTERSPHINX_ATTEMPTS:
-                time.sleep(min(2 ** (attempt - 1), 8))
+def _validate_intersphinx_inventory(name: str, payload: bytes) -> None:
+    """Reject malformed inventories and inventories for the wrong project."""
+    header = payload.split(b"\n", 4)
+    if len(header) != 5 or header[0] != b"# Sphinx inventory version 2":
+        raise ValueError("response is not a Sphinx v2 inventory")
+    project_prefix = b"# Project: "
+    if not header[1].startswith(project_prefix):
+        raise ValueError("inventory has no project identity")
+    project = header[1][len(project_prefix) :].decode("utf-8")
+    if project != INTERSPHINX_PROJECTS[name]:
+        raise ValueError(
+            f"inventory project is {project!r}, expected {INTERSPHINX_PROJECTS[name]!r}"
+        )
+    try:
+        records = zlib.decompress(header[4])
+    except zlib.error as error:
+        raise ValueError("inventory payload is not valid zlib data") from error
+    if not records.strip():
+        raise ValueError("inventory contains no object records")
+
+
+def _download_intersphinx_inventory(
+    name: str,
+    urls: Sequence[str],
+    target: Path,
+) -> bool:
+    """Fetch one validated Sphinx inventory from bounded official sources."""
+    for url in urls:
+        request = Request(url, headers={"User-Agent": "SCPN-FUSION-CORE-docs/1"})
+        for attempt in range(1, INTERSPHINX_ATTEMPTS + 1):
+            try:
+                with urlopen(  # nosec B310
+                    request,
+                    timeout=INTERSPHINX_TIMEOUT_SECONDS,
+                ) as response:
+                    payload = response.read(INTERSPHINX_MAX_BYTES + 1)
+                if len(payload) > INTERSPHINX_MAX_BYTES:
+                    raise ValueError("inventory exceeds the 16 MiB safety limit")
+                _validate_intersphinx_inventory(name, payload)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                temporary = target.with_suffix(f"{target.suffix}.tmp")
+                temporary.write_bytes(payload)
+                temporary.replace(target)
+                print(f"[native-docs] {name}: inventory ready from {url} at {target}")
+                return True
+            except (OSError, URLError, UnicodeDecodeError, ValueError) as error:
+                print(
+                    f"[native-docs] {name}: {url} attempt "
+                    f"{attempt}/{INTERSPHINX_ATTEMPTS} failed: {error}",
+                    file=sys.stderr,
+                )
+                if attempt < INTERSPHINX_ATTEMPTS:
+                    time.sleep(min(2 ** (attempt - 1), 8))
     return False
 
 
@@ -116,9 +153,9 @@ def _python_docs_environment() -> dict[str, str] | None:
     """Return an environment backed by locally validated inventories."""
     env = os.environ.copy()
     inventory_dir = REPO_ROOT / "docs" / "sphinx" / "_build" / "intersphinx"
-    for name, url in INTERSPHINX_INVENTORIES.items():
+    for name, urls in INTERSPHINX_INVENTORIES.items():
         target = inventory_dir / f"{name}.objects.inv"
-        if not _download_intersphinx_inventory(name, url, target):
+        if not _download_intersphinx_inventory(name, urls, target):
             return None
         env[f"SCPN_INTERSPHINX_{name.upper()}_INVENTORY"] = str(target)
     return env

@@ -10,10 +10,38 @@ from __future__ import annotations
 
 from pathlib import Path
 import subprocess
+import zlib
+from urllib.error import URLError
+from urllib.request import Request
 
 import pytest
 
 from tools import run_native_docs as native_docs
+
+
+class _InventoryResponse:
+    def __init__(self, payload: bytes) -> None:
+        self._payload = payload
+
+    def __enter__(self) -> _InventoryResponse:
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        return None
+
+    def read(self, _limit: int) -> bytes:
+        return self._payload
+
+
+def _inventory_payload(project: str) -> bytes:
+    records = b"example py:function 1 example.html Example\n"
+    return (
+        b"# Sphinx inventory version 2\n"
+        + f"# Project: {project}\n".encode()
+        + b"# Version: 1.0\n"
+        + b"# The remainder of this file is compressed using zlib.\n"
+        + zlib.compress(records)
+    )
 
 
 def test_requested_languages_expands_all_once_in_canonical_order() -> None:
@@ -78,6 +106,76 @@ def test_main_can_skip_only_unavailable_generators(
         == 0
     )
     assert calls == ["go"]
+
+
+def test_inventory_download_uses_validated_official_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+    payload = _inventory_payload("SciPy")
+
+    def fake_urlopen(request: Request, *, timeout: float) -> _InventoryResponse:
+        assert timeout == native_docs.INTERSPHINX_TIMEOUT_SECONDS
+        url = request.full_url
+        calls.append(url)
+        if url.endswith("primary/objects.inv"):
+            raise URLError("primary unavailable")
+        return _InventoryResponse(payload)
+
+    monkeypatch.setattr(native_docs, "urlopen", fake_urlopen)
+    monkeypatch.setattr(native_docs, "INTERSPHINX_ATTEMPTS", 1)
+    target = tmp_path / "scipy.objects.inv"
+
+    assert native_docs._download_intersphinx_inventory(
+        "scipy",
+        (
+            "https://example.invalid/primary/objects.inv",
+            "https://example.invalid/fallback/objects.inv",
+        ),
+        target,
+    )
+    assert calls == [
+        "https://example.invalid/primary/objects.inv",
+        "https://example.invalid/fallback/objects.inv",
+    ]
+    assert target.read_bytes() == payload
+
+
+def test_inventory_download_rejects_wrong_project_and_corrupt_payload(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    responses = iter(
+        (
+            _inventory_payload("NumPy"),
+            (
+                b"# Sphinx inventory version 2\n"
+                b"# Project: SciPy\n"
+                b"# Version: 1.0\n"
+                b"# The remainder of this file is compressed using zlib.\n"
+                b"not-zlib"
+            ),
+        )
+    )
+
+    def fake_urlopen(_request: Request, *, timeout: float) -> _InventoryResponse:
+        assert timeout == native_docs.INTERSPHINX_TIMEOUT_SECONDS
+        return _InventoryResponse(next(responses))
+
+    monkeypatch.setattr(native_docs, "urlopen", fake_urlopen)
+    monkeypatch.setattr(native_docs, "INTERSPHINX_ATTEMPTS", 1)
+    target = tmp_path / "scipy.objects.inv"
+
+    assert not native_docs._download_intersphinx_inventory(
+        "scipy",
+        (
+            "https://example.invalid/wrong-project.objects.inv",
+            "https://example.invalid/corrupt.objects.inv",
+        ),
+        target,
+    )
+    assert not target.exists()
 
 
 def test_rust_docs_deny_warnings_and_missing_docs(
