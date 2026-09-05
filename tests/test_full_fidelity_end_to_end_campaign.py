@@ -151,18 +151,18 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["freegs_public_example_cases"] >= 0
     assert report["freegs_public_example_vacuum_comparison_pass"] in {True, False}
     assert report["freegs_public_example_external_output_ready"] in {True, False}
-    assert report["free_boundary_strict_threshold_acceptance_ready"] is True
-    assert report["free_boundary_geometry_containment_ready"] is True
-    assert report["free_boundary_boundary_containment_metric_ready"] is True
-    assert report["free_boundary_grid_convergence_ready"] is True
-    assert report["free_boundary_coil_vacuum_sidecar_ready"] is True
-    assert report["free_boundary_same_case_public_reference_output_ready"] is True
+    assert report["free_boundary_strict_threshold_acceptance_ready"] is False
+    assert report["free_boundary_geometry_containment_ready"] is False
+    assert report["free_boundary_boundary_containment_metric_ready"] is False
+    assert report["free_boundary_grid_convergence_ready"] is False
+    assert report["free_boundary_coil_vacuum_sidecar_ready"] is False
+    assert report["free_boundary_same_case_public_reference_output_ready"] is False
     assert report["free_boundary_failed_threshold_check_count"] >= 0
-    assert report["free_boundary_strict_parity_blockers"] == []
     assert (
-        report["free_boundary_strict_parity_status"]
-        == "accepted_full_fidelity_free_boundary_parity"
+        "legacy_evidence_has_no_verified_field_custody"
+        in report["free_boundary_strict_parity_blockers"]
     )
+    assert report["free_boundary_strict_parity_status"] == "blocked_free_boundary_strict_parity"
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {
@@ -189,10 +189,10 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     } == {"FreeGS", "FreeGSNKE"}
     assert (
         lanes["free_boundary_equilibrium_strict_parity"]["status"]
-        == "accepted_full_fidelity_free_boundary_parity"
+        == "blocked_free_boundary_strict_parity"
     )
-    assert lanes["free_boundary_equilibrium_strict_parity"]["reference_cases_ready"] is True
-    assert lanes["free_boundary_equilibrium_strict_parity"]["next_required_evidence"] == []
+    assert lanes["free_boundary_equilibrium_strict_parity"]["reference_cases_ready"] is False
+    assert lanes["free_boundary_equilibrium_strict_parity"]["next_required_evidence"]
     for lane in lanes.values():
         assert lane["status"].startswith("blocked_") or lane["lane"] in {
             "aurora_strahl_grade_impurities",
@@ -224,14 +224,14 @@ def test_public_ledger_is_generated_from_campaign_lanes() -> None:
     assert ledger["acceptance_passed"] is False
     assert ledger["ledger_publication_ready"] is False
     assert ledger["campaign_report"] == "validation/reports/full_fidelity_end_to_end_campaign.json"
-    assert ledger["blocked_lane_count"] == 6
-    assert ledger["accepted_full_fidelity_lane_count"] == 1
+    assert ledger["blocked_lane_count"] == 7
+    assert ledger["accepted_full_fidelity_lane_count"] == 0
 
     rows = {row["lane"]: row for row in ledger["lanes"]}
     assert set(rows) == {lane["lane"] for lane in report["lanes"]}
-    assert rows["free_boundary_equilibrium_strict_parity"]["accepted_full_fidelity_lane"] is True
+    assert rows["free_boundary_equilibrium_strict_parity"]["accepted_full_fidelity_lane"] is False
     assert (
-        rows["free_boundary_equilibrium_strict_parity"]["blocked_for_public_full_fidelity"] is False
+        rows["free_boundary_equilibrium_strict_parity"]["blocked_for_public_full_fidelity"] is True
     )
     assert rows["gene_cgyro_gs2_nonlinear_gk_parity"]["blocked_for_public_full_fidelity"] is True
     assert rows["gene_cgyro_gs2_nonlinear_gk_parity"]["public_source_licenses_ready"] is False
@@ -273,7 +273,7 @@ def test_public_ledger_markdown_names_fail_closed_boundary() -> None:
     assert "# Full-Fidelity Validation Ledger" in rendered
     assert "publication readiness remains false" in rendered
     assert "`blocked_missing_external_output_manifest`" in rendered
-    assert "`accepted_full_fidelity_free_boundary_parity`" in rendered
+    assert "`blocked_free_boundary_strict_parity`" in rendered
 
 
 def test_public_ledger_source_report_records_fail_closed_missing_and_invalid_inputs() -> None:
@@ -400,6 +400,64 @@ def test_acceptance_surface_and_main_fail_closed_paths(
 
     assert campaign.main() == 0
     assert written == [{"schema": "fixture", "status": "not_full_fidelity"}]
+
+
+@pytest.mark.parametrize("schema_version", ["v1", "v2"])
+def test_campaign_recomputes_strict_admission_from_source_reports(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, schema_version: str
+) -> None:
+    """Neither historical nor relabelled cached acceptance promotes the real lane."""
+    cached = json.loads(campaign.FREE_BOUNDARY_STRICT_PARITY.read_text(encoding="utf-8"))
+    cached["schema"] = f"free-boundary-strict-parity-benchmark.{schema_version}"
+    cached["accepted_full_fidelity"] = True
+    cached["status"] = "accepted_full_fidelity_free_boundary_parity"
+    cached["checks"] = dict.fromkeys(cached["checks"], True)
+    cached["blockers"] = []
+    path = tmp_path / "strict.json"
+    path.write_text(json.dumps(cached), encoding="utf-8")
+    monkeypatch.setattr(campaign, "FREE_BOUNDARY_STRICT_PARITY", path)
+
+    report = run_campaign()
+    lane = next(row for row in report["lanes"] if row["surface"] == "free_boundary_equilibrium")
+    assert lane["reference_cases_ready"] is False
+    assert lane["status"] == "blocked_free_boundary_strict_parity"
+    assert "legacy_evidence_has_no_verified_field_custody" in lane["next_required_evidence"]
+    assert report["free_boundary_grid_convergence_ready"] is False
+    assert json.loads(path.read_text(encoding="utf-8")) == cached
+
+
+def test_campaign_missing_strict_report_cannot_fall_back_to_producer_readiness(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The actual producer summary cannot replace a missing admission report."""
+    monkeypatch.setattr(campaign, "FREE_BOUNDARY_STRICT_PARITY", tmp_path / "absent.json")
+    report = run_campaign()
+    assert report["free_boundary_strict_parity_status"] == "not_run"
+    assert report["free_boundary_strict_parity_blockers"] == ["strict_parity_report_missing"]
+    assert report["free_boundary_strict_threshold_acceptance_ready"] is False
+    assert report["free_boundary_geometry_containment_ready"] is False
+    assert report["free_boundary_boundary_containment_metric_ready"] is False
+    assert report["free_boundary_grid_convergence_ready"] is False
+    assert report["free_boundary_coil_vacuum_sidecar_ready"] is False
+    assert report["free_boundary_same_case_public_reference_output_ready"] is False
+
+
+def test_campaign_strict_diagnostics_follow_changed_source_bytes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A stale cache cannot mask a newly failing metric in the real source report."""
+    baseline = run_campaign()
+    source = json.loads(campaign.FREEGS_PUBLIC_RECONSTRUCTION.read_text(encoding="utf-8"))
+    strict = source["strict_free_boundary_parity_evidence"]
+    strict["cases"][0]["threshold_checks"][0]["value"] = 1e9
+    path = tmp_path / "reconstruction.json"
+    path.write_text(json.dumps(source), encoding="utf-8")
+    monkeypatch.setattr(campaign, "FREEGS_PUBLIC_RECONSTRUCTION", path)
+    report = run_campaign()
+    assert report["free_boundary_failed_threshold_check_count"] == (
+        baseline["free_boundary_failed_threshold_check_count"] + 1
+    )
+    assert report["free_boundary_strict_threshold_acceptance_ready"] is False
 
 
 def test_integrated_campaign_keeps_reference_parity_fail_closed() -> None:

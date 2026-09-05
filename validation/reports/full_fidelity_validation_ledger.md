@@ -7,14 +7,14 @@ It is fail-closed: publication readiness remains false while any full-fidelity l
 - Status: `not_full_fidelity`
 - Acceptance passed: `False`
 - Ledger publication ready: `False`
-- Blocked lane count: `6`
-- Accepted full-fidelity lane count: `1`
+- Blocked lane count: `7`
+- Accepted full-fidelity lane count: `0`
 
 ## Source Reports
 
 | Report | Exists | SHA-256 | Schema | Status |
 | --- | ---: | --- | --- | --- |
-| `validation/reports/full_fidelity_end_to_end_campaign.json` | `True` | `c12b4ca48c15a825e41013ad5965af75225a2c52558ed834691c3d89fbe00dbf` | `full-fidelity-end-to-end-campaign.v1` | `not_full_fidelity` |
+| `validation/reports/full_fidelity_end_to_end_campaign.json` | `True` | `149444f07332d10576fc59a2024908f592fc06f78912dbf82407b70f505a268c` | `full-fidelity-end-to-end-campaign.v1` | `not_full_fidelity` |
 | `validation/reports/full_fidelity_acceptance_benchmark.json` | `True` | `a1c19c3285470d16c3cb1eab4dcbf5b057e7b0f947cf32135578a7f0332af297` | `full-fidelity-acceptance.v1` | `n/a` |
 | `validation/reports/sas_dataset_readiness.json` | `True` | `9cb6fd32422a3915e2e6f52663e7769d0cd8198fd71edbbee865ee6d80b7af0c` | `sas-dataset-readiness-benchmark.v1` | `blocked_missing_required_external_parity_datasets` |
 | `validation/reports/full_fidelity_public_source_downloads.json` | `True` | `bf11d4c66704e4da2275cb5c0df6c357dbdd7e39e273ea699654656008a465b1` | `full-fidelity-public-source-downloads.v1` | `n/a` |
@@ -27,7 +27,7 @@ It is fail-closed: publication readiness remains false while any full-fidelity l
 | `validation/reports/production_decomposition_contract.json` | `True` | `5b663a3e3ad26f0149950ef54640f14763cc837f528d6f6d9c0834280336b345` | `production-decomposition-contract.v1` | `blocked_local_decomposition_ready_missing_distributed_runtime_scaling` |
 | `validation/reports/free_boundary_public_machine_metadata_inventory.json` | `True` | `e0da36d9f1016abb0dbce77d313032d2710e325d3eb922d1908a9fb582c7e7e1` | `free-boundary-public-machine-metadata-inventory-report.v1` | `accepted_public_machine_metadata_with_same_case_free_boundary_reference` |
 | `validation/reports/freegs_public_example_reconstruction.json` | `True` | `73edc6c0ebc1d0acc249dd8d13dc14a668e3ecd3419e336e49397b322af663ed` | `freegs-public-example-reconstruction-report.v1` | `accepted_public_freegs_same_case_free_boundary_parity` |
-| `validation/reports/free_boundary_strict_parity_benchmark.json` | `True` | `eae3b1065be4fab7b74803a05ef173369a772c3589d2e636980581f6a9c390f3` | `free-boundary-strict-parity-benchmark.v1` | `accepted_full_fidelity_free_boundary_parity` |
+| `validation/reports/free_boundary_strict_parity_benchmark.json` | `True` | `a351402424b1fda016b541b247664fd781fd60b97923301c2f07394816938d9b` | `free-boundary-strict-parity-benchmark.v2` | `blocked_free_boundary_strict_parity` |
 
 ## Lanes
 
@@ -39,4 +39,4 @@ It is fail-closed: publication readiness remains false while any full-fidelity l
 | production_scale_decomposition | `blocked_local_decomposition_ready_missing_distributed_runtime_scaling` | `False` | `True` | cluster MPI scaling report over the declared rank tiles<br>multi-GPU distributed execution path over the declared rank tiles<br>large-grid cluster/GPU wall-time scaling report<br>same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes<br>hardware-specific multi-rank throughput and efficiency thresholds<br>accepted distributed scaling gate over required rank counts<br>accepted distributed run manifests with reproducibility fields and checksums | `False` |
 | dream_grade_runaway_electrons | `blocked_missing_public_dream_artifacts` | `False` | `True` | compiled DREAM iface/dreami same-case output<br>native coupled momentum-pitch-radius Fokker-Planck operator<br>radial transport operator on evolved radius grid<br>full pitch-angle scattering operator on evolved pitch grid<br>DREAM partial-screening operator parity<br>DREAM bremsstrahlung and synchrotron loss parity<br>distribution, current, and growth-rate threshold comparison against DREAM | `False` |
 | aurora_strahl_grade_impurities | `accepted_native_aurora_effective_transport_closure_thresholds` | `False` | `True` | independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay | `False` |
-| free_boundary_equilibrium_strict_parity | `accepted_full_fidelity_free_boundary_parity` | `True` | `False` | none | `False` |
+| free_boundary_equilibrium_strict_parity | `blocked_free_boundary_strict_parity` | `False` | `True` | legacy_evidence_has_no_verified_field_custody<br>source_example_bytes_unverified | `False` |

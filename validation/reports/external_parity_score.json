@@ -68,37 +68,39 @@
       "status": "blocked_same_physics_thresholds"
     },
     {
-      "blocked_requirements": [],
+      "blocked_requirements": [
+        "non_admitting_strict_parity_report"
+      ],
       "external_code": "FreeGS/FreeGSNKE",
       "lane": "freegsnke_free_boundary",
       "parity_components": [
         {
           "component": "free_boundary_accepted_full_fidelity",
-          "evidence": "Strict parity gate accepts the current free-boundary lane.",
-          "ready": true
+          "evidence": "Summary-only strict parity reports cannot establish scientific admission.",
+          "ready": false
         },
         {
           "component": "external_nonlinear_output",
           "evidence": "Same-case external nonlinear output is ready.",
-          "ready": true
+          "ready": false
         },
         {
           "component": "native_same_case_profile_source",
           "evidence": "Native same-case profile-source comparison is ready.",
-          "ready": true
+          "ready": false
         },
         {
           "component": "strict_threshold_acceptance",
           "evidence": "Strict threshold acceptance is ready.",
-          "ready": true
+          "ready": false
         },
         {
           "component": "public_machine_metadata",
           "evidence": "Public machine metadata is ready.",
-          "ready": true
+          "ready": false
         }
       ],
-      "parity_score": 1.0,
+      "parity_score": 0.0,
       "reproducibility_components": [
         {
           "component": "freegs_public_reconstruction_report",
@@ -123,15 +125,16 @@
         {
           "component": "strict_parity_grid_convergence",
           "evidence": "Strict parity report records grid-convergence readiness.",
-          "ready": true
+          "ready": false
         }
       ],
-      "reproducibility_score": 1.0,
-      "status": "accepted_external_parity"
+      "reproducibility_score": 0.8,
+      "status": "blocked_free_boundary_external_parity",
+      "strict_parity_evidence_classification": "non_admitting_summary"
     }
   ],
-  "parity_score": 0.6,
-  "reproducibility_score": 1.0,
+  "parity_score": 0.1,
+  "reproducibility_score": 0.9,
   "schema": "scpn-fusion-core.external-parity-score.v1",
   "scoring": {
     "claim_boundary": "Scores summarize current report readiness. They do not promote a lane whose underlying fail-closed report remains blocked.",
@@ -141,17 +144,17 @@
   },
   "source_reports": [
     {
-      "file_sha256": "4a7c2f1fca279ea55967e2acac33a1d098ed4ce524ef7ecd6da2326fb4595f4c",
+      "file_sha256": "392f8b42dfcd8527c62ec40eb366ac3ef854eb76f1d20a78486ae39948eb537e",
       "path": "validation/reports/torax_real_parity.json",
-      "payload_sha256": "ddc3f017191168b4575d268d33929f891bc5a285dfba51b19ab9b1ec74aeb7c8",
+      "payload_sha256": "14344c947c5287eadeee1705c03a15529a26f1bb8dc62ef66840594b6e74f60d",
       "report_id": "torax_real_parity",
       "schema": "scpn-fusion-core.torax-real-parity.v1",
       "status": "real_torax_reference_acquired_divergence_documented"
     },
     {
-      "file_sha256": "2c9a2d0216c07dd3756bd9441a505a52c8e5bf9cb62ba8f7b45b8250d63701dd",
+      "file_sha256": "4de4e2cad4b0f2413a4b68f5a332615b3507fddb165aa86b4339b9a5f8c269d2",
       "path": "validation/reports/torax_same_physics_config_study.json",
-      "payload_sha256": "8220eaa73be0755e2fd1ea51a93c0a82714ffb58454079ba9f9ed39ee67dcf22",
+      "payload_sha256": "826f7c13afae4d2ed477c40a96b25deecbbbe8faf0c42a1097c11a9314d71061",
       "report_id": "torax_same_physics_config_study",
       "schema": "scpn-fusion-core.torax-same-physics-config-study.v1",
       "status": "same_initial_profile_config_ready_thresholds_blocked"
@@ -165,12 +168,12 @@
       "status": "torax_core_profiles_imas_fixture_ready"
     },
     {
-      "file_sha256": "eae3b1065be4fab7b74803a05ef173369a772c3589d2e636980581f6a9c390f3",
+      "file_sha256": "a351402424b1fda016b541b247664fd781fd60b97923301c2f07394816938d9b",
       "path": "validation/reports/free_boundary_strict_parity_benchmark.json",
-      "payload_sha256": "0633bfd9d0ca8d189e14b8220c2ae756fbd52b03b97657c7ede091014aa997be",
+      "payload_sha256": "e7e54de2d1ee4eed215f5dcc4d2d82ade8484186142bcc8cde16aac8264091b5",
       "report_id": "free_boundary_strict_parity",
-      "schema": "free-boundary-strict-parity-benchmark.v1",
-      "status": "accepted_full_fidelity_free_boundary_parity"
+      "schema": "free-boundary-strict-parity-benchmark.v2",
+      "status": "blocked_free_boundary_strict_parity"
     },
     {
       "file_sha256": "73edc6c0ebc1d0acc249dd8d13dc14a668e3ecd3419e336e49397b322af663ed",

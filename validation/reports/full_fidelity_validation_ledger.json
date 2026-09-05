@@ -1,7 +1,7 @@
 {
   "acceptance_passed": false,
-  "accepted_full_fidelity_lane_count": 1,
-  "blocked_lane_count": 6,
+  "accepted_full_fidelity_lane_count": 0,
+  "blocked_lane_count": 7,
   "campaign_report": "validation/reports/full_fidelity_end_to_end_campaign.json",
   "campaign_schema": "full-fidelity-end-to-end-campaign.v1",
   "lanes": [
@@ -242,12 +242,15 @@
       "surface": "impurity_transport"
     },
     {
-      "accepted_full_fidelity_lane": true,
-      "blocked_for_public_full_fidelity": false,
+      "accepted_full_fidelity_lane": false,
+      "blocked_for_public_full_fidelity": true,
       "lane": "free_boundary_equilibrium_strict_parity",
       "locally_actionable_contract_ready": true,
-      "missing_evidence": [],
-      "missing_evidence_count": 0,
+      "missing_evidence": [
+        "legacy_evidence_has_no_verified_field_custody",
+        "source_example_bytes_unverified"
+      ],
+      "missing_evidence_count": 2,
       "public_source_count": 2,
       "public_source_licenses_ready": false,
       "public_sources": [
@@ -277,8 +280,8 @@
           "source_id": "freegsnke_github"
         }
       ],
-      "reference_cases_ready": true,
-      "status": "accepted_full_fidelity_free_boundary_parity",
+      "reference_cases_ready": false,
+      "status": "blocked_free_boundary_strict_parity",
       "surface": "free_boundary_equilibrium"
     }
   ],
@@ -293,7 +296,7 @@
       "exists": true,
       "path": "validation/reports/full_fidelity_end_to_end_campaign.json",
       "schema": "full-fidelity-end-to-end-campaign.v1",
-      "sha256": "c12b4ca48c15a825e41013ad5965af75225a2c52558ed834691c3d89fbe00dbf",
+      "sha256": "149444f07332d10576fc59a2024908f592fc06f78912dbf82407b70f505a268c",
       "status": "not_full_fidelity"
     },
     {
@@ -418,13 +421,13 @@
     },
     {
       "acceptance_passed": null,
-      "accepted_full_fidelity": true,
+      "accepted_full_fidelity": false,
       "accepted_full_fidelity_ready": null,
       "exists": true,
       "path": "validation/reports/free_boundary_strict_parity_benchmark.json",
-      "schema": "free-boundary-strict-parity-benchmark.v1",
-      "sha256": "eae3b1065be4fab7b74803a05ef173369a772c3589d2e636980581f6a9c390f3",
-      "status": "accepted_full_fidelity_free_boundary_parity"
+      "schema": "free-boundary-strict-parity-benchmark.v2",
+      "sha256": "a351402424b1fda016b541b247664fd781fd60b97923301c2f07394816938d9b",
+      "status": "blocked_free_boundary_strict_parity"
     }
   ],
   "status": "not_full_fidelity"

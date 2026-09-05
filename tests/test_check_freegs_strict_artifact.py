@@ -4,6 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — FreeGS artifact guard tests
 """Tests for tools/check_freegs_strict_artifact.py."""
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ import json
 import runpy
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -87,31 +89,13 @@ def _strict_report(**overrides: object) -> dict[str, object]:
     return report
 
 
-def _public_example_report(**overrides: object) -> dict[str, object]:
-    """Return a minimal passing fresh public-example reconstruction payload."""
-    report: dict[str, object] = {
-        "schema": "freegs-public-example-reconstruction-report.v1",
-        "status": "accepted_public_freegs_same_case_free_boundary_parity",
-        "report_generation_mode": "external_backend_reconstruction",
-        "freegs_backend_available": True,
-        "freegs_version": "0.8.2",
-        "case_count": 1,
-        "external_nonlinear_output_ready": True,
-        "strict_free_boundary_parity_evidence": {
-            "accepted_full_fidelity": True,
-            "blocking_requirements": [],
-            "failed_threshold_check_count": 0,
-            "grid_convergence_ready": True,
-            "strict_threshold_acceptance_ready": True,
-            "cases": [
-                {
-                    "external_nonlinear_output_ready": True,
-                    "native_same_case_profile_source_ready": True,
-                    "strict_threshold_acceptance_ready": True,
-                }
-            ],
-        },
-    }
+def _public_example_report(**overrides: object) -> dict[str, Any]:
+    """Read the real historical summary without manufacturing positive evidence."""
+    report: dict[str, Any] = json.loads(
+        (ROOT / "validation/reports/freegs_public_example_reconstruction.json").read_text(
+            encoding="utf-8"
+        )
+    )
     report.update(overrides)
     return report
 
@@ -131,17 +115,17 @@ def test_evaluate_passes_for_strict_freegs_contract() -> None:
     assert summary["failed_checks"] == []
 
 
-def test_evaluate_passes_for_fresh_public_example_contract() -> None:
-    """Evaluator accepts fresh FreeGS same-case evidence only when every gate passes."""
-    summary = checker.evaluate(_public_example_report())
+def test_evaluate_refuses_legacy_despite_fresh_public_example_label() -> None:
+    """Changing a historical report's freshness label cannot supply missing arrays."""
+    summary = checker.evaluate(
+        _public_example_report(report_generation_mode="external_backend_reconstruction")
+    )
 
-    assert summary["overall_pass"] is True
-    assert summary["failed_checks"] == []
-    assert summary["case_count"] == 1
+    assert summary["overall_pass"] is False
+    assert "verified_evidence_contract" in summary["failed_checks"]
+    assert summary["evidence_classification"] == "legacy_non_admitting"
+    assert summary["case_count"] == 2
     assert summary["report_schema"] == "freegs-public-example-reconstruction-report.v1"
-    assert summary["report_status"] == "accepted_public_freegs_same_case_free_boundary_parity"
-    assert summary["freegs_version"] == "0.8.2"
-    assert summary["blocking_requirements"] == []
 
 
 def test_evaluate_fails_closed_for_incomplete_public_example_contract() -> None:
@@ -155,7 +139,7 @@ def test_evaluate_fails_closed_for_incomplete_public_example_contract() -> None:
     )
 
     assert summary["overall_pass"] is False
-    assert set(summary["failed_checks"]) == {
+    assert set(summary["failed_checks"]) >= {
         "case_count_matches",
         "external_nonlinear_output_ready",
         "strict_parity_accepted",
@@ -172,7 +156,8 @@ def test_evaluate_rejects_tracked_public_example_fallback() -> None:
     )
 
     assert summary["overall_pass"] is False
-    assert summary["failed_checks"] == ["fresh_external_backend_reconstruction"]
+    assert "fresh_external_backend_reconstruction" in summary["failed_checks"]
+    assert "verified_evidence_contract" in summary["failed_checks"]
 
 
 def test_evaluate_rejects_public_example_case_and_blocker_drift() -> None:
@@ -377,7 +362,7 @@ def test_public_example_runner_delegates_without_canonical_writes(
 def test_main_runs_and_writes_fresh_public_example_report(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Live mode writes ephemeral evidence and its passing guard summary."""
+    """Runner plumbing cannot promote returned legacy evidence into an accepted result."""
     report_path = tmp_path / "freegs.json"
     summary_path = tmp_path / "summary.json"
     monkeypatch.setattr(checker, "_run_public_example_report", _public_example_report)
@@ -392,9 +377,60 @@ def test_main_runs_and_writes_fresh_public_example_report(
         ]
     )
 
-    assert rc == 0
+    assert rc == 1
     assert json.loads(report_path.read_text(encoding="utf-8")) == _public_example_report()
-    assert json.loads(summary_path.read_text(encoding="utf-8"))["overall_pass"] is True
+    assert json.loads(summary_path.read_text(encoding="utf-8"))["overall_pass"] is False
+
+
+@pytest.mark.parametrize("schema", [None, "strict-free-boundary-parity-evidence.v2", "unknown"])
+def test_public_example_schema_relabelling_cannot_restore_admission(schema: str | None) -> None:
+    """Unsupported schema labels do not verify absent evidence bytes."""
+    report = _public_example_report(report_generation_mode="external_backend_reconstruction")
+    report["strict_free_boundary_parity_evidence"]["schema"] = schema
+    summary = checker.evaluate(report)
+    assert summary["overall_pass"] is False
+    assert summary["evidence_classification"] == "unsupported_evidence_non_admitting"
+
+
+def test_cli_refuses_real_legacy_report_without_rewriting_input(tmp_path: Path) -> None:
+    """Run the production file-reader boundary against preserved historical bytes."""
+    source = ROOT / "validation/reports/freegs_public_example_reconstruction.json"
+    before = source.read_bytes()
+    output = tmp_path / "summary.json"
+    assert checker.main(["--report", str(source), "--summary-json", str(output)]) == 1
+    assert source.read_bytes() == before
+    assert json.loads(output.read_text())["evidence_classification"] == "legacy_non_admitting"
+
+
+@pytest.mark.parametrize("rows", [None, {}, "invalid", [None]])
+def test_public_example_malformed_cases_produce_failure_summary(rows: object) -> None:
+    """Malformed historical case collections cannot crash or pass the reader."""
+    report = _public_example_report()
+    report["strict_free_boundary_parity_evidence"]["cases"] = rows
+    summary = checker.evaluate(report)
+    assert summary["overall_pass"] is False
+    assert "case_collection_valid" in summary["failed_checks"]
+
+
+@pytest.mark.parametrize("value", [None, "invalid", False])
+def test_public_example_counter_types_are_not_coerced(value: object) -> None:
+    """Null, text and bool counters remain explicit diagnostic failures."""
+    report = _public_example_report()
+    report["case_count"] = value
+    report["strict_free_boundary_parity_evidence"]["failed_threshold_check_count"] = value
+    summary = checker.evaluate(report)
+    assert summary["overall_pass"] is False
+    assert "case_count_matches" in summary["failed_checks"]
+    assert "failed_threshold_check_count_zero" in summary["failed_checks"]
+
+
+def test_public_example_unknown_outer_schema_stays_in_nonadmitting_lane() -> None:
+    """Relabelling the outer report cannot dispatch strict evidence to a different gate."""
+    report = _public_example_report(schema="unknown")
+    summary = checker.evaluate(report)
+    assert summary["overall_pass"] is False
+    assert "public_example_schema" in summary["failed_checks"]
+    assert "verified_evidence_contract" in summary["failed_checks"]
 
 
 def test_main_writes_summary_json(tmp_path: Path) -> None:

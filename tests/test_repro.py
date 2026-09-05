@@ -21,6 +21,33 @@ import scpn_fusion.repro as repro
 import validation.full_fidelity_end_to_end_campaign as campaign_mod
 
 
+def test_real_reproduction_retains_strict_parity_refusal(tmp_path: Path) -> None:
+    """Exercise the real campaign-to-ledger-to-reproduction artifact chain."""
+    json_output = tmp_path / "reproduction.json"
+    markdown_output = tmp_path / "reproduction.md"
+    report = repro.run_full_reproduction(json_output=json_output, markdown_output=markdown_output)
+    persisted = json.loads(json_output.read_text(encoding="utf-8"))
+    assert persisted == report
+    lane = next(
+        row for row in report["lanes"] if row["lane"] == "free_boundary_equilibrium_strict_parity"
+    )
+    assert lane["accepted_full_fidelity_lane"] is False
+    assert lane["blocked_for_public_full_fidelity"] is True
+    artifact = next(
+        row
+        for row in report["artifacts"]
+        if row["path"] == "validation/reports/free_boundary_strict_parity_benchmark.json"
+    )
+    assert artifact["schema"] == "free-boundary-strict-parity-benchmark.v2"
+    assert (
+        artifact["sha256"]
+        == hashlib.sha256(campaign_mod.FREE_BOUNDARY_STRICT_PARITY.read_bytes()).hexdigest()
+    )
+    assert "accepted_full_fidelity_free_boundary_parity" not in markdown_output.read_text(
+        encoding="utf-8"
+    )
+
+
 def _ledger_fixture() -> dict[str, Any]:
     return {
         "schema": "full-fidelity-validation-ledger.v1",

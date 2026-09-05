@@ -27,10 +27,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import subprocess
 import sys
-from typing import Any
+from typing import Any, TypeGuard
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "validation" / "reports"
@@ -42,10 +43,23 @@ DEFAULT_JSON_REPORT = REPORT_DIR / "free_boundary_strict_parity_benchmark.json"
 DEFAULT_MD_REPORT = REPORT_DIR / "free_boundary_strict_parity_benchmark.md"
 
 
+def _finite_number(value: object) -> TypeGuard[int | float]:
+    """Reject booleans and nonfinite or unrepresentable JSON numbers."""
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
 def _rel(path: Path) -> str:
     """Return a repository-relative display path."""
     resolved = path if path.is_absolute() else ROOT / path
-    return str(resolved.relative_to(ROOT))
+    try:
+        return str(resolved.relative_to(ROOT))
+    except ValueError:
+        return str(resolved)
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -65,14 +79,6 @@ def _sha256_json(payload: Any) -> str:
         ensure_ascii=True,
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
-
-
-def _sha256_file(path: Path) -> str | None:
-    """Return the SHA-256 digest for `path`, or None when the file is absent."""
-    resolved = path if path.is_absolute() else ROOT / path
-    if not resolved.exists():
-        return None
-    return hashlib.sha256(resolved.read_bytes()).hexdigest()
 
 
 def _source_commit() -> str:
@@ -96,98 +102,181 @@ def _require_bool(data: dict[str, Any], key: str) -> bool:
 
 
 def _source_record(artifact_id: str, path: Path, payload: dict[str, Any]) -> dict[str, Any]:
-    """Build provenance and checksum metadata for an input report artifact."""
+    """Bind parsed report content to one file snapshot, not to absent field arrays."""
+    resolved = path if path.is_absolute() else ROOT / path
+    payload_digest = _sha256_json(payload)
+    file_digest: str | None = None
+    matches = False
+    try:
+        raw = resolved.read_bytes()
+    except OSError:
+        raw = None
+    if raw is not None:
+        file_digest = hashlib.sha256(raw).hexdigest()
+        try:
+            disk_payload = json.loads(raw)
+        except (ValueError, UnicodeDecodeError):
+            disk_payload = None
+        matches = isinstance(disk_payload, dict) and _sha256_json(disk_payload) == payload_digest
     return {
         "artifact_id": artifact_id,
         "path": _rel(path),
-        "payload_sha256": _sha256_json(payload),
-        "file_sha256": _sha256_file(path),
+        "payload_sha256": payload_digest,
+        "file_sha256": file_digest,
+        "payload_matches_file": matches,
         "schema": payload.get("schema"),
         "status": payload.get("status"),
     }
 
 
-def _source_checksums(
-    freegs_report: dict[str, Any],
-    machine_metadata_report: dict[str, Any],
-    *,
-    freegs_report_path: Path,
-    machine_metadata_report_path: Path,
-) -> dict[str, str | None]:
-    """Return stable input payload and file checksum fields."""
-    return {
-        "freegs_public_example_reconstruction_payload_sha256": _sha256_json(freegs_report),
-        "freegs_public_example_reconstruction_file_sha256": _sha256_file(freegs_report_path),
-        "free_boundary_public_machine_metadata_inventory_payload_sha256": _sha256_json(
-            machine_metadata_report
-        ),
-        "free_boundary_public_machine_metadata_inventory_file_sha256": _sha256_file(
-            machine_metadata_report_path
-        ),
+def _identity_cases(section: object) -> dict[str, dict[str, Any]]:
+    """Index a report section without silently discarding malformed identities."""
+    if not isinstance(section, dict) or not isinstance(section.get("cases"), list):
+        raise ValueError("identity section requires a cases list")
+    indexed: dict[str, dict[str, Any]] = {}
+    for case in section["cases"]:
+        if not isinstance(case, dict):
+            raise ValueError("identity cases must be objects")
+        case_id = case.get("case_id")
+        if not isinstance(case_id, str) or not case_id.strip() or case_id in indexed:
+            raise ValueError("identity cases require unique nonempty case_id values")
+        indexed[case_id] = case
+    return indexed
+
+
+def _case_identity_errors(freegs: dict[str, Any], metadata: dict[str, Any]) -> list[str]:
+    """Compare reported cohort, source and configuration identity, not array custody."""
+    from validation.free_boundary_vacuum_evidence import evaluate_vacuum_evidence
+
+    strict = freegs.get("strict_free_boundary_parity_evidence")
+    strict = strict if isinstance(strict, dict) else {}
+    sections = {
+        "reconstruction": freegs,
+        "strict": strict,
+        "reference": metadata.get("same_case_public_reference_output"),
+        "grid": strict.get("grid_convergence_evidence"),
+        "geometry": strict.get("geometry_containment_evidence"),
     }
+    indexed: dict[str, dict[str, dict[str, Any]]] = {}
+    errors: list[str] = []
+    for name, section in sections.items():
+        try:
+            indexed[name] = _identity_cases(section)
+        except ValueError:
+            errors.append(f"{name}_case_identity_malformed")
+            indexed[name] = {}
+    baseline = indexed["reconstruction"]
+    if not baseline:
+        errors.append("reconstruction_cases_empty")
+    fields_by_section = {
+        "strict": ("machine_class", "example_path", "example_sha256"),
+        "reference": ("machine_class", "example_path", "example_sha256"),
+        "grid": ("machine_class",),
+        "geometry": (),
+    }
+    for name, fields in fields_by_section.items():
+        candidates = indexed[name]
+        if set(candidates) != set(baseline):
+            errors.append(f"{name}_case_membership_mismatch")
+        for case_id in sorted(set(candidates) & set(baseline)):
+            sidecar = baseline[case_id].get("vacuum_green_function_comparison")
+            if name == "strict":
+                if _sha256_json(sidecar) != _sha256_json(
+                    candidates[case_id].get("vacuum_green_function_comparison")
+                ):
+                    errors.append(f"strict:{case_id}:vacuum_sidecar_mismatch")
+                vacuum_diagnostics = evaluate_vacuum_evidence(sidecar)
+                if not vacuum_diagnostics["structure_consistent"]:
+                    errors.append(f"strict:{case_id}:vacuum_sidecar_structure")
+                if not vacuum_diagnostics["metrics_consistent"]:
+                    errors.append(f"strict:{case_id}:vacuum_numerics_inconsistent")
+            if name == "reference":
+                coils = sidecar.get("coils") if isinstance(sidecar, dict) else None
+                count = candidates[case_id].get("coil_count")
+                if not isinstance(coils, list) or type(count) is not int or count != len(coils):
+                    errors.append(f"reference:{case_id}:coil_count_mismatch")
+            for field in fields:
+                value = baseline[case_id].get(field)
+                if (
+                    not isinstance(value, str)
+                    or not value
+                    or candidates[case_id].get(field) != value
+                ):
+                    errors.append(f"{name}:{case_id}:{field}_mismatch")
+            if name == "strict":
+                source = baseline[case_id].get("source_contract")
+                candidate = candidates[case_id].get("source_contract")
+                if (
+                    not isinstance(source, dict)
+                    or not source
+                    or _sha256_json(source) != _sha256_json(candidate)
+                ):
+                    errors.append(f"strict:{case_id}:source_contract_mismatch")
+            if name == "geometry":
+                solve = baseline[case_id].get("nonlinear_solve_attempt")
+                comparison = (
+                    solve.get("native_same_case_profile_source_comparison")
+                    if isinstance(solve, dict)
+                    else None
+                )
+                if not isinstance(comparison, dict):
+                    errors.append(f"geometry:{case_id}:comparison_missing")
+                    continue
+                expected = {
+                    "external_axis": [
+                        comparison.get("external_axis_r_m"),
+                        comparison.get("external_axis_z_m"),
+                    ],
+                    "native_axis": [
+                        comparison.get("native_axis_r_m"),
+                        comparison.get("native_axis_z_m"),
+                    ],
+                    "boundary_containment_fraction": comparison.get(
+                        "boundary_containment_fraction"
+                    ),
+                }
+                for field, value in expected.items():
+                    values = value if isinstance(value, list) else [value]
+                    if not all(_finite_number(item) for item in values) or _sha256_json(
+                        value
+                    ) != _sha256_json(candidates[case_id].get(field)):
+                        errors.append(f"geometry:{case_id}:{field}_mismatch")
+    return errors
 
 
-def _threshold_case_rows(strict: dict[str, Any]) -> list[dict[str, Any]]:
-    """Extract per-case strict threshold rows from the FreeGS report."""
-    rows: list[dict[str, Any]] = []
-    for case in strict.get("cases", []):
-        if not isinstance(case, dict):
-            continue
-        failed_checks = [
-            check
-            for check in case.get("threshold_checks", [])
-            if isinstance(check, dict) and check.get("passed") is not True
-        ]
-        rows.append(
-            {
-                "case_id": str(case.get("case_id", "")),
-                "external_nonlinear_output_ready": bool(
-                    case.get("external_nonlinear_output_ready") is True
-                ),
-                "native_same_case_profile_source_ready": bool(
-                    case.get("native_same_case_profile_source_ready") is True
-                ),
-                "strict_threshold_acceptance_ready": bool(
-                    case.get("strict_threshold_acceptance_ready") is True
-                ),
-                "failed_threshold_check_count": len(failed_checks),
-                "failed_threshold_checks": [
-                    {
-                        "metric": str(check.get("metric", "")),
-                        "value": check.get("value"),
-                        "limit": check.get("limit"),
-                        "comparator": str(check.get("comparator", "")),
-                    }
-                    for check in failed_checks
-                ],
-            }
-        )
-    return rows
-
-
-def _grid_case_rows(strict: dict[str, Any]) -> list[dict[str, Any]]:
-    """Extract per-case grid-convergence readiness rows."""
-    grid = strict.get("grid_convergence_evidence", {})
-    if not isinstance(grid, dict):
+def _source_example_files(freegs: dict[str, Any]) -> list[dict[str, Any]]:
+    """Hash named repository source examples without executing scientific code."""
+    try:
+        cases = _identity_cases(freegs)
+    except ValueError:
         return []
-    rows: list[dict[str, Any]] = []
-    for case in grid.get("cases", []):
-        if not isinstance(case, dict):
-            continue
-        rows.append(
+    records: list[dict[str, Any]] = []
+    for case_id, case in cases.items():
+        path_value = case.get("example_path")
+        actual_hash: str | None = None
+        if isinstance(path_value, str) and path_value:
+            try:
+                path = (ROOT / path_value).resolve()
+                path.relative_to(ROOT.resolve())
+                if path.is_file():
+                    digest = hashlib.sha256()
+                    with path.open("rb") as source:
+                        for chunk in iter(lambda: source.read(65536), b""):
+                            digest.update(chunk)
+                    actual_hash = digest.hexdigest()
+            except (OSError, ValueError, RuntimeError):
+                actual_hash = None
+        records.append(
             {
-                "case_id": str(case.get("case_id", "")),
-                "machine_class": str(case.get("machine_class", "")),
-                "observed_resolution_count": int(case.get("observed_resolution_count", 0)),
-                "required_resolution_count": int(case.get("required_resolution_count", 0)),
-                "missing_resolution_count": int(case.get("missing_resolution_count", 0)),
-                "grid_convergence_case_ready": bool(
-                    case.get("grid_convergence_case_ready") is True
-                ),
-                "blocking_reason": str(case.get("blocking_reason", "")),
+                "case_id": case_id,
+                "path": path_value,
+                "declared_sha256": case.get("example_sha256"),
+                "file_sha256": actual_hash,
+                "declared_hash_matches_file": actual_hash is not None
+                and actual_hash == case.get("example_sha256"),
             }
         )
-    return rows
+    return records
 
 
 def evaluate_strict_parity(
@@ -197,7 +286,24 @@ def evaluate_strict_parity(
     freegs_report_path: Path = DEFAULT_FREEGS_REPORT,
     machine_metadata_report_path: Path = DEFAULT_MACHINE_METADATA_REPORT,
 ) -> dict[str, Any]:
-    """Evaluate the strict free-boundary acceptance contract."""
+    """Classify summary evidence without granting scientific admission.
+
+    Parameters
+    ----------
+    freegs_report, machine_metadata_report : dict
+        Original reconstruction and machine metadata reports.
+    freegs_report_path, machine_metadata_report_path : Path
+        Paths recorded for provenance. Report checksums do not establish
+        custody of absent external/native field arrays or q-profile samples.
+
+    Returns
+    -------
+    dict
+        Version-2 non-admitting report preserving diagnostic legacy rows.
+        Known v1 inputs lack verified field custody; unknown schemas are
+        rejected too. No positive scientific evidence contract is admitted
+        by this implementation.
+    """
     strict = freegs_report.get("strict_free_boundary_parity_evidence", {})
     if not isinstance(strict, dict):
         strict = {}
@@ -217,19 +323,14 @@ def evaluate_strict_parity(
     boundary_metric_ready = _require_bool(geometry, "boundary_containment_metric_ready")
     machine_metadata_ready = _require_bool(machine_metadata_report, "machine_metadata_ready")
     machine_reference_ready = _require_bool(machine_metadata_report, "reference_output_ready")
-    accepted = bool(
-        threshold_ready
-        and grid_ready
-        and sidecar_ready
-        and native_ready
-        and external_ready
-        and geometry_ready
-        and boundary_metric_ready
-        and machine_metadata_ready
-        and machine_reference_ready
-    )
+    legacy = strict.get("schema") == "strict-free-boundary-parity-evidence.v1"
+    classification = "legacy_non_admitting" if legacy else "unsupported_evidence_non_admitting"
 
-    blockers: list[str] = []
+    blockers: list[str] = [
+        "legacy_evidence_has_no_verified_field_custody"
+        if legacy
+        else "unsupported_evidence_contract"
+    ]
     if not threshold_ready:
         blockers.append("strict_threshold_acceptance_failed")
     if not grid_ready:
@@ -283,14 +384,39 @@ def evaluate_strict_parity(
         "machine_metadata_ready": machine_metadata_ready,
         "same_case_public_reference_output_ready": machine_reference_ready,
     }
-    threshold_cases = _threshold_case_rows(strict)
-    grid_cases = _grid_case_rows(strict)
-    source_checksums = _source_checksums(
-        freegs_report,
-        machine_metadata_report,
-        freegs_report_path=freegs_report_path,
-        machine_metadata_report_path=machine_metadata_report_path,
-    )
+    reported_readiness = checks
+    checks = dict.fromkeys(checks, False)
+    acceptance_matrix = dict.fromkeys(acceptance_matrix, False)
+    from validation.free_boundary_threshold_evidence import evaluate_threshold_evidence
+
+    numeric_diagnostics = evaluate_threshold_evidence(strict)
+    threshold_cases = numeric_diagnostics["threshold_cases"]
+    grid_cases = numeric_diagnostics["grid_cases"]
+    if {case["case_id"] for case in threshold_cases} != {case["case_id"] for case in grid_cases}:
+        blockers.append("grid_case_membership_mismatch")
+    input_reports = [
+        _source_record("freegs_public_example_reconstruction", freegs_report_path, freegs_report),
+        _source_record(
+            "free_boundary_public_machine_metadata_inventory",
+            machine_metadata_report_path,
+            machine_metadata_report,
+        ),
+    ]
+    source_checksums = {
+        f"{source['artifact_id']}_{key}": source[key]
+        for source in input_reports
+        for key in ("payload_sha256", "file_sha256")
+    }
+    if any(source["payload_matches_file"] is not True for source in input_reports):
+        blockers.append("input_report_payload_not_bound_to_file")
+    identity_errors = _case_identity_errors(freegs_report, machine_metadata_report)
+    if identity_errors:
+        blockers.append("case_identity_inconsistent")
+    example_files = _source_example_files(freegs_report)
+    if not example_files or any(
+        row["declared_hash_matches_file"] is not True for row in example_files
+    ):
+        blockers.append("source_example_bytes_unverified")
     machine_metadata = {
         "schema": machine_metadata_report.get("schema"),
         "status": machine_metadata_report.get("status"),
@@ -302,13 +428,13 @@ def evaluate_strict_parity(
     }
 
     return {
-        "schema": "free-boundary-strict-parity-benchmark.v1",
+        "schema": "free-boundary-strict-parity-benchmark.v2",
         "benchmark_id": "free_boundary_strict_parity",
         "benchmark_scope": "free_boundary_full_fidelity_acceptance",
-        "accepted_full_fidelity": accepted,
-        "status": "accepted_full_fidelity_free_boundary_parity"
-        if accepted
-        else "blocked_free_boundary_strict_parity",
+        "accepted_full_fidelity": False,
+        "evidence_classification": classification,
+        "reported_readiness": reported_readiness,
+        "status": "blocked_free_boundary_strict_parity",
         "inputs": {
             "freegs_public_example_reconstruction": _rel(freegs_report_path),
             "free_boundary_public_machine_metadata_inventory": _rel(machine_metadata_report_path),
@@ -318,18 +444,7 @@ def evaluate_strict_parity(
             "generator": "validation/benchmark_free_boundary_strict_parity.py",
             "source_commit": _source_commit(),
             "python_version": sys.version.split()[0],
-            "input_reports": [
-                _source_record(
-                    "freegs_public_example_reconstruction",
-                    freegs_report_path,
-                    freegs_report,
-                ),
-                _source_record(
-                    "free_boundary_public_machine_metadata_inventory",
-                    machine_metadata_report_path,
-                    machine_metadata_report,
-                ),
-            ],
+            "input_reports": input_reports,
         },
         "checks": checks,
         "acceptance_contract": acceptance_contract,
@@ -343,13 +458,17 @@ def evaluate_strict_parity(
             "machine_metadata_sha256": _sha256_json(machine_metadata),
         },
         "blockers": blockers,
-        "case_count": int(freegs_report.get("case_count", 0)),
-        "failed_threshold_check_count": int(strict.get("failed_threshold_check_count", 0)),
+        "case_identity_errors": identity_errors,
+        "source_example_files": example_files,
+        "case_count": len(threshold_cases),
+        "failed_threshold_check_count": sum(
+            row["failed_threshold_check_count"] for row in threshold_cases
+        ),
         "threshold_cases": threshold_cases,
         "grid_convergence": {
             "schema": grid.get("schema"),
             "status": grid.get("status"),
-            "required_resolution_count": int(grid.get("required_resolution_count", 0)),
+            "required_resolution_count": numeric_diagnostics["required_resolution_count"],
             "cases": grid_cases,
         },
         "machine_metadata": machine_metadata,
@@ -357,109 +476,10 @@ def evaluate_strict_parity(
 
 
 def render_markdown(report: dict[str, Any]) -> str:
-    """Render the strict parity report as Markdown."""
-    lines = [
-        "# Free-boundary Strict Parity Benchmark",
-        "",
-        "This gate is fail-closed. It accepts full-fidelity free-boundary parity",
-        "only when same-case public FreeGS output, native profile-source",
-        "comparison, strict thresholds, grid convergence, and public external",
-        "coil/vacuum sidecars are all present.",
-        "",
-        f"- Schema: `{report['schema']}`",
-        f"- Status: `{report['status']}`",
-        f"- Accepted full fidelity: `{report['accepted_full_fidelity']}`",
-        f"- Case count: `{report['case_count']}`",
-        f"- Failed threshold checks: `{report['failed_threshold_check_count']}`",
-        "",
-        "## Checks",
-        "",
-        "| Check | Ready |",
-        "| --- | ---: |",
-    ]
-    for key, value in report["checks"].items():
-        lines.append(f"| `{key}` | `{value}` |")
-    lines.extend(
-        [
-            "",
-            "## Acceptance matrix",
-            "",
-            "| Requirement | Ready |",
-            "| --- | ---: |",
-        ]
-    )
-    for key, value in report["acceptance_matrix"].items():
-        lines.append(f"| `{key}` | `{value}` |")
-    lines.extend(["", "## Blockers", ""])
-    if report["blockers"]:
-        for blocker in report["blockers"]:
-            lines.append(f"- `{blocker}`")
-    else:
-        lines.append("- None")
-    lines.extend(
-        [
-            "",
-            "## Threshold cases",
-            "",
-            "| Case | External output | Native comparison | Thresholds ready | Failed checks |",
-            "| --- | ---: | ---: | ---: | ---: |",
-        ]
-    )
-    for case in report["threshold_cases"]:
-        lines.append(
-            "| {case_id} | `{external}` | `{native}` | `{threshold}` | {failed} |".format(
-                case_id=case["case_id"],
-                external=case["external_nonlinear_output_ready"],
-                native=case["native_same_case_profile_source_ready"],
-                threshold=case["strict_threshold_acceptance_ready"],
-                failed=case["failed_threshold_check_count"],
-            )
-        )
-    lines.extend(
-        [
-            "",
-            "## Grid-convergence cases",
-            "",
-            "| Case | Machine | Observed | Required | Missing | Ready | Blocker |",
-            "| --- | --- | ---: | ---: | ---: | ---: | --- |",
-        ]
-    )
-    for case in report["grid_convergence"]["cases"]:
-        lines.append(
-            "| {case_id} | {machine} | {observed} | {required} | {missing} | `{ready}` | {reason} |".format(
-                case_id=case["case_id"],
-                machine=case["machine_class"],
-                observed=case["observed_resolution_count"],
-                required=case["required_resolution_count"],
-                missing=case["missing_resolution_count"],
-                ready=case["grid_convergence_case_ready"],
-                reason=case["blocking_reason"],
-            )
-        )
-    lines.extend(["", "## Machine metadata", ""])
-    metadata = report["machine_metadata"]
-    lines.append(f"- Schema: `{metadata['schema']}`")
-    lines.append(f"- Status: `{metadata['status']}`")
-    lines.append(f"- Machine config count: `{metadata['machine_config_count']}`")
-    lines.append(f"- Machines: `{', '.join(str(v) for v in metadata['machines'])}`")
-    lines.extend(["", "## Provenance and checksums", ""])
-    provenance = report["provenance"]
-    lines.append(f"- Generator: `{provenance['generator']}`")
-    lines.append(f"- Source commit: `{provenance['source_commit']}`")
-    lines.append(f"- Python version: `{provenance['python_version']}`")
-    lines.extend(["", "| Input report | Payload SHA-256 | File SHA-256 |", "| --- | --- | --- |"])
-    for source in provenance["input_reports"]:
-        lines.append(
-            "| {path} | `{payload}` | `{file}` |".format(
-                path=source["path"],
-                payload=source["payload_sha256"],
-                file=source["file_sha256"],
-            )
-        )
-    lines.extend(["", "| Evidence section | SHA-256 |", "| --- | --- |"])
-    for key, value in report["evidence_checksums"].items():
-        lines.append(f"| `{key}` | `{value}` |")
-    return "\n".join(lines) + "\n"
+    """Render the strict parity report through its presentation module."""
+    from validation.free_boundary_strict_parity_report import render_markdown as render
+
+    return render(report)
 
 
 def run_benchmark(
@@ -500,4 +520,5 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    sys.path.insert(0, str(ROOT))
     raise SystemExit(main())

@@ -5,6 +5,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — FreeGS artifact contract guard
 """Validate FreeGS strict-backend artifact contracts."""
 
 from __future__ import annotations
@@ -66,27 +67,41 @@ def _run_public_example_report() -> dict[str, Any]:
 
 
 def _evaluate_public_example(report: dict[str, Any]) -> dict[str, Any]:
-    """Evaluate a fresh public-example reconstruction artifact fail closed."""
+    """Refuse summary-only evidence independently of its reported freshness.
+
+    The producer's v1 payload lacks verified field/profile custody. No positive
+    evidence schema is supported here yet; relabelling it cannot grant admission.
+    Other checks retain their historical diagnostic meaning only.
+    """
     strict_raw = report.get("strict_free_boundary_parity_evidence", {})
     strict = strict_raw if isinstance(strict_raw, dict) else {}
     cases_raw = strict.get("cases", [])
-    cases = [dict(case) for case in cases_raw if isinstance(case, dict)]
+    cases_valid = isinstance(cases_raw, list) and all(isinstance(case, dict) for case in cases_raw)
+    cases = (
+        [dict(case) for case in cases_raw if isinstance(case, dict)]
+        if isinstance(cases_raw, list)
+        else []
+    )
     blockers_raw = strict.get("blocking_requirements", [])
     blockers = blockers_raw if isinstance(blockers_raw, list) else [blockers_raw]
     checks = {
+        "verified_evidence_contract": False,
+        "case_collection_valid": cases_valid,
         "public_example_schema": report.get("schema")
         == "freegs-public-example-reconstruction-report.v1",
         "fresh_external_backend_reconstruction": report.get("report_generation_mode")
         == "external_backend_reconstruction",
         "freegs_backend_available": report.get("freegs_backend_available") is True,
-        "case_count_matches": int(report.get("case_count", -1)) == len(cases) and bool(cases),
+        "case_count_matches": type(report.get("case_count")) is int
+        and report["case_count"] == len(cases)
+        and bool(cases),
         "external_nonlinear_output_ready": report.get("external_nonlinear_output_ready") is True,
         "strict_parity_accepted": strict.get("accepted_full_fidelity") is True,
         "grid_convergence_ready": strict.get("grid_convergence_ready") is True,
         "strict_threshold_acceptance_ready": strict.get("strict_threshold_acceptance_ready")
         is True,
-        "failed_threshold_check_count_zero": int(strict.get("failed_threshold_check_count", -1))
-        == 0,
+        "failed_threshold_check_count_zero": type(strict.get("failed_threshold_check_count")) is int
+        and strict["failed_threshold_check_count"] == 0,
         "blocking_requirements_empty": blockers == [],
         "all_cases_external_ready": all(
             case.get("external_nonlinear_output_ready") is True for case in cases
@@ -100,6 +115,11 @@ def _evaluate_public_example(report: dict[str, Any]) -> dict[str, Any]:
     }
     failed_checks = [key for key, value in checks.items() if not bool(value)]
     return {
+        "evidence_classification": (
+            "legacy_non_admitting"
+            if strict.get("schema") == "strict-free-boundary-parity-evidence.v1"
+            else "unsupported_evidence_non_admitting"
+        ),
         "overall_pass": len(failed_checks) == 0,
         "failed_checks": failed_checks,
         "checks": checks,
@@ -113,7 +133,10 @@ def _evaluate_public_example(report: dict[str, Any]) -> dict[str, Any]:
 
 def evaluate(report: dict[str, Any]) -> dict[str, Any]:
     """Evaluate FreeGS artifact metadata and emit invariant checks plus summary fields."""
-    if report.get("schema") == "freegs-public-example-reconstruction-report.v1":
+    if (
+        report.get("schema") == "freegs-public-example-reconstruction-report.v1"
+        or "strict_free_boundary_parity_evidence" in report
+    ):
         return _evaluate_public_example(report)
     cases_raw = report.get("cases", [])
     cases = [dict(case) for case in cases_raw if isinstance(case, dict)]

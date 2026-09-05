@@ -25,8 +25,8 @@ def test_external_parity_score_aggregates_tracked_reports() -> None:
     assert report["schema"] == score.SCHEMA
     assert report["status"] == "blocked_external_parity_score"
     assert report["acceptance_passed"] is False
-    assert report["reproducibility_score"] == 1.0
-    assert report["parity_score"] == 0.6
+    assert report["reproducibility_score"] == 0.9
+    assert report["parity_score"] == 0.1
 
     lanes = {lane["lane"]: lane for lane in report["lanes"]}
     assert set(lanes) == {"torax_transport", "freegsnke_free_boundary"}
@@ -37,10 +37,46 @@ def test_external_parity_score_aggregates_tracked_reports() -> None:
         "sources_and_boundary_conditions",
         "time_integration_contract",
     ]
-    assert lanes["freegsnke_free_boundary"]["status"] == "accepted_external_parity"
-    assert lanes["freegsnke_free_boundary"]["parity_score"] == 1.0
+    assert lanes["freegsnke_free_boundary"]["status"] == "blocked_free_boundary_external_parity"
+    assert lanes["freegsnke_free_boundary"]["parity_score"] == 0.0
+    assert (
+        "non_admitting_strict_parity_report"
+        in lanes["freegsnke_free_boundary"]["blocked_requirements"]
+    )
     assert len(report["source_reports"]) == 6
     assert all(source["file_sha256"] for source in report["source_reports"])
+
+
+@pytest.mark.parametrize(
+    "schema",
+    ["free-boundary-strict-parity-benchmark.v1", "free-boundary-strict-parity-benchmark.v2"],
+)
+def test_cached_acceptance_cannot_promote_free_boundary_lane(tmp_path: Path, schema: str) -> None:
+    """Read altered historical bytes through the public aggregate file boundary."""
+    payload = json.loads(score.FREE_BOUNDARY_STRICT_PARITY.read_text(encoding="utf-8"))
+    payload["schema"] = schema
+    payload["accepted_full_fidelity"] = True
+    payload["checks"] = dict.fromkeys(payload["checks"], True)
+    payload["blockers"] = []
+    source = tmp_path / "strict.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    before = source.read_bytes()
+    report = score.build_report(free_boundary_strict_parity_path=source)
+    lane = report["lanes"][1]
+    assert lane["parity_score"] == 0.0
+    assert lane["status"] == "blocked_free_boundary_external_parity"
+    assert lane["strict_parity_evidence_classification"] == "non_admitting_summary"
+    assert source.read_bytes() == before
+
+
+def test_free_boundary_reader_rejects_unknown_schema(tmp_path: Path) -> None:
+    """An unknown aggregate version is not a compatible admission contract."""
+    payload = json.loads(score.FREE_BOUNDARY_STRICT_PARITY.read_text(encoding="utf-8"))
+    payload["schema"] = "unknown"
+    source = tmp_path / "strict.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="schema mismatch"):
+        score.build_report(free_boundary_strict_parity_path=source)
 
 
 def test_write_and_check_report_roundtrip(tmp_path: Path) -> None:

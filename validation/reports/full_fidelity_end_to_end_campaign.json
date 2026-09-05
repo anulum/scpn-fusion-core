@@ -13,20 +13,23 @@
   "dream_reference_execution_status": "blocked_missing_dream_backend",
   "dream_reference_output_ready": false,
   "dream_settings_deck_generated": true,
-  "free_boundary_boundary_containment_metric_ready": true,
-  "free_boundary_coil_vacuum_sidecar_ready": true,
+  "free_boundary_boundary_containment_metric_ready": false,
+  "free_boundary_coil_vacuum_sidecar_ready": false,
   "free_boundary_failed_threshold_check_count": 0,
-  "free_boundary_geometry_containment_ready": true,
-  "free_boundary_grid_convergence_ready": true,
+  "free_boundary_geometry_containment_ready": false,
+  "free_boundary_grid_convergence_ready": false,
   "free_boundary_machine_metadata_indexed": 23,
   "free_boundary_machine_metadata_ready": true,
   "free_boundary_machine_metadata_report": "validation/reports/free_boundary_public_machine_metadata_inventory.json",
   "free_boundary_machine_metadata_status": "accepted_public_machine_metadata_with_same_case_free_boundary_reference",
-  "free_boundary_same_case_public_reference_output_ready": true,
-  "free_boundary_strict_parity_blockers": [],
+  "free_boundary_same_case_public_reference_output_ready": false,
+  "free_boundary_strict_parity_blockers": [
+    "legacy_evidence_has_no_verified_field_custody",
+    "source_example_bytes_unverified"
+  ],
   "free_boundary_strict_parity_report": "validation/reports/free_boundary_strict_parity_benchmark.json",
-  "free_boundary_strict_parity_status": "accepted_full_fidelity_free_boundary_parity",
-  "free_boundary_strict_threshold_acceptance_ready": true,
+  "free_boundary_strict_parity_status": "blocked_free_boundary_strict_parity",
+  "free_boundary_strict_threshold_acceptance_ready": false,
   "freegs_public_example_cases": 2,
   "freegs_public_example_external_output_ready": true,
   "freegs_public_example_reconstruction_report": "validation/reports/freegs_public_example_reconstruction.json",
@@ -263,8 +266,11 @@
     {
       "lane": "free_boundary_equilibrium_strict_parity",
       "locally_actionable_contract_ready": true,
-      "next_required_evidence": [],
-      "reference_cases_ready": true,
+      "next_required_evidence": [
+        "legacy_evidence_has_no_verified_field_custody",
+        "source_example_bytes_unverified"
+      ],
+      "reference_cases_ready": false,
       "sources": [
         {
           "evidence_url": "https://github.com/freegs-plasma/freegs",
@@ -290,7 +296,7 @@
           "surface": "free_boundary_equilibrium"
         }
       ],
-      "status": "accepted_full_fidelity_free_boundary_parity",
+      "status": "blocked_free_boundary_strict_parity",
       "surface": "free_boundary_equilibrium"
     }
   ],

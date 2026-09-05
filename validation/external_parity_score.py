@@ -56,13 +56,14 @@ def _sha256_json(payload: Mapping[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
-def _load_report(path: Path, *, expected_schema: str) -> JsonObject:
+def _load_report(path: Path, *, expected_schema: str | tuple[str, ...]) -> JsonObject:
     """Load a report JSON object and validate its schema."""
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
         raise ValueError(f"{_rel(path)} must contain a JSON object")
     report = cast(JsonObject, payload)
-    if report.get("schema") != expected_schema:
+    allowed_schemas = (expected_schema,) if isinstance(expected_schema, str) else expected_schema
+    if report.get("schema") not in allowed_schemas:
         raise ValueError(
             f"{_rel(path)} schema mismatch: expected {expected_schema}, got {report.get('schema')}"
         )
@@ -195,8 +196,23 @@ def _free_boundary_lane(
     public_reconstruction: Mapping[str, Any],
     machine_metadata: Mapping[str, Any],
 ) -> JsonObject:
-    """Build the scored FreeGS/FreeGSNKE free-boundary parity lane."""
-    checks = cast(Mapping[str, Any], strict_parity.get("checks", {}))
+    """Score report availability without admitting summary-only parity evidence.
+
+    Neither the historical v1 aggregate nor the non-admitting v2 classifier
+    verifies the underlying field/profile bytes. Their cached acceptance and
+    readiness flags cannot grant parity points. A positive evidence contract
+    requires a separately reviewed implementation, not a changed schema label.
+    """
+    checks = dict.fromkeys(
+        (
+            "grid_convergence_ready",
+            "external_nonlinear_output_ready",
+            "native_same_case_profile_source_ready",
+            "strict_threshold_acceptance_ready",
+            "machine_metadata_ready",
+        ),
+        False,
+    )
     reproducibility_components = [
         _component(
             "freegs_public_reconstruction_report",
@@ -227,8 +243,8 @@ def _free_boundary_lane(
     parity_components = [
         _component(
             "free_boundary_accepted_full_fidelity",
-            bool(strict_parity.get("accepted_full_fidelity") is True),
-            "Strict parity gate accepts the current free-boundary lane.",
+            False,
+            "Summary-only strict parity reports cannot establish scientific admission.",
         ),
         _component(
             "external_nonlinear_output",
@@ -262,7 +278,8 @@ def _free_boundary_lane(
         "parity_score": parity_score,
         "reproducibility_components": reproducibility_components,
         "parity_components": parity_components,
-        "blocked_requirements": list(cast(Sequence[str], strict_parity.get("blockers", []))),
+        "strict_parity_evidence_classification": "non_admitting_summary",
+        "blocked_requirements": ["non_admitting_strict_parity_report"],
     }
 
 
@@ -290,7 +307,10 @@ def build_report(
     )
     strict_parity = _load_report(
         free_boundary_strict_parity_path,
-        expected_schema="free-boundary-strict-parity-benchmark.v1",
+        expected_schema=(
+            "free-boundary-strict-parity-benchmark.v1",
+            "free-boundary-strict-parity-benchmark.v2",
+        ),
     )
     public_reconstruction = _load_report(
         freegs_public_reconstruction_path,

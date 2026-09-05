@@ -1,14 +1,14 @@
 {
   "acceptance_passed": false,
-  "accepted_full_fidelity_lane_count": 1,
+  "accepted_full_fidelity_lane_count": 0,
   "artifact_count": 17,
   "artifacts": [
     {
-      "bytes": 16662,
+      "bytes": 16853,
       "exists": true,
       "path": "validation/reports/full_fidelity_end_to_end_campaign.json",
       "schema": "full-fidelity-end-to-end-campaign.v1",
-      "sha256": "c12b4ca48c15a825e41013ad5965af75225a2c52558ed834691c3d89fbe00dbf",
+      "sha256": "149444f07332d10576fc59a2024908f592fc06f78912dbf82407b70f505a268c",
       "status": "not_full_fidelity"
     },
     {
@@ -108,52 +108,53 @@
       "status": "accepted_public_freegs_same_case_free_boundary_parity"
     },
     {
-      "bytes": 5964,
+      "bytes": 11301,
       "exists": true,
       "path": "validation/reports/free_boundary_strict_parity_benchmark.json",
-      "schema": "free-boundary-strict-parity-benchmark.v1",
-      "sha256": "eae3b1065be4fab7b74803a05ef173369a772c3589d2e636980581f6a9c390f3",
-      "status": "accepted_full_fidelity_free_boundary_parity"
+      "schema": "free-boundary-strict-parity-benchmark.v2",
+      "sha256": "a351402424b1fda016b541b247664fd781fd60b97923301c2f07394816938d9b",
+      "status": "blocked_free_boundary_strict_parity"
     },
     {
-      "bytes": 19063,
+      "bytes": 19155,
       "exists": true,
       "path": "validation/reports/full_fidelity_validation_ledger.json",
       "schema": "full-fidelity-validation-ledger.v1",
-      "sha256": "e15b4e0dc49579d8c77e0a1a1b8942685cf2b5a83ff98fe620ebc8be18c3c6e8",
+      "sha256": "64a88e94f819d1460cfea25e046880052801ce1a3128faa44a400f9c651d5f10",
       "status": "not_full_fidelity"
     },
     {
-      "bytes": 6893,
+      "bytes": 6953,
       "exists": true,
       "path": "validation/reports/full_fidelity_validation_ledger.md",
       "schema": null,
-      "sha256": "402278e40080f12014b3edbbebafdc48436d5f657beac1c2aa0bbd9ad9236228",
+      "sha256": "a58eec02900ff2c891bf4ee893f27d51fb00f82f1970af43e3f30ce159e37b31",
       "status": null
     },
     {
-      "bytes": 8167,
+      "bytes": 8316,
       "exists": true,
       "path": "validation/reports/full_fidelity_end_to_end_campaign.md",
       "schema": null,
-      "sha256": "f26fc29d186c0f4cfed0464ead74d5bdf9cf5e4e65f8c4feafbe9f3494ef9e8b",
+      "sha256": "1939e4dbb3c634a0cd93231e15616bfbc4edd802a37ba7c557961d832e9d3211",
       "status": null
     }
   ],
-  "blocked_lane_count": 6,
+  "blocked_lane_count": 7,
   "blocked_lanes": [
     "sas_dataset_readiness",
     "gene_cgyro_gs2_nonlinear_gk_parity",
     "full_maxwell_electromagnetic_fidelity",
     "production_scale_decomposition",
     "dream_grade_runaway_electrons",
-    "aurora_strahl_grade_impurities"
+    "aurora_strahl_grade_impurities",
+    "free_boundary_equilibrium_strict_parity"
   ],
   "campaign_report": "validation/reports/full_fidelity_end_to_end_campaign.json",
   "campaign_schema": "full-fidelity-end-to-end-campaign.v1",
   "claim_boundary": "The command reproduces the local fail-closed evidence chain. It does not mark blocked full-fidelity lanes ready until their external parity artifacts exist and the ledger publication gate passes.",
   "command": "scpn-fusion repro --full",
-  "evidence_payload_sha256": "d399a97e84819a2b0cd8593c6ce768db0fdcacc1cb2c4d209bdceb6747b6644e",
+  "evidence_payload_sha256": "d04a9b8c2ab71c3f2923fde17942db23ed1d4f506bb059bef4ac6956690091cd",
   "full_fidelity_ready": false,
   "lanes": [
     {
@@ -393,12 +394,15 @@
       "surface": "impurity_transport"
     },
     {
-      "accepted_full_fidelity_lane": true,
-      "blocked_for_public_full_fidelity": false,
+      "accepted_full_fidelity_lane": false,
+      "blocked_for_public_full_fidelity": true,
       "lane": "free_boundary_equilibrium_strict_parity",
       "locally_actionable_contract_ready": true,
-      "missing_evidence": [],
-      "missing_evidence_count": 0,
+      "missing_evidence": [
+        "legacy_evidence_has_no_verified_field_custody",
+        "source_example_bytes_unverified"
+      ],
+      "missing_evidence_count": 2,
       "public_source_count": 2,
       "public_source_licenses_ready": false,
       "public_sources": [
@@ -428,8 +432,8 @@
           "source_id": "freegsnke_github"
         }
       ],
-      "reference_cases_ready": true,
-      "status": "accepted_full_fidelity_free_boundary_parity",
+      "reference_cases_ready": false,
+      "status": "blocked_free_boundary_strict_parity",
       "surface": "free_boundary_equilibrium"
     }
   ],
@@ -438,6 +442,6 @@
   "missing_artifacts": [],
   "producer": "scpn_fusion.repro.build_reproduction_report",
   "schema": "scpn-fusion-full-reproduction-evidence.v1",
-  "source_commit": "7c4ea9e8857dee3d03b4d6cc247fc0dab1c29103",
+  "source_commit": "a84317b5315c4d2c4d8412b4fbfe16cf7ac6f650",
   "status": "not_full_fidelity"
 }

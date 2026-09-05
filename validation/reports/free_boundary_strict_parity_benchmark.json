@@ -15,57 +15,158 @@
     "requires_same_case_public_reference_output": true
   },
   "acceptance_matrix": {
-    "coil_vacuum_sidecars": true,
-    "grid_convergence_ladder": true,
-    "machine_metadata": true,
-    "native_same_case_profile_source": true,
-    "same_case_reference_output": true,
-    "strict_threshold_metrics": true
+    "coil_vacuum_sidecars": false,
+    "grid_convergence_ladder": false,
+    "machine_metadata": false,
+    "native_same_case_profile_source": false,
+    "same_case_reference_output": false,
+    "strict_threshold_metrics": false
   },
-  "accepted_full_fidelity": true,
+  "accepted_full_fidelity": false,
   "benchmark_id": "free_boundary_strict_parity",
   "benchmark_scope": "free_boundary_full_fidelity_acceptance",
-  "blockers": [],
+  "blockers": [
+    "legacy_evidence_has_no_verified_field_custody",
+    "source_example_bytes_unverified"
+  ],
   "case_count": 2,
+  "case_identity_errors": [],
   "checks": {
-    "boundary_containment_metric_ready": true,
-    "coil_vacuum_sidecar_ready": true,
-    "external_nonlinear_output_ready": true,
-    "geometry_containment_ready": true,
-    "grid_convergence_ready": true,
-    "machine_metadata_ready": true,
-    "native_same_case_profile_source_ready": true,
-    "same_case_public_reference_output_ready": true,
-    "strict_threshold_acceptance_ready": true
+    "boundary_containment_metric_ready": false,
+    "coil_vacuum_sidecar_ready": false,
+    "external_nonlinear_output_ready": false,
+    "geometry_containment_ready": false,
+    "grid_convergence_ready": false,
+    "machine_metadata_ready": false,
+    "native_same_case_profile_source_ready": false,
+    "same_case_public_reference_output_ready": false,
+    "strict_threshold_acceptance_ready": false
   },
   "evidence_checksums": {
     "acceptance_contract_sha256": "7970bb92a78a3fe9cda1f0a7f057216f7081c7c10c5949dded7e1343601b484c",
-    "acceptance_matrix_sha256": "ab744c8a30650b2ecdfbfd4070f118e794cdcc46f7439dec27fc2abd4bbd6595",
-    "checks_sha256": "962acf255628c4000a54b62edfaa5a0af39bab6c63896fee6e0cf143b62da61f",
-    "grid_convergence_cases_sha256": "a50410531c913ad059b95621bc1d402ffdb17c9f7e3a7e78c0bac84aa5735286",
+    "acceptance_matrix_sha256": "a72958b95ddc47a7f8dfa7ad474b1fb860789e7f5998e77388b5c357a7385526",
+    "checks_sha256": "ea15999ab61a8517f3e60d62e6629449deb01b926c9774be7789891b6e55904a",
+    "grid_convergence_cases_sha256": "469eb0605bfa8ce8968d7af2a4cd2ffd04ac3b47aac3c8e58e3b7ba8825d779a",
     "machine_metadata_sha256": "d4fb919289c0c1e4ca885c597b34d488838a1f21967cf26bed561df4021b2d6d",
-    "threshold_cases_sha256": "3d195e8a55ee4b475cbfef550282ac3c3c7a49070d0382202377f01ada051fa1"
+    "threshold_cases_sha256": "64d0f6534eb753bc87b8a4946f8c7f5fd2a167deb4030a9bab3446b05461d61f"
   },
+  "evidence_classification": "legacy_non_admitting",
   "failed_threshold_check_count": 0,
   "grid_convergence": {
     "cases": [
       {
-        "blocking_reason": "",
+        "blocking_reason": "grid_summary_has_no_verified_field_custody",
         "case_id": "freegs_01_test_tokamak_freeboundary",
-        "grid_convergence_case_ready": true,
+        "contradictory_grid_fields": [],
+        "grid_convergence_case_ready": false,
         "machine_class": "TestTokamak",
         "missing_resolution_count": 0,
+        "monotone_nonincreasing_metrics": {
+          "current_closure_relative_error": true,
+          "native_plasma_psi_rmse": true,
+          "psi_n_rmse": true,
+          "xpoint_psi_n_error_max": true
+        },
         "observed_resolution_count": 3,
-        "required_resolution_count": 3
+        "observed_resolutions": [
+          33,
+          65,
+          129
+        ],
+        "reported_grid_convergence_case_ready": true,
+        "required_resolution_count": 3,
+        "resolution_diagnostics": [
+          {
+            "contradictory_threshold_metrics": [],
+            "failed_threshold_check_count": 0,
+            "failed_threshold_checks": [],
+            "inconsistent_metric_values": [],
+            "reported_failed_count_matches": true,
+            "resolution": 33,
+            "unverified_threshold_metrics": [
+              "q_profile_sanity_status"
+            ]
+          },
+          {
+            "contradictory_threshold_metrics": [],
+            "failed_threshold_check_count": 0,
+            "failed_threshold_checks": [],
+            "inconsistent_metric_values": [],
+            "reported_failed_count_matches": true,
+            "resolution": 65,
+            "unverified_threshold_metrics": [
+              "q_profile_sanity_status"
+            ]
+          },
+          {
+            "contradictory_threshold_metrics": [],
+            "failed_threshold_check_count": 0,
+            "failed_threshold_checks": [],
+            "inconsistent_metric_values": [],
+            "reported_failed_count_matches": true,
+            "resolution": 129,
+            "unverified_threshold_metrics": [
+              "q_profile_sanity_status"
+            ]
+          }
+        ]
       },
       {
-        "blocking_reason": "",
+        "blocking_reason": "grid_summary_has_no_verified_field_custody",
         "case_id": "freegs_16_diiid_public_example",
-        "grid_convergence_case_ready": true,
+        "contradictory_grid_fields": [],
+        "grid_convergence_case_ready": false,
         "machine_class": "DIIID",
         "missing_resolution_count": 0,
+        "monotone_nonincreasing_metrics": {
+          "current_closure_relative_error": true,
+          "native_plasma_psi_rmse": true,
+          "psi_n_rmse": true,
+          "xpoint_psi_n_error_max": true
+        },
         "observed_resolution_count": 3,
-        "required_resolution_count": 3
+        "observed_resolutions": [
+          33,
+          65,
+          129
+        ],
+        "reported_grid_convergence_case_ready": true,
+        "required_resolution_count": 3,
+        "resolution_diagnostics": [
+          {
+            "contradictory_threshold_metrics": [],
+            "failed_threshold_check_count": 0,
+            "failed_threshold_checks": [],
+            "inconsistent_metric_values": [],
+            "reported_failed_count_matches": true,
+            "resolution": 33,
+            "unverified_threshold_metrics": [
+              "q_profile_sanity_status"
+            ]
+          },
+          {
+            "contradictory_threshold_metrics": [],
+            "failed_threshold_check_count": 0,
+            "failed_threshold_checks": [],
+            "inconsistent_metric_values": [],
+            "reported_failed_count_matches": true,
+            "resolution": 65,
+            "unverified_threshold_metrics": [
+              "q_profile_sanity_status"
+            ]
+          },
+          {
+            "contradictory_threshold_metrics": [],
+            "failed_threshold_check_count": 0,
+            "failed_threshold_checks": [],
+            "inconsistent_metric_values": [],
+            "reported_failed_count_matches": true,
+            "resolution": 129,
+            "unverified_threshold_metrics": [
+              "q_profile_sanity_status"
+            ]
+          }
+        ]
       }
     ],
     "required_resolution_count": 3,
@@ -96,6 +197,7 @@
         "artifact_id": "freegs_public_example_reconstruction",
         "file_sha256": "73edc6c0ebc1d0acc249dd8d13dc14a668e3ecd3419e336e49397b322af663ed",
         "path": "validation/reports/freegs_public_example_reconstruction.json",
+        "payload_matches_file": true,
         "payload_sha256": "39b624fba02e92e0e9d5a569d7ceb425405582ea18e2527dbb5defb3690f6928",
         "schema": "freegs-public-example-reconstruction-report.v1",
         "status": "accepted_public_freegs_same_case_free_boundary_parity"
@@ -104,38 +206,84 @@
         "artifact_id": "free_boundary_public_machine_metadata_inventory",
         "file_sha256": "e0da36d9f1016abb0dbce77d313032d2710e325d3eb922d1908a9fb582c7e7e1",
         "path": "validation/reports/free_boundary_public_machine_metadata_inventory.json",
+        "payload_matches_file": true,
         "payload_sha256": "89dc932da5b2d2a2e48cc6179d19a1fb3ef2c320abbdae09a89ffac7c07acb48",
         "schema": "free-boundary-public-machine-metadata-inventory-report.v1",
         "status": "accepted_public_machine_metadata_with_same_case_free_boundary_reference"
       }
     ],
     "python_version": "3.12.3",
-    "source_commit": "a950028dc366bfc9b28e12924c168523b1c17f7c"
+    "source_commit": "a84317b5315c4d2c4d8412b4fbfe16cf7ac6f650"
   },
-  "schema": "free-boundary-strict-parity-benchmark.v1",
+  "reported_readiness": {
+    "boundary_containment_metric_ready": true,
+    "coil_vacuum_sidecar_ready": true,
+    "external_nonlinear_output_ready": true,
+    "geometry_containment_ready": true,
+    "grid_convergence_ready": true,
+    "machine_metadata_ready": true,
+    "native_same_case_profile_source_ready": true,
+    "same_case_public_reference_output_ready": true,
+    "strict_threshold_acceptance_ready": true
+  },
+  "schema": "free-boundary-strict-parity-benchmark.v2",
   "source_checksums": {
     "free_boundary_public_machine_metadata_inventory_file_sha256": "e0da36d9f1016abb0dbce77d313032d2710e325d3eb922d1908a9fb582c7e7e1",
     "free_boundary_public_machine_metadata_inventory_payload_sha256": "89dc932da5b2d2a2e48cc6179d19a1fb3ef2c320abbdae09a89ffac7c07acb48",
     "freegs_public_example_reconstruction_file_sha256": "73edc6c0ebc1d0acc249dd8d13dc14a668e3ecd3419e336e49397b322af663ed",
     "freegs_public_example_reconstruction_payload_sha256": "39b624fba02e92e0e9d5a569d7ceb425405582ea18e2527dbb5defb3690f6928"
   },
-  "status": "accepted_full_fidelity_free_boundary_parity",
-  "threshold_cases": [
+  "source_example_files": [
     {
       "case_id": "freegs_01_test_tokamak_freeboundary",
-      "external_nonlinear_output_ready": true,
-      "failed_threshold_check_count": 0,
-      "failed_threshold_checks": [],
-      "native_same_case_profile_source_ready": true,
-      "strict_threshold_acceptance_ready": true
+      "declared_hash_matches_file": false,
+      "declared_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
+      "file_sha256": null,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py"
     },
     {
       "case_id": "freegs_16_diiid_public_example",
-      "external_nonlinear_output_ready": true,
+      "declared_hash_matches_file": false,
+      "declared_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
+      "file_sha256": null,
+      "path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py"
+    }
+  ],
+  "status": "blocked_free_boundary_strict_parity",
+  "threshold_cases": [
+    {
+      "case_id": "freegs_01_test_tokamak_freeboundary",
+      "contradictory_threshold_metrics": [],
+      "external_nonlinear_output_ready": false,
       "failed_threshold_check_count": 0,
       "failed_threshold_checks": [],
-      "native_same_case_profile_source_ready": true,
-      "strict_threshold_acceptance_ready": true
+      "native_same_case_profile_source_ready": false,
+      "reported_readiness": {
+        "external_nonlinear_output_ready": true,
+        "native_same_case_profile_source_ready": true,
+        "strict_threshold_acceptance_ready": true
+      },
+      "strict_threshold_acceptance_ready": false,
+      "unverified_threshold_metrics": [
+        "q_profile_sanity_status"
+      ]
+    },
+    {
+      "case_id": "freegs_16_diiid_public_example",
+      "contradictory_threshold_metrics": [],
+      "external_nonlinear_output_ready": false,
+      "failed_threshold_check_count": 0,
+      "failed_threshold_checks": [],
+      "native_same_case_profile_source_ready": false,
+      "reported_readiness": {
+        "external_nonlinear_output_ready": true,
+        "native_same_case_profile_source_ready": true,
+        "strict_threshold_acceptance_ready": true
+      },
+      "strict_threshold_acceptance_ready": false,
+      "unverified_threshold_metrics": [
+        "q_profile_sanity_status"
+      ]
     }
   ]
 }

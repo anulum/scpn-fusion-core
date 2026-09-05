@@ -237,21 +237,32 @@ def _load_freegs_public_reconstruction() -> dict[str, Any]:
 
 
 def _load_free_boundary_strict_parity() -> dict[str, Any]:
+    """Re-evaluate source bytes; cached admission flags are never authoritative."""
     if not FREE_BOUNDARY_STRICT_PARITY.exists():
         return {
             "accepted_full_fidelity": False,
-            "blockers": [],
+            "blockers": ["strict_parity_report_missing"],
             "checks": {},
             "failed_threshold_check_count": 0,
-            "schema": "free-boundary-strict-parity-benchmark.v1",
+            "schema": "free-boundary-strict-parity-benchmark.v2",
             "status": "not_run",
         }
     report = cast(
         dict[str, Any], json.loads(FREE_BOUNDARY_STRICT_PARITY.read_text(encoding="utf-8"))
     )
-    if report.get("schema") != "free-boundary-strict-parity-benchmark.v1":
+    if not isinstance(report, dict) or report.get("schema") not in {
+        "free-boundary-strict-parity-benchmark.v1",
+        "free-boundary-strict-parity-benchmark.v2",
+    }:
         raise ValueError("free-boundary strict parity benchmark schema mismatch")
-    return report
+    from validation.benchmark_free_boundary_strict_parity import evaluate_strict_parity
+
+    return evaluate_strict_parity(
+        _load_freegs_public_reconstruction(),
+        _load_free_boundary_machine_metadata(),
+        freegs_report_path=FREEGS_PUBLIC_RECONSTRUCTION,
+        machine_metadata_report_path=FREE_BOUNDARY_MACHINE_METADATA,
+    )
 
 
 def _sources_for(registry: dict[str, Any], surface: str) -> list[dict[str, Any]]:
@@ -283,8 +294,11 @@ def _sha256(path: Path) -> str:
 
 
 def _relative_report_path(path: Path) -> str:
-    """Return a repository-relative report path."""
-    return path.relative_to(ROOT).as_posix()
+    """Keep external report provenance absolute and repository paths relative."""
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.resolve().as_posix()
 
 
 def _source_report_paths(report: dict[str, Any]) -> tuple[str, ...]:
@@ -490,16 +504,6 @@ def run_campaign() -> dict[str, Any]:
     free_boundary_strict = cast(
         dict[str, Any],
         freegs_public_reconstruction["strict_free_boundary_parity_evidence"],
-    )
-    free_boundary_geometry = cast(
-        dict[str, Any],
-        free_boundary_strict.get(
-            "geometry_containment_evidence",
-            {
-                "boundary_containment_metric_ready": False,
-                "strict_geometry_containment_ready": False,
-            },
-        ),
     )
     acceptance = run_acceptance()
     runaway = run_runaway_contract(repeats=3)
@@ -788,8 +792,8 @@ def run_campaign() -> dict[str, Any]:
         ),
         "production_scale_ready": bool(production_decomposition["production_scale_ready"]),
         "production_decomposition_status": str(production_decomposition["status"]),
-        "free_boundary_machine_metadata_report": str(
-            FREE_BOUNDARY_MACHINE_METADATA.relative_to(ROOT)
+        "free_boundary_machine_metadata_report": _relative_report_path(
+            FREE_BOUNDARY_MACHINE_METADATA
         ),
         "free_boundary_machine_metadata_indexed": int(
             free_boundary_machine_metadata["machine_config_count"]
@@ -798,10 +802,10 @@ def run_campaign() -> dict[str, Any]:
             free_boundary_machine_metadata["machine_metadata_ready"]
         ),
         "free_boundary_machine_metadata_status": str(free_boundary_machine_metadata["status"]),
-        "freegs_public_example_reconstruction_report": str(
-            FREEGS_PUBLIC_RECONSTRUCTION.relative_to(ROOT)
+        "freegs_public_example_reconstruction_report": _relative_report_path(
+            FREEGS_PUBLIC_RECONSTRUCTION
         ),
-        "free_boundary_strict_parity_report": str(FREE_BOUNDARY_STRICT_PARITY.relative_to(ROOT)),
+        "free_boundary_strict_parity_report": _relative_report_path(FREE_BOUNDARY_STRICT_PARITY),
         "freegs_public_example_cases": int(freegs_public_reconstruction["case_count"]),
         "freegs_public_example_vacuum_comparison_pass": bool(
             freegs_public_reconstruction["vacuum_comparison_pass"]
@@ -813,31 +817,31 @@ def run_campaign() -> dict[str, Any]:
         "free_boundary_strict_threshold_acceptance_ready": bool(
             free_boundary_strict_gate.get("checks", {}).get(
                 "strict_threshold_acceptance_ready",
-                free_boundary_strict["strict_threshold_acceptance_ready"],
+                False,
             )
         ),
         "free_boundary_geometry_containment_ready": bool(
             free_boundary_strict_gate.get("checks", {}).get(
                 "geometry_containment_ready",
-                free_boundary_geometry["strict_geometry_containment_ready"],
+                False,
             )
         ),
         "free_boundary_boundary_containment_metric_ready": bool(
             free_boundary_strict_gate.get("checks", {}).get(
                 "boundary_containment_metric_ready",
-                free_boundary_geometry["boundary_containment_metric_ready"],
+                False,
             )
         ),
         "free_boundary_grid_convergence_ready": bool(
             free_boundary_strict_gate.get("checks", {}).get(
                 "grid_convergence_ready",
-                free_boundary_strict["grid_convergence_ready"],
+                False,
             )
         ),
         "free_boundary_coil_vacuum_sidecar_ready": bool(
             free_boundary_strict_gate.get("checks", {}).get(
                 "coil_vacuum_sidecar_ready",
-                free_boundary_strict["coil_vacuum_sidecar_ready"],
+                False,
             )
         ),
         "free_boundary_same_case_public_reference_output_ready": bool(
@@ -848,15 +852,11 @@ def run_campaign() -> dict[str, Any]:
         "free_boundary_failed_threshold_check_count": int(
             free_boundary_strict_gate.get(
                 "failed_threshold_check_count",
-                free_boundary_strict["failed_threshold_check_count"],
+                0,
             )
         ),
-        "free_boundary_strict_parity_status": str(
-            free_boundary_strict_gate.get("status", free_boundary_strict["status"])
-        ),
-        "free_boundary_strict_parity_blockers": list(
-            free_boundary_strict_gate.get("blockers", free_boundary_strict["blocking_requirements"])
-        ),
+        "free_boundary_strict_parity_status": str(free_boundary_strict_gate["status"]),
+        "free_boundary_strict_parity_blockers": list(free_boundary_strict_gate["blockers"]),
         "public_source_registry": str(PUBLIC_SOURCES.relative_to(ROOT)),
         "acceptance_report": "validation/reports/full_fidelity_acceptance_benchmark.json",
         "lanes": lanes,
