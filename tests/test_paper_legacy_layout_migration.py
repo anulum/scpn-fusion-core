@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import subprocess
+import sys
 from typing import Any
 
 
@@ -27,14 +28,30 @@ def _load_manifest() -> dict[str, Any]:
     return payload
 
 
-def test_retirement_manifest_regenerates_from_exact_git_objects() -> None:
-    """Require every retired byte and successor mapping to regenerate exactly."""
+def test_retirement_manifest_regenerates_from_exact_git_objects(tmp_path: Path) -> None:
+    """Check exact historical objects from a real checkout with no local venv."""
+    checkout = tmp_path / "checkout"
+    subprocess.run(
+        ["git", "clone", "--quiet", "--shared", "--no-checkout", str(ROOT), str(checkout)],
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    subprocess.run(
+        ["git", "checkout", "HEAD", "--", "papers"],
+        cwd=checkout,
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    assert not (checkout / ".venv").exists()
     result = subprocess.run(
-        [str(ROOT / ".venv" / "bin" / "python"), str(GENERATOR), "--check"],
-        cwd=ROOT,
+        [sys.executable, str(checkout / GENERATOR.relative_to(ROOT)), "--check"],
+        cwd=checkout,
         check=True,
         capture_output=True,
         text=True,
+        timeout=30,
     )
 
     assert result.stdout.strip() == "[OK] 58 retired paper paths retain exact Git-object custody"

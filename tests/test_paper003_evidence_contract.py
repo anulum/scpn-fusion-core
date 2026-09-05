@@ -13,6 +13,7 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import sys
 from typing import Any
 
 from scpn_fusion.control.fueling_mode import build_ice_pellet_fueling_controller
@@ -133,22 +134,40 @@ def test_production_petri_controller_preserves_runtime_bounds() -> None:
     assert all(0.0 <= value <= 1.0 for value in controller.marking)
 
 
-def test_evidence_generator_is_byte_deterministic() -> None:
-    """Require regeneration to leave all exact evidence bytes unchanged."""
+def test_evidence_generator_is_byte_deterministic(tmp_path: Path) -> None:
+    """Regenerate exact evidence in a real checkout without a repository-local venv."""
+    checkout = tmp_path / "checkout"
+    subprocess.run(
+        ["git", "clone", "--quiet", "--shared", "--no-checkout", str(ROOT), str(checkout)],
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    subprocess.run(
+        ["git", "checkout", "HEAD", "--", "papers", "src/scpn_fusion"],
+        cwd=checkout,
+        check=True,
+        capture_output=True,
+        timeout=30,
+    )
+    assert not (checkout / ".venv").exists()
+    submission = checkout / SUBMISSION.relative_to(ROOT)
+    evidence = submission / "evidence"
     tracked_paths = [
-        EVIDENCE / "vertical_stability_reduced_order.json",
-        EVIDENCE / "real_diiid_145419_validation.json",
-        EVIDENCE / "sparc_geqdsk_rmse_benchmark.json",
-        EVIDENCE / "evidence_manifest.json",
+        evidence / "vertical_stability_reduced_order.json",
+        evidence / "real_diiid_145419_validation.json",
+        evidence / "sparc_geqdsk_rmse_benchmark.json",
+        evidence / "evidence_manifest.json",
     ]
     before = {path: path.read_bytes() for path in tracked_paths}
 
     subprocess.run(
-        [str(ROOT / ".venv" / "bin" / "python"), str(SUBMISSION / "generate_evidence_manifest.py")],
-        cwd=ROOT,
+        [sys.executable, str(submission / "generate_evidence_manifest.py")],
+        cwd=checkout,
         check=True,
         capture_output=True,
         text=True,
+        timeout=30,
     )
 
     assert {path: path.read_bytes() for path in tracked_paths} == before
