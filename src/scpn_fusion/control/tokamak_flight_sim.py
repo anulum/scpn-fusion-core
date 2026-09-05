@@ -37,7 +37,7 @@ FloatArray: TypeAlias = NDArray[np.float64]
 class ControlObservation:
     """Measured plant state supplied to one control-policy evaluation.
 
-    Attributes
+    Parameters
     ----------
     step_index : int
         Zero-based control-step index.

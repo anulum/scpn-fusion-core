@@ -56,9 +56,9 @@ pub struct SimulationReport {
     pub history_truncated: bool,
     /// Whether any step met the local disruption heuristic.
     pub disrupted: bool,
-    /// First disruption time, or the full duration when undisrupted [s].
+    /// First disruption time, or the full duration when undisrupted, in seconds.
     pub t_disruption_s: f64,
-    /// RMS of the realized radial and vertical measurement noise [m].
+    /// RMS of the realised radial and vertical measurement noise in metres.
     pub realized_measurement_noise_rms_m: f64,
     /// Retained major-radius history in metres.
     pub r_history: Vec<f64>,
@@ -89,9 +89,9 @@ pub struct StepMetrics {
     pub pf_constraint_active: bool,
     /// Whether heating limits modified the heating request.
     pub heating_constraint_active: bool,
-    /// Realized radial position-measurement error [m].
+    /// Realised radial position-measurement error in metres.
     pub radial_measurement_noise_m: f64,
-    /// Realized vertical position-measurement error [m].
+    /// Realised vertical position-measurement error in metres.
     pub vertical_measurement_noise_m: f64,
 }
 
@@ -134,9 +134,9 @@ pub struct RustFlightSim {
     pub constraints: SafetyEnvelope,
     /// Control-period duration in seconds.
     pub control_dt: f64,
-    /// Standard deviation of independent radial/vertical position noise [m].
+    /// Standard deviation of independent radial/vertical position noise in metres.
     pub measurement_noise_std_m: f64,
-    /// Configured actuator command transport delay [s].
+    /// Configured actuator command transport delay in seconds.
     pub actuator_delay_s: f64,
     measurement_seed: u64,
     measurement_rng: StdRng,
