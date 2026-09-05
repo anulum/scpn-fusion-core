@@ -244,7 +244,8 @@ def run_checks(
                 )
                 row["path"] = list(check.path)
             else:
-                assert check.ratio is not None
+                if check.ratio is None:
+                    raise ValueError(f"[{check.check_id}] check has neither a path nor a ratio.")
                 numerator = _resolve_path(
                     payload,
                     check.ratio.numerator,

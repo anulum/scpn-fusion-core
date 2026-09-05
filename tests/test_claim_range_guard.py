@@ -14,6 +14,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -42,6 +43,15 @@ def test_claim_range_guard_passes_with_repo_config() -> None:
     errors, summary = claim_range_guard.run_checks(checks, repo_root=ROOT)
     assert errors == []
     assert summary["failed_checks"] == 0
+
+
+def test_claim_range_guard_reports_invalid_public_check_contract() -> None:
+    """Return a failure for a malformed public RangeCheck even with assertions disabled."""
+    checks = claim_range_guard.load_checks(ROOT / "validation/claim_range_thresholds.json")
+    malformed = replace(checks[0], path=None, ratio=None)
+    errors, summary = claim_range_guard.run_checks((malformed,), repo_root=ROOT)
+    assert errors == [f"[{malformed.check_id}] check has neither a path nor a ratio."]
+    assert summary["failed_checks"] == 1
 
 
 @pytest.mark.parametrize(
