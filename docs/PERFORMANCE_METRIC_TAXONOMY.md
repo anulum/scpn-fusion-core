@@ -43,9 +43,17 @@ changes to algorithm quality.
 
 | Metric ID | Scope | Includes | Excludes | Current headline value |
 |---|---|---|---|---|
-| `control.pid_kernel_step_us` | Rust PID kernel microbenchmark | Core reduced-order control kernel compute step in Rust | Python orchestration, plant integration, report/log overhead, Grad-Shafranov equilibrium solving | 0.52 us P50 in the committed Rust-extension campaign artifact |
+| `control.pid_kernel_step_us` | Rust PID kernel microbenchmark | PID kernel compute only, when independently timed | Plant integration and complete-shot timing | No current guarantee from the historical stress campaign |
+| `control.historical_shot_amortised_step_us` | Historical complete-shot wall time divided by reported steps | Legacy controller-specific plant and shot-loop execution, aggregated across episodes | Same-work speedup, kernel-only timing and current performance promotion | Rust-PID 0.522531 us P50; Python PID 3431.3758333333335 us P50, on different plants and a non-isolated host |
 | `control.closed_loop_step_us` | End-to-end closed-loop control step | Sensor preprocessing, controller call, actuator lag, and explicitly selected plant update mode | Claims that mix reduced-order surrogate timing with full Grad-Shafranov equilibrium timing | PID p95: 0.012 ms surrogate mode / 0.047 ms full mode in `validation/reports/scpn_end_to_end_latency.md` |
 | `control.hil_loop_us` | Hardware-in-the-loop or simulated-HIL loop latency | HIL integration path as reported in `RESULTS.md`; simulated host ADC/DAC scaffold rows when explicitly labelled as simulated | Offline synthetic microbench shortcuts; physical HIL, FPGA, CODAC, or actuator-hardware claims unless a physical report names the device | Legacy collect-results row: 24.5 us P50 in `RESULTS.md`; current simulated 256-actuator scaffold: 167.140500 us P50 / 232.522000 us P95 in `validation/reports/scpn_end_to_end_latency.md` |
+
+The historical values remain in
+[Paper 002's historical evidence](../papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json).
+The exact invocation count is unknown; 1,000 episodes was a harness default.
+The current schema-v3 report is wiring-only and not promotion-eligible.
+Neither record supports current sub-2 us, at-least-1000x speedup or
+zero-disruption guarantees. A fresh admissible cohort is required for promotion.
 
 ## Rust Equilibrium Metrics
 

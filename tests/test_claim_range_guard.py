@@ -44,6 +44,111 @@ def test_claim_range_guard_passes_with_repo_config() -> None:
     assert summary["failed_checks"] == 0
 
 
+@pytest.mark.parametrize(
+    ("path", "replacement"),
+    [
+        (("schema",), "scpn-fusion-core.stress-campaign-results.v2"),
+        (("campaign_complete",), True),
+        (("promotion_eligible",), True),
+        (("promotion_eligible",), 0),
+        (("campaign_complete",), 0),
+        (("promotion_eligible",), "false"),
+        (
+            ("campaign_identity", "payload", "evaluation_contract", "payload", "evidence_scope"),
+            "promotion",
+        ),
+        (("controllers", "Rust-PID", "policy_implementation"), "different.plant.controller"),
+    ],
+)
+def test_current_campaign_claim_contract_rejects_relabelled_evidence(
+    tmp_path: Path, path: tuple[str, ...], replacement: object
+) -> None:
+    """Reject promotion or schema/controller substitution in the frozen real report."""
+    relative = "validation/reports/stress_test_campaign.json"
+    payload = json.loads((ROOT / relative).read_text(encoding="utf-8"))
+    target = payload
+    for token in path[:-1]:
+        target = target[token]
+    target[path[-1]] = replacement
+    artifact = tmp_path / relative
+    artifact.parent.mkdir(parents=True)
+    _write_json(artifact, payload)
+    checks = tuple(
+        check
+        for check in claim_range_guard.load_checks(ROOT / "validation/claim_range_thresholds.json")
+        if check.file == relative
+    )
+    errors, _ = claim_range_guard.run_checks(checks, repo_root=tmp_path)
+    assert any("expected ==" in error for error in errors), errors
+
+
+def test_historical_latency_contract_retains_observations_not_release_bounds() -> None:
+    """Keep legacy latency outside live release guarantees and preserve all other bounds."""
+    checks = claim_range_guard.load_checks(ROOT / "validation/claim_range_thresholds.json")
+    retired = {
+        "rust_pid_p50_latency_us",
+        "rust_pid_speedup_vs_python_pid",
+        "rust_pid_disruption_rate",
+    }
+    assert retired.isdisjoint(check.check_id for check in checks)
+    historical = [check for check in checks if "historical_controller_latency.json" in check.file]
+    assert historical
+    assert all(
+        check.minimum is None and check.maximum is None and check.ratio is None
+        for check in historical
+    )
+    by_id = {check.check_id: check for check in checks}
+    assert by_id["qlknn_test_relative_l2"].maximum == 0.25
+    assert by_id["real_shot_disruption_recall"].minimum == 0.6
+    assert by_id["real_shot_disruption_fpr"].maximum == 0.4
+    assert by_id["freegs_overall_psi_nrmse"].maximum == 0.01
+
+
+@pytest.mark.parametrize("substitution", ["missing", "historical", "different_method"])
+def test_controller_claim_contract_rejects_missing_or_incompatible_artifacts(
+    tmp_path: Path, substitution: str
+) -> None:
+    """Reject missing evidence, legacy-for-current substitution and altered historical timers."""
+    historical_path = "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json"
+    current_path = "validation/reports/stress_test_campaign.json"
+    checks = tuple(
+        check
+        for check in claim_range_guard.load_checks(ROOT / "validation/claim_range_thresholds.json")
+        if check.file in {historical_path, current_path}
+    )
+    for relative in (historical_path, current_path):
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((ROOT / relative).read_bytes())
+    errors, _ = claim_range_guard.run_checks(checks, repo_root=tmp_path)
+    assert errors == []
+    if substitution == "missing":
+        (tmp_path / current_path).unlink()
+    elif substitution == "historical":
+        (tmp_path / current_path).write_bytes((ROOT / historical_path).read_bytes())
+    else:
+        historical = json.loads((ROOT / historical_path).read_text(encoding="utf-8"))
+        historical["methodology"]["latency_metric"] = "policy_only_kernel_timer"
+        _write_json(tmp_path / historical_path, historical)
+    errors, summary = claim_range_guard.run_checks(checks, repo_root=tmp_path)
+    assert errors
+    assert summary["failed_checks"] > 0
+
+
+def test_controller_claim_registries_share_exact_evidence_scope() -> None:
+    """Require public claim and metric registries to bind the same historical/current files."""
+    manifest = json.loads((ROOT / "validation/claims_manifest.json").read_text(encoding="utf-8"))
+    claims = {claim["id"]: claim for claim in manifest["claims"]}
+    checks = claim_range_guard.load_checks(ROOT / "validation/claim_range_thresholds.json")
+    evidence = set(claims["readme_controller_promotion_withheld"]["evidence_files"])
+    assert evidence == {
+        check.file
+        for check in checks
+        if check.check_id.startswith(("historical_", "current_controller_", "current_rust_pid_"))
+    }
+    assert set(claims["readme_historical_controller_latency_boundary"]["evidence_files"]) < evidence
+
+
 def test_claim_range_guard_reports_threshold_violation(tmp_path: Path) -> None:
     artifact = tmp_path / "artifact.json"
     _write_json(artifact, {"metric": 5.0})

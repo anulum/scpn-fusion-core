@@ -237,7 +237,7 @@ before plant deployment.
 | **Nuclear** | Blanket neutronics, PWI erosion, wall interaction |
 | **SCPN Compiler** | Petri net structure, compiler, contracts, safety interlocks, artifact packaging |
 | **I/O** | IMAS/OMAS adapter, GEQDSK, tokamak archive, logging |
-| **Rust Backend** | GS kernel (0.52 us), transport, control, ML inference, PyO3 bindings |
+| **Rust Backend** | Grad-Shafranov equilibrium, transport, control, ML inference, PyO3 bindings |
 
 The generated capability inventory above is the source of truth for public
 package, test, documentation, workflow, and Rust workspace counts.
@@ -270,7 +270,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 
 | Metric | Value | Reproducibility |
 |--------|-------|-----------------|
-| Rust PID kernel latency | **0.52 us P50** | `validation/verify_10khz_rust.py` |
+| Historical Rust-PID aggregate latency | **0.522531 us P50**, separate-plant observation; not kernel timing or a current guarantee | [Historical evidence](papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json) |
 | Closed-loop HIL latency | **24.5 us P50** legacy collect-results row | `RESULTS.md`; re-run with `python validation/collect_results.py` |
 | Taskset-affinity CPU sensor-to-control latency | **0.053408 ms P95** on logical CPUs 10,11; not shielded cpuset evidence | `validation/reports/scpn_end_to_end_latency.md` records the exact command |
 | Simulated 256-actuator HIL scaffold | **232.522 us P95** host ADC/DAC loop; not physical HIL rig timing | `python validation/scpn_end_to_end_latency.py --strict` |
@@ -280,7 +280,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | QLKNN-10D transport surrogate | test rel_L2 = **0.094** | `weights/neural_transport_qlknn.metrics.json` |
 | FNO turbulence surrogate | val rel_L2 = **0.055** | `weights/fno_turbulence_jax.metrics.json` |
 | ITER-like synthetic equilibrium baseline v2 | held-out mean / p95 rel_L2 = **3.05% / 6.90%**; synthetic-only, not facility validated | `validation/reports/iter_surrogate_v2_selection.json` |
-| Disruption rate (1,000-shot sim campaign) | **0%** (Rust-PID) | `validation/stress_test_campaign.py` |
+| Historical Rust-PID disruption observation | **0%**, exact invocation count unknown; not a current control-quality guarantee | [Historical evidence](papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json) |
 | ITPA H-mode confinement | 53 shots / 24 machines | `validation/reference_data/itpa/` |
 | SPARC GEQDSK validation | 8 public EFIT equilibria; operator-source gate passes; row-level debug traces expose profile-source/free-boundary blockers | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py` |
 | Q >= 10 operating point | Q = 15 (0D power balance) | `RESULTS.md` |
@@ -529,7 +529,7 @@ and hardware-specific timing evidence exist.
 | Native GK solver | Linear eigenvalue plus nonlinear 5D operator/invariant benchmarks; not GENE/CGYRO-class production turbulence | N | N | N | N |
 | External GK coupling (5 codes) | **Y** | TGLF only | TGLF only | N | N |
 | Neuro-symbolic SNN compiler | **Y** | N | N | N | N |
-| Rust PID kernel latency | **Y** (0.52 us P50 kernel metric; not a full PCS or HIL-loop timing claim) | N | N | N | N |
+| Current Rust PID kernel latency guarantee | **N** (historical aggregate-shot timing is not kernel-only evidence) | N | N | N | N |
 | H-infinity robust control | **Y** | N | N | N | N |
 | Free-boundary tracking | Direct kernel + supervisor; not EFIT/LiUQE-grade inverse reconstruction | N | N | N | N |
 | Disruption chain (TQ+CQ+RE+halo) | Reduced chain with 0D runaway rates | N | N | N | Y |
@@ -602,18 +602,30 @@ SNN deterministic replay over seeded stochastic traces, matrix-level incidence
 preservation against the Python compiler artefact schema, and finite-capacity
 token boundedness tied to executable weighted firing updates.
 
-## Controller Stress-Test Campaign (1,000 shots)
+## Historical Controller Stress-Test Output
 
-The campaign table is a mixed-fidelity controller benchmark, not an
-apples-to-apples language benchmark. `Rust-PID` uses the Rust
+The table preserves historical, non-comparable observations, not current
+controller performance guarantees. The legacy harness defaulted to 1,000
+shots, but the exact invocation count and seed were not recorded. Its timer
+measured complete-shot wall time divided by reported steps, then aggregated
+those episode values; it did not isolate PID kernel execution. The host was
+not isolated. `Rust-PID` used the Rust
 `PyRustFlightSim` reduced-order linearised plasma surrogate. The Python PID,
 H-infinity, NMPC-JAX, and Nengo-SNN rows run through the Python flight-sim
 control path; the non-surrogate PID lane performs Grad-Shafranov equilibrium
 work inside the loop. Therefore the Rust/Python latency ratio measures a
 physics-scope change plus implementation overhead, not "Rust is N times faster
-for the same work".
+for the same work". The [historical evidence](papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json)
+retains exact Git-object custody, original values and methodology limitations.
 
-| Controller | Physics/control scope | P50 Latency | P95 Latency | Disruption Rate |
+Current sub-2 us latency, at-least-1000x speedup and zero-disruption guarantees
+are withdrawn: the historical evidence cannot support them. The current
+[schema-v3 transition report](validation/reports/stress_test_campaign.json)
+is incomplete, wiring-only and not promotion-eligible. An admissible fresh
+cohort is required before any current controller-performance promotion.
+Passing the claim-integrity checks does not mean passing a performance gate.
+
+| Controller | Historical physics/control scope | Aggregate P50 | Aggregate P95 | Historical disruption output |
 |-----------|------------------------|------------|------------|-----------------|
 | **Rust-PID** | Reduced-order linearised plasma surrogate in Rust | **0.52 us** | 0.67 us | **0%** |
 | PID (Python) | Python flight-sim path with Grad-Shafranov equilibrium work | 3,431 us | 3,624 us | 0% |
@@ -639,8 +651,7 @@ field 65x65 at 489 us. Local hardware: Linux 6.17, 31.1 GB RAM, Rust 1.95.0,
 Python 3.12.3, NVIDIA GTX 1060 6GB available for JAX/CUDA tests. These numbers
 are competitive for sub-millisecond low-resolution equilibrium/control-support
 updates, but they are not EFIT-grade reconstruction parity evidence and should
-not be compared with the reduced-order 0.16-0.52 us Rust flight-simulator
-kernel.
+not be compared with the historical reduced-order Rust aggregate-shot timing.
 
 H-infinity is a research lane (reduced-order 2x2 robust model) and is not
 part of production release acceptance criteria.
@@ -784,7 +795,7 @@ cargo bench                      # Criterion benchmarks
 
 | Category | Modules |
 |----------|---------|
-| **Classical** | PID (Rust 0.52 us), H-infinity (Riccati synthesis), gain-scheduled, sliding-mode vertical |
+| **Classical** | PID (Python and Rust), H-infinity (Riccati synthesis), gain-scheduled, sliding-mode vertical |
 | **Optimal** | NMPC-JAX (SQP), MPC (gradient trajectory), optimal control |
 | **Learning** | Safe RL (Lagrangian PPO scaffold), controller tuning (offline/library Bayesian helper for PID and reduced H-infinity parameter search); no public PPO-vs-MPC/PID victory curve is claimed |
 | **Neuro-symbolic** | SNN compiler, cybernetic controller, Nengo SNN wrapper |

@@ -79,6 +79,40 @@ def test_claims_manifest_passes_against_repo() -> None:
     assert errors == []
 
 
+@pytest.mark.parametrize(
+    "overclaim",
+    [
+        "GS kernel (0.52 us)",
+        "Rust PID kernel latency | **0.52 us P50**",
+        "PID (Rust 0.52 us)",
+        "Disruption rate (1,000-shot sim campaign)",
+        "## Controller Stress-Test Campaign (1,000 shots)",
+    ],
+)
+def test_controller_claim_audit_rejects_restored_historical_overclaims(
+    tmp_path: Path, overclaim: str
+) -> None:
+    """Reject old headline guarantees even when the correct caveats remain present."""
+    claims = tuple(
+        claim
+        for claim in claims_audit.load_manifest(ROOT / "validation/claims_manifest.json")
+        if claim.claim_id
+        in {"readme_historical_controller_latency_boundary", "readme_controller_promotion_withheld"}
+    )
+    assert len(claims) == 2
+    files = {"README.md"} | {path for claim in claims for path in claim.evidence_files}
+    for relative in files:
+        target = tmp_path / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes((ROOT / relative).read_bytes())
+    errors = claims_audit.run_audit(claims, tmp_path, tracked_files=files)
+    assert errors == []
+    readme = tmp_path / "README.md"
+    readme.write_text(readme.read_text(encoding="utf-8") + "\n" + overclaim, encoding="utf-8")
+    errors = claims_audit.run_audit(claims, tmp_path, tracked_files=files)
+    assert any("source pattern not found" in error for error in errors), errors
+
+
 def test_reactor_claim_docs_are_manifested_and_bounded() -> None:
     manifest = ROOT / "validation" / "claims_manifest.json"
     claims = {claim.claim_id: claim for claim in claims_audit.load_manifest(manifest)}

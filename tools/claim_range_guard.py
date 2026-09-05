@@ -5,6 +5,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+# SCPN-FUSION-CORE — JSON claim metric and evidence-boundary checks.
 """Guard headline claim metrics using range/equality checks on JSON artifacts."""
 
 from __future__ import annotations
@@ -196,7 +197,22 @@ def run_checks(
     *,
     repo_root: Path = REPO_ROOT,
 ) -> tuple[list[str], dict[str, Any]]:
-    """Execute configured checks against artifact JSON and return failures and summary."""
+    """Check JSON metrics and evidence boundaries, retaining strict boolean/string types.
+
+    Parameters
+    ----------
+    checks : tuple of RangeCheck
+        Parsed metric bounds or frozen evidence-equality contracts.
+    repo_root : Path
+        Repository containing the referenced JSON artefacts.
+
+    Returns
+    -------
+    tuple
+        Failure messages and a per-check summary. Boolean and string equality
+        requires the same JSON type; numeric equality uses absolute tolerance
+        1e-12 and rejects boolean observations.
+    """
     errors: list[str] = []
     summary_rows: list[dict[str, Any]] = []
     json_cache: dict[Path, Any] = {}
@@ -258,7 +274,7 @@ def run_checks(
                         raise ValueError(
                             f"[{check.check_id}] expected == {expected}, got {observed_num}"
                         )
-                elif observed != expected:
+                elif type(observed) is not type(expected) or observed != expected:
                     raise ValueError(
                         f"[{check.check_id}] expected == {expected!r}, got {observed!r}"
                     )

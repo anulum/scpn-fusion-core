@@ -2,68 +2,191 @@
   "version": "claim-range-guard-v1",
   "checks": [
     {
-      "id": "rust_pid_p50_latency_us",
-      "file": "validation/reports/stress_test_campaign.json",
-      "path": ["Rust-PID", "p50_latency_us"],
-      "max": 2.0,
-      "description": "Rust PID control loop p50 latency remains within sub-2 us release contract."
+      "id": "historical_controller_schema",
+      "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+      "path": [
+        "schema"
+      ],
+      "equals": "scpn-fusion-core.paper002-historical-controller-latency.v1",
+      "description": "Frozen historical schema; not current controller performance evidence."
     },
     {
-      "id": "rust_pid_speedup_vs_python_pid",
-      "file": "validation/reports/stress_test_campaign.json",
-      "ratio": {
-        "numerator": ["PID", "p50_latency_us"],
-        "denominator": ["Rust-PID", "p50_latency_us"]
-      },
-      "min": 1000.0,
-      "description": "Rust PID must retain at least 1000x speedup over Python PID in stress artifact."
+      "id": "historical_controller_evidence_status",
+      "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+      "path": [
+        "evidence_status"
+      ],
+      "equals": "historical_non_comparable",
+      "description": "Different plants and non-isolated host prohibit current performance promotion."
     },
     {
-      "id": "rust_pid_disruption_rate",
+      "id": "historical_rust_pid_aggregate_p50_us",
+      "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+      "path": [
+        "results",
+        "Rust-PID",
+        "p50_latency_us"
+      ],
+      "equals": 0.522531,
+      "description": "Preserve the exact historical aggregate-shot observation, not a kernel or release bound."
+    },
+    {
+      "id": "historical_python_pid_aggregate_p50_us",
+      "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+      "path": [
+        "results",
+        "PID",
+        "p50_latency_us"
+      ],
+      "equals": 3431.3758333333335,
+      "description": "Preserve the historical Python observation; no same-work speedup is inferred."
+    },
+    {
+      "id": "historical_rust_pid_disruption_observation",
+      "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+      "path": [
+        "results",
+        "Rust-PID",
+        "disruption_rate"
+      ],
+      "equals": 0,
+      "description": "Preserve historical output only; no current disruption guarantee."
+    },
+    {
+      "id": "historical_controller_timer",
+      "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+      "path": [
+        "methodology",
+        "latency_metric"
+      ],
+      "equals": "wall_clock_for_complete_run_shot_divided_by_reported_steps",
+      "description": "The legacy timer includes the shot loop, not just a PID kernel."
+    },
+    {
+      "id": "historical_controller_host_isolation",
+      "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+      "path": [
+        "methodology",
+        "host_isolation"
+      ],
+      "equals": "not_isolated",
+      "description": "Historical timings are not isolated-host performance evidence."
+    },
+    {
+      "id": "historical_rust_pid_scope",
+      "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+      "path": [
+        "results",
+        "Rust-PID",
+        "status"
+      ],
+      "equals": "historical_orientation_only_separate_plant",
+      "description": "Do not relabel a different-plant observation as comparable performance."
+    },
+    {
+      "id": "current_controller_campaign_schema",
       "file": "validation/reports/stress_test_campaign.json",
-      "path": ["Rust-PID", "disruption_rate"],
-      "max": 0.0,
-      "description": "Rust PID stress campaign disruption rate must remain zero."
+      "path": [
+        "schema"
+      ],
+      "equals": "scpn-fusion-core.stress-campaign-results.v3",
+      "description": "Require the modern schema; never inject root-level legacy controller keys."
+    },
+    {
+      "id": "current_controller_campaign_incomplete",
+      "file": "validation/reports/stress_test_campaign.json",
+      "path": [
+        "campaign_complete"
+      ],
+      "equals": false,
+      "description": "The frozen transition run is incomplete; fresh-cohort admission requires separate review."
+    },
+    {
+      "id": "current_controller_promotion_withheld",
+      "file": "validation/reports/stress_test_campaign.json",
+      "path": [
+        "promotion_eligible"
+      ],
+      "equals": false,
+      "description": "No current latency, speedup or disruption promotion from this report."
+    },
+    {
+      "id": "current_controller_wiring_scope",
+      "file": "validation/reports/stress_test_campaign.json",
+      "path": [
+        "campaign_identity",
+        "payload",
+        "evaluation_contract",
+        "payload",
+        "evidence_scope"
+      ],
+      "equals": "wiring_only",
+      "description": "The transition run demonstrates wiring only, not performance admission."
+    },
+    {
+      "id": "current_rust_pid_implementation",
+      "file": "validation/reports/stress_test_campaign.json",
+      "path": [
+        "controllers",
+        "Rust-PID",
+        "policy_implementation"
+      ],
+      "equals": "rust.fusion_control.pid.IsoFluxController.RZ_via_PyO3",
+      "description": "Bind the current Rust-PID policy identity, not the historical separate plant."
     },
     {
       "id": "qlknn_test_relative_l2",
       "file": "weights/neural_transport_qlknn.metrics.json",
-      "path": ["test_relative_l2"],
+      "path": [
+        "test_relative_l2"
+      ],
       "max": 0.25,
       "description": "QLKNN test relative L2 < 0.25 (v3 retrain achieved 0.201 on L40S)."
     },
     {
       "id": "real_shot_overall_pass",
       "file": "artifacts/real_shot_validation.json",
-      "path": ["overall_pass"],
+      "path": [
+        "overall_pass"
+      ],
       "equals": true,
       "description": "Real-shot validation artifact must report overall pass."
     },
     {
       "id": "real_shot_disruption_recall",
       "file": "artifacts/real_shot_validation.json",
-      "path": ["disruption", "recall"],
+      "path": [
+        "disruption",
+        "recall"
+      ],
       "min": 0.6,
       "description": "Real-shot disruption recall remains above release minimum."
     },
     {
       "id": "real_shot_disruption_fpr",
       "file": "artifacts/real_shot_validation.json",
-      "path": ["disruption", "false_positive_rate"],
+      "path": [
+        "disruption",
+        "false_positive_rate"
+      ],
       "max": 0.4,
       "description": "Real-shot disruption false-positive rate remains below release maximum."
     },
     {
       "id": "freegs_mode_contract",
       "file": "artifacts/freegs_benchmark.json",
-      "path": ["mode"],
+      "path": [
+        "mode"
+      ],
       "equals": "solovev_manufactured_source",
       "description": "Equilibrium parity lane runs manufactured-source Solov'ev validation."
     },
     {
       "id": "freegs_overall_psi_nrmse",
       "file": "artifacts/freegs_benchmark.json",
-      "path": ["overall_psi_nrmse"],
+      "path": [
+        "overall_psi_nrmse"
+      ],
       "max": 0.01,
       "description": "Equilibrium parity ψ NRMSE below 1% (manufactured-source lane)."
     }

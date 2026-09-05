@@ -21,16 +21,24 @@
       ]
     },
     {
-      "id": "readme_rust_control_loop_latency_claim",
+      "id": "readme_historical_controller_latency_boundary",
       "source_file": "README.md",
-      "source_pattern": "Rust PID kernel latency \\| \\*\\*0\\.52 us P50\\*\\*",
+      "source_pattern": "\\A(?![\\s\\S]*(?:GS kernel \\(0\\.52 us\\)|Rust PID kernel latency \\| \\*\\*0\\.52 us|PID \\(Rust 0\\.52 us\\)))[\\s\\S]*Historical Rust-PID aggregate latency \\| \\*\\*0\\.522531 us P50\\*\\*, separate-plant observation; not kernel timing or a current guarantee",
       "evidence_files": [
         "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json"
       ],
       "evidence_patterns": [
         {
           "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
-          "pattern": "\"Rust-PID\"[\\s\\S]*\"p50_latency_us\"\\s*:\\s*[0-9eE+\\-.]+"
+          "pattern": "\"evidence_status\"\\s*:\\s*\"historical_non_comparable\""
+        },
+        {
+          "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+          "pattern": "\"latency_metric\"\\s*:\\s*\"wall_clock_for_complete_run_shot_divided_by_reported_steps\""
+        },
+        {
+          "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+          "pattern": "\"p50_latency_us\"\\s*:\\s*0\\.522531\\s*,"
         }
       ]
     },
@@ -49,16 +57,33 @@
       ]
     },
     {
-      "id": "readme_zero_disruption_rust_pid_claim",
+      "id": "readme_controller_promotion_withheld",
       "source_file": "README.md",
-      "source_pattern": "Disruption rate \\(1,000-shot sim campaign\\) \\| \\*\\*0%\\*\\* \\(Rust-PID\\)",
+      "source_pattern": "\\A(?![\\s\\S]*(?:Disruption rate \\(1,000-shot sim campaign\\)|## Controller Stress-Test Campaign \\(1,000 shots\\)))[\\s\\S]*Current sub-2 us latency, at-least-1000x speedup and zero-disruption guarantees\\s+are withdrawn:[\\s\\S]*An admissible fresh\\s+cohort is required before any current controller-performance promotion",
       "evidence_files": [
-        "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json"
+        "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+        "validation/reports/stress_test_campaign.json"
       ],
       "evidence_patterns": [
         {
           "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
-          "pattern": "\"Rust-PID\"[\\s\\S]*\"disruption_rate\"\\s*:\\s*0\\.0"
+          "pattern": "\"evidence_status\"\\s*:\\s*\"historical_non_comparable\""
+        },
+        {
+          "file": "validation/reports/stress_test_campaign.json",
+          "pattern": "\"schema\"\\s*:\\s*\"scpn-fusion-core.stress-campaign-results.v3\""
+        },
+        {
+          "file": "validation/reports/stress_test_campaign.json",
+          "pattern": "\"campaign_complete\"\\s*:\\s*false"
+        },
+        {
+          "file": "validation/reports/stress_test_campaign.json",
+          "pattern": "\"promotion_eligible\"\\s*:\\s*false"
+        },
+        {
+          "file": "validation/reports/stress_test_campaign.json",
+          "pattern": "\"evidence_scope\"\\s*:\\s*\"wiring_only\""
         }
       ]
     },
@@ -587,6 +612,20 @@
         {
           "file": "artifacts/real_diiid_145419/real_145419_validation.json",
           "pattern": "\"shell_pinning_attribution\"[\\s\\S]*?\"deep_rms_rel_span\"\\s*:\\s*0\\.00069719"
+        }
+      ]
+    },
+    {
+      "id": "historical_controller_metric_taxonomy",
+      "source_file": "docs/PERFORMANCE_METRIC_TAXONOMY.md",
+      "source_pattern": "control\\.historical_shot_amortised_step_us[\\s\\S]*No current guarantee|No current guarantee[\\s\\S]*control\\.historical_shot_amortised_step_us",
+      "evidence_files": [
+        "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json",
+          "pattern": "\"latency_metric\"\\s*:\\s*\"wall_clock_for_complete_run_shot_divided_by_reported_steps\""
         }
       ]
     }
