@@ -19,9 +19,9 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
-        files: ^(src/|tests/|tools/|validation/|examples/).*\.py$
+        files: ^(src/|tests/|integration_tests/|tools/|validation/|examples/).*\.py$
       - id: ruff-format
-        files: ^(src/|tests/|tools/|validation/|examples/).*\.py$
+        files: ^(src/|tests/|integration_tests/|tools/|validation/|examples/).*\.py$
 
   - repo: https://github.com/fsfe/reuse-tool
     rev: v6.2.0
@@ -42,7 +42,7 @@ repos:
         pass_filenames: false
       - id: capability-manifest
         name: capability manifest freshness guard
-        entry: bash -c "PYTHONPATH=src python tools/capability_manifest.py --check"
+        entry: bash -c "PYTHONPATH=src python tools/capability_manifest.py --check --index"
         language: system
         pass_filenames: false
         files: ^(src/|tests/|docs/|scpn-fusion-rs/|\.github/|pyproject\.toml|README\.md)

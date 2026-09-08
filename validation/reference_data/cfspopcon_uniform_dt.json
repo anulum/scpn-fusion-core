@@ -1,0 +1,27 @@
+{
+  "schema": "scpn-fusion.cfspopcon-uniform-dt-request.v1",
+  "major_radius_m": 1.85,
+  "minor_radius_m": 0.57,
+  "elongation": 1.75,
+  "magnetic_field_t": 12.2,
+  "plasma_current_ma": 8.7,
+  "h98": 1.0,
+  "ohmic_power_mw": 1.0,
+  "coupling_fraction": 0.9,
+  "auxiliary_limit_mw": 25.0,
+  "greenwald_limit": 0.9,
+  "density_m3": [
+    1e+20,
+    2e+20,
+    3e+20,
+    5e+20,
+    9e+20
+  ],
+  "temperature_kev": [
+    2.0,
+    5.0,
+    10.0,
+    15.0,
+    30.0
+  ]
+}

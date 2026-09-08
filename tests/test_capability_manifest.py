@@ -832,3 +832,50 @@ def _write_portable_fixture(repo: Path) -> None:
         "| Static inventory | 0 Rust crates, 0 Python capability modules, "
         "0 Python test files, and 0 public documentation pages | Source |\n",
     )
+
+
+def test_index_check_uses_staged_bytes_and_rejects_stale_projection() -> None:
+    """Check a prospective tree despite unrelated working and untracked bytes."""
+    tool = _load_tool()
+    with _tempdir() as repo:
+        _write_portable_fixture(repo)
+        assert tool.main(["--repo", str(repo)]) == 0
+        subprocess.run(["git", "init", "--quiet", str(repo)], check=True)
+        subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+        assert tool.main(["--repo", str(repo), "--index", "--check"]) == 0
+        _write_file(repo / "docs/new.md", "# New staged documentation\n")
+        subprocess.run(["git", "-C", str(repo), "add", "docs/new.md"], check=True)
+        assert tool.main(["--repo", str(repo), "--index", "--check"]) == 1
+        # Without a first commit the existing filesystem generation mode applies.
+        assert tool.main(["--repo", str(repo)]) == 0
+        subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+        _write_file(repo / "src/portable_fusion/core/equilibrium.py", "invalid python !")
+        _write_file(repo / "src/portable_fusion/core/untracked.py", "invalid python !")
+        _write_file(repo / "README.md", "Unstaged foreign edit\n")
+        assert tool.main(["--repo", str(repo), "--index", "--check"]) == 0
+        assert tool.main(["--repo", str(repo), "--index", "--check", "--no-readme"]) == 0
+
+
+def test_index_check_requires_check_mode() -> None:
+    """Refuse an index request that would write projections into a temporary tree."""
+    with pytest.raises(SystemExit, match="2"):
+        _load_tool().main(["--index"])
+
+
+def test_index_check_requires_git_on_path() -> None:
+    """Report a missing Git executable before trying to extract staged bytes."""
+    with _tempdir() as directory:
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(_repo_root() / "tools/capability_manifest.py"),
+                "--index",
+                "--check",
+            ],
+            env={"PATH": str(directory)},
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 2
+        assert "--index requires Git on PATH" in result.stderr

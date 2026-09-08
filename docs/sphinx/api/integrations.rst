@@ -33,3 +33,9 @@ Deterministic review envelope
 .. automodule:: scpn_fusion.integrations.torax.review
    :members:
    :show-inheritance:
+
+Uniform-DT operating maps
+-------------------------
+
+.. automodule:: validation.cfspopcon_operating_map
+   :members:

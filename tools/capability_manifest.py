@@ -21,8 +21,10 @@ import ast
 import importlib
 import json
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -819,7 +821,34 @@ def main(argv: Iterable[str] | None = None) -> int:
     )
     parser.add_argument("--validate", type=Path)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument(
+        "--index", action="store_true", help="check exact staged bytes in an isolated snapshot"
+    )
     args = parser.parse_args(list(argv) if argv is not None else None)
+    if args.index:
+        if not args.check or args.output or args.markdown_output or args.validate:
+            parser.error("--index requires --check and default output paths")
+        git_executable = shutil.which("git")
+        if git_executable is None:
+            parser.error("--index requires Git on PATH")
+        with tempfile.TemporaryDirectory(prefix="capability-index-") as directory:
+            subprocess.run(
+                [
+                    git_executable,
+                    "-C",
+                    str(args.repo.resolve()),
+                    "checkout-index",
+                    "--all",
+                    f"--prefix={directory}/",
+                ],
+                check=True,
+                capture_output=True,
+                timeout=60,
+            )
+            options = ["--repo", directory, "--config", str(args.config), "--check"]
+            if args.no_readme:
+                options.append("--no-readme")
+            return main(options)
 
     repo = args.repo.resolve()
     config = load_config(repo, args.config)

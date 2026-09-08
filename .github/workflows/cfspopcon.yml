@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — optional cfspopcon runtime contract
+name: cfspopcon integration
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  operating-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install independent reference and upstream runtimes
+        run: |
+          python -m venv "$RUNNER_TEMP/scpn-reference"
+          "$RUNNER_TEMP/scpn-reference/bin/python" -m pip install --require-hashes -r requirements/ci-py312.txt
+          "$RUNNER_TEMP/scpn-reference/bin/python" -m pip install --no-deps -e .
+          python -m venv "$RUNNER_TEMP/cfspopcon"
+          "$RUNNER_TEMP/cfspopcon/bin/python" -m pip install -r requirements/cfspopcon.txt pytest==9.1.1 pytest-cov==7.0.0
+      - name: Execute real integration tests and CLI with branch coverage
+        env:
+          PYTHONPATH: src:.
+        run: |
+          export SCPN_REFERENCE_PYTHON="$RUNNER_TEMP/scpn-reference/bin/python"
+          export COVERAGE_FILE="$RUNNER_TEMP/cfspopcon.coverage"
+          "$RUNNER_TEMP/cfspopcon/bin/python" -m pytest integration_tests/cfspopcon/test_operating_map.py --cov=validation.cfspopcon_operating_map --cov-branch
+          "$RUNNER_TEMP/cfspopcon/bin/python" -m coverage run --append --branch --source=validation.cfspopcon_operating_map -m validation.cfspopcon_operating_map validation/reference_data/cfspopcon_uniform_dt.json "$RUNNER_TEMP/cfspopcon-map.json" --reference-python "$SCPN_REFERENCE_PYTHON"
+          "$RUNNER_TEMP/cfspopcon/bin/python" -m coverage report --include=validation/cfspopcon_operating_map.py --fail-under=100

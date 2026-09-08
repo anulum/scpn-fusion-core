@@ -67,7 +67,8 @@
       "docs/rfc/heat_ml_magnetic_shadow_benchmark.md",
       "docs/rfc/torax_hybrid_realtime_control_benchmark.md",
       "docs/security/CONTAINER_HARDENING.md",
-      "docs/security/FUZZING.md"
+      "docs/security/FUZZING.md",
+      "docs/validation/cfspopcon.md"
     ],
     "python_classes": [
       {
@@ -3006,15 +3007,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 66,
-    "github_workflows": 16,
+    "capability_documentation_pages": 67,
+    "github_workflows": 17,
     "optional_extras": 14,
     "public_api_exports": 2,
-    "public_documentation_pages": 66,
+    "public_documentation_pages": 67,
     "python_capability_classes": 629,
     "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
-    "test_files": 657
+    "test_files": 660
   },
   "documentation": {
     "public_pages": [
@@ -3083,7 +3084,8 @@
       "docs/rfc/heat_ml_magnetic_shadow_benchmark.md",
       "docs/rfc/torax_hybrid_realtime_control_benchmark.md",
       "docs/security/CONTAINER_HARDENING.md",
-      "docs/security/FUZZING.md"
+      "docs/security/FUZZING.md",
+      "docs/validation/cfspopcon.md"
     ]
   },
   "evidence_boundary": "Counts are version-controlled static-source inventory only; benchmark, coverage, hardware, and scientific-fidelity claims remain governed by their dedicated evidence artifacts.",
@@ -3141,6 +3143,7 @@
   "project_label": "SCPN Fusion Core",
   "quality_gates": {
     "github_workflows": [
+      ".github/workflows/cfspopcon.yml",
       ".github/workflows/ci.yml",
       ".github/workflows/codeql.yml",
       ".github/workflows/docs.yml",
@@ -3336,12 +3339,15 @@
       "tests/test_free_boundary_public_machine_metadata_inventory.py",
       "tests/test_free_boundary_safety_supervisor.py",
       "tests/test_free_boundary_simulation.py",
+      "tests/test_free_boundary_strict_parity_report.py",
       "tests/test_free_boundary_supervisory_control.py",
       "tests/test_free_boundary_supervisory_types.py",
+      "tests/test_free_boundary_threshold_evidence.py",
       "tests/test_free_boundary_tracking.py",
       "tests/test_free_boundary_tracking_acceptance.py",
       "tests/test_free_boundary_tracking_base.py",
       "tests/test_free_boundary_tracking_config.py",
+      "tests/test_free_boundary_vacuum_evidence.py",
       "tests/test_freegs_benchmark.py",
       "tests/test_freegs_benchmark_enhanced.py",
       "tests/test_freegs_public_example_reconstruction.py",

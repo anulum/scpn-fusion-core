@@ -1,0 +1,2 @@
+# Optional isolated validation runtime; source bytes checked by the integration.
+cfspopcon @ git+https://github.com/cfs-energy/cfspopcon.git@b9ed8c3fd973bd2ad3d8226acbf77aa0e4caf7d1
