@@ -10,11 +10,12 @@
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any, TypedDict
 
 import matplotlib.pyplot as plt
 
-from scpn_fusion.engineering.thermal_hydraulics import CoolantLoop
+from scpn_fusion.engineering.thermal_hydraulics import CoolantLoop, PumpingPowerResult
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class PlantPerformance(TypedDict):
     Q_plasma: float
     Q_eng: float
     breakdown: PlantPowerBreakdown
+    hydraulics: PumpingPowerResult
 
 
 class PowerPlantModel:
@@ -65,12 +67,51 @@ class PowerPlantModel:
         self,
         P_fusion_MW: float,
         P_aux_absorbed_MW: float,
+        *,
+        coolant_parallel_channels: int = 1,
+        coolant_length_m: float = 100.0,
+        coolant_diameter_m: float = 0.05,
+        coolant_temperature_rise_k: float = 50.0,
     ) -> PlantPerformance:
-        """Convert plasma physics output into electrical output.
+        """Calculate instantaneous plant power with explicitly configured cooling.
 
-        P_fusion: Total fusion power (Alpha + Neutrons).
-        P_aux_absorbed: Power absorbed by plasma (heating).
+        Parameters
+        ----------
+        P_fusion_MW : float
+            Nonnegative finite total alpha plus neutron fusion power in MW.
+        P_aux_absorbed_MW : float
+            Nonnegative finite heating power absorbed by the plasma in MW.
+        coolant_parallel_channels : int
+            Number of identical equal-flow cooling paths, default one.
+        coolant_length_m : float
+            Length of each cooling path in metres.
+        coolant_diameter_m : float
+            Internal diameter of each cooling path in metres.
+        coolant_temperature_rise_k : float
+            Coolant temperature rise per path in kelvin.
+
+        Returns
+        -------
+        PlantPerformance
+            Thermal, gross, recirculating and net powers in MW, gain ratios,
+            component electrical loads and explicit hydraulic diagnostics.
+            Negative net power is preserved. Historical zero-denominator gain
+            convention returns zero; it does not establish a finite physical gain.
+
+        Raises
+        ------
+        ValueError
+            For invalid input powers or invalid cooling configuration.
+
+        Notes
+        -----
+        Default cooling is one 5 cm pipe, not a plant-scale layout. Supply actual
+        geometry and channel count; do not calibrate them solely to target net
+        electricity. CoolantLoop's constant-property limitations apply.
         """
+        for name, value in (("P_fusion_MW", P_fusion_MW), ("P_aux_absorbed_MW", P_aux_absorbed_MW)):
+            if not math.isfinite(value) or value < 0:
+                raise ValueError(f"{name} must be finite and non-negative.")
         # 1. Thermal Power Generation
         P_neutron = 0.8 * P_fusion_MW
         P_alpha = 0.2 * P_fusion_MW
@@ -86,7 +127,13 @@ class PowerPlantModel:
 
         # 3. Parasitic Consumption (Recirculating Power)
         # Physics-based pumping power
-        pump_res = self.coolant.calculate_pumping_power(P_thermal_total)
+        pump_res = self.coolant.calculate_pumping_power(
+            P_thermal_total,
+            delta_T=coolant_temperature_rise_k,
+            L=coolant_length_m,
+            D=coolant_diameter_m,
+            parallel_channels=coolant_parallel_channels,
+        )
         P_pump = float(pump_res["P_pump_MW"])
 
         # Power needed to drive the Aux Heating systems (Efficiency loss)
@@ -103,6 +150,7 @@ class PowerPlantModel:
         Q_engineering = P_gross_electric / P_recirculating if P_recirculating > 0 else 0
 
         return {
+            "hydraulics": pump_res,
             "P_fusion": P_fusion_MW,
             "P_thermal": P_thermal_total,
             "P_gross": P_gross_electric,
@@ -154,7 +202,4 @@ if __name__ == "__main__":
     logger.info("NET TO GRID: %.1f MW", res["P_net"])
     logger.info("Q_eng: %.2f", res["Q_eng"])
 
-    if res["P_net"] > 0:
-        logger.info("SUCCESS: Reactor is commercially viable.")
-    else:
-        logger.info("FAIL: Reactor consumes more than it produces.")
+    logger.info("Screening calculation only; net power does not establish commercial viability.")

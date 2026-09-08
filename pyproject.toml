@@ -176,6 +176,8 @@ ignore_missing_imports = false
 # currently gated typed surface and is expanded incrementally as modules are
 # brought to strict-clean status.
 files = [
+    "tests/test_thermal_hydraulics.py",
+    "tests/test_balance_of_plant.py",
     "validation/cfspopcon_operating_map.py",
     "integration_tests/cfspopcon/test_operating_map.py",
     # Top-level package entrypoints
