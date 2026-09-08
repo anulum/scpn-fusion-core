@@ -68,7 +68,8 @@
       "docs/rfc/torax_hybrid_realtime_control_benchmark.md",
       "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md",
-      "docs/validation/cfspopcon.md"
+      "docs/validation/cfspopcon.md",
+      "docs/validation/process.md"
     ],
     "python_classes": [
       {
@@ -3007,11 +3008,11 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 67,
-    "github_workflows": 17,
+    "capability_documentation_pages": 68,
+    "github_workflows": 18,
     "optional_extras": 14,
     "public_api_exports": 2,
-    "public_documentation_pages": 67,
+    "public_documentation_pages": 68,
     "python_capability_classes": 629,
     "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
@@ -3085,7 +3086,8 @@
       "docs/rfc/torax_hybrid_realtime_control_benchmark.md",
       "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md",
-      "docs/validation/cfspopcon.md"
+      "docs/validation/cfspopcon.md",
+      "docs/validation/process.md"
     ]
   },
   "evidence_boundary": "Counts are version-controlled static-source inventory only; benchmark, coverage, hardware, and scientific-fidelity claims remain governed by their dedicated evidence artifacts.",
@@ -3151,6 +3153,7 @@
       ".github/workflows/freegsnke-inverse.yml",
       ".github/workflows/mast-complete-magnetic-archive.yml",
       ".github/workflows/pre-commit.yml",
+      ".github/workflows/process.yml",
       ".github/workflows/publish.yml",
       ".github/workflows/pypi-downloads.yml",
       ".github/workflows/python-fuzz.yml",

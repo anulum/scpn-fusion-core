@@ -39,3 +39,15 @@ Uniform-DT operating maps
 
 .. automodule:: validation.cfspopcon_operating_map
    :members:
+
+PROCESS power diagnostics
+-------------------------
+
+.. automodule:: validation.process_power_report
+   :members:
+
+Source-bound PROCESS execution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: validation.process_reference_run
+   :members:

@@ -176,6 +176,11 @@ ignore_missing_imports = false
 # currently gated typed surface and is expanded incrementally as modules are
 # brought to strict-clean status.
 files = [
+    "validation/process_power_report.py",
+    "validation/process_reference_run.py",
+    "integration_tests/process/conftest.py",
+    "integration_tests/process/test_power_report.py",
+    "integration_tests/process/test_reference_run.py",
     "tests/test_thermal_hydraulics.py",
     "tests/test_balance_of_plant.py",
     "validation/cfspopcon_operating_map.py",
