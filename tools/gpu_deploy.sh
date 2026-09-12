@@ -66,10 +66,11 @@ if [ ! -d ".venv" ]; then
 fi
 
 source .venv/bin/activate
-pip install --upgrade "pip==25.0.1" "wheel==0.47.0" "setuptools==78.1.0" -q
+python -m pip install --upgrade --require-hashes -r requirements/gpu-bootstrap.txt -q
 
-# Install with GPU + ML + dev extras
-pip install --no-deps -e . -q && pip install --require-hashes -r requirements/ci-py312.txt -q 2>&1 | tail -3
+# Install the project with the hash-locked Python 3.12 dependency set.
+python -m pip install --no-deps -e . -q \
+    && python -m pip install --require-hashes -r requirements/ci-py312.txt -q 2>&1 | tail -3
 ok "Installed scpn-fusion[gpu,ml,dev]"
 
 # ── Step 2: Verify GPU ──────────────────────────────────────────

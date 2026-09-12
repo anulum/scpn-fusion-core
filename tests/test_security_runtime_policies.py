@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import ast
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -235,3 +236,25 @@ def test_scorecard_workflow_is_publishable_and_sanitizes_code_scanning_upload() 
     assert "run:" not in analysis_job
     assert scorecard_at < raw_artifact_at < upload_job_at
     assert upload_job_at < sanitize_at < sanitized_artifact_at < sarif_at
+
+
+def test_gpu_deploy_shell_is_syntactically_valid() -> None:
+    """Require Bash to parse the shipped deployment entry point."""
+    script = ROOT / "tools" / "gpu_deploy.sh"
+    subprocess.run(["bash", "-n", str(script)], check=True)
+
+
+def test_gpu_deploy_bootstrap_is_hash_locked() -> None:
+    """Bind bootstrap installation to the maintained hashed requirement file."""
+    script = (ROOT / "tools" / "gpu_deploy.sh").read_text(encoding="utf-8")
+    lock = (ROOT / "requirements" / "gpu-bootstrap.txt").read_text(encoding="utf-8")
+
+    assert (
+        "python -m pip install --upgrade --require-hashes -r requirements/gpu-bootstrap.txt -q"
+    ) in script
+    assert 'pip install --upgrade "' not in script
+    assert lock.count("--hash=sha256:") == 8
+    assert "packaging==26.3" in lock
+    assert "pip==26.2.1" in lock
+    assert "setuptools==84.0.0" in lock
+    assert "wheel==0.47.0" in lock
