@@ -379,9 +379,11 @@ def test_tracked_artifact_matches_pinned_requirements(
 ) -> None:
     """Every bound artifact records the current hash-pinned environment contract.
 
-    After a lock refresh, regenerate all bound artifacts from the repository root with::
+    After a lock refresh, install requirements/full.txt with --require-hashes in
+    a dedicated environment. Substitute its interpreter below and regenerate
+    all bound artifacts from the repository root::
 
-        PINNED_PY=/media/anulum/GOTM/_scratch/fusion-pinned-venv2/bin/python
+        PINNED_PY=/path/to/hash-pinned-venv/bin/python
         PYTHONPATH=src:. $PINNED_PY validation/validate_real_diiid_145419.py
         PYTHONPATH=src:. $PINNED_PY validation/measure_coilgrad_adjoint_fd.py
         PYTHONPATH=src:. $PINNED_PY validation/measure_mg_preconditioner_iterations.py
