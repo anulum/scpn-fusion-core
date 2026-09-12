@@ -22,8 +22,8 @@ from validation.process_reference_run import run_process_reference, verify_proce
 
 @pytest.fixture(scope="session")
 def process_case() -> Path:
-    """Select the pinned upstream case supplied by the optional runtime lane."""
-    return Path(os.environ["PROCESS_TEST_CASE"])
+    """Resolve the upstream case before subprocesses change working directory."""
+    return Path(os.environ["PROCESS_TEST_CASE"]).resolve(strict=True)
 
 
 @pytest.fixture(scope="session")
