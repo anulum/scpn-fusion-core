@@ -38,6 +38,7 @@ _RELEASE_READINESS = REPO_ROOT / "docs" / "RELEASE_READINESS.md"
 
 
 def _module_available(module_name: str) -> bool:
+    """Report whether import discovery succeeds without importing the optional backend."""
     try:
         return importlib.util.find_spec(module_name) is not None
     except (ImportError, ValueError):
@@ -52,6 +53,7 @@ def _internal_files_available(*paths: Path) -> bool:
 
 
 def _normalize_check_timeout_seconds(timeout_s: float) -> float:
+    """Validate a finite positive per-command wall-clock budget in seconds."""
     timeout = float(timeout_s)
     if not math.isfinite(timeout) or timeout <= 0.0:
         raise ValueError("check_timeout_seconds must be finite and > 0.")
@@ -100,7 +102,10 @@ def _build_release_checks(
     enable_strict_backend_checks: bool,
     enable_freegs_strict_backend_check: bool,
 ) -> list[tuple[str, list[str]]]:
-    checks: list[tuple[str, list[str]]] = []
+    """Assemble ordered release commands with mandatory CI ownership validation first."""
+    checks: list[tuple[str, list[str]]] = [
+        ("CI workflow ownership", [sys.executable, "tools/check_ci_workflow_ownership.py"])
+    ]
     if not skip_version_metadata:
         # Hardening: Run metadata sync first to ensure consistency
         checks.append(
@@ -566,6 +571,7 @@ def _build_release_checks(
 
 
 def _build_research_checks(*, skip_research_suite: bool) -> list[tuple[str, list[str]]]:
+    """Select the optional experimental test suite for the research gate."""
     checks: list[tuple[str, list[str]]] = []
     if not skip_research_suite:
         checks.append(
@@ -629,6 +635,7 @@ def _build_checks(
     enable_strict_backend_checks: bool,
     enable_freegs_strict_backend_check: bool,
 ) -> list[tuple[str, list[str]]]:
+    """Compose release and research command lists using the requested gate and skips."""
     checks: list[tuple[str, list[str]]] = []
     if gate in {"release", "all"}:
         checks.extend(
@@ -680,6 +687,7 @@ def _build_checks(
 
 
 def _run_check(name: str, cmd: list[str], *, timeout_seconds: float) -> int:
+    """Run one real command in the repository, translating timeouts to exit status 124."""
     rendered = " ".join(shlex.quote(part) for part in cmd)
     print(f"[preflight] {name}: {rendered}")
     try:

@@ -33,6 +33,7 @@
       "docs/VALIDATION_REAL_DIIID_145419.md",
       "docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md",
       "docs/competitive_analysis.md",
+      "docs/development/ci_workflows.md",
       "docs/equilibrium/frc_rigid_rotor.md",
       "docs/formal_verification.md",
       "docs/hil_demo.md",
@@ -3009,15 +3010,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 69,
-    "github_workflows": 19,
+    "capability_documentation_pages": 70,
+    "github_workflows": 36,
     "optional_extras": 14,
     "public_api_exports": 2,
-    "public_documentation_pages": 69,
+    "public_documentation_pages": 70,
     "python_capability_classes": 629,
     "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
-    "test_files": 661
+    "test_files": 662
   },
   "documentation": {
     "public_pages": [
@@ -3052,6 +3053,7 @@
       "docs/VALIDATION_REAL_DIIID_145419.md",
       "docs/blog/first_machine_checkable_safety_proof_for_tokamak_plasma_solver.md",
       "docs/competitive_analysis.md",
+      "docs/development/ci_workflows.md",
       "docs/equilibrium/frc_rigid_rotor.md",
       "docs/formal_verification.md",
       "docs/hil_demo.md",
@@ -3148,6 +3150,23 @@
   "quality_gates": {
     "github_workflows": [
       ".github/workflows/cfspopcon.yml",
+      ".github/workflows/ci-ci-chain-guard.yml",
+      ".github/workflows/ci-dependency-policy.yml",
+      ".github/workflows/ci-geometry-3d-smoke.yml",
+      ".github/workflows/ci-lean-safety-proofs.yml",
+      ".github/workflows/ci-python-research-gate.yml",
+      ".github/workflows/ci-python-tests.yml",
+      ".github/workflows/ci-reference-evidence.yml",
+      ".github/workflows/ci-runtime-parity-perf-gate.yml",
+      ".github/workflows/ci-rust-benchmarks.yml",
+      ".github/workflows/ci-rust-coverage.yml",
+      ".github/workflows/ci-rust-fuzz.yml",
+      ".github/workflows/ci-rust-python-interop.yml",
+      ".github/workflows/ci-rust-tests.yml",
+      ".github/workflows/ci-smoke-install.yml",
+      ".github/workflows/ci-stress-test.yml",
+      ".github/workflows/ci-studio-conformance.yml",
+      ".github/workflows/ci-validation-regression.yml",
       ".github/workflows/ci.yml",
       ".github/workflows/codeql.yml",
       ".github/workflows/docs.yml",
@@ -3207,6 +3226,7 @@
       "tests/test_cad_raytrace.py",
       "tests/test_calibrate_gyro_bohm.py",
       "tests/test_capability_manifest.py",
+      "tests/test_check_ci_workflow_ownership.py",
       "tests/test_check_commit_trailers.py",
       "tests/test_check_definition_docstrings.py",
       "tests/test_check_disruption_shot_splits.py",

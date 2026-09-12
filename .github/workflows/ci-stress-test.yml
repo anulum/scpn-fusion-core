@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+name: CI stress-test
+'on':
+  workflow_call: {}
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  stress-test:
+    name: Stress Test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        lfs: false
+    - name: Set up Python 3.12
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      run: |
+        pip install --require-hashes -r requirements/ci-stress.txt
+        pip install --no-deps -e .
+    - name: Run stress tests
+      run: "pytest tests/ -v -m \"stress\" --timeout=600 || rc=$?\nif [ \"${rc:-0}\" -eq 5 ]; then\n \
+        \ echo \"No stress-marked tests collected \u2014 skipping.\"\n  exit 0\nfi\nexit \"${rc:-0}\"\n"

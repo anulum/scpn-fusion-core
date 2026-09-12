@@ -4,6 +4,8 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+"""Verify preflight command selection, mandatory guards and failure propagation."""
+
 from __future__ import annotations
 
 import importlib
@@ -20,15 +22,18 @@ RunCall = tuple[list[str], Path, bool, float]
 
 
 def _load_module() -> Any:
+    """Load the maintained runner through the shared test module loader."""
     return importlib.reload(importlib.import_module("tools.run_python_preflight"))
 
 
 def test_module_available_returns_false_when_discovery_raises(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Import-discovery errors report an unavailable optional module."""
     module = _load_module()
 
     def broken_find_spec(_module_name: str) -> None:
+        """Raise the selected import-discovery error for the optional-module check."""
         raise ImportError("broken discovery")
 
     monkeypatch.setattr(module.importlib.util, "find_spec", broken_find_spec)
@@ -39,6 +44,7 @@ def test_module_available_returns_false_when_discovery_raises(
 def test_internal_files_are_never_admitted_from_hosted_ci_residue(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    """Hosted CI must not treat leftover private files as admissible governance inputs."""
     module = _load_module()
     private_input = tmp_path / "private.md"
     private_input.write_text("local only\n", encoding="utf-8")
@@ -54,6 +60,7 @@ def test_main_returns_zero_when_no_checks_selected(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
+    """An empty selected command list succeeds without running subprocesses."""
     module = _load_module()
     monkeypatch.setattr(module, "_build_checks", lambda **_kwargs: [])
     monkeypatch.setattr(module.sys, "argv", ["run_python_preflight.py"])
@@ -63,12 +70,14 @@ def test_main_returns_zero_when_no_checks_selected(
 
 
 def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Default checks retain their order, repository cwd and timeout budget."""
     module = _load_module()
     calls: list[RunCall] = []
 
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -84,6 +93,7 @@ def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> N
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
 
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (["python-test", "tools/check_ci_workflow_ownership.py"], SCRIPT_PATH.resolve().parents[1]),
         (
             [
                 "python-test",
@@ -406,12 +416,14 @@ def test_main_runs_default_checks_in_order(monkeypatch: pytest.MonkeyPatch) -> N
 
 
 def test_main_honors_skip_flags(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Optional skips preserve mandatory workflow ownership verification."""
     module = _load_module()
     calls: list[RunCall] = []
 
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -464,6 +476,7 @@ def test_main_honors_skip_flags(monkeypatch: pytest.MonkeyPatch) -> None:
     assert all(check is False for _, _, check, _ in calls)
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (["python-test", "tools/check_ci_workflow_ownership.py"], SCRIPT_PATH.resolve().parents[1]),
         (
             [
                 "python-test",
@@ -512,12 +525,14 @@ def test_main_honors_skip_flags(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_main_honors_no_tests_without_skipping_other_checks(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """The no-tests flag removes pytest commands while retaining other checks."""
     module = _load_module()
     calls: list[RunCall] = []
 
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -544,12 +559,14 @@ def test_main_honors_no_tests_without_skipping_other_checks(
 def test_main_enables_strict_backend_checks_when_requested(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Strict backend opt-in selects its explicit release commands."""
     module = _load_module()
     calls: list[RunCall] = []
 
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -603,6 +620,7 @@ def test_main_enables_strict_backend_checks_when_requested(
     assert all(check is False for _, _, check, _ in calls)
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (["python-test", "tools/check_ci_workflow_ownership.py"], SCRIPT_PATH.resolve().parents[1]),
         (
             [
                 "python-test",
@@ -655,12 +673,14 @@ def test_main_enables_strict_backend_checks_when_requested(
 def test_main_enables_freegs_strict_backend_check_when_requested(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """FreeGS opt-in selects strict parity verification."""
     module = _load_module()
     calls: list[RunCall] = []
 
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -715,6 +735,7 @@ def test_main_enables_freegs_strict_backend_check_when_requested(
     assert all(check is False for _, _, check, _ in calls)
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (["python-test", "tools/check_ci_workflow_ownership.py"], SCRIPT_PATH.resolve().parents[1]),
         (
             [
                 "python-test",
@@ -776,12 +797,14 @@ def test_main_enables_freegs_strict_backend_check_when_requested(
 def test_main_skips_freegs_strict_parity_without_opt_in(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """FreeGS parity stays absent without explicit opt-in."""
     module = _load_module()
     calls: list[RunCall] = []
 
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -834,6 +857,7 @@ def test_main_skips_freegs_strict_parity_without_opt_in(
     assert all(check is False for _, _, check, _ in calls)
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (["python-test", "tools/check_ci_workflow_ownership.py"], SCRIPT_PATH.resolve().parents[1]),
         (
             [
                 "python-test",
@@ -886,12 +910,14 @@ def test_main_skips_freegs_strict_parity_without_opt_in(
 def test_main_skips_freegs_strict_parity_when_flagged(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """The FreeGS skip flag overrides backend opt-in."""
     module = _load_module()
     calls: list[RunCall] = []
 
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -946,6 +972,7 @@ def test_main_skips_freegs_strict_parity_when_flagged(
     assert all(check is False for _, _, check, _ in calls)
     assert all(timeout == module.DEFAULT_CHECK_TIMEOUT_SECONDS for _, _, _, timeout in calls)
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
+        (["python-test", "tools/check_ci_workflow_ownership.py"], SCRIPT_PATH.resolve().parents[1]),
         (
             [
                 "python-test",
@@ -996,12 +1023,14 @@ def test_main_skips_freegs_strict_parity_when_flagged(
 
 
 def test_main_runs_research_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The research gate selects the experimental test suite."""
     module = _load_module()
     calls: list[RunCall] = []
 
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, 0)
 
@@ -1034,6 +1063,7 @@ def test_main_runs_research_gate(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_main_stops_at_first_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The first command failure prevents later checks and preserves its exit status."""
     module = _load_module()
     calls: list[RunCall] = []
     results = iter([17, 0, 0])
@@ -1041,6 +1071,7 @@ def test_main_stops_at_first_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         return subprocess.CompletedProcess(cmd, next(results))
 
@@ -1054,24 +1085,19 @@ def test_main_stops_at_first_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     assert calls[0][2] is False
     assert calls[0][3] == module.DEFAULT_CHECK_TIMEOUT_SECONDS
     assert [(cmd, cwd) for cmd, cwd, _, _ in calls] == [
-        (
-            [
-                "python-test",
-                "tools/sync_metadata.py",
-                "--check",
-            ],
-            SCRIPT_PATH.resolve().parents[1],
-        )
+        (["python-test", "tools/check_ci_workflow_ownership.py"], SCRIPT_PATH.resolve().parents[1])
     ]
 
 
 def test_main_returns_timeout_code_on_check_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A subprocess timeout stops preflight with status 124."""
     module = _load_module()
     calls: list[RunCall] = []
 
     def fake_run(
         cmd: list[str], cwd: Path, check: bool, timeout: float
     ) -> subprocess.CompletedProcess[list[str]]:
+        """Capture command arguments and return the configured subprocess outcome."""
         calls.append((cmd, cwd, check, timeout))
         raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
 
@@ -1086,6 +1112,7 @@ def test_main_returns_timeout_code_on_check_timeout(monkeypatch: pytest.MonkeyPa
 
 
 def test_main_rejects_invalid_check_timeout() -> None:
+    """Invalid timeout budgets fail before command execution."""
     module = _load_module()
     try:
         module.main(["--check-timeout-seconds", "0"])

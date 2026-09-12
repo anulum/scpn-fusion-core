@@ -13,6 +13,8 @@ import json
 import re
 from pathlib import Path
 
+from tools.check_ci_workflow_ownership import workflow_sources
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
@@ -21,8 +23,8 @@ PYTHON_PATH_RE = re.compile(r"\b(?:tests|tools|validation)/[A-Za-z0-9_./-]+\.py\
 
 
 def _workflow_text() -> str:
-    """Return the tracked CI workflow text."""
-    return CI_WORKFLOW.read_text(encoding="utf-8")
+    """Read every declared CI workflow after validating its ownership graph."""
+    return "\n".join(workflow_sources(ROOT).values())
 
 
 def test_ci_workflow_python_file_references_exist() -> None:

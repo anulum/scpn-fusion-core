@@ -1,0 +1,350 @@
+{
+  "schema": "ci-workflow-ownership.v1",
+  "coordinator": ".github/workflows/ci.yml",
+  "gate": {
+    "job": "required-gate",
+    "name": "Python 3.12",
+    "body": {
+      "name": "Python 3.12",
+      "needs": [
+        "ci-chain-guard",
+        "dependency-policy",
+        "geometry-3d-smoke",
+        "lean-safety-proofs",
+        "python-research-gate",
+        "python-tests",
+        "reference-evidence",
+        "runtime-parity-perf-gate",
+        "rust-benchmarks",
+        "rust-coverage",
+        "rust-fuzz",
+        "rust-python-interop",
+        "rust-tests",
+        "smoke-install",
+        "stress-test",
+        "studio-conformance",
+        "validation-regression"
+      ],
+      "if": "${{ always() }}",
+      "runs-on": "ubuntu-latest",
+      "permissions": {},
+      "steps": [
+        {
+          "name": "Require every declared CI category",
+          "env": {
+            "CATEGORY_RESULTS": "${{ toJSON(needs) }}",
+            "EXPECTED_CATEGORIES": "[\"ci-chain-guard\", \"dependency-policy\", \"geometry-3d-smoke\", \"lean-safety-proofs\", \"python-research-gate\", \"python-tests\", \"reference-evidence\", \"runtime-parity-perf-gate\", \"rust-benchmarks\", \"rust-coverage\", \"rust-fuzz\", \"rust-python-interop\", \"rust-tests\", \"smoke-install\", \"stress-test\", \"studio-conformance\", \"validation-regression\"]",
+            "EVENT_NAME": "${{ github.event_name }}",
+            "REF_NAME": "${{ github.ref }}"
+          },
+          "run": "python - <<'PY'\nimport json\nimport os\n\nresults = json.loads(os.environ['CATEGORY_RESULTS'])\nexpected = json.loads(os.environ['EXPECTED_CATEGORIES'])\nif set(results) != set(expected):\n    raise SystemExit('CI category inventory mismatch')\nstress_required = os.environ['EVENT_NAME'] == 'push' and os.environ['REF_NAME'] == 'refs/heads/main'\nfor name in expected:\n    status = results[name]['result']\n    if status == 'success':\n        continue\n    if name == 'stress-test' and status == 'skipped' and not stress_required:\n        continue\n    raise SystemExit(f'{name}: {status}')\nPY\n"
+        }
+      ]
+    }
+  },
+  "limits": {
+    "reusable_workflows": 24,
+    "lines_per_file": 1000,
+    "bytes_per_file": 102400
+  },
+  "global_env": {
+    "GIT_CONFIG_COUNT": "1",
+    "GIT_CONFIG_KEY_0": "init.defaultBranch",
+    "GIT_CONFIG_VALUE_0": "main"
+  },
+  "groups": {
+    "ci-chain-guard": {
+      "path": ".github/workflows/ci-ci-chain-guard.yml",
+      "category": 2,
+      "jobs": [
+        "ci-chain-guard"
+      ],
+      "needs": [],
+      "condition": null,
+      "permissions": {
+        "actions": "read",
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "lean-safety-proofs": {
+      "path": ".github/workflows/ci-lean-safety-proofs.yml",
+      "category": 6,
+      "jobs": [
+        "lean-safety-proofs"
+      ],
+      "needs": [
+        "ci-chain-guard"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "smoke-install": {
+      "path": ".github/workflows/ci-smoke-install.yml",
+      "category": 3,
+      "jobs": [
+        "smoke-install"
+      ],
+      "needs": [
+        "ci-chain-guard"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "python-tests": {
+      "path": ".github/workflows/ci-python-tests.yml",
+      "category": 4,
+      "jobs": [
+        "python-tests"
+      ],
+      "needs": [
+        "ci-chain-guard",
+        "lean-safety-proofs"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {
+        "CODECOV_TOKEN": "${{ secrets.CODECOV_TOKEN }}"
+      },
+      "workflow_call": {
+        "secrets": {
+          "CODECOV_TOKEN": {
+            "required": "false"
+          }
+        }
+      }
+    },
+    "python-research-gate": {
+      "path": ".github/workflows/ci-python-research-gate.yml",
+      "category": 4,
+      "jobs": [
+        "python-research-gate"
+      ],
+      "needs": [
+        "python-tests"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "geometry-3d-smoke": {
+      "path": ".github/workflows/ci-geometry-3d-smoke.yml",
+      "category": 5,
+      "jobs": [
+        "geometry-3d-smoke"
+      ],
+      "needs": [
+        "python-tests"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "runtime-parity-perf-gate": {
+      "path": ".github/workflows/ci-runtime-parity-perf-gate.yml",
+      "category": 6,
+      "jobs": [
+        "runtime-parity-perf-gate"
+      ],
+      "needs": [
+        "python-tests"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "rust-tests": {
+      "path": ".github/workflows/ci-rust-tests.yml",
+      "category": 6,
+      "jobs": [
+        "rust-tests"
+      ],
+      "needs": [
+        "ci-chain-guard"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "rust-python-interop": {
+      "path": ".github/workflows/ci-rust-python-interop.yml",
+      "category": 6,
+      "jobs": [
+        "rust-python-interop"
+      ],
+      "needs": [
+        "rust-tests"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "rust-coverage": {
+      "path": ".github/workflows/ci-rust-coverage.yml",
+      "category": 4,
+      "jobs": [
+        "rust-coverage"
+      ],
+      "needs": [
+        "ci-chain-guard"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {
+        "CODECOV_TOKEN": "${{ secrets.CODECOV_TOKEN }}"
+      },
+      "workflow_call": {
+        "secrets": {
+          "CODECOV_TOKEN": {
+            "required": "false"
+          }
+        }
+      }
+    },
+    "rust-fuzz": {
+      "path": ".github/workflows/ci-rust-fuzz.yml",
+      "category": 8,
+      "jobs": [
+        "rust-fuzz"
+      ],
+      "needs": [
+        "rust-tests"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "rust-benchmarks": {
+      "path": ".github/workflows/ci-rust-benchmarks.yml",
+      "category": 7,
+      "jobs": [
+        "rust-benchmarks"
+      ],
+      "needs": [
+        "ci-chain-guard"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "validation-regression": {
+      "path": ".github/workflows/ci-validation-regression.yml",
+      "category": 4,
+      "jobs": [
+        "validation-regression"
+      ],
+      "needs": [
+        "python-tests",
+        "rust-python-interop",
+        "rust-tests"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "stress-test": {
+      "path": ".github/workflows/ci-stress-test.yml",
+      "category": 11,
+      "jobs": [
+        "stress-test"
+      ],
+      "needs": [
+        "python-tests"
+      ],
+      "condition": "github.event_name == 'push' && github.ref == 'refs/heads/main'",
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "studio-conformance": {
+      "path": ".github/workflows/ci-studio-conformance.yml",
+      "category": 10,
+      "jobs": [
+        "studio-conformance"
+      ],
+      "needs": [
+        "ci-chain-guard"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "reference-evidence": {
+      "path": ".github/workflows/ci-reference-evidence.yml",
+      "category": 7,
+      "jobs": [
+        "rmse-dashboard-smoke",
+        "real-shot-validation",
+        "benchmark-provenance-smoke"
+      ],
+      "needs": [
+        "python-tests"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "dependency-policy": {
+      "path": ".github/workflows/ci-dependency-policy.yml",
+      "category": 8,
+      "jobs": [
+        "github-token-format-guard",
+        "rust-audit"
+      ],
+      "needs": [
+        "ci-chain-guard"
+      ],
+      "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    }
+  }
+}

@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+name: CI geometry-3d-smoke
+'on':
+  workflow_call: {}
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  geometry-3d-smoke:
+    name: Geometry 3D Smoke
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        lfs: false
+    - name: Set up Python 3.12
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - name: Install Lean toolchain for polyglot solver contracts
+      run: |
+        curl --retry 5 --retry-all-errors --retry-delay 10 \
+          --connect-timeout 20 --max-time 120 -fsSL \
+          https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
+          -o /tmp/elan-init.sh
+        echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
+        sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
+        echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+    - name: Install dependencies
+      run: |
+        pip install --require-hashes -r requirements/ci-py312.txt
+        pip install --no-deps -e .
+    - name: Run 3D quickstart smoke
+      run: |
+        python examples/run_3d_flux_quickstart.py --toroidal 12 --poloidal 12 --output artifacts/ci_3d_smoke.obj
+        python examples/run_3d_flux_quickstart.py --vmec-like --n1-amplitude 0.04 --toroidal 12 --poloidal 12 --output artifacts/ci_3d_vmec_smoke.obj
+    - name: Validate OBJ artifact
+      run: |
+        python - <<'PY'
+        from pathlib import Path
+        def validate_obj(path: Path) -> None:
+            if not path.exists() or path.stat().st_size == 0:
+                raise SystemExit(f"OBJ artifact missing or empty: {path}")
+            verts = 0
+            faces = 0
+            for line in path.read_text(encoding="utf-8").splitlines():
+                if line.startswith("v "):
+                    verts += 1
+                elif line.startswith("f "):
+                    faces += 1
+            if verts <= 0 or faces <= 0:
+                raise SystemExit(f"Invalid mesh content for {path}: verts={verts}, faces={faces}")
+            print(f"OBJ smoke OK {path.name}: verts={verts}, faces={faces}")
+
+        validate_obj(Path("artifacts/ci_3d_smoke.obj"))
+        validate_obj(Path("artifacts/ci_3d_vmec_smoke.obj"))
+        PY

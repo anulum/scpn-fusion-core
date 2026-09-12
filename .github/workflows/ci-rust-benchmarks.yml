@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+name: CI rust-benchmarks
+'on':
+  workflow_call: {}
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  rust-benchmarks:
+    name: Rust Benchmarks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: scpn-fusion-rs
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7
+    - name: Cache cargo
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          scpn-fusion-rs/target
+        key: ${{ runner.os }}-bench-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-bench-
+    - name: Record hardware metadata
+      run: |
+        mkdir -p benchmark-results
+        {
+          echo "runner: github-actions ubuntu-latest"
+          echo "cpu: $(lscpu | grep 'Model name' | sed 's/.*:\s*//')"
+          echo "cores: $(nproc)"
+          echo "ram_mb: $(free -m | awk '/Mem:/{print $2}')"
+          echo "rustc: $(rustc --version)"
+        } > benchmark-results/hardware.txt
+    - name: Run benchmarks
+      run: cargo bench 2>&1 | tee benchmark-results/bench_output.txt
+    - name: Collect Criterion JSON
+      if: always()
+      run: |
+        if [ -d target/criterion ]; then
+          cp -r target/criterion benchmark-results/criterion_data
+        fi
+    - name: Upload benchmark artifacts
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: rust-benchmarks
+        path: scpn-fusion-rs/benchmark-results/

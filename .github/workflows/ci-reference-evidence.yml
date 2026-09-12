@@ -1,0 +1,269 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+name: CI reference-evidence
+'on':
+  workflow_call: {}
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  rmse-dashboard-smoke:
+    name: RMSE Dashboard Smoke
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        lfs: false
+    - name: Set up Python 3.12
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      run: |
+        pip install --require-hashes -r requirements/ci-py312.txt
+        pip install --no-deps -e .
+    - name: Generate RMSE dashboard
+      run: |
+        python validation/rmse_dashboard.py --output-json artifacts/rmse_dashboard_ci.json --output-md artifacts/rmse_dashboard_ci.md
+    - name: Validate dashboard artifacts
+      run: |
+        python - <<'PY'
+        import json
+        from pathlib import Path
+        j = Path("artifacts/rmse_dashboard_ci.json")
+        m = Path("artifacts/rmse_dashboard_ci.md")
+        if not j.exists() or j.stat().st_size == 0:
+            raise SystemExit("Missing RMSE JSON artifact")
+        if not m.exists() or m.stat().st_size == 0:
+            raise SystemExit("Missing RMSE Markdown artifact")
+        data = json.loads(j.read_text(encoding="utf-8"))
+        for key in ("confinement_itpa", "confinement_iter_sparc", "beta_iter_sparc", "sparc_axis"):
+            if key not in data:
+                raise SystemExit(f"Missing key: {key}")
+        print("RMSE dashboard smoke OK")
+        PY
+    - name: RMSE regression gate
+      run: python tools/ci_rmse_gate.py
+    - name: Upload RMSE artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: rmse-dashboard-smoke
+        path: |
+          artifacts/rmse_dashboard_ci.json
+          artifacts/rmse_dashboard_ci.md
+  real-shot-validation:
+    name: Real-Shot Validation Gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        lfs: false
+    - name: Set up Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      run: |
+        pip install --require-hashes -r requirements/ci-py312.txt
+        pip install --no-deps -e .
+    - name: Run real-shot validation
+      run: |
+        python validation/validate_real_shots.py --strict-coverage \
+          --output-json artifacts/real_shot_validation.json \
+          --output-md artifacts/real_shot_validation.md
+    - name: Real-shot validation guard
+      run: |
+        python tools/real_shot_validation_guard.py \
+          --report artifacts/real_shot_validation.json \
+          --thresholds tools/real_shot_validation_thresholds.json \
+          --summary-json artifacts/real_shot_validation_guard_summary.json
+    - name: Real-data roadmap progress report
+      run: |
+        python tools/real_data_roadmap_progress.py \
+          --report artifacts/real_shot_validation.json \
+          --targets tools/real_data_roadmap_targets.json \
+          --output-json artifacts/real_data_roadmap_progress.json \
+          --output-md artifacts/real_data_roadmap_progress.md
+    - name: Real-data roadmap non-regression guard
+      run: |
+        python tools/real_data_roadmap_non_regression_guard.py \
+          --progress-json artifacts/real_data_roadmap_progress.json \
+          --baseline-json tools/real_data_roadmap_baseline.json \
+          --summary-json artifacts/real_data_roadmap_non_regression_summary.json
+    - name: Upload validation artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: real-shot-validation
+        path: |
+          artifacts/real_shot_validation.json
+          artifacts/real_shot_validation.md
+          artifacts/real_shot_validation_guard_summary.json
+          artifacts/real_data_roadmap_progress.json
+          artifacts/real_data_roadmap_progress.md
+          artifacts/real_data_roadmap_non_regression_summary.json
+  benchmark-provenance-smoke:
+    name: Benchmark Provenance Smoke
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        lfs: false
+    - name: Set up Python
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      run: |
+        pip install --require-hashes -r requirements/ci-benchmark.txt
+        pip install --no-deps -e .
+    - name: Generate benchmark artifacts
+      run: |
+        python validation/benchmark_torax_real_parity.py --check
+        python validation/benchmark_torax_real_parity.py --output artifacts/torax_benchmark.json
+        python validation/benchmark_torax_coupled_transport_parity.py --check
+        python validation/benchmark_torax_differentiable_transport.py --check
+        python validation/benchmark_sparc_geqdsk_rmse.py
+        python validation/benchmark_vs_freegs.py --force-solovev
+        python validation/benchmark_disruption_transfer_generalization.py \
+          --strict \
+          --output-json artifacts/_local_disruption_transfer_generalization.json \
+          --output-md artifacts/_local_disruption_transfer_generalization.md
+        python validation/vertical_control_replay_benchmark.py \
+          --output-json artifacts/_local_vertical_control_replay_benchmark.json \
+          --output-md artifacts/_local_vertical_control_replay_benchmark.md
+        python validation/vertical_control_replay_benchmark.py \
+          --all-profiles \
+          --output-json artifacts/_local_vertical_control_replay_profiles.json \
+          --output-md artifacts/_local_vertical_control_replay_profiles.md
+    - name: Verify provenance fields
+      run: |
+        python - <<'PY'
+        import json
+        from pathlib import Path
+
+        torax = json.loads(Path("artifacts/torax_benchmark.json").read_text(encoding="utf-8"))
+        sparc = json.loads(Path("artifacts/sparc_geqdsk_rmse_benchmark.json").read_text(encoding="utf-8"))
+        freegs = json.loads(Path("artifacts/freegs_benchmark.json").read_text(encoding="utf-8"))
+        transfer = json.loads(Path("artifacts/_local_disruption_transfer_generalization.json").read_text(encoding="utf-8"))
+        vertical = json.loads(Path("artifacts/_local_vertical_control_replay_benchmark.json").read_text(encoding="utf-8"))
+        vertical_profiles = json.loads(Path("artifacts/_local_vertical_control_replay_profiles.json").read_text(encoding="utf-8"))
+        vertical_md = Path("artifacts/_local_vertical_control_replay_benchmark.md").read_text(encoding="utf-8")
+        vertical_profiles_md = Path("artifacts/_local_vertical_control_replay_profiles.md").read_text(encoding="utf-8")
+
+        torax_reference = torax.get("reference", {})
+        torax_provenance = torax_reference.get("provenance", {})
+        sparc_cases = sparc.get("cases", [])
+        freegs_cases = freegs.get("cases", [])
+        transfer_checks = transfer.get("checks", {})
+        if torax.get("schema") != "scpn-fusion-core.torax-real-parity.v1":
+            raise SystemExit("torax benchmark payload is not the real-parity schema")
+        if not bool(torax.get("passes_thresholds", False)):
+            raise SystemExit("torax real-parity report did not pass integrity thresholds")
+        if bool(torax.get("physics_equivalence_claimed", True)):
+            raise SystemExit("torax real-parity report must not claim physics equivalence")
+        for key in ("code", "torax_version", "config_name", "config_sha256", "licence"):
+            if not torax_provenance.get(key):
+                raise SystemExit(f"torax reference provenance missing key: {key}")
+        if not torax_reference.get("profile_checksum_sha256"):
+            raise SystemExit("torax reference missing profile checksum")
+        for key in ("core_te_ratio_fine_over_torax", "normalised_te_shape_rel_l2_fine"):
+            if key not in torax.get("divergence_metrics", {}):
+                raise SystemExit(f"torax divergence metrics missing key: {key}")
+        if not sparc_cases:
+            raise SystemExit("sparc benchmark produced zero cases")
+        if not freegs_cases:
+            raise SystemExit("freegs benchmark produced zero cases")
+        if not transfer_checks:
+            raise SystemExit("transfer benchmark produced zero checks")
+
+        for idx, case in enumerate(sparc_cases):
+            for key in ("surrogate_backend", "fallback_reason"):
+                if key not in case:
+                    raise SystemExit(f"sparc case[{idx}] missing key: {key}")
+            if not bool(case.get("backend_requirement_satisfied", False)):
+                raise SystemExit(f"sparc case[{idx}] backend requirement not satisfied")
+        for idx, case in enumerate(freegs_cases):
+            for key in ("mode", "comparison_backend", "reference_backend"):
+                if key not in case:
+                    raise SystemExit(f"freegs case[{idx}] missing key: {key}")
+        for key in ("source_group", "target_group", "transfer_efficiency", "passes", "thresholds"):
+            if key not in transfer:
+                raise SystemExit(f"transfer benchmark missing key: {key}")
+        for key in ("recall", "false_positive_rate", "n_shots"):
+            if key not in transfer["source_group"]:
+                raise SystemExit(f"transfer source_group missing key: {key}")
+            if key not in transfer["target_group"]:
+                raise SystemExit(f"transfer target_group missing key: {key}")
+        if "vertical_control_replay_benchmark" not in vertical:
+            raise SystemExit("vertical_control_replay_benchmark payload missing section")
+        if "vertical_control_replay_profile_suite" not in vertical_profiles:
+            raise SystemExit("vertical_control_replay_profiles payload missing profile suite section")
+        if not vertical["vertical_control_replay_benchmark"]["passes_thresholds"]:
+            raise SystemExit("vertical control benchmark did not pass acceptance thresholds")
+        if not vertical_profiles["vertical_control_replay_profile_suite"]["all_profiles_pass"]:
+            raise SystemExit("vertical control profile suite did not pass acceptance thresholds")
+
+        print(
+            "Benchmark provenance OK: "
+            f"torax_schema={torax.get('schema')} "
+            f"sparc_cases={len(sparc_cases)} "
+            f"freegs_cases={len(freegs_cases)} "
+            f"transfer_pass={transfer.get('passes')}"
+        )
+        print(
+            "Vertical control replay OK: "
+            f"passes={vertical['vertical_control_replay_benchmark']['passes_thresholds']}, "
+            f"profiles={len(vertical_profiles['vertical_control_replay_profile_suite']['profile_ids'])}, "
+            f"all_profiles_pass={vertical_profiles['vertical_control_replay_profile_suite']['all_profiles_pass']}"
+        )
+        for marker in (
+            "- Overall pass:",
+            "- Deterministic replay pass:",
+        ):
+            if marker not in vertical_md:
+                raise SystemExit(f"vertical markdown report missing marker: {marker}")
+        if "## Profile suite" not in vertical_profiles_md:
+            raise SystemExit("vertical profile markdown report missing profile suite section")
+        PY
+    - name: Fallback budget guard
+      run: |
+        python tools/fallback_budget_guard.py \
+          --torax artifacts/torax_benchmark.json \
+          --sparc artifacts/sparc_geqdsk_rmse_benchmark.json \
+          --freegs artifacts/freegs_benchmark.json \
+          --thresholds tools/fallback_budget_thresholds.json \
+          --summary-json artifacts/fallback_budget_summary.json
+    - name: Benchmark regression guard
+      run: |
+        python tools/benchmark_regression_guard.py \
+          --thresholds tools/benchmark_regression_thresholds.json \
+          --summary-json artifacts/benchmark_regression_guard_summary.json
+    - name: Upload benchmark provenance artifacts
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: benchmark-provenance-smoke
+        path: |
+          artifacts/torax_benchmark.json
+          artifacts/sparc_geqdsk_rmse_benchmark.json
+          artifacts/freegs_benchmark.json
+          artifacts/fallback_budget_summary.json
+          artifacts/benchmark_regression_guard_summary.json
+          artifacts/_local_disruption_transfer_generalization.json
+          artifacts/_local_disruption_transfer_generalization.md
+          artifacts/_local_vertical_control_replay_benchmark.json
+          artifacts/_local_vertical_control_replay_benchmark.md
+          artifacts/_local_vertical_control_replay_profiles.json
+          artifacts/_local_vertical_control_replay_profiles.md

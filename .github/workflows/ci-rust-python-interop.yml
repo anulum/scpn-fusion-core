@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+name: CI rust-python-interop
+'on':
+  workflow_call: {}
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  rust-python-interop:
+    name: Rust-Python Interop
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: .
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7
+    - name: Set up Python 3.12
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - name: Cache cargo
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          scpn-fusion-rs/target
+        key: ${{ runner.os }}-interop-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-interop-
+    - name: Create virtualenv and install Python package
+      run: |
+        python -m venv .venv
+        source .venv/bin/activate
+        pip install --require-hashes -r requirements/ci-interop.txt
+        pip install --no-deps -e .
+    - name: Build Rust extension
+      run: |
+        source .venv/bin/activate
+        cd scpn-fusion-rs/crates/fusion-python && maturin develop --release
+    - name: Verify Rust extension loads
+      run: |
+        source .venv/bin/activate
+        python -c "import scpn_fusion_rs; print('Rust extension loaded OK')"
+    - name: Run interop tests
+      run: |
+        source .venv/bin/activate
+        pytest tests/test_boris_pyo3_bridge.py tests/test_snn_pyo3_bridge.py \
+               tests/test_rust_python_parity.py tests/test_rust_compat_wrapper.py \
+               tests/test_rust_multigrid_wiring.py \
+               tests/test_frc_rigid_rotor_rust_parity.py \
+               tests/test_runaway_kinetic_rust_parity.py -v --tb=short
+    - name: Run new binding tests
+      run: |
+        source .venv/bin/activate
+        pytest tests/test_pyo3_physics_bridge.py tests/test_pyo3_control_bridge.py \
+               tests/test_pyo3_nuclear_bridge.py tests/test_pyo3_transport_bridge.py -v --tb=short
+    - name: Measure phase-kernel cross-tier benchmark (isolated runner)
+      run: |
+        source .venv/bin/activate
+        mkdir -p artifacts
+        python benchmarks/bench_phase_kernels.py --repeats 5 \
+          --output artifacts/phase_kernels_benchmark.json
+        python - <<'PY'
+        import json
+        from pathlib import Path
+
+        report = json.loads(Path("artifacts/phase_kernels_benchmark.json").read_text())
+        print(f"rust_available={report['rust_available']}")
+        for kernel in report["kernels"]:
+            speedup = kernel.get("rust_over_numpy_speedup")
+            parity = kernel.get("rust_vs_numpy_final_state_rel_l2")
+            speedup_str = f"{speedup:.2f}x" if speedup is not None else "n/a"
+            parity_str = f"{parity:.1e}" if parity is not None else "n/a"
+            print(f"  {kernel['kernel']}: {speedup_str}  parity={parity_str}")
+        PY
+    - name: Upload phase-kernel benchmark
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: phase-kernels-benchmark
+        path: artifacts/phase_kernels_benchmark.json

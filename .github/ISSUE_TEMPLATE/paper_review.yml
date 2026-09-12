@@ -50,7 +50,7 @@ body:
     id: references
     attributes:
       label: External References
-      description: DOI/arXiv references needed to validate framing or equations
+      description: DOI or primary-source references needed to validate framing or equations
     validations:
       required: false
   - type: dropdown

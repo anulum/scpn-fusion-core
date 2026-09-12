@@ -46,6 +46,12 @@ repos:
         language: system
         pass_filenames: false
         files: ^(src/|tests/|docs/|scpn-fusion-rs/|\.github/|pyproject\.toml|README\.md)
+      - id: ci-workflow-ownership
+        name: distributed CI ownership guard
+        entry: python tools/check_ci_workflow_ownership.py
+        language: system
+        pass_filenames: false
+        files: ^(\.github/workflows/|tools/(check_ci_workflow_ownership\.py|ci_workflow_ownership\.json))
       - id: claims-evidence
         name: public claims evidence guard
         entry: python tools/claims_audit.py

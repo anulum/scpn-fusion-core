@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+name: CI rust-coverage
+'on':
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  rust-coverage:
+    name: Rust Coverage (tarpaulin)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: scpn-fusion-rs
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7
+    - name: Cache cargo
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          scpn-fusion-rs/target
+        key: ${{ runner.os }}-tarpaulin-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
+        restore-keys: ${{ runner.os }}-tarpaulin-
+    - name: Install cargo-binstall
+      uses: taiki-e/install-action@6eb4471beed212309063862e6f5284ca3da3b01d
+    - name: Install cargo-tarpaulin
+      run: |
+        set -euo pipefail
+        if cargo binstall --no-confirm --force cargo-tarpaulin; then
+          exit 0
+        fi
+        echo "cargo-binstall path failed, retrying locked source build..."
+        for attempt in 1 2 3; do
+          if cargo install cargo-tarpaulin --locked; then
+            exit 0
+          fi
+          echo "cargo install attempt ${attempt}/3 failed."
+          sleep $((attempt * 10))
+        done
+        echo "cargo-tarpaulin install failed after retries."
+        exit 1
+    - name: Generate coverage
+      run: cargo tarpaulin --packages fusion-types fusion-math fusion-core fusion-physics fusion-nuclear
+        fusion-engineering fusion-control fusion-diagnostics fusion-ml --run-types Lib --timeout 300 --out
+        xml --output-dir coverage
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354
+      with:
+        files: scpn-fusion-rs/coverage/cobertura.xml
+        flags: rust
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

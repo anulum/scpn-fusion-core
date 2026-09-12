@@ -68,6 +68,7 @@ dev = [
     "bandit>=1.7",
     "pre-commit>=3.0",
     "types-psutil>=7.2.2.20260518",
+    "types-PyYAML>=6.0.12.20260906",
 ]
 fuzz = [
     "atheris>=2.3",
@@ -178,6 +179,10 @@ ignore_missing_imports = false
 files = [
     "tools/build_rustbca_reference.py",
     "tools/check_definition_docstrings.py",
+    "tools/check_ci_workflow_ownership.py",
+    "tests/test_tools_run_python_preflight.py",
+    "tests/test_check_ci_workflow_ownership.py",
+    "tests/test_ci_workflow_references.py",
     "tests/test_check_definition_docstrings.py",
     "validation/rustbca_request.py",
     "validation/rustbca_reference.py",

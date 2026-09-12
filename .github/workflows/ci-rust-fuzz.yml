@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+name: CI rust-fuzz
+'on':
+  workflow_call: {}
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  rust-fuzz:
+    name: Rust Fuzz Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: scpn-fusion-rs
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Install Rust nightly toolchain
+      uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7
+      with:
+        toolchain: nightly
+        components: llvm-tools-preview
+    - name: Cache cargo
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+      with:
+        path: |
+          ~/.cargo/bin
+          ~/.cargo/registry
+          ~/.cargo/git
+          scpn-fusion-rs/target
+        key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('scpn-fusion-rs/Cargo.lock', 'scpn-fusion-rs/fuzz/Cargo.toml')
+          }}
+        restore-keys: ${{ runner.os }}-cargo-fuzz-
+    - name: Install cargo-fuzz
+      run: |
+        if command -v cargo-fuzz >/dev/null 2>&1; then
+          cargo fuzz --version
+          exit 0
+        fi
+        for attempt in 1 2 3; do
+          if cargo install cargo-fuzz --locked; then
+            cargo fuzz --version
+            exit 0
+          fi
+          echo "cargo-fuzz locked install attempt ${attempt}/3 failed."
+          sleep $((attempt * 10))
+        done
+        cargo install cargo-fuzz
+        cargo fuzz --version
+    - name: Verify fuzz targets are present
+      run: test -f fuzz/fuzz_targets/mpi_domain.rs
+    - name: Run bounded fuzz smoke target
+      env:
+        RUST_BACKTRACE: '1'
+      run: cargo +nightly fuzz run mpi_domain -- -runs=256 -max_len=128 -timeout=10 -rss_limit_mb=2048

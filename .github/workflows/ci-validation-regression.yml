@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+name: CI validation-regression
+'on':
+  workflow_call: {}
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  validation-regression:
+    name: Physics Validation Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        lfs: false
+    - name: Set up Python 3.12
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - name: Install Lean toolchain for polyglot solver contracts
+      run: |
+        curl --retry 5 --retry-all-errors --retry-delay 10 \
+          --connect-timeout 20 --max-time 120 -fsSL \
+          https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
+          -o /tmp/elan-init.sh
+        echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
+        sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
+        echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+    - name: Install dependencies
+      run: |
+        pip install --require-hashes -r requirements/ci-py312.txt
+        pip install --no-deps -e .
+    - name: Verify embedded neurocore backend
+      run: |
+        python - <<'PY'
+        from scpn_fusion.neurocore_compat import SC_NEUROCORE_AVAILABLE, SC_NEUROCORE_BACKEND
+
+        if not SC_NEUROCORE_AVAILABLE:
+            raise SystemExit("Embedded neurocore backend unavailable.")
+        print(f"Embedded neurocore backend active: {SC_NEUROCORE_BACKEND}")
+        PY
+    - name: IPB98 confinement scaling validation
+      run: pytest tests/test_uncertainty.py -v --tb=short
+    - name: Focused physics validation regression suite
+      run: |
+        pytest \
+          tests/test_validation_regression.py \
+          tests/test_benchmark_sparc_geqdsk_rmse.py \
+          tests/test_benchmark_free_boundary_strict_parity.py \
+          tests/test_benchmark_disruption_transfer_generalization.py \
+          tests/test_vertical_control_replay_benchmark.py \
+          tests/test_torax_real_parity.py \
+          tests/test_check_freegs_strict_artifact.py \
+          -v --tb=short -x -m "not experimental"

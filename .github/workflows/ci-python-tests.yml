@@ -1,0 +1,202 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+name: CI python-tests
+'on':
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  python-tests:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+        - '3.10'
+        - '3.11'
+        - '3.12'
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        fetch-depth: 0
+        lfs: false
+    - name: Checkout pinned DREAM Python API fixture
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        repository: chalmersplasmatheory/DREAM
+        ref: ecdd5e146537c77602c9d7cc76b36100200e4b9a
+        path: data/external/full_fidelity_public_sources/repos/dream
+        fetch-depth: 1
+        lfs: false
+        persist-credentials: false
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install Lean toolchain for polyglot solver contracts
+      run: |
+        curl --retry 5 --retry-all-errors --retry-delay 10 \
+          --connect-timeout 20 --max-time 120 -fsSL \
+          https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
+          -o /tmp/elan-init.sh
+        echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
+        sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
+        echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+    - name: Install dependencies
+      run: |
+        pyver="${{ matrix.python-version }}"
+        pytag="${pyver//.}"
+        if [ "$pyver" = "3.12" ]; then
+          pip install --require-hashes -r requirements/ci-benchmark.txt
+        else
+          pip install --require-hashes -r "requirements/ci-py${pytag}.txt"
+        fi
+        pip install --no-deps -e .
+    - name: Verify distributed CI contracts
+      run: |
+        python tools/check_ci_workflow_ownership.py
+        python tools/check_definition_docstrings.py tools/check_ci_workflow_ownership.py tools/run_python_preflight.py tests/test_check_ci_workflow_ownership.py tests/test_ci_workflow_references.py tests/test_tools_run_python_preflight.py
+        mkdir -p "$RUNNER_TEMP/ci-ownership-coverage"
+        export COVERAGE_FILE="$RUNNER_TEMP/ci-ownership-coverage/.coverage"
+        export COVERAGE_RCFILE="$PWD/tools/ci_workflow_coverage.ini"
+        python -m coverage run -m pytest tests/test_check_ci_workflow_ownership.py tests/test_ci_workflow_references.py --no-cov
+        python -m coverage combine --keep
+        python -m coverage json --keep-combined -o "$RUNNER_TEMP/ci-ownership-coverage/report.json"
+        python -m coverage report --keep-combined
+    - name: Verify embedded neurocore backend (Python 3.12 lane)
+      if: matrix.python-version == '3.12'
+      run: |
+        python - <<'PY'
+        from scpn_fusion.neurocore_compat import SC_NEUROCORE_AVAILABLE, SC_NEUROCORE_BACKEND
+
+        if not SC_NEUROCORE_AVAILABLE:
+            raise SystemExit("Embedded neurocore backend unavailable.")
+        print(f"Embedded neurocore backend active: {SC_NEUROCORE_BACKEND}")
+        PY
+    - name: Python preflight release gate
+      if: matrix.python-version == '3.12'
+      env:
+        SCPN_ENABLE_STRICT_BACKEND_CHECKS: '1'
+      run: |
+        python tools/run_python_preflight.py --gate release
+    - name: Reject silent tracked evidence drift
+      if: matrix.python-version == '3.12'
+      run: git diff --exit-code -- artifacts validation/reports
+    - name: Run release test suite (exclude experimental-only lanes)
+      if: matrix.python-version != '3.12'
+      run: |
+        # The frozen exact-byte evidence records a specific Python 3.12.3,
+        # JAX 0.7.1 and CUDA host. Keep its reconstruction test on that
+        # matching evidence host; generic hosted runners run every portable
+        # test and the complete authenticated CVGC2 contract surface.
+        pytest tests/ -v -m "not experimental" \
+          --deselect \
+          tests/test_diagnose_ida_fixed_reference_operator.py::test_real_diiid_fixed_reference_operator_decomposition
+    - name: Generate Python coverage report
+      if: matrix.python-version == '3.12'
+      run: |
+        mkdir -p artifacts
+        set +e
+        timeout --signal=TERM 75m pytest tests/ -q -m "not experimental" \
+          --deselect \
+          tests/test_diagnose_ida_fixed_reference_operator.py::test_real_diiid_fixed_reference_operator_decomposition \
+          --cov=scpn_fusion --cov-branch --cov-report=xml:coverage-python.xml \
+          2>&1 | tee artifacts/python312_coverage.log
+        rc=${PIPESTATUS[0]}
+        python - <<'PY'
+        import json
+        from pathlib import Path
+
+        diag = {
+            "coverage_timeout": False,
+            "coverage_log": "artifacts/python312_coverage.log",
+            "coverage_xml": "coverage-python.xml",
+            "timeout_minutes": 75,
+        }
+        Path("artifacts").mkdir(parents=True, exist_ok=True)
+        Path("artifacts/python312_coverage_diagnostics.json").write_text(
+            json.dumps(diag, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        PY
+        if [ "$rc" -eq 124 ]; then
+          echo "::error::Python 3.12 coverage run timed out after 75 minutes."
+        fi
+        exit "$rc"
+    - name: Coverage regression guard
+      if: matrix.python-version == '3.12'
+      run: |
+        python tools/coverage_guard.py \
+          --coverage-xml coverage-python.xml \
+          --thresholds tools/coverage_guard_thresholds.json \
+          --summary-json artifacts/coverage_guard_summary.json
+    - name: Coverage delta report
+      if: matrix.python-version == '3.12'
+      run: |
+        python tools/coverage_delta_report.py \
+          --coverage-summary artifacts/coverage_guard_summary.json \
+          --thresholds tools/coverage_guard_thresholds.json \
+          --output-json artifacts/coverage_delta_report.json \
+          --output-md artifacts/coverage_delta_report.md
+    - name: Disruption false-positive rate gate
+      if: matrix.python-version == '3.12'
+      run: |
+        python -c "
+        from scpn_fusion.control.disruption_predictor import run_anomaly_alarm_campaign
+        r = run_anomaly_alarm_campaign(seed=42, episodes=32, window=64)
+        assert r['false_positive_rate'] <= 0.10, f'FPR {r[\"false_positive_rate\"]:.3f} exceeds 10%%'
+        "
+    - name: Upload Python coverage to Codecov
+      if: matrix.python-version == '3.12'
+      uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354
+      with:
+        files: coverage-python.xml
+        flags: python
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    - name: Upload Python 3.12 coverage diagnostics
+      if: matrix.python-version == '3.12' && always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: python312-coverage-diagnostics
+        if-no-files-found: warn
+        path: |
+          artifacts/python312_coverage.log
+          artifacts/python312_coverage_diagnostics.json
+          coverage-python.xml
+          artifacts/untested_module_guard_summary.json
+          artifacts/deprecated_default_lane_guard_summary.json
+          artifacts/release_delta_guard_summary.json
+          artifacts/claim_range_guard_summary.json
+    - name: Upload coverage guard summary
+      if: matrix.python-version == '3.12' && always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: coverage-guard-summary
+        if-no-files-found: warn
+        path: |
+          artifacts/coverage_guard_summary.json
+          artifacts/coverage_delta_report.json
+          artifacts/coverage_delta_report.md
+    - name: Upload CI ownership coverage
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: ci-ownership-${{ matrix.python-version }}
+        include-hidden-files: true
+        path: ${{ runner.temp }}/ci-ownership-coverage/

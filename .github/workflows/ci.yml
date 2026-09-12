@@ -1,1186 +1,181 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later | Commercial license available
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
 # © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
-# SCPN Fusion Core — Continuous Integration
+# SCPN Fusion Core — reusable CI validation
 name: CI
-
-on:
+'on':
   push:
-    branches: [main]
+    branches:
+    - main
   pull_request:
-    branches: [main]
-  workflow_dispatch:
-
+    branches:
+    - main
+  workflow_dispatch: null
 permissions: {}
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
-env:
-  GIT_CONFIG_COUNT: "1"
-  GIT_CONFIG_KEY_0: init.defaultBranch
-  GIT_CONFIG_VALUE_0: main
-
 jobs:
   ci-chain-guard:
-    name: CI Chain Guard
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-ci-chain-guard.yml
     permissions:
       actions: read
       contents: read
-    steps:
-      - name: Detect stale/duplicate in-progress CI chains
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_WORKFLOW: ${{ github.workflow }}
-          GITHUB_REF_NAME: ${{ github.ref_name }}
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_SHA: ${{ github.sha }}
-          MAX_STALE_MINUTES: "180"
-        run: |
-          python - <<'PY'
-          from __future__ import annotations
-
-          import json
-          import os
-          import sys
-          import urllib.request
-          from datetime import datetime, timezone
-
-          repo = os.environ["GITHUB_REPOSITORY"]
-          workflow = os.environ["GITHUB_WORKFLOW"]
-          ref_name = os.environ.get("GITHUB_REF_NAME", "")
-          run_id = int(os.environ["GITHUB_RUN_ID"])
-          sha = os.environ.get("GITHUB_SHA", "")
-          max_stale_minutes = float(os.environ.get("MAX_STALE_MINUTES", "180"))
-          token = os.environ.get("GITHUB_TOKEN", "")
-          if not token:
-              raise SystemExit("Missing GITHUB_TOKEN for CI chain guard.")
-
-          req = urllib.request.Request(
-              f"https://api.github.com/repos/{repo}/actions/runs?status=in_progress&per_page=100",
-              headers={
-                  "Authorization": f"Bearer {token}",
-                  "Accept": "application/vnd.github+json",
-                  "X-GitHub-Api-Version": "2022-11-28",
-              },
-          )
-          with urllib.request.urlopen(req, timeout=30) as resp:
-              payload = json.load(resp)
-          runs = payload.get("workflow_runs", [])
-          now = datetime.now(timezone.utc)
-
-          duplicates: list[tuple[int, str, float | None]] = []
-          stale: list[tuple[int, str, float | None]] = []
-          for run in runs:
-              if int(run.get("id", 0)) == run_id:
-                  continue
-              if str(run.get("name", "")) != workflow:
-                  continue
-              if str(run.get("head_branch", "")) != ref_name:
-                  continue
-
-              created_at = run.get("created_at")
-              age_minutes: float | None = None
-              if isinstance(created_at, str):
-                  try:
-                      created = datetime.strptime(
-                          created_at,
-                          "%Y-%m-%dT%H:%M:%SZ",
-                      ).replace(tzinfo=timezone.utc)
-                      age_minutes = (now - created).total_seconds() / 60.0
-                  except ValueError:
-                      age_minutes = None
-
-              run_id_other = int(run.get("id", 0))
-              run_url = str(run.get("html_url", ""))
-              if str(run.get("head_sha", "")) == sha:
-                  duplicates.append((run_id_other, run_url, age_minutes))
-              if age_minutes is not None and age_minutes > max_stale_minutes:
-                  stale.append((run_id_other, run_url, age_minutes))
-
-          if duplicates:
-              print("CI chain guard failed.")
-              print("Duplicate in-progress runs for same workflow/ref/sha:")
-              for rid, url, age in duplicates:
-                  age_str = "unknown" if age is None else f"{age:.1f}m"
-                  print(f" - run_id={rid} age={age_str} url={url}")
-              raise SystemExit(1)
-
-          if stale:
-              print(
-                  "CI chain guard warning: stale in-progress runs for same workflow/ref "
-                  f"(>{max_stale_minutes:.0f}m):"
-              )
-              for rid, url, age in stale:
-                  age_str = "unknown" if age is None else f"{age:.1f}m"
-                  print(f" - run_id={rid} age={age_str} url={url}")
-
-          print("CI chain guard passed: no duplicate in-progress runs found.")
-          PY
-
-  github-token-format-guard:
-    name: GitHub Token Format Guard
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    needs: [ci-chain-guard]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Validate token format assumptions
-        run: python tools/github_token_format_guard.py
-
   lean-safety-proofs:
-    name: Lean Safety Proofs
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-lean-safety-proofs.yml
     permissions:
       contents: read
-    needs: [ci-chain-guard]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Install Lean toolchain
-        run: |
-          curl --retry 5 --retry-all-errors --retry-delay 10 \
-            --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
-            -o /tmp/elan-init.sh
-          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
-          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Build Lean safety + compiler-contract proof surface
-        run: |
-          cd scpn-fusion-lean
-          lake build
-      - name: Assert proofs are complete (no sorry/admit stubs)
-        run: |
-          cd scpn-fusion-lean
-          if grep -rnE '\bsorry\b|\badmit\b|sorryAx' -- *.lean; then
-            echo "::error::Lean proofs contain a sorry/admit stub — the contract is not proven"
-            exit 1
-          fi
-          echo "All Lean proofs are complete (no sorry/admit)."
-
+    needs:
+    - ci-chain-guard
   smoke-install:
-    name: Install Smoke (${{ matrix.os }} / ${{ matrix.profile }})
-    runs-on: ${{ matrix.os }}
+    uses: ./.github/workflows/ci-smoke-install.yml
     permissions:
       contents: read
-    needs: [ci-chain-guard]
-    continue-on-error: ${{ matrix.allow_failure }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            profile: minimal
-            allow_failure: false
-          - os: ubuntu-latest
-            profile: dev
-            allow_failure: false
-          - os: ubuntu-latest
-            profile: full
-            allow_failure: false
-          - os: macos-latest
-            profile: minimal
-            allow_failure: false
-          - os: macos-latest
-            profile: dev
-            allow_failure: false
-          - os: macos-latest
-            profile: full
-            allow_failure: false
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install selected dependency profile
-        env:
-          SCPN_PROFILE: ${{ matrix.profile }}
-        run: |
-          python - <<'PY'
-          from __future__ import annotations
-          import os
-          import subprocess
-          import sys
-
-          profile = os.environ["SCPN_PROFILE"].strip().lower()
-          reqs = {
-              "minimal": "requirements/minimal.txt",
-              "dev": "requirements/ci-py312.txt",
-              "full": "requirements/full.txt",
-          }.get(profile)
-          if reqs is None:
-              raise SystemExit(f"Unknown install profile: {profile}")
-          subprocess.check_call([sys.executable, "-m", "pip", "install", "--require-hashes", "-r", reqs])
-          subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-deps", "-e", "."])
-          PY
-      - name: Import smoke
-        env:
-          SCPN_PROFILE: ${{ matrix.profile }}
-        run: |
-          python - <<'PY'
-          from __future__ import annotations
-          import importlib
-          import os
-          import subprocess
-          import sys
-
-          import scpn_fusion
-
-          print("scpn_fusion version:", getattr(scpn_fusion, "__version__", "unknown"))
-          profile = os.environ["SCPN_PROFILE"].strip().lower()
-          if profile == "full":
-              importlib.import_module("jax")
-              importlib.import_module("gymnasium")
-          subprocess.check_call([sys.executable, "-m", "scpn_fusion.cli", "--help"])
-          PY
-
+    needs:
+    - ci-chain-guard
   python-tests:
-    name: Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-python-tests.yml
     permissions:
       contents: read
-    needs: [ci-chain-guard, lean-safety-proofs]
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          fetch-depth: 0
-          lfs: false
-      - name: Checkout pinned DREAM Python API fixture
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          repository: chalmersplasmatheory/DREAM
-          ref: ecdd5e146537c77602c9d7cc76b36100200e4b9a
-          path: data/external/full_fidelity_public_sources/repos/dream
-          fetch-depth: 1
-          lfs: false
-          persist-credentials: false
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install Lean toolchain for polyglot solver contracts
-        run: |
-          curl --retry 5 --retry-all-errors --retry-delay 10 \
-            --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
-            -o /tmp/elan-init.sh
-          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
-          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Install dependencies
-        run: |
-          pyver="${{ matrix.python-version }}"
-          pytag="${pyver//.}"
-          if [ "$pyver" = "3.12" ]; then
-            pip install --require-hashes -r requirements/ci-benchmark.txt
-          else
-            pip install --require-hashes -r "requirements/ci-py${pytag}.txt"
-          fi
-          pip install --no-deps -e .
-      - name: Verify embedded neurocore backend (Python 3.12 lane)
-        if: matrix.python-version == '3.12'
-        run: |
-          python - <<'PY'
-          from scpn_fusion.neurocore_compat import SC_NEUROCORE_AVAILABLE, SC_NEUROCORE_BACKEND
-
-          if not SC_NEUROCORE_AVAILABLE:
-              raise SystemExit("Embedded neurocore backend unavailable.")
-          print(f"Embedded neurocore backend active: {SC_NEUROCORE_BACKEND}")
-          PY
-      - name: Python preflight release gate
-        if: matrix.python-version == '3.12'
-        env:
-          SCPN_ENABLE_STRICT_BACKEND_CHECKS: "1"
-        run: |
-          python tools/run_python_preflight.py --gate release
-      - name: Reject silent tracked evidence drift
-        if: matrix.python-version == '3.12'
-        run: git diff --exit-code -- artifacts validation/reports
-      - name: Run release test suite (exclude experimental-only lanes)
-        if: matrix.python-version != '3.12'
-        run: |
-          # The frozen exact-byte evidence records a specific Python 3.12.3,
-          # JAX 0.7.1 and CUDA host. Keep its reconstruction test on that
-          # matching evidence host; generic hosted runners run every portable
-          # test and the complete authenticated CVGC2 contract surface.
-          pytest tests/ -v -m "not experimental" \
-            --deselect \
-            tests/test_diagnose_ida_fixed_reference_operator.py::test_real_diiid_fixed_reference_operator_decomposition
-      - name: Generate Python coverage report
-        if: matrix.python-version == '3.12'
-        run: |
-          mkdir -p artifacts
-          set +e
-          timeout --signal=TERM 75m pytest tests/ -q -m "not experimental" \
-            --deselect \
-            tests/test_diagnose_ida_fixed_reference_operator.py::test_real_diiid_fixed_reference_operator_decomposition \
-            --cov=scpn_fusion --cov-branch --cov-report=xml:coverage-python.xml \
-            2>&1 | tee artifacts/python312_coverage.log
-          rc=${PIPESTATUS[0]}
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          diag = {
-              "coverage_timeout": False,
-              "coverage_log": "artifacts/python312_coverage.log",
-              "coverage_xml": "coverage-python.xml",
-              "timeout_minutes": 75,
-          }
-          Path("artifacts").mkdir(parents=True, exist_ok=True)
-          Path("artifacts/python312_coverage_diagnostics.json").write_text(
-              json.dumps(diag, indent=2) + "\n",
-              encoding="utf-8",
-          )
-          PY
-          if [ "$rc" -eq 124 ]; then
-            echo "::error::Python 3.12 coverage run timed out after 75 minutes."
-          fi
-          exit "$rc"
-      - name: Coverage regression guard
-        if: matrix.python-version == '3.12'
-        run: |
-          python tools/coverage_guard.py \
-            --coverage-xml coverage-python.xml \
-            --thresholds tools/coverage_guard_thresholds.json \
-            --summary-json artifacts/coverage_guard_summary.json
-      - name: Coverage delta report
-        if: matrix.python-version == '3.12'
-        run: |
-          python tools/coverage_delta_report.py \
-            --coverage-summary artifacts/coverage_guard_summary.json \
-            --thresholds tools/coverage_guard_thresholds.json \
-            --output-json artifacts/coverage_delta_report.json \
-            --output-md artifacts/coverage_delta_report.md
-      - name: Disruption false-positive rate gate
-        if: matrix.python-version == '3.12'
-        run: |
-          python -c "
-          from scpn_fusion.control.disruption_predictor import run_anomaly_alarm_campaign
-          r = run_anomaly_alarm_campaign(seed=42, episodes=32, window=64)
-          assert r['false_positive_rate'] <= 0.10, f'FPR {r[\"false_positive_rate\"]:.3f} exceeds 10%%'
-          "
-      - name: Upload Python coverage to Codecov
-        if: matrix.python-version == '3.12'
-        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354  # v6.0.1
-        with:
-          files: coverage-python.xml
-          flags: python
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      - name: Upload Python 3.12 coverage diagnostics
-        if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: python312-coverage-diagnostics
-          if-no-files-found: warn
-          path: |
-            artifacts/python312_coverage.log
-            artifacts/python312_coverage_diagnostics.json
-            coverage-python.xml
-            artifacts/untested_module_guard_summary.json
-            artifacts/deprecated_default_lane_guard_summary.json
-            artifacts/release_delta_guard_summary.json
-            artifacts/claim_range_guard_summary.json
-      - name: Upload coverage guard summary
-        if: matrix.python-version == '3.12' && always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: coverage-guard-summary
-          if-no-files-found: warn
-          path: |
-            artifacts/coverage_guard_summary.json
-            artifacts/coverage_delta_report.json
-            artifacts/coverage_delta_report.md
-
+    needs:
+    - ci-chain-guard
+    - lean-safety-proofs
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   python-research-gate:
-    name: Python Research Gate
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-python-research-gate.yml
     permissions:
       contents: read
-    needs: [python-tests]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          lfs: false
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install Lean toolchain for polyglot solver contracts
-        run: |
-          curl --retry 5 --retry-all-errors --retry-delay 10 \
-            --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
-            -o /tmp/elan-init.sh
-          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
-          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Install dependencies
-        run: |
-          pip install --require-hashes -r requirements/ci-py312.txt
-          pip install --no-deps -e .
-
-      - name: Verify embedded neurocore backend
-        run: |
-          python - <<'PY'
-          from scpn_fusion.neurocore_compat import SC_NEUROCORE_AVAILABLE, SC_NEUROCORE_BACKEND
-
-          if not SC_NEUROCORE_AVAILABLE:
-              raise SystemExit("Embedded neurocore backend unavailable.")
-          print(f"Embedded neurocore backend active: {SC_NEUROCORE_BACKEND}")
-          PY
-      - name: Python preflight research gate
-        run: python tools/run_python_preflight.py --gate research
-
+    needs:
+    - python-tests
   geometry-3d-smoke:
-    name: Geometry 3D Smoke
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-geometry-3d-smoke.yml
     permissions:
       contents: read
-    needs: [python-tests]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          lfs: false
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install Lean toolchain for polyglot solver contracts
-        run: |
-          curl --retry 5 --retry-all-errors --retry-delay 10 \
-            --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
-            -o /tmp/elan-init.sh
-          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
-          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Install dependencies
-        run: |
-          pip install --require-hashes -r requirements/ci-py312.txt
-          pip install --no-deps -e .
-
-      - name: Run 3D quickstart smoke
-        run: |
-          python examples/run_3d_flux_quickstart.py --toroidal 12 --poloidal 12 --output artifacts/ci_3d_smoke.obj
-          python examples/run_3d_flux_quickstart.py --vmec-like --n1-amplitude 0.04 --toroidal 12 --poloidal 12 --output artifacts/ci_3d_vmec_smoke.obj
-      - name: Validate OBJ artifact
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          def validate_obj(path: Path) -> None:
-              if not path.exists() or path.stat().st_size == 0:
-                  raise SystemExit(f"OBJ artifact missing or empty: {path}")
-              verts = 0
-              faces = 0
-              for line in path.read_text(encoding="utf-8").splitlines():
-                  if line.startswith("v "):
-                      verts += 1
-                  elif line.startswith("f "):
-                      faces += 1
-              if verts <= 0 or faces <= 0:
-                  raise SystemExit(f"Invalid mesh content for {path}: verts={verts}, faces={faces}")
-              print(f"OBJ smoke OK {path.name}: verts={verts}, faces={faces}")
-
-          validate_obj(Path("artifacts/ci_3d_smoke.obj"))
-          validate_obj(Path("artifacts/ci_3d_vmec_smoke.obj"))
-          PY
-
-  rmse-dashboard-smoke:
-    name: RMSE Dashboard Smoke
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    needs: [python-tests]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          lfs: false
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: |
-          pip install --require-hashes -r requirements/ci-py312.txt
-          pip install --no-deps -e .
-
-      - name: Generate RMSE dashboard
-        run: |
-          python validation/rmse_dashboard.py --output-json artifacts/rmse_dashboard_ci.json --output-md artifacts/rmse_dashboard_ci.md
-      - name: Validate dashboard artifacts
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          j = Path("artifacts/rmse_dashboard_ci.json")
-          m = Path("artifacts/rmse_dashboard_ci.md")
-          if not j.exists() or j.stat().st_size == 0:
-              raise SystemExit("Missing RMSE JSON artifact")
-          if not m.exists() or m.stat().st_size == 0:
-              raise SystemExit("Missing RMSE Markdown artifact")
-          data = json.loads(j.read_text(encoding="utf-8"))
-          for key in ("confinement_itpa", "confinement_iter_sparc", "beta_iter_sparc", "sparc_axis"):
-              if key not in data:
-                  raise SystemExit(f"Missing key: {key}")
-          print("RMSE dashboard smoke OK")
-          PY
-      - name: RMSE regression gate
-        run: python tools/ci_rmse_gate.py
-      - name: Upload RMSE artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: rmse-dashboard-smoke
-          path: |
-            artifacts/rmse_dashboard_ci.json
-            artifacts/rmse_dashboard_ci.md
-
-  real-shot-validation:
-    name: Real-Shot Validation Gate
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    needs: [python-tests]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          lfs: false
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: |
-          pip install --require-hashes -r requirements/ci-py312.txt
-          pip install --no-deps -e .
-
-      - name: Run real-shot validation
-        run: |
-          python validation/validate_real_shots.py --strict-coverage \
-            --output-json artifacts/real_shot_validation.json \
-            --output-md artifacts/real_shot_validation.md
-      - name: Real-shot validation guard
-        run: |
-          python tools/real_shot_validation_guard.py \
-            --report artifacts/real_shot_validation.json \
-            --thresholds tools/real_shot_validation_thresholds.json \
-            --summary-json artifacts/real_shot_validation_guard_summary.json
-      - name: Real-data roadmap progress report
-        run: |
-          python tools/real_data_roadmap_progress.py \
-            --report artifacts/real_shot_validation.json \
-            --targets tools/real_data_roadmap_targets.json \
-            --output-json artifacts/real_data_roadmap_progress.json \
-            --output-md artifacts/real_data_roadmap_progress.md
-      - name: Real-data roadmap non-regression guard
-        run: |
-          python tools/real_data_roadmap_non_regression_guard.py \
-            --progress-json artifacts/real_data_roadmap_progress.json \
-            --baseline-json tools/real_data_roadmap_baseline.json \
-            --summary-json artifacts/real_data_roadmap_non_regression_summary.json
-      - name: Upload validation artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: real-shot-validation
-          path: |
-            artifacts/real_shot_validation.json
-            artifacts/real_shot_validation.md
-            artifacts/real_shot_validation_guard_summary.json
-            artifacts/real_data_roadmap_progress.json
-            artifacts/real_data_roadmap_progress.md
-            artifacts/real_data_roadmap_non_regression_summary.json
-
-  benchmark-provenance-smoke:
-    name: Benchmark Provenance Smoke
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    needs: [python-tests]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          lfs: false
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: |
-          pip install --require-hashes -r requirements/ci-benchmark.txt
-          pip install --no-deps -e .
-      - name: Generate benchmark artifacts
-        run: |
-          python validation/benchmark_torax_real_parity.py --check
-          python validation/benchmark_torax_real_parity.py --output artifacts/torax_benchmark.json
-          python validation/benchmark_torax_coupled_transport_parity.py --check
-          python validation/benchmark_torax_differentiable_transport.py --check
-          python validation/benchmark_sparc_geqdsk_rmse.py
-          python validation/benchmark_vs_freegs.py --force-solovev
-          python validation/benchmark_disruption_transfer_generalization.py \
-            --strict \
-            --output-json artifacts/_local_disruption_transfer_generalization.json \
-            --output-md artifacts/_local_disruption_transfer_generalization.md
-          python validation/vertical_control_replay_benchmark.py \
-            --output-json artifacts/_local_vertical_control_replay_benchmark.json \
-            --output-md artifacts/_local_vertical_control_replay_benchmark.md
-          python validation/vertical_control_replay_benchmark.py \
-            --all-profiles \
-            --output-json artifacts/_local_vertical_control_replay_profiles.json \
-            --output-md artifacts/_local_vertical_control_replay_profiles.md
-      - name: Verify provenance fields
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          torax = json.loads(Path("artifacts/torax_benchmark.json").read_text(encoding="utf-8"))
-          sparc = json.loads(Path("artifacts/sparc_geqdsk_rmse_benchmark.json").read_text(encoding="utf-8"))
-          freegs = json.loads(Path("artifacts/freegs_benchmark.json").read_text(encoding="utf-8"))
-          transfer = json.loads(Path("artifacts/_local_disruption_transfer_generalization.json").read_text(encoding="utf-8"))
-          vertical = json.loads(Path("artifacts/_local_vertical_control_replay_benchmark.json").read_text(encoding="utf-8"))
-          vertical_profiles = json.loads(Path("artifacts/_local_vertical_control_replay_profiles.json").read_text(encoding="utf-8"))
-          vertical_md = Path("artifacts/_local_vertical_control_replay_benchmark.md").read_text(encoding="utf-8")
-          vertical_profiles_md = Path("artifacts/_local_vertical_control_replay_profiles.md").read_text(encoding="utf-8")
-
-          torax_reference = torax.get("reference", {})
-          torax_provenance = torax_reference.get("provenance", {})
-          sparc_cases = sparc.get("cases", [])
-          freegs_cases = freegs.get("cases", [])
-          transfer_checks = transfer.get("checks", {})
-          if torax.get("schema") != "scpn-fusion-core.torax-real-parity.v1":
-              raise SystemExit("torax benchmark payload is not the real-parity schema")
-          if not bool(torax.get("passes_thresholds", False)):
-              raise SystemExit("torax real-parity report did not pass integrity thresholds")
-          if bool(torax.get("physics_equivalence_claimed", True)):
-              raise SystemExit("torax real-parity report must not claim physics equivalence")
-          for key in ("code", "torax_version", "config_name", "config_sha256", "licence"):
-              if not torax_provenance.get(key):
-                  raise SystemExit(f"torax reference provenance missing key: {key}")
-          if not torax_reference.get("profile_checksum_sha256"):
-              raise SystemExit("torax reference missing profile checksum")
-          for key in ("core_te_ratio_fine_over_torax", "normalised_te_shape_rel_l2_fine"):
-              if key not in torax.get("divergence_metrics", {}):
-                  raise SystemExit(f"torax divergence metrics missing key: {key}")
-          if not sparc_cases:
-              raise SystemExit("sparc benchmark produced zero cases")
-          if not freegs_cases:
-              raise SystemExit("freegs benchmark produced zero cases")
-          if not transfer_checks:
-              raise SystemExit("transfer benchmark produced zero checks")
-
-          for idx, case in enumerate(sparc_cases):
-              for key in ("surrogate_backend", "fallback_reason"):
-                  if key not in case:
-                      raise SystemExit(f"sparc case[{idx}] missing key: {key}")
-              if not bool(case.get("backend_requirement_satisfied", False)):
-                  raise SystemExit(f"sparc case[{idx}] backend requirement not satisfied")
-          for idx, case in enumerate(freegs_cases):
-              for key in ("mode", "comparison_backend", "reference_backend"):
-                  if key not in case:
-                      raise SystemExit(f"freegs case[{idx}] missing key: {key}")
-          for key in ("source_group", "target_group", "transfer_efficiency", "passes", "thresholds"):
-              if key not in transfer:
-                  raise SystemExit(f"transfer benchmark missing key: {key}")
-          for key in ("recall", "false_positive_rate", "n_shots"):
-              if key not in transfer["source_group"]:
-                  raise SystemExit(f"transfer source_group missing key: {key}")
-              if key not in transfer["target_group"]:
-                  raise SystemExit(f"transfer target_group missing key: {key}")
-          if "vertical_control_replay_benchmark" not in vertical:
-              raise SystemExit("vertical_control_replay_benchmark payload missing section")
-          if "vertical_control_replay_profile_suite" not in vertical_profiles:
-              raise SystemExit("vertical_control_replay_profiles payload missing profile suite section")
-          if not vertical["vertical_control_replay_benchmark"]["passes_thresholds"]:
-              raise SystemExit("vertical control benchmark did not pass acceptance thresholds")
-          if not vertical_profiles["vertical_control_replay_profile_suite"]["all_profiles_pass"]:
-              raise SystemExit("vertical control profile suite did not pass acceptance thresholds")
-
-          print(
-              "Benchmark provenance OK: "
-              f"torax_schema={torax.get('schema')} "
-              f"sparc_cases={len(sparc_cases)} "
-              f"freegs_cases={len(freegs_cases)} "
-              f"transfer_pass={transfer.get('passes')}"
-          )
-          print(
-              "Vertical control replay OK: "
-              f"passes={vertical['vertical_control_replay_benchmark']['passes_thresholds']}, "
-              f"profiles={len(vertical_profiles['vertical_control_replay_profile_suite']['profile_ids'])}, "
-              f"all_profiles_pass={vertical_profiles['vertical_control_replay_profile_suite']['all_profiles_pass']}"
-          )
-          for marker in (
-              "- Overall pass:",
-              "- Deterministic replay pass:",
-          ):
-              if marker not in vertical_md:
-                  raise SystemExit(f"vertical markdown report missing marker: {marker}")
-          if "## Profile suite" not in vertical_profiles_md:
-              raise SystemExit("vertical profile markdown report missing profile suite section")
-          PY
-      - name: Fallback budget guard
-        run: |
-          python tools/fallback_budget_guard.py \
-            --torax artifacts/torax_benchmark.json \
-            --sparc artifacts/sparc_geqdsk_rmse_benchmark.json \
-            --freegs artifacts/freegs_benchmark.json \
-            --thresholds tools/fallback_budget_thresholds.json \
-            --summary-json artifacts/fallback_budget_summary.json
-      - name: Benchmark regression guard
-        run: |
-          python tools/benchmark_regression_guard.py \
-            --thresholds tools/benchmark_regression_thresholds.json \
-            --summary-json artifacts/benchmark_regression_guard_summary.json
-      - name: Upload benchmark provenance artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: benchmark-provenance-smoke
-          path: |
-            artifacts/torax_benchmark.json
-            artifacts/sparc_geqdsk_rmse_benchmark.json
-            artifacts/freegs_benchmark.json
-            artifacts/fallback_budget_summary.json
-            artifacts/benchmark_regression_guard_summary.json
-            artifacts/_local_disruption_transfer_generalization.json
-            artifacts/_local_disruption_transfer_generalization.md
-            artifacts/_local_vertical_control_replay_benchmark.json
-            artifacts/_local_vertical_control_replay_benchmark.md
-            artifacts/_local_vertical_control_replay_profiles.json
-            artifacts/_local_vertical_control_replay_profiles.md
-
+    needs:
+    - python-tests
   runtime-parity-perf-gate:
-    name: Runtime Parity + Perf Gate
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-runtime-parity-perf-gate.yml
     permissions:
       contents: read
-    needs: [python-tests]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          lfs: false
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: |
-          pip install --require-hashes -r requirements/ci-py312.txt
-          pip install --no-deps -e .
-      - name: Generate parity and latency artifacts
-        run: |
-          python validation/traceable_runtime_parity.py --strict \
-            --output-json artifacts/traceable_runtime_parity.json \
-            --output-md artifacts/traceable_runtime_parity.md
-          python validation/scpn_end_to_end_latency.py --strict \
-            --output-json artifacts/_local_scpn_end_to_end_latency_ci.json \
-            --output-md artifacts/_local_scpn_end_to_end_latency_ci.md
-      - name: Runtime parity/perf guard
-        run: |
-          python tools/runtime_parity_perf_guard.py \
-            --parity artifacts/traceable_runtime_parity.json \
-            --latency artifacts/_local_scpn_end_to_end_latency_ci.json \
-            --thresholds tools/runtime_parity_perf_thresholds.json \
-            --summary-json artifacts/runtime_parity_perf_guard_summary.json
-      - name: Upload runtime parity/perf artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: runtime-parity-perf-gate
-          path: |
-            artifacts/traceable_runtime_parity.json
-            artifacts/traceable_runtime_parity.md
-            artifacts/_local_scpn_end_to_end_latency_ci.json
-            artifacts/_local_scpn_end_to_end_latency_ci.md
-            artifacts/runtime_parity_perf_guard_summary.json
-
+    needs:
+    - python-tests
   rust-tests:
-    name: Rust (stable)
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-rust-tests.yml
     permissions:
       contents: read
-    needs: [ci-chain-guard]
-    defaults:
-      run:
-        working-directory: scpn-fusion-rs
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # stable
-        with:
-          components: rustfmt, clippy
-      - name: Cache cargo
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            scpn-fusion-rs/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-      - name: Clippy
-        run: cargo clippy --all-targets --all-features -- -D warnings
-      - name: Run tests (including proptest)
-        run: cargo test --all-features -- --test-threads=1
-
+    needs:
+    - ci-chain-guard
   rust-python-interop:
-    name: Rust-Python Interop
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-rust-python-interop.yml
     permissions:
       contents: read
-    needs: [rust-tests]
-    defaults:
-      run:
-        working-directory: .
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # stable
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Cache cargo
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            scpn-fusion-rs/target
-          key: ${{ runner.os }}-interop-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-interop-
-      - name: Create virtualenv and install Python package
-        run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install --require-hashes -r requirements/ci-interop.txt
-          pip install --no-deps -e .
-      - name: Build Rust extension
-        run: |
-          source .venv/bin/activate
-          cd scpn-fusion-rs/crates/fusion-python && maturin develop --release
-      - name: Verify Rust extension loads
-        run: |
-          source .venv/bin/activate
-          python -c "import scpn_fusion_rs; print('Rust extension loaded OK')"
-      - name: Run interop tests
-        run: |
-          source .venv/bin/activate
-          pytest tests/test_boris_pyo3_bridge.py tests/test_snn_pyo3_bridge.py \
-                 tests/test_rust_python_parity.py tests/test_rust_compat_wrapper.py \
-                 tests/test_rust_multigrid_wiring.py \
-                 tests/test_frc_rigid_rotor_rust_parity.py -v --tb=short
-      - name: Run new binding tests
-        run: |
-          source .venv/bin/activate
-          pytest tests/test_pyo3_physics_bridge.py tests/test_pyo3_control_bridge.py \
-                 tests/test_pyo3_nuclear_bridge.py tests/test_pyo3_transport_bridge.py -v --tb=short
-      - name: Measure phase-kernel cross-tier benchmark (isolated runner)
-        run: |
-          source .venv/bin/activate
-          mkdir -p artifacts
-          python benchmarks/bench_phase_kernels.py --repeats 5 \
-            --output artifacts/phase_kernels_benchmark.json
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          report = json.loads(Path("artifacts/phase_kernels_benchmark.json").read_text())
-          print(f"rust_available={report['rust_available']}")
-          for kernel in report["kernels"]:
-              speedup = kernel.get("rust_over_numpy_speedup")
-              parity = kernel.get("rust_vs_numpy_final_state_rel_l2")
-              speedup_str = f"{speedup:.2f}x" if speedup is not None else "n/a"
-              parity_str = f"{parity:.1e}" if parity is not None else "n/a"
-              print(f"  {kernel['kernel']}: {speedup_str}  parity={parity_str}")
-          PY
-      - name: Upload phase-kernel benchmark
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: phase-kernels-benchmark
-          path: artifacts/phase_kernels_benchmark.json
-
+    needs:
+    - rust-tests
   rust-coverage:
-    name: Rust Coverage (tarpaulin)
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-rust-coverage.yml
     permissions:
       contents: read
-    needs: [ci-chain-guard]
-    defaults:
-      run:
-        working-directory: scpn-fusion-rs
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # stable
-      - name: Cache cargo
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            scpn-fusion-rs/target
-          key: ${{ runner.os }}-tarpaulin-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-tarpaulin-
-      - name: Install cargo-binstall
-        uses: taiki-e/install-action@6eb4471beed212309063862e6f5284ca3da3b01d  # cargo-binstall
-      - name: Install cargo-tarpaulin
-        run: |
-          set -euo pipefail
-          if cargo binstall --no-confirm --force cargo-tarpaulin; then
-            exit 0
-          fi
-          echo "cargo-binstall path failed, retrying locked source build..."
-          for attempt in 1 2 3; do
-            if cargo install cargo-tarpaulin --locked; then
-              exit 0
-            fi
-            echo "cargo install attempt ${attempt}/3 failed."
-            sleep $((attempt * 10))
-          done
-          echo "cargo-tarpaulin install failed after retries."
-          exit 1
-      - name: Generate coverage
-        run: cargo tarpaulin --packages fusion-types fusion-math fusion-core fusion-physics fusion-nuclear fusion-engineering fusion-control fusion-diagnostics fusion-ml --run-types Lib --timeout 300 --out xml --output-dir coverage
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354  # v6.0.1
-        with:
-          files: scpn-fusion-rs/coverage/cobertura.xml
-          flags: rust
-          fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
+    needs:
+    - ci-chain-guard
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   rust-fuzz:
-    name: Rust Fuzz Smoke
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    uses: ./.github/workflows/ci-rust-fuzz.yml
     permissions:
       contents: read
-    needs: [rust-tests]
-    defaults:
-      run:
-        working-directory: scpn-fusion-rs
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Install Rust nightly toolchain
-        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # nightly
-        with:
-          toolchain: nightly
-          components: llvm-tools-preview
-      - name: Cache cargo
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
-            scpn-fusion-rs/target
-          key: ${{ runner.os }}-cargo-fuzz-${{ hashFiles('scpn-fusion-rs/Cargo.lock', 'scpn-fusion-rs/fuzz/Cargo.toml') }}
-          restore-keys: ${{ runner.os }}-cargo-fuzz-
-      - name: Install cargo-fuzz
-        run: |
-          if command -v cargo-fuzz >/dev/null 2>&1; then
-            cargo fuzz --version
-            exit 0
-          fi
-          for attempt in 1 2 3; do
-            if cargo install cargo-fuzz --locked; then
-              cargo fuzz --version
-              exit 0
-            fi
-            echo "cargo-fuzz locked install attempt ${attempt}/3 failed."
-            sleep $((attempt * 10))
-          done
-          cargo install cargo-fuzz
-          cargo fuzz --version
-      - name: Verify fuzz targets are present
-        run: test -f fuzz/fuzz_targets/mpi_domain.rs
-      - name: Run bounded fuzz smoke target
-        env:
-          RUST_BACKTRACE: "1"
-        run: cargo +nightly fuzz run mpi_domain -- -runs=256 -max_len=128 -timeout=10 -rss_limit_mb=2048
-
-  rust-audit:
-    name: Rust Security Audit
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    needs: [ci-chain-guard]
-    defaults:
-      run:
-        working-directory: scpn-fusion-rs
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
-      - name: Run security audit
-        run: cargo audit --deny warnings
-
+    needs:
+    - rust-tests
   rust-benchmarks:
-    name: Rust Benchmarks
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-rust-benchmarks.yml
     permissions:
       contents: read
-    needs: [ci-chain-guard]
-    defaults:
-      run:
-        working-directory: scpn-fusion-rs
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7  # stable
-      - name: Cache cargo
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            scpn-fusion-rs/target
-          key: ${{ runner.os }}-bench-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-bench-
-      - name: Record hardware metadata
-        run: |
-          mkdir -p benchmark-results
-          {
-            echo "runner: github-actions ubuntu-latest"
-            echo "cpu: $(lscpu | grep 'Model name' | sed 's/.*:\s*//')"
-            echo "cores: $(nproc)"
-            echo "ram_mb: $(free -m | awk '/Mem:/{print $2}')"
-            echo "rustc: $(rustc --version)"
-          } > benchmark-results/hardware.txt
-      - name: Run benchmarks
-        run: cargo bench 2>&1 | tee benchmark-results/bench_output.txt
-      - name: Collect Criterion JSON
-        if: always()
-        run: |
-          if [ -d target/criterion ]; then
-            cp -r target/criterion benchmark-results/criterion_data
-          fi
-      - name: Upload benchmark artifacts
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
-        with:
-          name: rust-benchmarks
-          path: scpn-fusion-rs/benchmark-results/
-
+    needs:
+    - ci-chain-guard
   validation-regression:
-    name: Physics Validation Suite
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    uses: ./.github/workflows/ci-validation-regression.yml
     permissions:
       contents: read
-    needs: [python-tests, rust-tests, rust-python-interop]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          lfs: false
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install Lean toolchain for polyglot solver contracts
-        run: |
-          curl --retry 5 --retry-all-errors --retry-delay 10 \
-            --connect-timeout 20 --max-time 120 -fsSL \
-            https://raw.githubusercontent.com/leanprover/elan/b6cec7e10fe4965a605aaf60d1cb4a5837f0462b/elan-init.sh \
-            -o /tmp/elan-init.sh
-          echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
-          sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
-          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Install dependencies
-        run: |
-          pip install --require-hashes -r requirements/ci-py312.txt
-          pip install --no-deps -e .
-
-      - name: Verify embedded neurocore backend
-        run: |
-          python - <<'PY'
-          from scpn_fusion.neurocore_compat import SC_NEUROCORE_AVAILABLE, SC_NEUROCORE_BACKEND
-
-          if not SC_NEUROCORE_AVAILABLE:
-              raise SystemExit("Embedded neurocore backend unavailable.")
-          print(f"Embedded neurocore backend active: {SC_NEUROCORE_BACKEND}")
-          PY
-      - name: IPB98 confinement scaling validation
-        run: pytest tests/test_uncertainty.py -v --tb=short
-      - name: Focused physics validation regression suite
-        run: |
-          pytest \
-            tests/test_validation_regression.py \
-            tests/test_benchmark_sparc_geqdsk_rmse.py \
-            tests/test_benchmark_free_boundary_strict_parity.py \
-            tests/test_benchmark_disruption_transfer_generalization.py \
-            tests/test_vertical_control_replay_benchmark.py \
-            tests/test_torax_real_parity.py \
-            tests/test_check_freegs_strict_artifact.py \
-            -v --tb=short -x -m "not experimental"
-
+    needs:
+    - python-tests
+    - rust-python-interop
+    - rust-tests
   stress-test:
-    name: Stress Test
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-stress-test.yml
     permissions:
       contents: read
-    needs: [python-tests]
+    needs:
+    - python-tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          lfs: false
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: |
-          pip install --require-hashes -r requirements/ci-stress.txt
-          pip install --no-deps -e .
-      - name: Run stress tests
-        run: |
-          pytest tests/ -v -m "stress" --timeout=600 || rc=$?
-          if [ "${rc:-0}" -eq 5 ]; then
-            echo "No stress-marked tests collected — skipping."
-            exit 0
-          fi
-          exit "${rc:-0}"
-
   studio-conformance:
-    name: Studio Federation Conformance
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/ci-studio-conformance.yml
     permissions:
       contents: read
-    needs: [ci-chain-guard]
+    needs:
+    - ci-chain-guard
+  reference-evidence:
+    uses: ./.github/workflows/ci-reference-evidence.yml
+    permissions:
+      contents: read
+    needs:
+    - python-tests
+  dependency-policy:
+    uses: ./.github/workflows/ci-dependency-policy.yml
+    permissions:
+      contents: read
+    needs:
+    - ci-chain-guard
+  required-gate:
+    name: Python 3.12
+    needs:
+    - ci-chain-guard
+    - dependency-policy
+    - geometry-3d-smoke
+    - lean-safety-proofs
+    - python-research-gate
+    - python-tests
+    - reference-evidence
+    - runtime-parity-perf-gate
+    - rust-benchmarks
+    - rust-coverage
+    - rust-fuzz
+    - rust-python-interop
+    - rust-tests
+    - smoke-install
+    - stress-test
+    - studio-conformance
+    - validation-regression
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions: {}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-        with:
-          lfs: false
-      - name: Set up Python 3.12
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
-        with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: |
-          pip install --require-hashes -r requirements/ci-py312.txt
-          pip install --no-deps -e .
-      - name: Install studio federation SDK
-        # The [studio] extra is optional, so the base test job skips the schema-A
-        # tests; this job installs the SDK so the federation contract is genuinely
-        # gated (validate_studio_manifest must admit the manifest) rather than skipped.
-        run: pip install --require-hashes -r requirements/studio.txt
-      - name: Studio schema-A federation tests
-        run: pytest tests/test_studio_manifest.py -v
-      - name: Studio manifest drift guard
-        run: python -m scpn_fusion.studio.federation --check
+    - name: Require every declared CI category
+      env:
+        CATEGORY_RESULTS: ${{ toJSON(needs) }}
+        EXPECTED_CATEGORIES: '["ci-chain-guard", "dependency-policy", "geometry-3d-smoke", "lean-safety-proofs",
+          "python-research-gate", "python-tests", "reference-evidence", "runtime-parity-perf-gate", "rust-benchmarks",
+          "rust-coverage", "rust-fuzz", "rust-python-interop", "rust-tests", "smoke-install", "stress-test",
+          "studio-conformance", "validation-regression"]'
+        EVENT_NAME: ${{ github.event_name }}
+        REF_NAME: ${{ github.ref }}
+      run: |
+        python - <<'PY'
+        import json
+        import os
+
+        results = json.loads(os.environ['CATEGORY_RESULTS'])
+        expected = json.loads(os.environ['EXPECTED_CATEGORIES'])
+        if set(results) != set(expected):
+            raise SystemExit('CI category inventory mismatch')
+        stress_required = os.environ['EVENT_NAME'] == 'push' and os.environ['REF_NAME'] == 'refs/heads/main'
+        for name in expected:
+            status = results[name]['result']
+            if status == 'success':
+                continue
+            if name == 'stress-test' and status == 'skipped' and not stress_required:
+                continue
+            raise SystemExit(f'{name}: {status}')
+        PY
