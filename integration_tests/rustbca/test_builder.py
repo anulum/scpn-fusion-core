@@ -510,7 +510,7 @@ def test_actual_unsupported_wheel_refuses_before_build(
     _, record = completed_build
     artifact = Path(os.environ["RUSTBCA_UNSUPPORTED_WHEEL"])
     assert hashlib.sha256(artifact.read_bytes()).hexdigest() == (
-        "177f9c9b0d45c47873b619f5b650346d632cdc35fb5e4d25058e09c9e581433d"
+        "33ae60725d69eaa249bc1982e739943c23b34b58d51f1cb6253453773aca6e65"
     )
     environment = tmp_path / "unsupported-writer"
     venv.EnvBuilder(with_pip=False).create(environment)
@@ -558,7 +558,7 @@ def test_actual_unsupported_wheel_refuses_before_build(
             timeout=10,
         )
     )
-    assert identity[0] == "0.42.0"
+    assert identity[0] == "0.46.2"
     assert Path(identity[1]).resolve().is_relative_to(environment.resolve())
     output = tmp_path / "build"
     result = subprocess.run(

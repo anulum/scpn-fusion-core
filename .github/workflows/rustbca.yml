@@ -140,7 +140,7 @@ jobs:
           COVERAGE_PROCESS_START: ${{ github.workspace }}/integration_tests/rustbca/coverage.ini
         run: |
           export RUSTBCA_BUILD_RECEIPT="$RUNNER_TEMP/rustbca-build/result.json"
-          export RUSTBCA_UNSUPPORTED_WHEEL="$RUNNER_TEMP/rustbca-test-wheels/wheel-0.42.0-py3-none-any.whl"
+          export RUSTBCA_UNSUPPORTED_WHEEL="$RUNNER_TEMP/rustbca-test-wheels/wheel-0.46.2-py3-none-any.whl"
           export RUSTBCA_SOURCE_ARCHIVE="$RUNNER_TEMP/rustbca-source.tar.gz"
           export RUSTBCA_PYTHON="$RUNNER_TEMP/rustbca-runtime/bin/python"
           "$RUNNER_TEMP/rustbca-tools/bin/python" -m pytest integration_tests/rustbca --no-cov \

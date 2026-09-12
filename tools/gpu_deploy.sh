@@ -66,7 +66,7 @@ if [ ! -d ".venv" ]; then
 fi
 
 source .venv/bin/activate
-pip install --upgrade "pip==25.0.1" "wheel==0.45.1" "setuptools==78.1.0" -q
+pip install --upgrade "pip==25.0.1" "wheel==0.47.0" "setuptools==78.1.0" -q
 
 # Install with GPU + ML + dev extras
 pip install --no-deps -e . -q && pip install --require-hashes -r requirements/ci-py312.txt -q 2>&1 | tail -3
