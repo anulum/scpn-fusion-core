@@ -1,0 +1,37 @@
+{
+  "schema": "scpn-fusion.rustbca-request.v1",
+  "ion": {
+    "Z": 1,
+    "m": 2.0,
+    "Ec": 0.1,
+    "Es": 1.5,
+    "label": "deuterium",
+    "provenance": "Upstream example only: lcpp-org/RustBCA@18920a26263c21b9e337db1bab1fd17f23f0fec5 scripts/materials.py SHA256 b63c8b44e94716519cc549a181900eecab82ad9db2c6fad337a38a0cc8d1ccdb; not experimentally verified"
+  },
+  "target": {
+    "Z": 74,
+    "m": 183.84,
+    "n": 6.306e+28,
+    "Es": 8.9,
+    "Eb": 0.0,
+    "Ec": 3.0,
+    "label": "tungsten",
+    "provenance": "Upstream example only: lcpp-org/RustBCA@18920a26263c21b9e337db1bab1fd17f23f0fec5 scripts/materials.py SHA256 b63c8b44e94716519cc549a181900eecab82ad9db2c6fad337a38a0cc8d1ccdb; not experimentally verified"
+  },
+  "energies_eV": [
+    100.0,
+    1000.0
+  ],
+  "angles_deg": [
+    0.0,
+    60.0
+  ],
+  "samples_per_seed": 512,
+  "seeds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "threads": 1
+}

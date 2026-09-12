@@ -163,12 +163,12 @@ checksums, thresholds, grid or scaling evidence, and native comparisons.
 | Public API exports | 2 |
 | Python capability source modules | 361 |
 | Python capability classes | 629 |
-| Capability documentation pages | 68 |
+| Capability documentation pages | 69 |
 | Rust workspace crates | 13 |
 | Optional extras | 14 |
-| Python test files | 660 |
-| Public documentation pages | 68 |
-| GitHub Actions workflows | 18 |
+| Python test files | 661 |
+| Public documentation pages | 69 |
+| GitHub Actions workflows | 19 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
 <!-- capability-snapshot:end -->

@@ -366,3 +366,32 @@ def test_resolve_handles_relative_and_absolute_paths(
 
     assert linkage._resolve("relative/path") == tmp_path / "relative/path"
     assert linkage._resolve(str(tmp_path / "absolute")) == tmp_path / "absolute"
+
+
+def test_real_rustbca_builder_is_linked_through_integration_root(tmp_path: Path) -> None:
+    """The actual integration corpus alone supplies linkage for the native builder."""
+    builder = next((ROOT / "tools").glob("build_rustbca_*.py")).relative_to(ROOT).as_posix()
+    unit_root = tmp_path / "absent-unit"
+    ordinary = linkage.collect_unlinked_tools(tools_root=ROOT / "tools", test_root=unit_root)
+    assert builder in ordinary
+    unlinked = linkage.collect_unlinked_tools(
+        tools_root=ROOT / "tools",
+        test_root=unit_root,
+        additional_test_roots=(ROOT / "integration_tests",),
+    )
+    assert builder not in unlinked
+
+
+def test_missing_additional_test_root_adds_no_linkage(tmp_path: Path) -> None:
+    """An absent optional corpus cannot manufacture linkage for an untested tool."""
+    ordinary = linkage.collect_unlinked_tools(
+        tools_root=ROOT / "tools",
+        test_root=tmp_path / "absent-unit",
+    )
+    with_missing = linkage.collect_unlinked_tools(
+        tools_root=ROOT / "tools",
+        test_root=tmp_path / "absent-unit",
+        additional_test_roots=(tmp_path / "absent-integration",),
+    )
+    assert with_missing == ordinary
+    assert len(with_missing) > 0

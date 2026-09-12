@@ -20,6 +20,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SOURCE_ROOT = REPO_ROOT / "src" / "scpn_fusion"
 DEFAULT_TOOLS_ROOT = REPO_ROOT / "tools"
 DEFAULT_TEST_ROOT = REPO_ROOT / "tests"
+DEFAULT_INTEGRATION_TEST_ROOT = REPO_ROOT / "integration_tests"
 DEFAULT_ALLOWLIST = REPO_ROOT / "tools" / "untested_module_allowlist.json"
 
 
@@ -33,6 +34,7 @@ class TestLinkageIndex:
 
 
 def _resolve(path_value: str) -> Path:
+    """Resolve relative guard arguments against the canonical repository root."""
     path = Path(path_value)
     if not path.is_absolute():
         path = REPO_ROOT / path
@@ -50,15 +52,18 @@ def collect_source_modules(source_root: Path) -> list[Path]:
 
 
 def _module_import_path(source_root: Path, module_path: Path) -> str:
+    """Derive the scpn_fusion import name from a module below its source root."""
     rel = module_path.relative_to(source_root).with_suffix("")
     return "scpn_fusion." + ".".join(rel.parts)
 
 
 def _iter_test_files(test_root: Path) -> list[Path]:
+    """Return deterministically ordered test modules below the selected test root."""
     return sorted(test_root.rglob("test_*.py"))
 
 
 def _collect_import_targets(path: Path) -> set[str]:
+    """Collect absolute import targets; syntax-invalid test modules supply no linkage."""
     text = path.read_text(encoding="utf-8", errors="ignore")
     try:
         tree = ast.parse(text)
@@ -81,12 +86,18 @@ def _collect_import_targets(path: Path) -> set[str]:
     return imports
 
 
-def _build_test_linkage_index(test_root: Path) -> TestLinkageIndex:
+def _build_test_linkage_index(
+    test_root: Path, additional_test_roots: tuple[Path, ...] = ()
+) -> TestLinkageIndex:
+    """Combine imports, test-name stems and source text across deduplicated test roots."""
     imports: set[str] = set()
     stems: set[str] = set()
     corpus_parts: list[str] = []
 
-    for path in _iter_test_files(test_root):
+    test_files = sorted(
+        {path for root in (test_root, *additional_test_roots) for path in _iter_test_files(root)}
+    )
+    for path in test_files:
         corpus_parts.append(path.read_text(encoding="utf-8", errors="ignore"))
         imports.update(_collect_import_targets(path))
         stem = path.stem
@@ -101,6 +112,7 @@ def _build_test_linkage_index(test_root: Path) -> TestLinkageIndex:
 
 
 def _is_import_linked(import_path: str, imports: set[str]) -> bool:
+    """Recognize an exact module import or an explicitly imported member beneath it."""
     if import_path in imports:
         return True
     prefix = import_path + "."
@@ -136,15 +148,18 @@ def collect_unlinked_tools(
     *,
     tools_root: Path,
     test_root: Path,
+    additional_test_roots: tuple[Path, ...] = (),
 ) -> list[str]:
     """Find top-level Python tools with no exact test-corpus linkage.
 
     A tool is linked when a test imports ``tools.<stem>``, has the matching
     ``test_<stem>.py`` name, or names the exact ``<stem>.py`` filename. The
     filename check covers the repository's deliberate ``spec_from_file_location``
-    pattern without admitting loose stem-only prose matches.
+    pattern without admitting loose stem-only prose matches. Additional roots
+    are scanned identically, so real integration tests can own a tool without
+    an artificial unit-test wrapper. Missing roots contribute no tests.
     """
-    linkage = _build_test_linkage_index(test_root)
+    linkage = _build_test_linkage_index(test_root, additional_test_roots)
     unlinked: list[str] = []
     for tool_path in sorted(tools_root.glob("*.py")):
         if tool_path.name == "__init__.py":
@@ -198,6 +213,11 @@ def main(argv: list[str] | None = None) -> int:
         help="Test root to scan for direct linkage.",
     )
     parser.add_argument(
+        "--integration-test-root",
+        default=str(DEFAULT_INTEGRATION_TEST_ROOT),
+        help="Additional integration-test root scanned for top-level tool linkage.",
+    )
+    parser.add_argument(
         "--tools-root",
         default=str(DEFAULT_TOOLS_ROOT),
         help="Top-level Python tools root to scan for exact test linkage.",
@@ -234,6 +254,7 @@ def main(argv: list[str] | None = None) -> int:
     unlinked_tools = collect_unlinked_tools(
         tools_root=tools_root,
         test_root=test_root,
+        additional_test_roots=(_resolve(args.integration_test_root),),
     )
 
     unexpected = sorted(unlinked - allowlisted)

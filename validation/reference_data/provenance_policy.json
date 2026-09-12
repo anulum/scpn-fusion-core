@@ -450,6 +450,48 @@
       "license": "CC-BY-SA-4.0",
       "citation": "UKAEA FAIR-MAST, shot 27707 magnetics group, https://mastapp.site/; ingestion mapping revision ab435c799d892956fb042d55391f7d1be0c950e6.",
       "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/."
+    },
+    {
+      "id": "cfspopcon_source",
+      "glob": "cfspopcon_source.json",
+      "source_type": "repository_solver_custody_lock",
+      "source": "Repository-maintained source inventory for cfs-energy/cfspopcon revision b9ed8c3fd973bd2ad3d8226acbf77aa0e4caf7d1: upstream path checksums and license identity, not copied solver source or physical validation results.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "process_source",
+      "glob": "process_source.json",
+      "source_type": "repository_solver_custody_lock",
+      "source": "Repository-maintained source and data inventory for ukaea/PROCESS revision 620d1e9a38f1b3c6d2597956c8556e9ab6c17037: upstream path checksums and license identity, not copied solver source or physical validation results.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "cfspopcon_uniform_dt",
+      "glob": "cfspopcon_uniform_dt.json",
+      "source_type": "repository_solver_request",
+      "source": "Repository-authored uniform deuterium-tritium operating-map request specifying geometry, field, current, constraints and density/temperature grid; not experimental observations or upstream solver output.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "rustbca_source_files_json",
+      "glob": "rustbca_source_files.json",
+      "source_type": "repository_solver_custody_lock",
+      "source": "Repository-generated SHA-256 inventory of the pinned RustBCA source archive; contains filenames and hashes, not upstream source code or measured physical results.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "rustbca_request_json",
+      "glob": "rustbca_request.json",
+      "source_type": "repository_solver_request",
+      "source": "Repository-authored bounded RustBCA request defining species, energy, incidence, sample count and seed ensemble; not experimental observations.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "rustbca_Cargo_lock",
+      "glob": "rustbca.Cargo.lock",
+      "source_type": "repository_dependency_lock",
+      "source": "Cargo-generated dependency resolution retained for the pinned optional RustBCA build. Records package versions and registry checksums, not vendored dependency source code.",
+      "license": "AGPL-3.0-or-later"
     }
   ]
 }

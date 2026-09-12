@@ -176,6 +176,16 @@ ignore_missing_imports = false
 # currently gated typed surface and is expanded incrementally as modules are
 # brought to strict-clean status.
 files = [
+    "tools/build_rustbca_reference.py",
+    "tools/check_definition_docstrings.py",
+    "tests/test_check_definition_docstrings.py",
+    "validation/rustbca_request.py",
+    "validation/rustbca_reference.py",
+    "validation/rustbca_build_receipt.py",
+    "integration_tests/rustbca/test_request.py",
+    "integration_tests/rustbca/test_reference.py",
+    "integration_tests/rustbca/test_build_receipt.py",
+    "integration_tests/rustbca/test_builder.py",
     "validation/process_power_report.py",
     "validation/process_reference_run.py",
     "integration_tests/process/conftest.py",

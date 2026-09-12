@@ -1,0 +1,12 @@
+{
+  "url": "https://downloads.python.org/pypy/pypy3.10-v7.3.19-linux64.tar.gz",
+  "sha256": "abfbb05bb3691e694cf9307635d14d0866f0a85429df8958c110e3de168706b4",
+  "checksum_source": "https://www.pypy.org/checksums.html",
+  "interpreter": "pypy3.10-v7.3.19-linux64/bin/pypy3",
+  "implementation": "pypy",
+  "python_version": [
+    3,
+    10,
+    16
+  ]
+}

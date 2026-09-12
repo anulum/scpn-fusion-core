@@ -69,7 +69,8 @@
       "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md",
       "docs/validation/cfspopcon.md",
-      "docs/validation/process.md"
+      "docs/validation/process.md",
+      "docs/validation/rustbca.md"
     ],
     "python_classes": [
       {
@@ -3008,15 +3009,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 68,
-    "github_workflows": 18,
+    "capability_documentation_pages": 69,
+    "github_workflows": 19,
     "optional_extras": 14,
     "public_api_exports": 2,
-    "public_documentation_pages": 68,
+    "public_documentation_pages": 69,
     "python_capability_classes": 629,
     "python_capability_source_modules": 361,
     "rust_workspace_crates": 13,
-    "test_files": 660
+    "test_files": 661
   },
   "documentation": {
     "public_pages": [
@@ -3087,7 +3088,8 @@
       "docs/security/CONTAINER_HARDENING.md",
       "docs/security/FUZZING.md",
       "docs/validation/cfspopcon.md",
-      "docs/validation/process.md"
+      "docs/validation/process.md",
+      "docs/validation/rustbca.md"
     ]
   },
   "evidence_boundary": "Counts are version-controlled static-source inventory only; benchmark, coverage, hardware, and scientific-fidelity claims remain governed by their dedicated evidence artifacts.",
@@ -3158,6 +3160,7 @@
       ".github/workflows/pypi-downloads.yml",
       ".github/workflows/python-fuzz.yml",
       ".github/workflows/real-data-strict.yml",
+      ".github/workflows/rustbca.yml",
       ".github/workflows/sbom.yml",
       ".github/workflows/scorecard.yml",
       ".github/workflows/security-audit.yml",
@@ -3205,6 +3208,7 @@
       "tests/test_calibrate_gyro_bohm.py",
       "tests/test_capability_manifest.py",
       "tests/test_check_commit_trailers.py",
+      "tests/test_check_definition_docstrings.py",
       "tests/test_check_disruption_shot_splits.py",
       "tests/test_check_freegs_strict_artifact.py",
       "tests/test_check_lfs_hygiene.py",

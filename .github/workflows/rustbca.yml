@@ -1,0 +1,193 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — optional RustBCA runtime integration
+name: RustBCA integration
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/rustbca.yml
+      - tools/build_rustbca_reference.py
+      - tools/check_definition_docstrings.py
+      - tests/test_check_definition_docstrings.py
+      - tools/check_test_module_linkage.py
+      - tests/test_check_test_module_linkage.py
+      - validation/rustbca_*.py
+      - validation/reference_data/rustbca*
+      - integration_tests/rustbca/**
+      - requirements/rustbca.*
+      - pyproject.toml
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/workflows/rustbca.yml
+      - tools/build_rustbca_reference.py
+      - tools/check_definition_docstrings.py
+      - tests/test_check_definition_docstrings.py
+      - tools/check_test_module_linkage.py
+      - tests/test_check_test_module_linkage.py
+      - validation/rustbca_*.py
+      - validation/reference_data/rustbca*
+      - integration_tests/rustbca/**
+      - requirements/rustbca.*
+      - pyproject.toml
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  reference-runtime:
+    name: RustBCA runtime integration
+    # One cohesive owner: integration/runtime validation (taxonomy category 5).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Isolate Cargo dependency cache
+        run: echo "CARGO_HOME=$RUNNER_TEMP/rustbca-cargo" >> "$GITHUB_ENV"
+      - uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7
+        with:
+          toolchain: "1.98.1"
+      - name: Install hash-locked integration tooling
+        run: |
+          python -m venv "$RUNNER_TEMP/rustbca-tools"
+          "$RUNNER_TEMP/rustbca-tools/bin/python" -m pip install --require-hashes -r requirements/rustbca.txt
+          "$RUNNER_TEMP/rustbca-tools/bin/python" -m pip download --require-hashes \
+            --only-binary=:all: --no-deps -r requirements/rustbca.unsupported-wheel.txt \
+            --dest "$RUNNER_TEMP/rustbca-test-wheels"
+          python -m venv "$RUNNER_TEMP/rustbca-runtime"
+      - name: Acquire pinned unsupported interpreter fixture
+        run: |
+          python - <<'PYTHON'
+          import hashlib
+          import json
+          import os
+          import shutil
+          import tarfile
+          import urllib.request
+          from pathlib import Path
+
+          spec = json.loads(Path("requirements/rustbca.unsupported-python.json").read_text())
+          root = Path(os.environ["RUNNER_TEMP"]) / "rustbca-unsupported-python"
+          root.mkdir()
+          archive = root / "runtime.tar.gz"
+          with urllib.request.urlopen(spec["url"], timeout=30) as response, archive.open("wb") as output:
+              shutil.copyfileobj(response, output)
+          if hashlib.sha256(archive.read_bytes()).hexdigest() != spec["sha256"]:
+              raise ValueError("Unsupported runtime fixture digest mismatch")
+          with tarfile.open(archive, "r:gz") as source:
+              source.extractall(root, filter="data")
+          archive.unlink()
+          with Path(os.environ["GITHUB_ENV"]).open("a") as environment:
+              environment.write(f"RUSTBCA_UNSUPPORTED_PYTHON={root / spec['interpreter']}\n")
+          PYTHON
+      - name: Configure isolated subprocess coverage
+        run: |
+          mkdir -p "$RUNNER_TEMP/rustbca-coverage"
+          echo "COVERAGE_FILE=$RUNNER_TEMP/rustbca-coverage/.coverage" >> "$GITHUB_ENV"
+          "$RUNNER_TEMP/rustbca-tools/bin/python" - <<'PYTHON'
+          import os
+          import subprocess
+          import sysconfig
+          from pathlib import Path
+
+          tools_site = sysconfig.get_path("purelib")
+          runtime = Path(os.environ["RUNNER_TEMP"]) / "rustbca-runtime/bin/python"
+          runtime_site = subprocess.check_output(
+              [str(runtime), "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
+              text=True, timeout=10,
+          ).strip()
+          hook = (
+              "import os, sys; "
+              f"sys.path.insert(0, {tools_site!r}) if os.environ.get('COVERAGE_PROCESS_START') else None; "
+              "__import__('coverage').process_startup() if os.environ.get('COVERAGE_PROCESS_START') else None\n"
+          )
+          for directory in (tools_site, runtime_site):
+              path = Path(directory) / "rustbca_coverage.pth"
+              with path.open("x") as stream:
+                  stream.write(hook)
+          PYTHON
+      - name: Acquire pinned source and build from cold dependency cache
+        env:
+          COVERAGE_PROCESS_START: ${{ github.workspace }}/integration_tests/rustbca/coverage.ini
+        run: |
+          curl --fail --location --retry 3 --max-time 120 \
+            https://codeload.github.com/lcpp-org/RustBCA/tar.gz/18920a26263c21b9e337db1bab1fd17f23f0fec5 \
+            -o "$RUNNER_TEMP/rustbca-source.tar.gz"
+          "$RUNNER_TEMP/rustbca-tools/bin/python" -m tools.build_rustbca_reference \
+            "$RUNNER_TEMP/rustbca-source.tar.gz" "$RUNNER_TEMP/rustbca-build" \
+            --python "$RUNNER_TEMP/rustbca-runtime/bin/python" \
+            --cargo "$(rustup which cargo)" --rustc "$(rustup which rustc)" \
+            --fetch-dependencies --timeout-seconds 900
+          "$RUNNER_TEMP/rustbca-runtime/bin/python" -m pip install --no-index --no-deps \
+            "$RUNNER_TEMP"/rustbca-build/*.whl
+      - name: Verify actual wheel, runtime, custody and process cleanup
+        env:
+          COVERAGE_PROCESS_START: ${{ github.workspace }}/integration_tests/rustbca/coverage.ini
+        run: |
+          export RUSTBCA_BUILD_RECEIPT="$RUNNER_TEMP/rustbca-build/result.json"
+          export RUSTBCA_UNSUPPORTED_WHEEL="$RUNNER_TEMP/rustbca-test-wheels/wheel-0.42.0-py3-none-any.whl"
+          export RUSTBCA_SOURCE_ARCHIVE="$RUNNER_TEMP/rustbca-source.tar.gz"
+          export RUSTBCA_PYTHON="$RUNNER_TEMP/rustbca-runtime/bin/python"
+          "$RUNNER_TEMP/rustbca-tools/bin/python" -m pytest integration_tests/rustbca --no-cov \
+            --basetemp "$RUNNER_TEMP/rustbca-tests" --junitxml "$RUNNER_TEMP/rustbca-junit.xml"
+      - name: Enforce strict types, lint and native docstrings
+        run: |
+          python_bin="$RUNNER_TEMP/rustbca-tools/bin/python"
+          sources=(tools/build_rustbca_reference.py tools/check_definition_docstrings.py
+                   tools/check_test_module_linkage.py validation/rustbca_*.py
+                   integration_tests/rustbca/*.py tests/test_check_definition_docstrings.py
+                   tests/test_check_test_module_linkage.py)
+          "$python_bin" -m mypy --strict "${sources[@]}"
+          "$python_bin" -m ruff check "${sources[@]}"
+          "$python_bin" -m ruff format --check "${sources[@]}"
+          "$python_bin" -m ruff check --select D --config 'lint.pydocstyle.convention="numpy"' "${sources[@]}"
+          mkdir -p "$RUNNER_TEMP/rustbca-docstrings"
+          export COVERAGE_FILE="$RUNNER_TEMP/rustbca-docstrings/.coverage"
+          export COVERAGE_RCFILE="$PWD/integration_tests/rustbca/docstring_coverage.ini"
+          "$python_bin" -m coverage run -m tools.check_definition_docstrings "${sources[@]}"
+          "$python_bin" -m coverage run -m pytest tests/test_check_definition_docstrings.py --no-cov
+          "$python_bin" -m coverage combine --keep
+          "$python_bin" -m coverage json --keep-combined -o "$RUNNER_TEMP/rustbca-docstrings/report.json"
+          "$python_bin" -m coverage report --keep-combined
+      - name: Combine build and runtime coverage without consuming observations
+        if: always()
+        run: |
+          python_bin="$RUNNER_TEMP/rustbca-tools/bin/python"
+          config=integration_tests/rustbca/coverage.ini
+          "$python_bin" -m coverage combine --append --keep --rcfile="$config"
+          "$python_bin" -m coverage json --keep-combined --rcfile="$config" \
+            -o "$RUNNER_TEMP/rustbca-coverage/coverage.json"
+          "$python_bin" -m coverage report --keep-combined --rcfile="$config"
+      - name: Retain build and test observations
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rustbca-observations
+          retention-days: 14
+          include-hidden-files: true
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/rustbca-build/*.json
+            ${{ runner.temp }}/rustbca-build/*.log
+            ${{ runner.temp }}/rustbca-build/*.whl
+            ${{ runner.temp }}/rustbca-build/build_source.py
+            ${{ runner.temp }}/rustbca-build/source/
+            ${{ runner.temp }}/rustbca-build/target/release/liblibRustBCA.so
+            ${{ runner.temp }}/rustbca-junit.xml
+            ${{ runner.temp }}/rustbca-coverage/
+            ${{ runner.temp }}/rustbca-docstrings/
