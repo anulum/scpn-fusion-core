@@ -7,7 +7,7 @@
     "target_recall_ok": true,
     "transfer_efficiency_ok": true
   },
-  "generated_at_utc": "2026-09-01T22:29:29.648455+00:00",
+  "generated_at_utc": "2026-09-12T17:47:54.214749+00:00",
   "passes": true,
   "provenance": {
     "disruption_data_directory": "validation/reference_data/diiid/disruption_shots",
@@ -23,11 +23,11 @@
     "packages": {
       "matplotlib": "3.10.8",
       "numpy": "1.26.4",
-      "python": "3.12.13",
+      "python": "3.12.3",
       "torch": null
     },
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "56b28e8213664e79c78900541dc7003b88f5de5a585e2e47bdd8645099083134"
+    "pinned_requirements_sha256": "b66321dc23b3a02241ca662a966b84534a1e84affe524a3610b4028d89b62474"
   },
   "scenario_counts": {
     "beta_limit": 2,

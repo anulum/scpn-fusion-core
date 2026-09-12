@@ -3,7 +3,7 @@
     "fixed_point_equivalence_span_rel_33sq": 1.9877577380713763e-09,
     "note": "compiled and eager reach the same equilibrium; warm repeats are bit-deterministic (asserted in tests/test_jax_predictive_forward_compiled.py)"
   },
-  "generated_utc": "2026-09-01T22:26:41+00:00",
+  "generated_utc": "2026-09-12T17:46:04+00:00",
   "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_compiled_forward_speedup.py",
@@ -22,7 +22,7 @@
     ],
     "logic_sources_sha256": "f0b3c48632a1766eb43121cd51bd4eba9a329c9869e8ec3b5bc21ecbae3a9701",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "56b28e8213664e79c78900541dc7003b88f5de5a585e2e47bdd8645099083134"
+    "pinned_requirements_sha256": "b66321dc23b3a02241ca662a966b84534a1e84affe524a3610b4028d89b62474"
   },
   "settings": {
     "defaults": "validated Anderson defaults, MG on",
@@ -32,43 +32,43 @@
   "timings_indicative": {
     "compiled": [
       {
-        "compile_plus_first_solve_ms": 6893.091002006258,
+        "compile_plus_first_solve_ms": 5533.434979966842,
         "grid": "33x33",
-        "warm_median_ms": 240.75094900035765,
+        "warm_median_ms": 218.81737001240253,
         "warm_ms": [
-          233.30128600355238,
-          240.75094900035765,
-          251.34506700123893
+          218.81737001240253,
+          248.7068910850212,
+          211.55675093177706
         ]
       },
       {
-        "compile_plus_first_solve_ms": 8298.253610999382,
+        "compile_plus_first_solve_ms": 8275.924639077857,
         "grid": "65x65",
-        "warm_median_ms": 980.1092049965519,
+        "warm_median_ms": 915.7790170283988,
         "warm_ms": [
-          998.9724190018023,
-          980.1092049965519,
-          938.303087001259
+          906.270444043912,
+          915.7790170283988,
+          970.6555500160903
         ]
       },
       {
-        "compile_plus_first_solve_ms": 11222.84685899649,
+        "compile_plus_first_solve_ms": 9652.598958928138,
         "grid": "129x129",
-        "warm_median_ms": 2969.2089119998855,
+        "warm_median_ms": 2633.871198981069,
         "warm_ms": [
-          3381.689641995763,
-          2945.215822001046,
-          2969.2089119998855
+          2574.4568899972364,
+          3157.70210896153,
+          2633.871198981069
         ]
       }
     ],
     "device": "cpu (cpu)",
     "eager_33sq_ms": [
-      38585.344311999506,
-      37099.459026998375,
-      37053.89208900306
+      29540.738111012615,
+      31036.364373052493,
+      31790.88371898979
     ],
     "host": "aaarthuus (x86_64) - LOADED development host; indicative only, NOT a performance claim; the claimable number is the dedicated-hardware re-benchmark",
-    "speedup_anchor_33sq": 154.09891084974814
+    "speedup_anchor_33sq": 141.83684033535982
   }
 }

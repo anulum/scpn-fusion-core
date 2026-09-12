@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 
 from tools.sanitize_scorecard_sarif import (
     PLACEHOLDER_URI,
@@ -28,6 +29,7 @@ SCAN_DIRS = ("src", "validation", "tools")
 
 
 def _iter_python_files() -> list[Path]:
+    """Enumerate maintained Python sources covered by the runtime security policies."""
     files: list[Path] = []
     for rel in SCAN_DIRS:
         base = ROOT / rel
@@ -38,6 +40,7 @@ def _iter_python_files() -> list[Path]:
 
 
 def test_numpy_load_always_disables_pickle() -> None:
+    """Reject NumPy deserialization calls that permit or omit pickle loading."""
     violations: list[str] = []
     for path in _iter_python_files():
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
@@ -67,6 +70,7 @@ def test_numpy_load_always_disables_pickle() -> None:
 
 
 def test_subprocess_calls_do_not_enable_shell_mode() -> None:
+    """Reject shell-enabled subprocess execution in maintained Python sources."""
     violations: list[str] = []
     for path in _iter_python_files():
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
@@ -111,17 +115,24 @@ def test_every_checkout_workflow_configures_default_branch() -> None:
         workflow = path.read_text(encoding="utf-8")
         if "uses: actions/checkout@" not in workflow:
             continue
-        for setting in (
-            'GIT_CONFIG_COUNT: "1"',
-            "GIT_CONFIG_KEY_0: init.defaultBranch",
-            "GIT_CONFIG_VALUE_0: main",
-        ):
-            if setting not in workflow:
-                violations.append(f"{path.name}: missing {setting}")
+        document = yaml.load(workflow, Loader=yaml.BaseLoader)
+        for job_name, job in document["jobs"].items():
+            for step in job.get("steps", []):
+                if not step.get("uses", "").startswith("actions/checkout@"):
+                    continue
+                environment = document.get("env", {}) | job.get("env", {}) | step.get("env", {})
+                for key, expected in {
+                    "GIT_CONFIG_COUNT": "1",
+                    "GIT_CONFIG_KEY_0": "init.defaultBranch",
+                    "GIT_CONFIG_VALUE_0": "main",
+                }.items():
+                    if environment.get(key) != expected:
+                        violations.append(f"{path.name}/{job_name}: expected {key}={expected!r}")
     assert not violations, "\n".join(violations)
 
 
 def _scorecard_sarif(rule_id: str, *locations: object) -> dict[str, object]:
+    """Build a minimal SARIF document containing the requested rule and locations."""
     return {
         "version": "2.1.0",
         "runs": [{"results": [{"ruleId": rule_id, "locations": list(locations)}]}],
