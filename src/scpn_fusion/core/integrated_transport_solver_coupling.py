@@ -204,7 +204,13 @@ class TransportSolverCouplingMixin(TransportSolverState):
         enforce_numerical_recovery: bool = False,
         max_numerical_recoveries: int | None = None,
     ) -> dict[str, Any]:
-        """Run transport evolution until approximate steady state."""
+        """Run transport evolution until approximate steady state.
+
+        Adaptive results include ``trial_difference_history``: raw full-versus-
+        half L2 differences for Ti/Te (keV) and ne (10^19 m^-3). Only the existing
+        Ti Richardson estimate controls the timestep; other differences are
+        diagnostics, not additional acceptance criteria.
+        """
         if self_consistent:
             return self.run_self_consistent(
                 P_aux=P_aux,
@@ -261,4 +267,5 @@ class TransportSolverCouplingMixin(TransportSolverState):
             "dt_final": atc.dt,
             "dt_history": atc.dt_history.copy(),
             "error_history": atc.error_history.copy(),
+            "trial_difference_history": atc.trial_difference_history.copy(),
         }
