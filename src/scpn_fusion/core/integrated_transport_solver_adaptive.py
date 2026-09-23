@@ -103,6 +103,8 @@ class AdaptiveTimeController:
             Runtime with Ti/Te profiles and ``evolve_profiles``. Transport-owned
             profiles, species, coefficients, boundary values, diagnostics and
             neural/pedestal caches are isolated; kernel geometry is not evolved.
+            Mutable state must be stored in ``vars(solver)``. Implementations
+            storing profiles only in properties or slots are not supported.
         P_aux : float
             Auxiliary heating power in MW.
         enforce_numerical_recovery : bool, optional
@@ -120,6 +122,11 @@ class AdaptiveTimeController:
         Only two successful half steps are committed. Any trial exception leaves
         the original runtime objects and controller history unchanged. External
         logs or backend process effects cannot be rolled back by this operation.
+        Global fallback telemetry and its budgets count every attempted trial,
+        including discarded full steps; restoring solver state does not refund
+        those budgets. A fallback-budget refusal is propagated unchanged.
+        Nonfinite Ti, Te or ne trial differences refuse the trial and roll back.
+        Finite Te/ne differences do not control the timestep.
         Raw Ti/Te and, when present, ne full-versus-half L2 differences are retained
         in ``trial_difference_history`` with units in their keys. They do not
         change the existing Ti-only timestep policy or qualify coupled order.

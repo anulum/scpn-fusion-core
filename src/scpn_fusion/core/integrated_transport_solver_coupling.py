@@ -209,7 +209,8 @@ class TransportSolverCouplingMixin(TransportSolverState):
         Adaptive results include ``trial_difference_history``: raw full-versus-
         half L2 differences for Ti/Te (keV) and ne (10^19 m^-3). Only the existing
         Ti Richardson estimate controls the timestep; other differences are
-        diagnostics, not additional acceptance criteria.
+        diagnostics. Any nonfinite trial difference refuses the trial. Global
+        fallback budgets count discarded trials as well as committed half steps.
         """
         if self_consistent:
             return self.run_self_consistent(

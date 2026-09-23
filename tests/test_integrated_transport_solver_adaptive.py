@@ -13,6 +13,7 @@ from copy import deepcopy
 import json
 from pathlib import Path
 from typing import Any
+from types import GetSetDescriptorType
 
 import numpy as np
 import pytest
@@ -61,24 +62,48 @@ def _assert_equal(actual: Any, expected: Any) -> None:
         assert actual == expected
 
 
+def _values(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {name: _values(item) for name, item in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [_values(item) for item in value]
+    if hasattr(value, "__dict__"):
+        return _values(vars(value))
+    if type(value).__name__ == "PyFusionKernel":
+        return {
+            "native_identity": id(value),
+            "public_properties": {
+                name: _values(getattr(value, name))
+                for name, descriptor in vars(type(value)).items()
+                if isinstance(descriptor, GetSetDescriptorType) and not name.startswith("_")
+            },
+        }
+    return deepcopy(value)
+
+
+@pytest.mark.parametrize("power", [20.0, 50.0])
 @pytest.mark.parametrize("multi_ion", [False, True])
 @pytest.mark.parametrize("backend", ["reduced_multichannel", "neural_transport"])
 def test_estimate_error_matches_independent_half_step_state(
-    config_path: Path, multi_ion: bool, backend: str
+    config_path: Path, multi_ion: bool, backend: str, power: float
 ) -> None:
     """Full-step species, closure and pedestal mutations never enter the accepted path."""
     solver = _solver(config_path, multi_ion, backend)
     full = _solver(config_path, multi_ion, backend)
     half = _solver(config_path, multi_ion, backend)
+    if power > 30.0:
+        full.set_neoclassical(R0=6.2, a=2.0, B0=5.3)
+        solver.neoclassical_params = full.neoclassical_params
+        half.neoclassical_params = full.neoclassical_params
     controller = adaptive_mod.AdaptiveTimeController(dt_init=0.002)
     original_ti = solver.Ti
     original_values = original_ti.copy()
-    full.evolve_profiles(0.002, 20.0)
-    half.evolve_profiles(0.001, 20.0)
-    half.evolve_profiles(0.001, 20.0)
+    full.evolve_profiles(0.002, power)
+    half.evolve_profiles(0.001, power)
+    half.evolve_profiles(0.001, power)
     expected_error = max(float(np.linalg.norm(full.Ti - half.Ti)) / 3.0, 1e-15)
 
-    error = controller.estimate_error(solver, P_aux=20.0)
+    error = controller.estimate_error(solver, P_aux=power)
 
     assert error == pytest.approx(expected_error, rel=1e-12)
     assert controller.trial_difference_history == [
@@ -102,11 +127,17 @@ def test_estimate_error_matches_independent_half_step_state(
         "_Z_eff",
         "T_edge_keV",
         "_neural_transport_model",
+        "pedestal_model",
+        "q_profile",
+        "_dV_cache",
     ):
         _assert_equal(getattr(solver, name), getattr(half, name))
     for name in vars(half):
         if name.startswith("_last_"):
             _assert_equal(getattr(solver, name), getattr(half, name))
+    if power > 30.0:
+        assert solver._last_pedestal_contract["used"]
+        assert solver.pedestal_model is not None
     if multi_ion:
         assert not np.array_equal(solver.Te, solver.Ti)
     np.testing.assert_array_equal(original_ti, original_values)
@@ -156,13 +187,19 @@ def test_estimate_error_restores_state_on_real_recovery_refusal(config_path: Pat
     solver = _solver(config_path, True, "reduced_multichannel")
     solver.Ti[0] = -1.0
     before = dict(vars(solver))
+    values = _values(before)
+    controller = adaptive_mod.AdaptiveTimeController(dt_init=0.002)
     with pytest.raises(PhysicsError, match="recovery"):
-        adaptive_mod.AdaptiveTimeController(dt_init=0.002).estimate_error(
+        controller.estimate_error(
             solver, P_aux=20.0, enforce_numerical_recovery=True, max_numerical_recoveries=0
         )
     assert vars(solver).keys() == before.keys()
     for name, value in before.items():
         assert getattr(solver, name) is value
+    _assert_equal(_values(vars(solver)), values)
+    assert controller.trial_difference_history == []
+    assert controller.dt_history == []
+    assert controller.error_history == []
     assert solver.Ti[0] == -1.0
 
 
@@ -193,6 +230,7 @@ def test_estimate_error_refuses_nonfinite_trial_difference(
     """A corrupt result after real evolution is refused without committing any trial."""
     solver = _solver(config_path, True, "reduced_multichannel")
     before = dict(vars(solver))
+    values = _values(before)
     evolve = solver.evolve_profiles
     calls = 0
 
@@ -211,3 +249,65 @@ def test_estimate_error_refuses_nonfinite_trial_difference(
     for name, value in before.items():
         assert getattr(solver, name) is value
     assert controller.trial_difference_history == []
+
+    assert set(vars(solver)) == set(before) | {"evolve_profiles"}
+    for name, value in values.items():
+        _assert_equal(_values(getattr(solver, name)), value)
+    assert controller.dt_history == []
+    assert controller.error_history == []
+
+
+@pytest.mark.parametrize("multi_ion", [False, True])
+@pytest.mark.parametrize("backend", ["reduced_multichannel", "neural_transport"])
+def test_real_evolution_mutations_remain_in_trial_scope(
+    config_path: Path, multi_ion: bool, backend: str
+) -> None:
+    """Every runtime attribute change must be covered by adaptive state isolation."""
+    solver = _solver(config_path, multi_ion, backend)
+    solver.set_neoclassical(R0=6.2, a=2.0, B0=5.3)
+    before = _values(vars(solver))
+    solver.evolve_profiles(0.002, 50.0)
+    changed = set(before) ^ set(vars(solver))
+    for name in before.keys() & vars(solver).keys():
+        try:
+            _assert_equal(_values(getattr(solver, name)), before[name])
+        except AssertionError:
+            changed.add(name)
+    assert {"Ti", "Te", "pedestal_model"} <= changed
+    assert all(
+        name in adaptive_mod._TRIAL_FIELDS or name.startswith("_last_") for name in changed
+    ), changed
+
+
+@pytest.mark.parametrize("failed_call", [2, 3])
+def test_half_trial_real_recovery_refusal_restores_values(
+    config_path: Path, monkeypatch: pytest.MonkeyPatch, failed_call: int
+) -> None:
+    """Corrupt half-trial input triggers the real runtime budget and full rollback."""
+    solver = _solver(config_path, True, "reduced_multichannel")
+    before = dict(vars(solver))
+    values = _values(before)
+    evolve = solver.evolve_profiles
+    calls = 0
+
+    def damaged_input(*args: Any, **kwargs: Any) -> tuple[float, float]:
+        nonlocal calls
+        calls += 1
+        if calls == failed_call:
+            solver.Ti[:] = -1.0
+        return evolve(*args, **kwargs)
+
+    monkeypatch.setattr(solver, "evolve_profiles", damaged_input)
+    controller = adaptive_mod.AdaptiveTimeController(dt_init=0.002)
+    with pytest.raises(PhysicsError, match="Numerical recovery budget exceeded"):
+        controller.estimate_error(
+            solver, P_aux=20.0, enforce_numerical_recovery=True, max_numerical_recoveries=8
+        )
+    assert calls == failed_call
+    assert set(vars(solver)) == set(before) | {"evolve_profiles"}
+    for name, value in before.items():
+        assert getattr(solver, name) is value
+        _assert_equal(_values(getattr(solver, name)), values[name])
+    assert controller.trial_difference_history == []
+    assert controller.dt_history == []
+    assert controller.error_history == []
