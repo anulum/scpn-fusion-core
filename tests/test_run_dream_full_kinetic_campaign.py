@@ -792,3 +792,80 @@ def test_execute_rejects_deck_manifest_digest_drift(
     atomic_write_json(campaign_dir / "campaign.json", manifest)
     with pytest.raises(ValueError, match="deck-manifest digest drift"):
         execute_campaign(campaign_dir)
+
+
+@pytest.mark.parametrize(
+    "layout",
+    [
+        "03_CODE/SCPN-FUSION-CORE",
+        "03_CODE/GROUP/repositories/SCPN-FUSION-CORE",
+        "work/extra/nesting/repo",
+    ],
+)
+def test_default_campaign_root_follows_monorepo_markers(tmp_path: Path, layout: str) -> None:
+    """Repository relocation preserves the canonical evidence destination."""
+    from tools.run_dream_full_kinetic_campaign import default_campaign_root
+
+    repo = tmp_path / layout
+    repo.mkdir(parents=True)
+    (tmp_path / "agentic-shared").mkdir()
+    (tmp_path / "agentic-shared/SHARED_CONTEXT.md").write_text("rules", encoding="utf-8")
+    (tmp_path / ".coordination").mkdir()
+    (tmp_path / "03_CODE").mkdir(exist_ok=True)
+    assert (
+        default_campaign_root(repo)
+        == tmp_path / ".coordination/evidence/SCPN-FUSION-CORE/dream_full_kinetic_runs"
+    )
+
+
+@pytest.mark.parametrize(
+    "missing", ["agentic-shared/SHARED_CONTEXT.md", ".coordination", "03_CODE"]
+)
+def test_default_campaign_root_refuses_incomplete_markers(tmp_path: Path, missing: str) -> None:
+    """An incomplete marker set cannot redirect campaign evidence."""
+    from tools.run_dream_full_kinetic_campaign import default_campaign_root
+
+    for name in ("agentic-shared/SHARED_CONTEXT.md", ".coordination", "03_CODE"):
+        if name == missing:
+            continue
+        path = tmp_path / name
+        if name.endswith(".md"):
+            path.parent.mkdir()
+            path.write_text("rules", encoding="utf-8")
+        else:
+            path.mkdir()
+    with pytest.raises(ValueError, match="Cannot locate monorepo root"):
+        default_campaign_root(tmp_path)
+
+
+def test_prepare_cli_refuses_missing_monorepo_without_side_effects(tmp_path: Path) -> None:
+    """A standalone CLI remains usable but requires an explicit data destination."""
+    script = tmp_path / "tools/run_dream_full_kinetic_campaign.py"
+    script.parent.mkdir()
+    shutil.copyfile(ROOT / "tools/run_dream_full_kinetic_campaign.py", script)
+    env = {
+        **os.environ,
+        "SCPN_DISABLE_JULIA": "1",
+        "PYTHONPATH": os.pathsep.join((str(ROOT), str(ROOT / "src"))),
+    }
+    help_result = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert help_result.returncode == 0
+    result = subprocess.run(
+        [sys.executable, str(script), "prepare", "--run-id", "no-root"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert result.returncode == 2
+    assert "Cannot locate monorepo root" in result.stderr
+    assert "--campaign-root" in result.stderr
+    assert not (tmp_path / ".coordination").exists()

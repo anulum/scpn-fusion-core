@@ -41,10 +41,6 @@ from validation.reference_data.dream.full_kinetic_radial_parity_deck import (
 
 
 ROOT: Final[Path] = Path(__file__).resolve().parents[1]
-MONOREPO_ROOT: Final[Path] = ROOT.parents[1]
-DEFAULT_CAMPAIGN_ROOT: Final[Path] = (
-    MONOREPO_ROOT / ".coordination/evidence/SCPN-FUSION-CORE/dream_full_kinetic_runs"
-)
 DEFAULT_DREAM_ROOT: Final[Path] = ROOT / "data/external/full_fidelity_public_sources/repos/dream"
 CAMPAIGN_SCHEMA: Final[str] = "scpn-fusion.dream-full-kinetic-campaign.v1"
 RESOLUTION_ORDER: Final[tuple[str, str]] = ("veryfine", "superfine")
@@ -61,6 +57,36 @@ MEMBER_FILENAMES: Final[dict[str, str]] = {
     "process_log_path": "process.log",
     "receipt_path": "execution_receipt.json",
 }
+
+
+def default_campaign_root(repository: Path) -> Path:
+    """Resolve the default evidence directory from a marked ancestor.
+
+    Parameters
+    ----------
+    repository : Path
+        Checkout directory from which to search resolved ancestors.
+
+    Returns
+    -------
+    Path
+        Campaign directory beneath the canonical coordination root.
+
+    Raises
+    ------
+    ValueError
+        No ancestor has the shared policy file and coordination/code directories.
+        Standalone checkouts must supply an explicit ``--campaign-root``.
+    """
+    resolved = repository.resolve()
+    for candidate in (resolved, *resolved.parents):
+        if (
+            (candidate / "agentic-shared/SHARED_CONTEXT.md").is_file()
+            and (candidate / ".coordination").is_dir()
+            and (candidate / "03_CODE").is_dir()
+        ):
+            return candidate / ".coordination/evidence/SCPN-FUSION-CORE/dream_full_kinetic_runs"
+    raise ValueError("Cannot locate monorepo root; supply --campaign-root explicitly")
 
 
 def _utc_now() -> str:
@@ -666,7 +692,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     prepare = commands.add_parser("prepare", help="freeze durable settings without running DREAM")
-    prepare.add_argument("--campaign-root", type=Path, default=DEFAULT_CAMPAIGN_ROOT)
+    prepare.add_argument(
+        "--campaign-root",
+        type=Path,
+        help="durable data root; defaults to the marked monorepo coordination directory",
+    )
     prepare.add_argument("--run-id", required=True)
     prepare.add_argument("--dream-root", type=Path, default=DEFAULT_DREAM_ROOT)
     prepare.add_argument("--dreami", type=Path)
@@ -678,8 +708,16 @@ def main(argv: list[str] | None = None) -> int:
         command.add_argument("--campaign-dir", type=Path, required=True)
     args = parser.parse_args(argv)
     if args.command == "prepare":
+        try:
+            campaign_root = (
+                args.campaign_root
+                if args.campaign_root is not None
+                else default_campaign_root(ROOT)
+            )
+        except ValueError as exc:
+            parser.error(str(exc))
         result = prepare_campaign(
-            campaign_root=args.campaign_root,
+            campaign_root=campaign_root,
             run_id=args.run_id,
             dream_root=args.dream_root,
             dreami=args.dreami,
