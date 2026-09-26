@@ -68,6 +68,42 @@ Shattered Pellet Injection
    :undoc-members:
    :show-inheritance:
 
+Free-Boundary Tracking
+----------------------
+
+.. autoclass:: scpn_fusion.control.free_boundary_tracking.FreeBoundaryTrackingController
+   :members: identify_response_matrix, compute_correction, evaluate_objectives, evaluate_supervisor, run_tracking_shot
+   :inherited-members:
+
+Reduced Tritium-Breeding Proxy
+------------------------------
+
+.. autofunction:: scpn_fusion.control.disruption_contracts.mcnp_lite_tbr
+
+The following example exercises the public mitigation contracts with finite
+inputs. The breeding result is a reduced proxy, not a validated neutronics
+prediction.
+
+.. code-block:: python
+
+   from scpn_fusion.control.disruption_contracts import mcnp_lite_tbr
+   from scpn_fusion.control.spi_mitigation import ShatteredPelletInjection
+
+   tbr, factor, bounds = mcnp_lite_tbr(
+       base_tbr=0.96,
+       li6_enrichment=0.92,
+       be_multiplier_fraction=0.70,
+       reflector_albedo=0.60,
+       return_uncertainty=True,
+   )
+   assert bounds["tbr_p95_low"] <= tbr <= bounds["tbr_p95_high"]
+
+   spi = ShatteredPelletInjection(Plasma_Energy_MJ=300.0, Plasma_Current_MA=15.0)
+   times_ms, energies_mj, currents_ma = spi.trigger_mitigation(
+       neon_quantity_mol=0.1, duration_s=0.001, verbose=False
+   )
+   assert len(times_ms) == len(energies_mj) == len(currents_ma)
+
 Integrated Control Room
 -------------------------
 

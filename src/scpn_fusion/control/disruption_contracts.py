@@ -74,7 +74,35 @@ def mcnp_lite_tbr(
     reflector_albedo: float,
     return_uncertainty: bool = False,
 ) -> tuple[float, float] | tuple[float, float, dict[str, float]]:
-    """Estimate a conservative tritium-breeding proxy and optional uncertainty envelope."""
+    """Estimate a reduced tritium-breeding proxy and uncertainty envelope.
+
+    Parameters
+    ----------
+    base_tbr : float
+        Finite positive dimensionless baseline breeding ratio.
+    li6_enrichment, be_multiplier_fraction, reflector_albedo : float
+        Finite input fractions. Values outside [0, 1] are clipped to that
+        interval by this reduced proxy.
+    return_uncertainty : bool, default=False
+        Include a Gaussian 95 % interval bounded below at zero.
+
+    Returns
+    -------
+    tuple
+        Dimensionless proxy TBR and multiplicative factor. When uncertainty
+        is requested, a third mapping contains ``tbr_sigma``, relative sigma
+        and lower/upper 95 % bounds.
+
+    Raises
+    ------
+    ValueError
+        The baseline is nonpositive or nonfinite, or any fraction is nonfinite.
+
+    Notes
+    -----
+    This is a parameterised reduced proxy; its interval does not establish
+    an independently validated neutronics result.
+    """
     base_tbr = require_positive_float("base_tbr", base_tbr)
     li6_enrichment = require_finite_float("li6_enrichment", li6_enrichment)
     be_multiplier_fraction = require_finite_float("be_multiplier_fraction", be_multiplier_fraction)

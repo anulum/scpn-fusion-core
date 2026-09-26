@@ -47,6 +47,7 @@ except ImportError:
 
 
 def _require_monotonic_axis(name: str, values: FloatArray, expected_len: int) -> FloatArray:
+    """Validate a finite, strictly increasing axis with the expected length."""
     arr = np.asarray(values, dtype=np.float64)
     if arr.ndim != 1 or arr.size != int(expected_len):
         raise ValueError(f"{name} must be 1-D with length {expected_len}, got shape {arr.shape}")
@@ -66,6 +67,7 @@ def _require_state_grid(
     nr: int,
     require_finite: bool,
 ) -> FloatArray:
+    """Validate a state grid's shape and optionally its finite values."""
     arr = np.asarray(values, dtype=np.float64)
     expected = (int(nz), int(nr))
     if arr.ndim != 2 or tuple(arr.shape) != expected:
@@ -89,6 +91,7 @@ class RustAcceleratedKernel:
     """
 
     def __init__(self, config_path: str | Path) -> None:
+        """Load Rust kernel, validate its grid, and synchronise initial state."""
         self._config_path = str(config_path)
         self.state_sync_failures = 0
         self.last_state_sync_error: Optional[str] = None
@@ -274,12 +277,33 @@ if _RUST_AVAILABLE:
 else:
 
     def rust_shafranov_bv(*args: Any, **kwargs: Any) -> Any:
+        """Refuse a Shafranov/field call when the native extension is absent.
+
+        Raises
+        ------
+        ImportError
+            The optional ``scpn_fusion_rs`` extension is not installed.
+        """
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
     def rust_solve_coil_currents(*args: Any, **kwargs: Any) -> Any:
+        """Refuse a native coil-current solve when the extension is absent.
+
+        Raises
+        ------
+        ImportError
+            The optional ``scpn_fusion_rs`` extension is not installed.
+        """
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
     def rust_measure_magnetics(*args: Any, **kwargs: Any) -> Any:
+        """Refuse native magnetic diagnostics when the extension is absent.
+
+        Raises
+        ------
+        ImportError
+            The optional ``scpn_fusion_rs`` extension is not installed.
+        """
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
     def rust_simulate_tearing_mode(
@@ -288,6 +312,13 @@ else:
         beta_p: float = 0.8,
         w_crit: float = 0.05,
     ) -> Any:
+        """Refuse a native tearing-mode shot when the extension is absent.
+
+        Raises
+        ------
+        ImportError
+            The optional ``scpn_fusion_rs`` extension is not installed.
+        """
         raise ImportError("scpn_fusion_rs not installed. Run: maturin develop")
 
 
@@ -321,6 +352,7 @@ class RustSnnPool:
         allow_numpy_fallback: bool = True,
         seed: int = 42,
     ):
+        """Select the Rust pool or a seeded NumPy fallback when permitted."""
         self._backend = "rust"
         if _RUST_AVAILABLE:
             from scpn_fusion_rs import PySnnPool
@@ -358,6 +390,7 @@ class RustSnnPool:
         return self._backend
 
     def __repr__(self) -> str:
+        """Show pool size, gain and the selected backend."""
         return (
             f"RustSnnPool(n_neurons={self.n_neurons}, gain={self.gain}, backend='{self.backend}')"
         )
@@ -390,6 +423,7 @@ class RustSnnController:
         allow_numpy_fallback: bool = True,
         seed: int = 42,
     ):
+        """Select the Rust controller or a seeded two-axis NumPy fallback."""
         self._backend = "rust"
         if _RUST_AVAILABLE:
             from scpn_fusion_rs import PySnnController
@@ -427,6 +461,7 @@ class RustSnnController:
         return self._backend
 
     def __repr__(self) -> str:
+        """Show positional targets and the selected backend."""
         return (
             f"RustSnnController(target_r={self.target_r}, target_z={self.target_z}, "
             f"backend='{self.backend}')"
@@ -444,6 +479,7 @@ class _NumpySnnPoolFallback:
         *,
         seed: int,
     ) -> None:
+        """Validate pool dimensions and seed separate positive/negative populations."""
         self.n_neurons = int(n_neurons)
         self.gain = float(gain)
         self.window_size = int(window_size)
@@ -468,6 +504,7 @@ class _NumpySnnPoolFallback:
         self._v_reset = 0.0
 
     def _step_pop(self, v: FloatArray, rng: np.random.Generator, input_current: float) -> int:
+        """Advance one noisy LIF population and return its spike count."""
         noise = rng.normal(0.0, self._noise_std, size=v.shape)
         v += self._alpha * (-v + float(input_current) + noise)
         fired = v >= self._v_threshold
@@ -477,6 +514,7 @@ class _NumpySnnPoolFallback:
         return n_fired
 
     def step(self, error_signal: float) -> float:
+        """Rate-code a finite signed error through paired LIF populations."""
         err = float(error_signal)
         if not np.isfinite(err):
             raise ValueError("error_signal must be finite.")
@@ -497,6 +535,7 @@ class _NumpySnnControllerFallback:
     """Deterministic local compatibility path matching the Rust SNN controller interface."""
 
     def __init__(self, target_r: float, target_z: float, *, seed: int) -> None:
+        """Store finite targets in m and initialise two seeded LIF pools."""
         self.target_r = float(target_r)
         self.target_z = float(target_z)
         if not np.isfinite(self.target_r) or not np.isfinite(self.target_z):
@@ -505,6 +544,7 @@ class _NumpySnnControllerFallback:
         self._pool_z = _NumpySnnPoolFallback(50, 20.0, 20, seed=int(seed) + 2)
 
     def step(self, measured_r: float, measured_z: float) -> tuple[float, float]:
+        """Convert finite measured positions in m to two control outputs."""
         mr = float(measured_r)
         mz = float(measured_z)
         if not np.isfinite(mr) or not np.isfinite(mz):

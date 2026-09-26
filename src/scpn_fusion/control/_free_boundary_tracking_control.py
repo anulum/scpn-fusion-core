@@ -18,7 +18,35 @@ from scpn_fusion.control._free_boundary_tracking_types import FloatArray, _Actua
 
 
 class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
+    """Supply response identification and bounded corrections to the public controller."""
+
     def identify_response_matrix(self, perturbation: float | None = None) -> FloatArray:
+        """Measure the local coil-current to objective-response matrix.
+
+        Parameters
+        ----------
+        perturbation : float, optional
+            Finite positive current perturbation in A. The configured
+            identification perturbation is used when omitted.
+
+        Returns
+        -------
+        FloatArray
+            Copy of the objective-by-coil finite-difference matrix. Each
+            column is measured within the configured coil-current limits.
+
+        Raises
+        ------
+        ValueError
+            If the perturbation is nonfinite or not positive.
+
+        Notes
+        -----
+        The method solves the state for each available perturbation. On
+        successful completion it restores the original currents and actuator
+        state and updates response-rank diagnostics. A coil with no available
+        perturbation has a zero column.
+        """
         p = self.identification_perturbation if perturbation is None else float(perturbation)
         if not np.isfinite(p) or p <= 0.0:
             raise ValueError("perturbation must be finite and > 0.")
@@ -54,6 +82,7 @@ class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
         return self.response_matrix.copy()
 
     def _update_response_diagnostics(self) -> None:
+        """Record numerical rank, condition and degeneracy of the response matrix."""
         singular_values = np.asarray(
             np.linalg.svd(self.response_matrix, compute_uv=False), dtype=np.float64
         ).reshape(-1)
@@ -78,6 +107,7 @@ class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
         )
 
     def _build_control_activation_mask(self, metrics: dict[str, Any]) -> FloatArray:
+        """Disable objective rows whose configured tolerance checks already pass."""
         objective_checks = cast(dict[str, bool], metrics.get("objective_checks", {}))
         mask = np.ones(self.target_vector.shape, dtype=np.float64)
         for block in self.objective_blocks:
@@ -106,6 +136,7 @@ class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
         return mask
 
     def _build_coil_penalties(self, delta_hint: FloatArray) -> FloatArray:
+        """Scale regularisation by available current headroom in each direction."""
         headrooms = np.ones(self.n_coils, dtype=np.float64)
         penalties = np.ones(self.n_coils, dtype=np.float64)
         for idx in range(self.n_coils):
@@ -137,6 +168,33 @@ class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
         *,
         metrics: dict[str, Any] | None = None,
     ) -> FloatArray:
+        """Compute a bounded, headroom-weighted coil-current correction.
+
+        Parameters
+        ----------
+        observation : FloatArray
+            Flat objective vector with the same shape as ``target_vector``.
+        metrics : dict[str, Any], optional
+            Objective diagnostics for ``observation``. If omitted, they are
+            evaluated from the supplied vector.
+
+        Returns
+        -------
+        FloatArray
+            One correction per coil, in A, clipped to ``correction_limit``.
+            This method does not apply the correction to the coils.
+
+        Raises
+        ------
+        ValueError
+            If the observation shape differs from the target shape.
+
+        Notes
+        -----
+        Rows whose configured objective tolerances are satisfied are masked.
+        Least-squares regularisation increases as directional coil headroom
+        decreases; ``last_coil_penalties`` records the applied weights.
+        """
         obs = np.asarray(observation, dtype=np.float64).reshape(-1)
         if obs.shape != self.target_vector.shape:
             raise ValueError("observation must match the free-boundary target vector shape.")
@@ -167,10 +225,12 @@ class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
         return cast(FloatArray, np.asarray(clipped, dtype=np.float64))
 
     def _apply_correction(self, delta_currents: FloatArray, gain: float) -> FloatArray:
+        """Apply a gained current change through command and actuator limits."""
         commanded = self._command_currents(delta_currents, gain=gain)
         return self._apply_commanded_currents(commanded)
 
     def _apply_fallback_currents(self) -> float:
+        """Apply configured safe currents and return maximum actuator lag in A."""
         if self.fallback_currents is None:
             raise ValueError("fallback currents are not configured.")
         applied = self._apply_commanded_currents(self.fallback_currents)
@@ -186,6 +246,7 @@ class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
         metrics_before: dict[str, Any],
         true_metrics_before: dict[str, Any],
     ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], float, bool]:
+        """Restore the trial state and evaluate configured fallback and supervisor."""
         self._restore_actuator_states(actuator_snapshot)
         self.coils.currents = baseline_currents.copy()
         fallback_active = False
@@ -215,6 +276,28 @@ class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
         )
 
     def evaluate_objectives(self, observation: np.ndarray[Any, Any]) -> dict[str, Any]:
+        """Measure tracking errors and configured objective convergence.
+
+        Parameters
+        ----------
+        observation : ndarray
+            Objective vector in the same flattened order as ``target_vector``.
+            X-point positions use m; flux blocks retain the kernel's flux
+            convention and must be compared with targets in that convention.
+
+        Returns
+        -------
+        dict[str, Any]
+            Tracking and weighted control norms, per-block RMS/maximum or
+            position errors, objective checks, active-row count and copied
+            tolerances. Metrics for absent blocks are ``None``; no configured
+            checks means ``objective_converged`` is true.
+
+        Notes
+        -----
+        This method evaluates a supplied observation. It neither advances a
+        shot nor changes coil currents.
+        """
         obs = np.asarray(observation, dtype=np.float64).reshape(-1)
         error = self.target_vector - obs
         metrics: dict[str, Any] = {
@@ -293,6 +376,24 @@ class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
         max_abs_coil_current: float,
         max_abs_actuator_lag: float,
     ) -> dict[str, Any]:
+        """Check measured objectives and actuator magnitudes against limits.
+
+        Parameters
+        ----------
+        metrics : dict[str, Any]
+            Mapping returned by :meth:`evaluate_objectives`.
+        max_abs_coil_current : float
+            Maximum absolute coil current in A.
+        max_abs_actuator_lag : float
+            Maximum absolute command-to-applied-current lag in A.
+
+        Returns
+        -------
+        dict[str, Any]
+            Copied supervisor limits, one boolean per configured check,
+            ``supervisor_active`` and ``supervisor_safe``. A missing metric
+            fails its configured check; an empty limit set is inactive and safe.
+        """
         metric_map = {
             "tracking_error_norm": metrics.get("tracking_error_norm"),
             "shape_rms": metrics.get("shape_rms"),
@@ -322,6 +423,7 @@ class _FreeBoundaryTrackingControlMixin(_FreeBoundaryTrackingState):
         metrics_before: dict[str, Any],
         metrics_after: dict[str, Any],
     ) -> dict[str, bool]:
+        """Flag objectives that cross from within tolerance to outside it."""
         metric_names = {
             "shape_rms": "shape_rms",
             "shape_max_abs": "shape_max_abs",

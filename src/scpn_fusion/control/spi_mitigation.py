@@ -25,6 +25,7 @@ class ShatteredPelletInjection:
     """Reduced SPI mitigation model for thermal/current quench campaigns."""
 
     def __init__(self, Plasma_Energy_MJ: float = 300.0, Plasma_Current_MA: float = 15.0):
+        """Initialise finite positive plasma energy and current in SI state units."""
         w_mj = float(Plasma_Energy_MJ)
         ip_ma = float(Plasma_Current_MA)
         if not np.isfinite(w_mj) or w_mj <= 0.0:
@@ -39,6 +40,7 @@ class ShatteredPelletInjection:
 
     @staticmethod
     def _require_non_negative(name: str, value: float) -> float:
+        """Accept a finite nonnegative gas amount or raise ``ValueError``."""
         out = float(value)
         if not np.isfinite(out) or out < 0.0:
             raise ValueError(f"{name} must be finite and >= 0.")
@@ -172,7 +174,38 @@ class ShatteredPelletInjection:
         dt_s: float = 1e-5,
         verbose: bool = True,
     ) -> _SPIHistory | _SPIHistoryDiag:
-        """Run the thermal/current quench mitigation time history."""
+        """Advance the reduced thermal and current quench model.
+
+        Parameters
+        ----------
+        neon_quantity_mol, argon_quantity_mol, xenon_quantity_mol : float
+            Finite nonnegative injected gas amounts in mol.
+        return_diagnostics : bool, default=False
+            Include final effective charge, quench-time and input diagnostics.
+        duration_s, dt_s : float
+            Finite positive simulated duration and fixed integration step in s.
+        verbose : bool, default=True
+            Emit mitigation and phase-transition log messages.
+
+        Returns
+        -------
+        tuple
+            Time samples in ms, thermal energy in MJ and plasma current in MA.
+            With ``return_diagnostics=True``, a fourth element records final
+            state and supplied gas amounts.
+
+        Raises
+        ------
+        ValueError
+            Any gas amount is negative or nonfinite, or the duration/step is
+            nonfinite or not positive.
+
+        Notes
+        -----
+        The method mutates ``W_th``, ``Ip``, ``Te``, ``Z_eff`` and
+        ``last_tau_cq_s``. It starts a fresh quench history on each call;
+        it does not restore the constructor's energy or current state.
+        """
         neon = self._require_non_negative("neon_quantity_mol", neon_quantity_mol)
         argon = self._require_non_negative("argon_quantity_mol", argon_quantity_mol)
         xenon = self._require_non_negative("xenon_quantity_mol", xenon_quantity_mol)

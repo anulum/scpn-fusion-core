@@ -16,7 +16,7 @@ from pathlib import Path
 
 
 def missing_docstrings(paths: Sequence[Path]) -> list[str]:
-    """Find undocumented definitions, including private and nested objects.
+    """Find undocumented runtime definitions, including private and nested objects.
 
     Parameters
     ----------
@@ -44,6 +44,11 @@ def missing_docstrings(paths: Sequence[Path]) -> list[str]:
         tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         for node in ast.walk(tree):
             if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+                if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and any(
+                    isinstance(decorator, ast.Name) and decorator.id == "overload"
+                    for decorator in node.decorator_list
+                ):
+                    continue  # The documented implementation owns the runtime API.
                 if not (ast.get_docstring(node) or "").strip():
                     line = getattr(node, "lineno", 1)
                     name = getattr(node, "name", "<module>")

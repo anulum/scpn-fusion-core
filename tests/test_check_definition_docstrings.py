@@ -85,3 +85,27 @@ def test_empty_scope_cannot_report_success() -> None:
     """The public checker rejects a scope that would silently inspect nothing."""
     with pytest.raises(ValueError, match="at least one file"):
         missing_docstrings([])
+
+
+def test_overload_signature_uses_implementation_docstring(tmp_path: Path) -> None:
+    """Real TBR overload declarations use their runtime implementation's docs."""
+    source = ROOT / "src/scpn_fusion/control/disruption_contracts.py"
+    path = tmp_path / source.name
+    text = source.read_text()
+    path.write_text(text)
+    assert missing_docstrings([path]) == []
+    owner = next(
+        node
+        for node in ast.parse(text).body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "mcnp_lite_tbr"
+        and not node.decorator_list
+    )
+    doc = owner.body[0]
+    assert doc.end_lineno is not None
+    lines = text.splitlines(keepends=True)
+    lines[doc.lineno - 1 : doc.end_lineno] = ["\n"] * (doc.end_lineno - doc.lineno + 1)
+    path.write_text("".join(lines))
+    assert missing_docstrings([path]) == [
+        f"{path}:{owner.lineno}: missing docstring: mcnp_lite_tbr"
+    ]

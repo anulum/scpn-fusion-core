@@ -20,6 +20,8 @@ from scpn_fusion.core.fusion_kernel import CoilSet
 
 
 class _FreeBoundaryTrackingShotMixin(_FreeBoundaryTrackingState):
+    """Supply supervised shot execution to the public tracking controller."""
+
     def run_tracking_shot(
         self,
         *,
@@ -28,6 +30,38 @@ class _FreeBoundaryTrackingShotMixin(_FreeBoundaryTrackingState):
         disturbance_callback: Callable[[Any, CoilSet, int], None] | None = None,
         stop_on_convergence: bool = False,
     ) -> dict[str, Any]:
+        """Run one free-boundary tracking shot with supervised trial corrections.
+
+        Parameters
+        ----------
+        shot_steps : int, default=10
+            Maximum number of control steps; must be at least one.
+        gain : float, default=1.0
+            Finite positive initial gain. Rejected trials halve this gain.
+        disturbance_callback : callable, optional
+            Called with the kernel, coils and zero-based step before each solve.
+        stop_on_convergence : bool, default=False
+            Stop after a step whose configured objectives have converged.
+
+        Returns
+        -------
+        dict[str, Any]
+            Shot summary with performed ``steps``, elapsed seconds, tracking
+            and control errors, current/lag extrema in A, supervisor/fallback
+            diagnostics. Per-step values remain in ``self.history``.
+
+        Raises
+        ------
+        ValueError
+            If ``shot_steps`` is below one or ``gain`` is nonfinite or not
+            positive. Solver and callback failures propagate to the caller.
+
+        Notes
+        -----
+        The call resets shot histories and observer state before execution.
+        Rejected trial corrections restore the actuator snapshot before any
+        configured fallback currents are applied.
+        """
         steps = int(shot_steps)
         if steps < 1:
             raise ValueError("shot_steps must be >= 1.")

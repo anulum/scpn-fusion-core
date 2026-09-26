@@ -537,7 +537,7 @@ def _open_zarr_group(path: Path) -> Any:
 
 def _parse_mapping(data: bytes) -> JsonObject:
     try:
-        import yaml  # type: ignore[import-untyped]  # PyYAML does not ship inline types
+        import yaml
     except ImportError as exc:
         raise MastMagneticArchiveDependencyError(
             "MAST qualification requires Python >=3.11 and scpn-fusion[mast]"
