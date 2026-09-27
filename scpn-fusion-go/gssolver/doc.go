@@ -7,4 +7,8 @@
 
 // Package gssolver provides the native Go fixed-boundary Grad-Shafranov
 // reference solver and flux-derived current diagnostics.
+// CaseFromTOML reads the exact thirteen-field grad_shafranov TOML 1.0 schema;
+// Case.Validate applies the same domain, generated-axis and work limits to
+// direct callers before allocation. Counts are signed TOML integers and
+// physical fields use SI units. See docs/NUMERICAL_CONTRACTS.md in the repository.
 package gssolver

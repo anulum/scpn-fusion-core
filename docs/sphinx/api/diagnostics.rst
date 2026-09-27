@@ -6,6 +6,12 @@ The diagnostics subpackage provides synthetic diagnostic instruments,
 forward models, and tomographic inversion for virtual tokamak
 experiments.
 
+Magnetic measurements require native float64 matrices with at least two nodes
+on each axis. Valid strided/readonly inputs are preserved; deterministic
+outputs own independent C-contiguous storage. See
+`Numerical contracts <../../NUMERICAL_CONTRACTS.md>`_ for scalar admission,
+explicit conversion and typed failures.
+
 Synthetic Sensors
 -------------------
 

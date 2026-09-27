@@ -17,6 +17,7 @@ pub mod iga;
 pub mod interp;
 pub mod linalg;
 pub mod multigrid;
+mod multigrid_geometry;
 pub mod sor;
 pub mod symplectic;
 pub mod tridiag;

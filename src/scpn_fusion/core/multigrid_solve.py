@@ -27,6 +27,16 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.array_contract import (
+    array_input,
+    scalar_kind,
+    integer_value,
+    real_value,
+    checked_grid,
+    grid_spacing,
+    finite_array,
+)
+
 FloatArray = NDArray[np.float64]
 
 
@@ -153,6 +163,8 @@ def mg_smooth(
     dz: float,
     omega: float,
     n_sweeps: int,
+    *,
+    radius_floor: float | None = None,
 ) -> FloatArray:
     """Red-Black SOR smoother with the toroidal ``1/R`` stencil for multigrid.
 
@@ -170,6 +182,8 @@ def mg_smooth(
         SOR over-relaxation factor.
     n_sweeps : int
         Number of Red-Black sweeps.
+    radius_floor : float or None, optional
+        Explicit legacy caller policy; None uses actual radii.
 
     Returns
     -------
@@ -182,7 +196,7 @@ def mg_smooth(
     dz2 = dz**2
 
     r_int = r_grid[1:-1, 1:-1]
-    r_safe = np.maximum(r_int, 1e-10)
+    r_safe = r_int if radius_floor is None else np.maximum(r_int, radius_floor)
     a_e = 1.0 / dr2 - 1.0 / (2.0 * r_safe * dr)
     a_w = 1.0 / dr2 + 1.0 / (2.0 * r_safe * dr)
     a_ns = 1.0 / dz2
@@ -214,6 +228,8 @@ def mg_residual(
     r_grid: FloatArray,
     dr: float,
     dz: float,
+    *,
+    radius_floor: float | None = None,
 ) -> FloatArray:
     """Compute the GS* residual ``r = L*[psi] - source`` on the given grid.
 
@@ -227,6 +243,8 @@ def mg_residual(
         ``R``-coordinate meshgrid matching ``psi`` shape.
     dr, dz : float
         Grid spacings.
+    radius_floor : float or None, optional
+        Explicit legacy caller policy; None uses actual radii.
 
     Returns
     -------
@@ -238,7 +256,7 @@ def mg_residual(
 
     residual = np.zeros_like(psi)
     r_int = r_grid[1:-1, 1:-1]
-    r_safe = np.maximum(r_int, 1e-10)
+    r_safe = r_int if radius_floor is None else np.maximum(r_int, radius_floor)
 
     d2r = (psi[1:-1, 2:] - 2.0 * psi[1:-1, 1:-1] + psi[1:-1, 0:-2]) / dr2
     d1r = (psi[1:-1, 2:] - psi[1:-1, 0:-2]) / (2.0 * dr)
@@ -260,6 +278,7 @@ def multigrid_vcycle(
     pre_smooth: int = 3,
     post_smooth: int = 3,
     min_grid: int = 5,
+    radius_floor: float | None = None,
 ) -> FloatArray:
     """One V-cycle of geometric multigrid for the GS* operator.
 
@@ -280,6 +299,8 @@ def multigrid_vcycle(
         Smoothing sweeps before/after the coarse correction, by default 3.
     min_grid : int, optional
         Minimum grid dimension before switching to a direct solve, by default 5.
+    radius_floor : float or None, optional
+        Explicit legacy caller policy applied independently at each mesh level.
 
     Returns
     -------
@@ -290,17 +311,21 @@ def multigrid_vcycle(
 
     # Base case: grid too coarse — solve directly with many SOR sweeps
     if min_grid >= nz or min_grid >= nr:
-        return mg_smooth(psi.copy(), source, r_grid, dr, dz, omega, n_sweeps=50)
+        return mg_smooth(
+            psi.copy(), source, r_grid, dr, dz, omega, n_sweeps=50, radius_floor=radius_floor
+        )
 
     # 1. Pre-smooth
-    psi = mg_smooth(psi.copy(), source, r_grid, dr, dz, omega, pre_smooth)
+    psi = mg_smooth(
+        psi.copy(), source, r_grid, dr, dz, omega, pre_smooth, radius_floor=radius_floor
+    )
 
     # 2. Compute the defect (negative residual). The error e satisfies
     #    L*[e] = source - L*[psi] = -(L*[psi] - source), so the coarse-grid
     #    right-hand side is the *negated* residual. Restricting the raw residual
     #    instead solves L*[e] = +r, which inverts every correction (psi <- psi - e)
     #    and stalls/diverges the solve.
-    defect = -mg_residual(psi, source, r_grid, dr, dz)
+    defect = -mg_residual(psi, source, r_grid, dr, dz, radius_floor=radius_floor)
 
     # 3. Restrict the defect and R-grid to the coarse level
     d_coarse = restrict_full_weight(defect)
@@ -323,6 +348,7 @@ def multigrid_vcycle(
         pre_smooth=pre_smooth,
         post_smooth=post_smooth,
         min_grid=min_grid,
+        radius_floor=radius_floor,
     )
 
     # 5. Prolongate the correction and apply
@@ -330,7 +356,7 @@ def multigrid_vcycle(
     psi = psi + correction
 
     # 6. Post-smooth
-    psi = mg_smooth(psi, source, r_grid, dr, dz, omega, post_smooth)
+    psi = mg_smooth(psi, source, r_grid, dr, dz, omega, post_smooth, radius_floor=radius_floor)
 
     return psi
 
@@ -346,6 +372,8 @@ def residual_linf(
     interior = mg_residual(psi, source, r_grid, dr, dz)[1:-1, 1:-1]
     if interior.size == 0:
         return 0.0
+    if not np.all(np.isfinite(interior)):
+        raise RuntimeError("multigrid residual arithmetic became nonfinite")
     return float(np.max(np.abs(interior)))
 
 
@@ -411,30 +439,174 @@ def multigrid_solve(
     ------
     ValueError
         If the grid dimensions are inconsistent with the array shapes, or if
-        ``tol``/``max_cycles`` are not strictly positive.
+        controls, finite inputs or fine/coarse operator geometry are invalid.
+    TypeError
+        If inputs violate the native float64 ndarray or scalar kind contract.
+    RuntimeError
+        If accepted inputs cause nonfinite solver arithmetic.
+
+    Notes
+    -----
+    Conversions are explicit caller responsibilities. All valid ndarray layouts,
+    including readonly views, are accepted. Output is fresh, native float64 and
+    C contiguous. The positive radial coordinates are used directly in the operator.
     """
-    source_arr = np.asarray(source, dtype=np.float64)
-    psi = np.asarray(psi_bc, dtype=np.float64).copy()
-    if source_arr.shape != (nz, nr) or psi.shape != (nz, nr):
+    source_arr = array_input(source, "source")
+    initial = array_input(psi_bc, "psi_bc")
+    for name, value, integer in (
+        ("r_min", r_min, False),
+        ("r_max", r_max, False),
+        ("z_min", z_min, False),
+        ("z_max", z_max, False),
+        ("nr", nr, True),
+        ("nz", nz, True),
+        ("tol", tol, False),
+        ("max_cycles", max_cycles, True),
+        ("omega", omega, False),
+        ("pre_smooth", pre_smooth, True),
+        ("post_smooth", post_smooth, True),
+        ("min_grid", min_grid, True),
+    ):
+        scalar_kind(value, name, integer=integer)
+    nr, nz = integer_value(nr, "nr", 3), integer_value(nz, "nz", 3)
+    max_cycles = integer_value(max_cycles, "max_cycles", 1)
+    pre_smooth = integer_value(pre_smooth, "pre_smooth", 0)
+    post_smooth = integer_value(post_smooth, "post_smooth", 0)
+    min_grid = integer_value(min_grid, "min_grid", 3)
+    checked_grid(nr, nz)
+    if source_arr.shape != (nz, nr) or initial.shape != (nz, nr):
         raise ValueError(
             f"source and psi_bc must have shape (nz, nr) = ({nz}, {nr}); "
-            f"got source={source_arr.shape}, psi_bc={psi.shape}."
+            f"got source={source_arr.shape}, psi_bc={initial.shape}."
         )
-    if not (np.isfinite(tol) and tol > 0.0):
+    r_min, r_max = real_value(r_min, "r_min"), real_value(r_max, "r_max")
+    z_min, z_max = real_value(z_min, "z_min"), real_value(z_max, "z_max")
+    tol = real_value(tol, "tol")
+    omega = validate_sor_omega(real_value(omega, "omega"))
+    if tol <= 0.0:
         raise ValueError("tol must be finite and > 0.")
-    if max_cycles < 1:
-        raise ValueError("max_cycles must be >= 1.")
+    if r_min <= 0.0:
+        raise ValueError("r_min must be positive for the GS operator")
+    grid_spacing(r_min, r_max, nr, "R")
+    grid_spacing(z_min, z_max, nz, "Z")
+    try:
+        with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
+            r_axis = np.linspace(r_min, r_max, nr)
+            z_axis = np.linspace(z_min, z_max, nz)
+            for name, axis in (("R", r_axis), ("Z", z_axis)):
+                if not np.all(np.isfinite(axis)) or not np.all(np.diff(axis) > 0.0):
+                    raise ValueError(f"{name} actual coordinates must be finite and increasing")
+            dr, dz = float(r_axis[1] - r_axis[0]), float(z_axis[1] - z_axis[0])
+            r_grid, _ = np.meshgrid(r_axis, z_axis)
+            _validate_operator_levels(r_grid, dr, dz, min_grid, (r_min, r_max, z_min, z_max))
+    except (FloatingPointError, OverflowError, ZeroDivisionError) as error:
+        raise ValueError("multigrid operator geometry is not representable") from error
+    finite_array(source_arr, "source")
+    finite_array(initial, "psi_bc")
+    source_arr = np.array(source_arr, dtype=np.float64, order="C", copy=True)
+    psi = np.array(initial, dtype=np.float64, order="C", copy=True)
+    try:
+        with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
+            return _solve_validated(
+                source_arr,
+                psi,
+                r_grid,
+                dr,
+                dz,
+                tol,
+                max_cycles,
+                omega,
+                pre_smooth,
+                post_smooth,
+                min_grid,
+            )
+    except (FloatingPointError, OverflowError, ZeroDivisionError) as error:
+        raise RuntimeError("multigrid arithmetic became nonfinite") from error
 
-    r_axis = np.linspace(r_min, r_max, nr)
-    z_axis = np.linspace(z_min, z_max, nz)
-    r_grid, _z_grid = np.meshgrid(r_axis, z_axis)
-    dr = float(r_axis[1] - r_axis[0]) if nr > 1 else 1.0
-    dz = float(z_axis[1] - z_axis[0]) if nz > 1 else 1.0
 
+def _validate_operator_levels(
+    r_grid: FloatArray,
+    dr: float,
+    dz: float,
+    min_grid: int,
+    bounds: tuple[float, float, float, float],
+) -> None:
+    """Check the actual fine and restricted coarse geometry before solver work."""
+    native_nr, native_nz = r_grid.shape[1], r_grid.shape[0]
+    native_r_min, native_r_max, native_z_min, native_z_max = bounds
+    while True:
+        native_r = native_r_min + np.arange(native_nr) * (
+            (native_r_max - native_r_min) / (native_nr - 1)
+        )
+        native_z = native_z_min + np.arange(native_nz) * (
+            (native_z_max - native_z_min) / (native_nz - 1)
+        )
+        for axis in (native_r, native_z):
+            if not np.all(np.isfinite(axis)) or not np.all(np.diff(axis) > 0.0):
+                raise ValueError("native coarse coordinates must be finite and increasing")
+        mesh, _ = np.meshgrid(native_r, native_z)
+        _validate_operator_level(
+            mesh, float(native_r[1] - native_r[0]), float(native_z[1] - native_z[0])
+        )
+        if min(native_nr, native_nz) <= min_grid:
+            break
+        native_r_min, native_r_max = float(native_r[0]), float(native_r[-1])
+        native_z_min, native_z_max = float(native_z[0]), float(native_z[-1])
+        native_nr, native_nz = (native_nr + 1) // 2, (native_nz + 1) // 2
+    while True:
+        _validate_operator_level(r_grid, dr, dz)
+        if min(r_grid.shape) <= min_grid:
+            return
+        r_grid = restrict_full_weight(r_grid)
+        dr, dz = dr * 2.0, dz * 2.0
+
+
+def _validate_operator_level(r_grid: FloatArray, dr: float, dz: float) -> None:
+    """Require every denominator, reciprocal and coefficient at one actual mesh level."""
+    dr2, dz2 = dr * dr, dz * dz
+    radius = r_grid[1:-1, 1:-1]
+    radial = 2.0 * radius * dr
+    inverse_radius = 1.0 / radius
+    inverses = (1.0 / dr2, 1.0 / dz2, 1.0 / (2.0 * dr))
+    if (
+        not all(np.isfinite(x) and x > 0.0 for x in (dr2, dz2, *inverses))
+        or not np.all(np.isfinite(radial))
+        or not np.all(radial > 0.0)
+        or not np.all(np.isfinite(inverse_radius))
+        or not np.all(inverse_radius > 0.0)
+    ):
+        raise ValueError("multigrid stencil denominators are not representable")
+    a_e = inverses[0] - 1.0 / radial
+    a_w = inverses[0] + 1.0 / radial
+    a_c = 2.0 * inverses[0] + 2.0 * inverses[1]
+    if (
+        not np.all(np.isfinite(a_e))
+        or not np.all(np.isfinite(a_w))
+        or not np.isfinite(a_c)
+        or a_c <= 0.0
+    ):
+        raise ValueError("multigrid stencil coefficients are not representable")
+
+
+def _solve_validated(
+    source_arr: FloatArray,
+    psi: FloatArray,
+    r_grid: FloatArray,
+    dr: float,
+    dz: float,
+    tol: float,
+    max_cycles: int,
+    omega: float,
+    pre_smooth: int,
+    post_smooth: int,
+    min_grid: int,
+) -> tuple[FloatArray, float, int, bool]:
+    """Run checked V-cycles after strict admission while preserving boundary values."""
     # Dirichlet boundary ring captured from psi_bc, re-applied after each cycle.
     psi_boundary = psi.copy()
 
     def _enforce_boundary(field: FloatArray) -> None:
+        """Restore all original Dirichlet boundary cells after a correction."""
         field[0, :] = psi_boundary[0, :]
         field[-1, :] = psi_boundary[-1, :]
         field[:, 0] = psi_boundary[:, 0]
@@ -455,6 +627,8 @@ def multigrid_solve(
             post_smooth=post_smooth,
             min_grid=min_grid,
         )
+        if not np.all(np.isfinite(psi)):
+            raise RuntimeError("multigrid flux arithmetic became nonfinite")
         _enforce_boundary(psi)
         n_cycles += 1
         residual = residual_linf(psi, source_arr, r_grid, dr, dz)

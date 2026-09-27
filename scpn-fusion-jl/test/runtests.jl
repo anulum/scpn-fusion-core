@@ -101,3 +101,5 @@ end
         @test abs(current_density_mixed[iz, ir] - expected_j) < 1.0e-6
     end
 end
+
+include("case_contract.jl")

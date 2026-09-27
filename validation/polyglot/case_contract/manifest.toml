@@ -1,0 +1,2608 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — Polyglot Grad-Shafranov Case
+schema = "scpn.physical-case-corpus.v1"
+# Expected mappings are declared physical values, not inferred from the tested loader.
+# solve=false marks admission-only limits; never run a cap-sized numerical solve.
+
+[[case]]
+name = "reference"
+path = "cases/reference.toml"
+sha256 = "3836c33598d4b98d44991e26a945ccc504c1076179696d98b2133e6b1ce50257"
+reason = "reference"
+valid = true
+solve = true
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "quoted_table"
+path = "cases/quoted_table.toml"
+sha256 = "0b77f11dcbd7025211bfb761386e5ce85cbdd65b19ffb2b7f7d41fa95884101f"
+reason = "equivalent tree"
+valid = true
+solve = true
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "quoted_fields"
+path = "cases/quoted_fields.toml"
+sha256 = "8d2826653908975e4c927c585f817047238a00f5f7faa1a23643968c316892d4"
+reason = "equivalent tree"
+valid = true
+solve = true
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "dotted_fields"
+path = "cases/dotted_fields.toml"
+sha256 = "88483c54b8450b378e5fa8383380a1cb4b0ce80c599ff19ea3185356d3b6adf0"
+reason = "equivalent tree"
+valid = true
+solve = true
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "inline_table"
+path = "cases/inline_table.toml"
+sha256 = "bc3ac247d68f8f3dbf0d994970f0c35720d8adaed66ec9c2663861b4a1f649a7"
+reason = "equivalent tree"
+valid = true
+solve = true
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "comment_and_signed_exponent"
+path = "cases/comment_and_signed_exponent.toml"
+sha256 = "afd0ffc3d5948c0948be6684c9303fcf305939bc6687ed071edbe7de727f2c1e"
+reason = "equivalent real syntax"
+valid = true
+solve = true
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NR_hex"
+path = "cases/NR_hex.toml"
+sha256 = "7f27084abfebf719935f69bda17a6802fa31a11ff920a4e02553932c7c8f7d28"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NR_octal"
+path = "cases/NR_octal.toml"
+sha256 = "b51d53109a7e24387970e5713649dafef164004e0450990366bce806355073ab"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NR_binary"
+path = "cases/NR_binary.toml"
+sha256 = "76f2b4cb54b1bf0c050d6d29ca2cca6bd2e859eab82270b7ae6ca80548afac56"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NR_underscore"
+path = "cases/NR_underscore.toml"
+sha256 = "a8bbfc18fa6f49f619fc6f53b7fae5d37ebd7416701a9a3196fcc7a6c048170e"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NZ_hex"
+path = "cases/NZ_hex.toml"
+sha256 = "8afa80e2de035ba7f015c0a6f344d4fd69e9d76e05b8620cebf34ab1c5ab32a4"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NZ_octal"
+path = "cases/NZ_octal.toml"
+sha256 = "7a48dc817c6a0f106e83eed5b8d4f2d6bf25c7cf630f8a0ccad4c0eef97589e7"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NZ_binary"
+path = "cases/NZ_binary.toml"
+sha256 = "252c430f26a42948846edffba698cbf0904c815bd3fae128bb63d573d022c781"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NZ_underscore"
+path = "cases/NZ_underscore.toml"
+sha256 = "ea9ab89c0c43011a126f56405340cf1cfc709d27388a1bc5362d4611e8a128e9"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_jacobi_hex"
+path = "cases/n_jacobi_hex.toml"
+sha256 = "2ddbf3e73d749e13f0d86f61520b4ea51b7dee58343cd0fd108302a1e575a33d"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_jacobi_octal"
+path = "cases/n_jacobi_octal.toml"
+sha256 = "a14965708ec1661ef879f136212c9ac4b4ed45403e572856c0d777616036f48e"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_jacobi_binary"
+path = "cases/n_jacobi_binary.toml"
+sha256 = "434c56f705083be88dff0658d863dcb2bd48b72ee99e6c09a23f6ba87094cdbd"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_jacobi_underscore"
+path = "cases/n_jacobi_underscore.toml"
+sha256 = "a749fe5dfad176de208fbb46a5dbf95d8e12284cb1eb2192c1f919333cf85c4d"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_picard_hex"
+path = "cases/n_picard_hex.toml"
+sha256 = "9ca499d521ca5e76513a3a851ad0b6229e73d76a6502f29e991a6384e163ae05"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_picard_octal"
+path = "cases/n_picard_octal.toml"
+sha256 = "cb1e193154ffd823246c703af5ff3458bd710c7b7d591656877aee5ca6c5e32a"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_picard_binary"
+path = "cases/n_picard_binary.toml"
+sha256 = "ea88b65482699b3344c9a6b879c0f00b0275fd902685b35c4d8d1c76aae532f2"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_picard_underscore"
+path = "cases/n_picard_underscore.toml"
+sha256 = "1b1aa79ace1b2a3012d450cc1851dfb578592bad30f7e2f99df854f58a33844c"
+reason = "equivalent TOML integer"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "missing_R_min"
+path = "cases/missing_R_min.toml"
+sha256 = "4d92f9a251189c33f614e45cba7f95a7c92f765170a44e8e1fab88254cdfeb3a"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_wrong_boolean"
+path = "cases/R_min_wrong_boolean.toml"
+sha256 = "3a901277e3daeb008dab1d3d1f04b6c1f0472e132ad4375e00427fc07a0d0f21"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_wrong_string"
+path = "cases/R_min_wrong_string.toml"
+sha256 = "578c4b6a41c3539b2ac0966c9dbc4e01d8e0ce2992fd7ac212428587d4a0e32d"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_wrong_array"
+path = "cases/R_min_wrong_array.toml"
+sha256 = "958dcf325c3df12e382e4e57f460d8f4ba95da76497ab28c9954c3de7e050329"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_wrong_table"
+path = "cases/R_min_wrong_table.toml"
+sha256 = "660b3427d2f7d8656293a111f18ceb4015a28b9a17661bede029516ac86b5ba5"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_wrong_date"
+path = "cases/R_min_wrong_date.toml"
+sha256 = "3d810e69dc8a7757f420d97d4672982b9f49b4b6e19f739978fe3dfd60ecb9c7"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_wrong_time"
+path = "cases/R_min_wrong_time.toml"
+sha256 = "4766034964672e04fc7a64845288dad8ec18d7e20c07ce12d8e15a70ea146a2b"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_nan"
+path = "cases/R_min_nan.toml"
+sha256 = "e667c7eb3ed1e362ea1b8b3efa673525b20265388201049b0f8bebb439c18bf2"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_pos_inf"
+path = "cases/R_min_pos_inf.toml"
+sha256 = "f623d93a394f146479b3f9cd487034b85686b2ec2db99876ec20ef1d55673a3a"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_neg_inf"
+path = "cases/R_min_neg_inf.toml"
+sha256 = "d6d189a10e731fc0fc79b02ccab376c206ccd42f776ad690fa44f4d3aee0e890"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_inexact_integer"
+path = "cases/R_min_inexact_integer.toml"
+sha256 = "1737a697b7b8b2cc05da702d658121be2c75f2f1bd0fbd8b19439d67435ee5d8"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_R_max"
+path = "cases/missing_R_max.toml"
+sha256 = "ea319ac41d9f79921ed3d4b9fd911c138f7e07ac377f9ff270acfb717ec399df"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_wrong_boolean"
+path = "cases/R_max_wrong_boolean.toml"
+sha256 = "379ddc5b06f6f337b83db3767f756c401672e2c07fdb7baf85f1d3c06ce82fec"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_wrong_string"
+path = "cases/R_max_wrong_string.toml"
+sha256 = "46721ace04938e85f434efaec8122133ca90206e0d0ea22487d2a6ca075f2e55"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_wrong_array"
+path = "cases/R_max_wrong_array.toml"
+sha256 = "dd4b0c37b095fdae8816352cab0b0036a7829e004eb44fd64079cfee896aa7cc"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_wrong_table"
+path = "cases/R_max_wrong_table.toml"
+sha256 = "5c24da2f9e31e8ef4478ce2ae672181571c052a28b36152fe9422abf376d3688"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_wrong_date"
+path = "cases/R_max_wrong_date.toml"
+sha256 = "1bf0bb8759377ebff69ec2574e22c2b36fc55f3763717f7c47dce39dc9a25284"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_wrong_time"
+path = "cases/R_max_wrong_time.toml"
+sha256 = "ea68751e7653a2add4562aef6c5235fee2e496dfbd49f81c9281b7a4aca02785"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_nan"
+path = "cases/R_max_nan.toml"
+sha256 = "b1dcefd1850cdd8adc757f10c13ba68e979567db3232642b129d16a2df698c67"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_pos_inf"
+path = "cases/R_max_pos_inf.toml"
+sha256 = "c82b0f0a62cd0e7d76bef2da36e9b9c8812241a6ef3668e808c8bca3652b715b"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_neg_inf"
+path = "cases/R_max_neg_inf.toml"
+sha256 = "642246e789ee6e9133bfb1eb80f9fa2f41e1abecf3d34cc3eaa592c104f3ac98"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "R_max_inexact_integer"
+path = "cases/R_max_inexact_integer.toml"
+sha256 = "bb71a1df4e0b0aa978a0f8976c4888f4319258c60e946d78da543779bf1977ad"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_Z_min"
+path = "cases/missing_Z_min.toml"
+sha256 = "e583ed6137ff567d2fb9eb184e0ebf8d14ba97e211e6a4af07a6825a1bb0657d"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_wrong_boolean"
+path = "cases/Z_min_wrong_boolean.toml"
+sha256 = "9a39428673739e031d928267872bc32b2256e65294002eee4c9bef8157b45fa8"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_wrong_string"
+path = "cases/Z_min_wrong_string.toml"
+sha256 = "d0fee15e83433b6615189463446cc40a83abbca4852c5ba60f4dcbf268406467"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_wrong_array"
+path = "cases/Z_min_wrong_array.toml"
+sha256 = "e2b728e7c9ec17c1e40e5945eeee7a6fd6884b0f178655c6bd5e2d9840332aa7"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_wrong_table"
+path = "cases/Z_min_wrong_table.toml"
+sha256 = "d5ef000f1e07406027239793f0a3107151d9e3e95834a2baedc6d63544955d96"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_wrong_date"
+path = "cases/Z_min_wrong_date.toml"
+sha256 = "813a2bf6e4624803c085bc5c03ebb41fd97148b30f43a7fa0dba6c2f5be1d99d"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_wrong_time"
+path = "cases/Z_min_wrong_time.toml"
+sha256 = "f6f063ce2cb643637a98140dafd911239c68c26c7471317ee5198fba4f121cc6"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_nan"
+path = "cases/Z_min_nan.toml"
+sha256 = "e913d83be8cc91508ab31ac3fd850d242ec1a68eb61410e5f6e19348e8c2404b"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_pos_inf"
+path = "cases/Z_min_pos_inf.toml"
+sha256 = "c9465a23932a82d7e9f593623520575cacabe81b4b2ad7d3ea162488de62ef64"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_neg_inf"
+path = "cases/Z_min_neg_inf.toml"
+sha256 = "97e3df52b6cc2e0494d5afc15803b70c3f0a99ae55c13ff5c8e504142ba4de2c"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_min_inexact_integer"
+path = "cases/Z_min_inexact_integer.toml"
+sha256 = "2005759f5b3fa3cb6e88a2b52c5a7073348643764eea1b97133196cf22f9e9cc"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_Z_max"
+path = "cases/missing_Z_max.toml"
+sha256 = "8c913af42c50e5b80dfc809399695d727cab30c12093d4b2d2e0ba962f48acad"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_wrong_boolean"
+path = "cases/Z_max_wrong_boolean.toml"
+sha256 = "631c05593ae86c7f30d2528f230b2e357d1e7b13038fccc6d2dcea1e4a6b82a2"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_wrong_string"
+path = "cases/Z_max_wrong_string.toml"
+sha256 = "8672d4fbc8ce6d2f23310027e8bb0f589d31b25fbcead9c0346468c45229c952"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_wrong_array"
+path = "cases/Z_max_wrong_array.toml"
+sha256 = "747e383c775ad6a3e7431d48e021e4dfe49d53aebe7fee041abb673de16fe4f8"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_wrong_table"
+path = "cases/Z_max_wrong_table.toml"
+sha256 = "2ea5a1f80278858842446850faceb52196fa1f558eb84de397d530c451a09425"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_wrong_date"
+path = "cases/Z_max_wrong_date.toml"
+sha256 = "d248786738aa1e674aef3d29124a581a7058f32524d7962a17b8a15eaec14fdc"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_wrong_time"
+path = "cases/Z_max_wrong_time.toml"
+sha256 = "ba50eaf11a422f505e898a419452e2b9e34d518ad1d2bc79ce71d07a9933df0d"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_nan"
+path = "cases/Z_max_nan.toml"
+sha256 = "36159cad895543ad4ace6028df08a33b326a5a9093062266e105ccce661f391d"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_pos_inf"
+path = "cases/Z_max_pos_inf.toml"
+sha256 = "8f37285adc7c227d4a0f03dba2e7b9afe6be3686a781c6282e3aff5fb8761aff"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_neg_inf"
+path = "cases/Z_max_neg_inf.toml"
+sha256 = "e74c3fc289129325137d7cd6baa451802eb3b96882184f4438cfac15fae92548"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_max_inexact_integer"
+path = "cases/Z_max_inexact_integer.toml"
+sha256 = "4d84be1db46537b7aaff486223fe7af69078b363bbba7779b396020163ef7c4d"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_NR"
+path = "cases/missing_NR.toml"
+sha256 = "d6aedaeb055e5e5b7067488baafab3b2ae5c26eab6c3d962e36611ea5517661c"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "NR_wrong_boolean"
+path = "cases/NR_wrong_boolean.toml"
+sha256 = "ef9ca2a0684f685e54d5773bcb560baa6a784998196f50a977e3a30e0447fc0b"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NR_wrong_string"
+path = "cases/NR_wrong_string.toml"
+sha256 = "5bb2793c38d99b166a2bc6e4e649e7587d9b7bfa9372fcd39de2025ce10bbbf6"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NR_wrong_array"
+path = "cases/NR_wrong_array.toml"
+sha256 = "4f329730b82997dc926bec90e2338af3d220f151d23a55875b6f5153368c3f18"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NR_wrong_table"
+path = "cases/NR_wrong_table.toml"
+sha256 = "8f6255d6e4a4cb253dab72ec4daa66121a16d6d48198cb7665558bcfc84b4dae"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NR_wrong_date"
+path = "cases/NR_wrong_date.toml"
+sha256 = "78fd146602f9f2c62df196b92c73212d838c3230bfaccf193e31ddb7df9151a6"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NR_wrong_time"
+path = "cases/NR_wrong_time.toml"
+sha256 = "541757d222a07f2d05101db8329e50fffa4a7c4a5b6c51d17cda76631c3bf2b9"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NR_integral_float"
+path = "cases/NR_integral_float.toml"
+sha256 = "6a38ee0708c73d1a68f4dd2c346b2b5e367edaacedfc301479e574e167742416"
+reason = "count requires TOML Integer"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_NZ"
+path = "cases/missing_NZ.toml"
+sha256 = "3327c45840ee87eb4adabe484105106b07fc0240f0b92d9e8be1141ee2819e18"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_wrong_boolean"
+path = "cases/NZ_wrong_boolean.toml"
+sha256 = "3156ebcb3739eb11df11c1b979fd5ca4d02112f28e5f8d086f52b748881e7e28"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_wrong_string"
+path = "cases/NZ_wrong_string.toml"
+sha256 = "068ff38633750aed415bda7985b22f577051c1552f19113de71df2906e02c266"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_wrong_array"
+path = "cases/NZ_wrong_array.toml"
+sha256 = "a03bffdb5e6ac7b1f31182f09b975b6efbc4c903f7576d927da1f1278a773777"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_wrong_table"
+path = "cases/NZ_wrong_table.toml"
+sha256 = "8fa233dbc20c69f919a7dd449e1d4641aa1dbf1e8d02736c647124c4883e87d0"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_wrong_date"
+path = "cases/NZ_wrong_date.toml"
+sha256 = "147b311d1444671a519f42f9bab1ea938fbe7b3577fb0317370f5ffce2a7a1aa"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_wrong_time"
+path = "cases/NZ_wrong_time.toml"
+sha256 = "fcf9b779cdef7313d6d57e8964411e00656150d33f862f2d97243d9b011ea91c"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_integral_float"
+path = "cases/NZ_integral_float.toml"
+sha256 = "1c9e51593bbc8497f9bddb5be74bf12167083940712fd2e42c9859179fcdea6f"
+reason = "count requires TOML Integer"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_Ip_target"
+path = "cases/missing_Ip_target.toml"
+sha256 = "6b3c968c9c2b4c6a7422c7a40f38e3a6b507b337ebe499368eebf29a11a5abed"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_wrong_boolean"
+path = "cases/Ip_target_wrong_boolean.toml"
+sha256 = "9f2cdc1f8693a6018083335069cff5cd0dd301e7ccc6e0e5a05926e5f801617b"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_wrong_string"
+path = "cases/Ip_target_wrong_string.toml"
+sha256 = "04e55ed0ac80136851464a94397974700cf22c65cc17bb82ed470c386ec21b9e"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_wrong_array"
+path = "cases/Ip_target_wrong_array.toml"
+sha256 = "a327460accab98840a46fdf890770855f72a9c86b153a6f2e802c81a13964883"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_wrong_table"
+path = "cases/Ip_target_wrong_table.toml"
+sha256 = "7701153f0ebdd15ae8b6b696a042add6be81681a80f98bb19c81baffb57a35a1"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_wrong_date"
+path = "cases/Ip_target_wrong_date.toml"
+sha256 = "40ee12df412cddf4f8c027b6ad847e097280b0ae7a1eb7cd37f73a50afed9104"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_wrong_time"
+path = "cases/Ip_target_wrong_time.toml"
+sha256 = "6bf7a1f7c2c972900ea101fa927427b39385341fcbc673f402b09f73437ebcb3"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_nan"
+path = "cases/Ip_target_nan.toml"
+sha256 = "8028b991eaf4d24c108bd064079d2c67297363e19716baf889f7990ccd2cf5f6"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_pos_inf"
+path = "cases/Ip_target_pos_inf.toml"
+sha256 = "87d779ffe78443a8d13463ab2c94d63185fd0e35fb8fa9ae281f2ad9914726c7"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_neg_inf"
+path = "cases/Ip_target_neg_inf.toml"
+sha256 = "ced8f4d8826542608675a777947c466d8ba179ecae964f32cafd4ad95d4efc3a"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "Ip_target_inexact_integer"
+path = "cases/Ip_target_inexact_integer.toml"
+sha256 = "32e5172bd8b53ce9f8b686094d48768f9c17ac3e22fa3481380c7c30cd168989"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_mu0"
+path = "cases/missing_mu0.toml"
+sha256 = "1bfdcbffda64330360aa44f556e29090559786676f3a4128fb2ce8126e80db30"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_wrong_boolean"
+path = "cases/mu0_wrong_boolean.toml"
+sha256 = "c51e932fe212031ea060802b5587d435812c0074a162445afd5b2e795f8d9ba9"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_wrong_string"
+path = "cases/mu0_wrong_string.toml"
+sha256 = "8e07d09c4ccf75778f181d971004361f99fc0c03299ae6b3d6e6bdbb3fa8e058"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_wrong_array"
+path = "cases/mu0_wrong_array.toml"
+sha256 = "9cf703fa96336cd3a5d1f18f85586b8f12478e7af11e8e86c994389bb5681356"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_wrong_table"
+path = "cases/mu0_wrong_table.toml"
+sha256 = "b4d89f93cff8dec27de678b065c0d3a9f74e3d4e11a14c25ca8d6e36f39562a7"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_wrong_date"
+path = "cases/mu0_wrong_date.toml"
+sha256 = "6a655ea84e313995ede304af688c5a7ffa7dd8a897400945610b383a01f04b67"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_wrong_time"
+path = "cases/mu0_wrong_time.toml"
+sha256 = "f56bcd235f96df44de9723622293584cda70b9924ec87ee6491ce34024637bec"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_nan"
+path = "cases/mu0_nan.toml"
+sha256 = "9551adb9d01a94ed959ad5b4ec64f760c0044c53ac539406fab3be74c5c4fff5"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_pos_inf"
+path = "cases/mu0_pos_inf.toml"
+sha256 = "de7293e99ecb395a38bff436712170956e64f1bdb3fe710227296c41490fa48c"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_neg_inf"
+path = "cases/mu0_neg_inf.toml"
+sha256 = "bb1ff9883272359a76750e37e4c48babd89470cc9796de87c1c974c22933d17d"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_inexact_integer"
+path = "cases/mu0_inexact_integer.toml"
+sha256 = "3c6a240592702b4344cf23fef1644c0f66006c489b58b04fb7e52276b44e1f8e"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_n_picard"
+path = "cases/missing_n_picard.toml"
+sha256 = "2dd54429de9e0e64f28d2b4bf027f1488fca7fb21111b392ec58a625a308f5c2"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_wrong_boolean"
+path = "cases/n_picard_wrong_boolean.toml"
+sha256 = "57dab35e55b60a8d855c4ae02db63f16189f65c1949b1cf2117adfebb118b7d5"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_wrong_string"
+path = "cases/n_picard_wrong_string.toml"
+sha256 = "f06e9be87c9b9ec220ad825d87f55cde881710d7446cb11b7582f28995c02244"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_wrong_array"
+path = "cases/n_picard_wrong_array.toml"
+sha256 = "6e844b586ce83a7fae7f32d550c07ba157003764b32d40e31dbb1b6bb0779c92"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_wrong_table"
+path = "cases/n_picard_wrong_table.toml"
+sha256 = "2a9c25f23c8b13c46fd32f3fd703bdd0f766e65b069c64bac7c031d4fcb030af"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_wrong_date"
+path = "cases/n_picard_wrong_date.toml"
+sha256 = "e06aaa3e0aca2c68cb08de1d02a70826387b8be575575c716466fa8a11207c31"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_wrong_time"
+path = "cases/n_picard_wrong_time.toml"
+sha256 = "d3149a895b23c42f3fa047b2084f48f23e7c4f2d4b1966b4c46748df3199aea3"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_integral_float"
+path = "cases/n_picard_integral_float.toml"
+sha256 = "ef1fd9453e761df27d32baaa31250317b69dbbfce08236a83651acbb1327d539"
+reason = "count requires TOML Integer"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_n_jacobi"
+path = "cases/missing_n_jacobi.toml"
+sha256 = "a75fa1033043114fa12abded735fbf74c0e949128f7b7b92552645a619b81660"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_wrong_boolean"
+path = "cases/n_jacobi_wrong_boolean.toml"
+sha256 = "a2fc9f0cdd42ca01171b6d57431fb7acb4bd586d4ec182cd3bbfbbd402be19a3"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_wrong_string"
+path = "cases/n_jacobi_wrong_string.toml"
+sha256 = "44ca22174b64c3ab0c5f65cbe62e173bd5aa91f50d9603d4d068edfec6941d07"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_wrong_array"
+path = "cases/n_jacobi_wrong_array.toml"
+sha256 = "77b52f276f270b38c4dec1649fabf1c26e39d5b3e178c077838ab745df09a772"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_wrong_table"
+path = "cases/n_jacobi_wrong_table.toml"
+sha256 = "de73650cbad7b63e75468c1dc78c2fe88c5a52fa21e85b2b22a4f43ad9befd6c"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_wrong_date"
+path = "cases/n_jacobi_wrong_date.toml"
+sha256 = "8d7bd4b976a1576fc8c581131f846a7dd375f84944681faa0492bd69ad536130"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_wrong_time"
+path = "cases/n_jacobi_wrong_time.toml"
+sha256 = "4be949669494e4d1bd7ab3ef1e76ded3c703d51103a131242e3f4fe74c12bee3"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_integral_float"
+path = "cases/n_jacobi_integral_float.toml"
+sha256 = "b6f8095345194473ce9d9eb7ef62a925e80e29c5926b3a3bcee0afae39d33ce3"
+reason = "count requires TOML Integer"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_alpha"
+path = "cases/missing_alpha.toml"
+sha256 = "95b0f956d0589a245b620a70ee9cf753aae681536f277efd473dda668959be3e"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_wrong_boolean"
+path = "cases/alpha_wrong_boolean.toml"
+sha256 = "0ce678429a81aecd09c3875612dbff75ea5bc761a3a9cd37342e760f4a3dc644"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_wrong_string"
+path = "cases/alpha_wrong_string.toml"
+sha256 = "9d7c4f97b9a760bf40c123c4a4db8f409a800a1a4bb89ed6a89823b139e7548e"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_wrong_array"
+path = "cases/alpha_wrong_array.toml"
+sha256 = "e713d0077ad03ad3a628a15dcff3f73d3ffc1c1e773efd44c1f4b629e053d909"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_wrong_table"
+path = "cases/alpha_wrong_table.toml"
+sha256 = "53efb9024ba9e9dd6afa11ab18bb83f57231773681b18e8958d982e401820e15"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_wrong_date"
+path = "cases/alpha_wrong_date.toml"
+sha256 = "f9c01a919b04d04b9faa1cc0d7b858e0bf80948f5b1f1bb32dcf9f79c87d39f8"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_wrong_time"
+path = "cases/alpha_wrong_time.toml"
+sha256 = "5b1f3c193fcff96c66af9fa6fcaf66b378881ef5f050c5406c415aeefce38a37"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_nan"
+path = "cases/alpha_nan.toml"
+sha256 = "ff02eeb1d9a9febca4e31c18ae14b30d68e574630b0a0f81683cecc8ac95393e"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_pos_inf"
+path = "cases/alpha_pos_inf.toml"
+sha256 = "fe14cf40a67d6530ef14f7d322feb8c2c1929c2cd2bdc460d94ec7275e63ba59"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_neg_inf"
+path = "cases/alpha_neg_inf.toml"
+sha256 = "232c4408d7abcb77b232e68541193feb24d1ba74231e5df170f85b08dc02e62a"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_inexact_integer"
+path = "cases/alpha_inexact_integer.toml"
+sha256 = "bbe60ce1bed5e1731b7564678b4f98c20d4801f84354f4b1dea5b5642d2a0994"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_omega_j"
+path = "cases/missing_omega_j.toml"
+sha256 = "3d1ba7d7019c361123d22b042197560be2d055b117281a682b1b3fc38dcb7dd8"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_wrong_boolean"
+path = "cases/omega_j_wrong_boolean.toml"
+sha256 = "3d25a9ac9741dc8e84439966958f23b2ade8e99675f0ff4f1b0cef77f3677a40"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_wrong_string"
+path = "cases/omega_j_wrong_string.toml"
+sha256 = "70af9520eaf02e7dcb205018de451d6c4180852715cd98eb03a3028d8d3b91f8"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_wrong_array"
+path = "cases/omega_j_wrong_array.toml"
+sha256 = "faf9944fe21a15db8366eebdd58801e93a4d445368060205a98b7bba29e89142"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_wrong_table"
+path = "cases/omega_j_wrong_table.toml"
+sha256 = "20a7d6065f58fb86d083474bcb5011561ba5be7d62bde930c5e957ec4bce6706"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_wrong_date"
+path = "cases/omega_j_wrong_date.toml"
+sha256 = "58632cc9922050b81d1b591283b3323c4d0cd0c0f0a9bc98e957b122960428a4"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_wrong_time"
+path = "cases/omega_j_wrong_time.toml"
+sha256 = "021419d3838ae4205fd70ac991ad2b1182540c50df6930a90f44a1ad42a66908"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_nan"
+path = "cases/omega_j_nan.toml"
+sha256 = "9e92ea6c531e2e864dba1be869af70f8ffe2ebb0629eab1ca34616c45d124cb9"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_pos_inf"
+path = "cases/omega_j_pos_inf.toml"
+sha256 = "260a1f629de6a3e0778e18a57c15f55e1f78f459d46989a323af2fe0786800df"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_neg_inf"
+path = "cases/omega_j_neg_inf.toml"
+sha256 = "29a88ee1b3c395fe609bbec9e539660297f312ca2c6382816a42d94084b34c43"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_inexact_integer"
+path = "cases/omega_j_inexact_integer.toml"
+sha256 = "ec98c8d25367c9df1e00aa2f52df17a3c9fb76c02f3e63dfa4b45aae4d025c8c"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "missing_beta_mix"
+path = "cases/missing_beta_mix.toml"
+sha256 = "c57e6280eb3d177e18c918f7fa737e8a05b054bcefd0e43a5a1f5cbd949473f2"
+reason = "required field absent"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_wrong_boolean"
+path = "cases/beta_mix_wrong_boolean.toml"
+sha256 = "dc6c79f7b1e97e96e8a69d351f18b36fdab1cf578274a0660bba60b42f318f2d"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_wrong_string"
+path = "cases/beta_mix_wrong_string.toml"
+sha256 = "8872e3c070df5493ae3d596800e2dbc184bc682328b215a2d50aaa5fa9ed3d28"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_wrong_array"
+path = "cases/beta_mix_wrong_array.toml"
+sha256 = "36a0b41994cd6ee8daeec2f0f871dac9b8ab8cc013955202fca0c1eaaa44fc66"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_wrong_table"
+path = "cases/beta_mix_wrong_table.toml"
+sha256 = "d3853e521d03ea7408c029a6a2870cdb5f1bda1097e610540f88c36fb4debbdf"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_wrong_date"
+path = "cases/beta_mix_wrong_date.toml"
+sha256 = "abbf2a6ae779aa7bd00d64d1ad9df67987e77477cb9c66c28d7950f01f85a30a"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_wrong_time"
+path = "cases/beta_mix_wrong_time.toml"
+sha256 = "3d50e5c99948bca9ff0c185878652566fe8339d0311ce40668c44186ffe77b0d"
+reason = "wrong delivered numeric kind"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_nan"
+path = "cases/beta_mix_nan.toml"
+sha256 = "7c9644ed473beae351f7b0bda3e957c0553ce54a89160a1dca6e927a4190456e"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_pos_inf"
+path = "cases/beta_mix_pos_inf.toml"
+sha256 = "3564d25e8a7416b1492f1dc87d0954794a30f298c741f490ab12be37eae66f7f"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_neg_inf"
+path = "cases/beta_mix_neg_inf.toml"
+sha256 = "6c5993e11474c2b90929302193c1d4aacc47decba83bdf51a9862f0e75353ead"
+reason = "nonfinite real"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_inexact_integer"
+path = "cases/beta_mix_inexact_integer.toml"
+sha256 = "2cea9989909e1ca24e865e7b376d1b62b8c28c2986fc7458dedd06a0b046cad0"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "duplicate_field"
+path = "cases/duplicate_field.toml"
+sha256 = "08358b5ea48950025340a5faab44facfbb43720955493d482a47d6de92e098f0"
+reason = "TOML syntax or signed64 range"
+valid = false
+solve = false
+
+[[case]]
+name = "duplicate_table"
+path = "cases/duplicate_table.toml"
+sha256 = "21362d27ef81e3ba57a78e7d487551642a1f87e4c80be2a2ebc0dd5af401b494"
+reason = "TOML syntax or signed64 range"
+valid = false
+solve = false
+
+[[case]]
+name = "leading_zero"
+path = "cases/leading_zero.toml"
+sha256 = "76a9415483c56a2b1b2aaa9c81398c9d2628338b3c0615ce7ac43e484e7fb9ef"
+reason = "TOML syntax or signed64 range"
+valid = false
+solve = false
+
+[[case]]
+name = "malformed"
+path = "cases/malformed.toml"
+sha256 = "cc88a328df7c66cdb3283239090e5179f5ce46a6fe0e048561e0de8c2d315eb1"
+reason = "TOML syntax or signed64 range"
+valid = false
+solve = false
+
+[[case]]
+name = "truncated"
+path = "cases/truncated.toml"
+sha256 = "0a9e5c5e7ebd10a0ff975e6c65d09e96f23bd2f5ed220a038f791ab9eaf2614a"
+reason = "TOML syntax or signed64 range"
+valid = false
+solve = false
+
+[[case]]
+name = "integer_overflow"
+path = "cases/integer_overflow.toml"
+sha256 = "7b07b492b447ce4a9f26b51f2fc345fa48007640da22241a41e9e02daa179181"
+reason = "TOML syntax or signed64 range"
+valid = false
+solve = false
+
+[[case]]
+name = "invalid_utf8"
+path = "cases/invalid_utf8.toml"
+sha256 = "17a8403d58477435749666fa578a8c6f82c28849bd61830feb6f45108a39a10d"
+reason = "invalid UTF8 TOML"
+valid = false
+solve = false
+
+[[case]]
+name = "unknown_root"
+path = "cases/unknown_root.toml"
+sha256 = "b814636788735a3fc7ec87f4093f25491647049e7ea5e156818aa46261083e00"
+reason = "unknown root key"
+valid = false
+solve = false
+
+[[case]]
+name = "unknown_field"
+path = "cases/unknown_field.toml"
+sha256 = "5a87b8edf7c4c85ca62533813ac633621103e96174806b136ce34efd79c8ed8f"
+reason = "unknown physical field"
+valid = false
+solve = false
+
+[[case]]
+name = "unknown_table"
+path = "cases/unknown_table.toml"
+sha256 = "0fd2574e493a2b1996221f625020d3104ee06ee54b2448e8666f027506ae5f4d"
+reason = "unknown root table"
+valid = false
+solve = false
+
+[[case]]
+name = "unknown_nested_table"
+path = "cases/unknown_nested_table.toml"
+sha256 = "2809c8432b48e36dd4d10d3f549389d9bbdb044e8b84f82069371059a2cabed0"
+reason = "unknown nested physical table"
+valid = false
+solve = false
+
+[[case]]
+name = "root_not_table"
+path = "cases/root_not_table.toml"
+sha256 = "212136155f61b9fb2a0b197693b9dd92dfe62f31b2330e8931f94f6f37810423"
+reason = "root requires table"
+valid = false
+solve = false
+
+[[case]]
+name = "negative_current"
+path = "cases/negative_current.toml"
+sha256 = "72c8d2c270fefa6f676edbbfd025e5c4773bf89957db3263008982d3f6f3b2ec"
+reason = "signed/exact current"
+valid = true
+solve = true
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = -1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "zero_current"
+path = "cases/zero_current.toml"
+sha256 = "57094fbed791bd1050b87941f1d18a2cb7fde3b4ed7cfc214125fd36482fa242"
+reason = "signed/exact current"
+valid = true
+solve = true
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 0.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "exact_large_integer_current"
+path = "cases/exact_large_integer_current.toml"
+sha256 = "93d18a55aea6fefb89efcadbd9a19117bec0d2141bcecdaf06589bb2fc2b2915"
+reason = "signed/exact current"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 9007199254740994.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "exact_min_signed64_current"
+path = "cases/exact_min_signed64_current.toml"
+sha256 = "37320f3755c827140bdc3de01227b0dee61610cd06f4690a75f03c16587a6306"
+reason = "signed/exact current"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = -9.223372036854776e+18
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "inexact_max_signed64_current"
+path = "cases/inexact_max_signed64_current.toml"
+sha256 = "50306f9413700d4db175ba169f3629db3c93258ee946e5059b3001c09eb46135"
+reason = "integer not exactly binary64"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_exact_integer_real"
+path = "cases/R_min_exact_integer_real.toml"
+sha256 = "11e04a0061a0ced12642a1f2ff7c369b2228a0c67731754c1ebeff8c160532b9"
+reason = "exact integer real"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "R_max_exact_integer_real"
+path = "cases/R_max_exact_integer_real.toml"
+sha256 = "579e11b77a182b32e2839ac52547236f3e1f1fc09f121245ceff2341e31f758c"
+reason = "exact integer real"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "Z_min_exact_integer_real"
+path = "cases/Z_min_exact_integer_real.toml"
+sha256 = "5086af201998246f955ab683563ba360d8a25d67eec77674440d4545109826c1"
+reason = "exact integer real"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.0
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "Z_max_exact_integer_real"
+path = "cases/Z_max_exact_integer_real.toml"
+sha256 = "de015c5a79c2732c12ecfcb10cc873de9bd11d5aa7964f5b6b067e32fdbc432f"
+reason = "exact integer real"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.0
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "Ip_target_exact_integer_real"
+path = "cases/Ip_target_exact_integer_real.toml"
+sha256 = "5bc2929b6a02666d8a547217d28e70a5517c4ba5f26a746726a50faef73c1197"
+reason = "exact integer real"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "mu0_exact_integer_real"
+path = "cases/mu0_exact_integer_real.toml"
+sha256 = "0fefb9d7d767455fea14e0c75091a7165a4855a64676e5eb579b23c114c98abd"
+reason = "exact integer real"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.0
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "alpha_exact_integer_real"
+path = "cases/alpha_exact_integer_real.toml"
+sha256 = "cd63f940a8ef7a92c5a42d19daffdb17e244b782f659b8e8b6d9371e586d448c"
+reason = "exact integer real"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 1.0
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "omega_j_exact_integer_real"
+path = "cases/omega_j_exact_integer_real.toml"
+sha256 = "dd14fc288160aa5d58d0815a4b0ff25c8da44b81468122ea1297d18d3399dc3c"
+reason = "exact integer real"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 1.0
+beta_mix = 0.5
+
+[[case]]
+name = "beta_mix_exact_integer_real"
+path = "cases/beta_mix_exact_integer_real.toml"
+sha256 = "9a01de0a621b99470909a5b3fb87cccd96b6594ae238df83ba09d0b30a0c0f29"
+reason = "exact integer real"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.0
+
+[[case]]
+name = "NR_below_min"
+path = "cases/NR_below_min.toml"
+sha256 = "0a0a90ed02c446bc69b804a2e30d1aedf1e1a409b154968e57ea2ddab36d9140"
+reason = "grid count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "NR_min"
+path = "cases/NR_min.toml"
+sha256 = "922f4bed970ef0650b6137900c7a832dc919db523a0b10f7ce45893c5fd4e9a0"
+reason = "grid count boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 3
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NR_max"
+path = "cases/NR_max.toml"
+sha256 = "400cc3022d14991baaef78039c90865fb3f0ec2337d8bab7b622147bdb4fd509"
+reason = "grid count boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 1025
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NR_above_max"
+path = "cases/NR_above_max.toml"
+sha256 = "4486893532872e40f68d1409b76cbfa58e24ec56df4b0ea5a4e6b08116424793"
+reason = "grid count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "NR_huge"
+path = "cases/NR_huge.toml"
+sha256 = "65ed1b537156ec7d080e6034880f600ad3cd074e2df7c05fdf9cb8117b4a7841"
+reason = "grid count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_below_min"
+path = "cases/NZ_below_min.toml"
+sha256 = "46ea60773bc7adf5b40f167cca579adfbe8f8aa2c13aebce744e5d1d42c3f79e"
+reason = "grid count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_min"
+path = "cases/NZ_min.toml"
+sha256 = "c218d0dbee1502e440067893874481c0352175b6e4237aed76085a4b3c95a2a4"
+reason = "grid count boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 3
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NZ_max"
+path = "cases/NZ_max.toml"
+sha256 = "1e7bdb33e23e0d59488dfdf03fdc9b233cb8f815c07e14817db1ef921ebf89b3"
+reason = "grid count boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 1025
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "NZ_above_max"
+path = "cases/NZ_above_max.toml"
+sha256 = "1c7de1e946fad5ad596935dacbbf9af6db6aad9f3cc2c18d07d4ccb5b90eb606"
+reason = "grid count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "NZ_huge"
+path = "cases/NZ_huge.toml"
+sha256 = "13d99ea86f4ccdc3edcfe6462aee207f27093ff16b082fc603252f5ec36701bd"
+reason = "grid count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_below_min"
+path = "cases/n_picard_below_min.toml"
+sha256 = "e34d9a6f22bee82968f1fe43cb0c1e9ddafa5b87a5a916d99747ed76d9d87e89"
+reason = "iteration count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_min"
+path = "cases/n_picard_min.toml"
+sha256 = "0f2f7b0bdee0c69c31fc4f1db1a63e8845df2265f6b5c8bd3aa7f068a54679a5"
+reason = "iteration count boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 1
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_picard_max"
+path = "cases/n_picard_max.toml"
+sha256 = "710e465bc15933ca2357aa604595313d6eac60bf617261cab6ee58eca8b9f2df"
+reason = "iteration count boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 10000
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_picard_above_max"
+path = "cases/n_picard_above_max.toml"
+sha256 = "0671db13bc98ebb45f8e26598af900b47987296ac0802703ee4e3a0bc3dfa1bc"
+reason = "iteration count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "n_picard_huge"
+path = "cases/n_picard_huge.toml"
+sha256 = "418bc1049e821fdccb91ebf64aba2e048b9ddb5c7e9504c771a691097256fd2a"
+reason = "iteration count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_below_min"
+path = "cases/n_jacobi_below_min.toml"
+sha256 = "c00aad2a4d3a9d5323439dca7f338840f6ce3e8da5b0781239802ee4e468acb3"
+reason = "iteration count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_min"
+path = "cases/n_jacobi_min.toml"
+sha256 = "55959ff393c54fde957392eaa9c780b9de8d7599a40089864a86c65b4df90d20"
+reason = "iteration count boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 1
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_jacobi_max"
+path = "cases/n_jacobi_max.toml"
+sha256 = "7555efa991396dc1e7f39a1a3902e6688afde51ce7054dc988de525e328e3746"
+reason = "iteration count boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 10000
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "n_jacobi_above_max"
+path = "cases/n_jacobi_above_max.toml"
+sha256 = "7f38452bbf47c8be79b5f6f2a0b4b6996f751a1980afb61e2783fe6e92b42be9"
+reason = "iteration count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "n_jacobi_huge"
+path = "cases/n_jacobi_huge.toml"
+sha256 = "ba5111ca3e57ffb5af082eae97bc191c7ed0f81f5cd6c4085fbb7a63807ce066"
+reason = "iteration count boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "work_exact"
+path = "cases/work_exact.toml"
+sha256 = "32a04bc2780459ef543a49b2945b1a3e066a9514ad49249245dc122825247eb9"
+reason = "checked point-iteration work"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 10
+NZ = 10
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 10000
+n_jacobi = 100
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "work_below"
+path = "cases/work_below.toml"
+sha256 = "0c03d38b7c7f03a23cdfa3d75db403b441989340128ea987bb93bdd59f297ab0"
+reason = "checked point-iteration work"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 10
+NZ = 10
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 9999
+n_jacobi = 100
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "work_above_only"
+path = "cases/work_above_only.toml"
+sha256 = "db67a55066b86271fa9f1ee555e7d6245ab52aa659de7afb1494fe0ec290fbbc"
+reason = "checked point-iteration work"
+valid = false
+solve = false
+
+[[case]]
+name = "work_above_iteration"
+path = "cases/work_above_iteration.toml"
+sha256 = "c1111dc2493a869e2cc060237992a78dd3774b58bec85688bc80e95d1b78f545"
+reason = "checked point-iteration work"
+valid = false
+solve = false
+
+[[case]]
+name = "max_axes"
+path = "cases/max_axes.toml"
+sha256 = "b56a441c488881a2232d5762a0094d1d4489bc114e9a3383a197036c6577aa36"
+reason = "checked point-iteration work"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 1025
+NZ = 1025
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 1
+n_jacobi = 1
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "count_product_overflow"
+path = "cases/count_product_overflow.toml"
+sha256 = "f3f31ffe3494dfa656d8d3b71d998ad8f2fe3bf173a8c1414a2d619e0ef33506"
+reason = "checked point-iteration work"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_zero"
+path = "cases/alpha_zero.toml"
+sha256 = "9169feb1d02eb5462cf97592009c0f4cc852f284a6c63bcfa82200774109a575"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "alpha_smallest_positive"
+path = "cases/alpha_smallest_positive.toml"
+sha256 = "f507a3d33150aa4a9ff0b13508c411ccd9cac8b78608834bc11cb83322020635"
+reason = "physical control boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 5e-324
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "alpha_one"
+path = "cases/alpha_one.toml"
+sha256 = "185603d22286e0e980760738d252a0c7d774bfe3be44da45043b294cc8d9456c"
+reason = "physical control boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 1.0
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "alpha_above_one"
+path = "cases/alpha_above_one.toml"
+sha256 = "f9a51c6992ed61b237acdc59c965b0a11ededf1bd3089c2cc18ef640cc078b01"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_zero"
+path = "cases/omega_j_zero.toml"
+sha256 = "bc0795be5b85d550e4a5ebb8d140f580bdf7e9ff0b75a81cca5143895887a356"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "omega_j_smallest_positive"
+path = "cases/omega_j_smallest_positive.toml"
+sha256 = "3d76e7ff1e1e4ba520077e9fa3a1717987e4623545df472df21d6e9df75012fc"
+reason = "physical control boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 5e-324
+beta_mix = 0.5
+
+[[case]]
+name = "omega_j_below_two"
+path = "cases/omega_j_below_two.toml"
+sha256 = "4f17cfc0c16fabf54f6b7676c9d6b6d9a258afbe228884d86289a75962d37eff"
+reason = "physical control boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 1.9999999999999998
+beta_mix = 0.5
+
+[[case]]
+name = "omega_j_two"
+path = "cases/omega_j_two.toml"
+sha256 = "965cdb374f94835ce96dd860873c459046c581193936a8c6ac2ccf68babc33bb"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_zero"
+path = "cases/beta_mix_zero.toml"
+sha256 = "70a6f2327bb7c8fd2b87667af3917459151bde740e41c13db788671cc61fcb27"
+reason = "physical control boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.0
+
+[[case]]
+name = "beta_mix_one"
+path = "cases/beta_mix_one.toml"
+sha256 = "1e5b2f0f25538352857f96e08ac1600425723a54efb3db283b49de16665bde1c"
+reason = "physical control boundary"
+valid = true
+solve = false
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 1.0
+
+[[case]]
+name = "beta_mix_below_zero"
+path = "cases/beta_mix_below_zero.toml"
+sha256 = "1958f2566b69001fa98a63434cc7ca61880f420d46e7331863a96ab253d5be13"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "beta_mix_above_one"
+path = "cases/beta_mix_above_one.toml"
+sha256 = "cbca16f269ddcf302286acc62a0cf4082d2d1362427ca0fda69b318f80b41c2b"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_zero"
+path = "cases/mu0_zero.toml"
+sha256 = "627726c89a12063afac4ed369b17bae9e5917ffeacdc949e45904d57c02b6d42"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "mu0_negative"
+path = "cases/mu0_negative.toml"
+sha256 = "7e5dcd78d8ef605a129d73fcb8922feed6375e834a7a820bc9941dcd3e36e6d9"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_zero"
+path = "cases/R_min_zero.toml"
+sha256 = "4d99fa68e128a21d0352521bd2eba73da3efc5496131bdb2b0ef76c32b83921d"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "R_min_negative"
+path = "cases/R_min_negative.toml"
+sha256 = "06ea0a9683a980b6dcd272e8c96fc2c4458794418c1f0b5591780d752b80abe9"
+reason = "physical control boundary"
+valid = false
+solve = false
+
+[[case]]
+name = "R_equal"
+path = "cases/R_equal.toml"
+sha256 = "2a5649876f19222e7982c4b18938b8b7682a304951f8dffc6835bab5ffce0a4d"
+reason = "unrepresentable or unordered geometry"
+valid = false
+solve = false
+
+[[case]]
+name = "R_reversed"
+path = "cases/R_reversed.toml"
+sha256 = "4536c5ad4928572ca011de9201bedaf8b1751111b92dabd36a255dd08d4689c3"
+reason = "unrepresentable or unordered geometry"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_equal"
+path = "cases/Z_equal.toml"
+sha256 = "5d2af64dedf37e9b6ec0acb3c5480aeb81a988d504f2b54ca3faf80124932786"
+reason = "unrepresentable or unordered geometry"
+valid = false
+solve = false
+
+[[case]]
+name = "Z_reversed"
+path = "cases/Z_reversed.toml"
+sha256 = "34ba25173904a54784bc297e787e4a99a2e24964e80f8abfb5efec3c76be4637"
+reason = "unrepresentable or unordered geometry"
+valid = false
+solve = false
+
+[[case]]
+name = "spacing_overflow"
+path = "cases/spacing_overflow.toml"
+sha256 = "8fb5daed5970f2c87302d2b4a2d4dc4dcd49082b1def45697c332549238675be"
+reason = "unrepresentable or unordered geometry"
+valid = false
+solve = false
+
+[[case]]
+name = "spacing_underflow"
+path = "cases/spacing_underflow.toml"
+sha256 = "115b6228628afe59da0f964e536377e2b5fd600b4d5105aaa703eebf41c7e0a1"
+reason = "unrepresentable or unordered geometry"
+valid = false
+solve = false
+
+[[case]]
+name = "collapsed_axis"
+path = "cases/collapsed_axis.toml"
+sha256 = "aa478d9625d48288d816142676fa64d6df9035a840d4749697ae7224d6ad52b0"
+reason = "unrepresentable or unordered geometry"
+valid = false
+solve = false
+
+[[case]]
+name = "small_rectangular"
+path = "cases/small_rectangular.toml"
+sha256 = "1819e25053f589dbc16b23b0ce27f3cb98433f4063cf372d363d67db902f1495"
+reason = "affordable direct solver"
+valid = true
+solve = true
+[case.expected]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 3
+NZ = 5
+Ip_target = 1000000.0
+mu0 = 1.2566370614359173e-06
+n_picard = 2
+n_jacobi = 2
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5
+
+[[case]]
+name = "subnormal_R_endpoint_collapse"
+path = "cases/subnormal_R_endpoint_collapse.toml"
+sha256 = "08a9ed8d279cb6a2ab61dd1d8749f4aeae7cef02df51351c14acff9ac3d94519"
+reason = "inclusive endpoint collapses despite increasing nominal mesh formula"
+valid = false
+solve = false
+
+[[case]]
+name = "subnormal_Z_endpoint_collapse"
+path = "cases/subnormal_Z_endpoint_collapse.toml"
+sha256 = "7a912e2ca5507014ff5e79f08b86917ee39a4dbbf65d8e2824629d2b08855c33"
+reason = "inclusive endpoint collapses despite increasing nominal mesh formula"
+valid = false
+solve = false
+
+[[case]]
+name = "interior_mesh_collapse_across_binade"
+path = "cases/interior_mesh_collapse_across_binade.toml"
+sha256 = "8390450523011d050c60d0252a96a703fc1cfc054a9a3c83a6ff165af8676c8b"
+reason = "two interior nodes collapse across a binary exponent boundary despite a valid final interval"
+valid = false
+solve = false

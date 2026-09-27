@@ -8,6 +8,7 @@ Contact: www.anulum.li | protoscience@anulum.li
 SCPN Fusion Core — Lean Grad-Shafranov CSV CLI
 -/
 import SCPNFusionSolvers
+import SCPNFusionSolvers.CSV
 import SafetyProof
 import PIDBoundedOutput
 import SNNReachabilityPreservation
@@ -15,19 +16,7 @@ import PetriTokenBoundedness
 
 open SCPNFusionSolvers
 
-def padLeftZeros (s : String) (width : Nat) : String :=
-  if s.length >= width then s else String.ofList (List.replicate (width - s.length) '0') ++ s
-
-def formatFloat15 (value : Float) : String :=
-  let scale : UInt64 := 1000000000000000
-  let scaled := Float.toUInt64 ((Float.abs value) * 1000000000000000.0 + 0.5)
-  let intPart := scaled / scale
-  let fracPart := scaled % scale
-  (if value < 0.0 then "-" else "") ++ toString intPart ++ "." ++ padLeftZeros (toString fracPart) 15
-
-def formatRow (row : Array Float) : String :=
-  String.intercalate "," ((row.toList).map formatFloat15)
-
+/-- Solve the requested physical case and emit only finite, round-trippable CSV. -/
 def main (args : List String) : IO UInt32 := do
   if args.length != 1 then
     IO.eprintln "usage: gs_picard_csv CASE.toml"
@@ -43,6 +32,11 @@ def main (args : List String) : IO UInt32 := do
       IO.eprintln err
       return 1
   | Except.ok result =>
-      for row in result.psi do
-        IO.println (formatRow row)
-      return 0
+      let encoded := result.psi.toList.mapM formatRow64
+      match encoded with
+      | .error error =>
+        IO.eprintln error
+        return 1
+      | .ok rows =>
+        for row in rows do IO.println row
+        return 0

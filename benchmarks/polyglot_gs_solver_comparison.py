@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import csv
 import json
+import hashlib
 import platform
 import subprocess
 import sys
@@ -27,6 +28,7 @@ _REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO / "src"))
 
 from scpn_fusion.core.jax_gs_solver import gs_equation_residual_np, gs_solve_np
+from scpn_fusion.core.physical_case import case_from_toml
 
 FloatArray = NDArray[np.float64]
 
@@ -40,47 +42,26 @@ _REPORT_JSON = _REPO / "validation" / "reports" / "polyglot_gs_solver_comparison
 _REPORT_MD = _REPO / "validation" / "reports" / "polyglot_gs_solver_comparison.md"
 
 
-def _parse_scalar(value: str) -> int | float | str:
-    cleaned = value.strip().strip('"')
-    if cleaned.lower() in {"true", "false"}:
-        return cleaned.lower() == "true"
-    try:
-        if any(marker in cleaned.lower() for marker in (".", "e")):
-            return float(cleaned)
-        return int(cleaned)
-    except ValueError:
-        return cleaned
-
-
 def _read_case(path: Path) -> dict[str, Any]:
-    section = None
-    values: dict[str, Any] = {}
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.split("#", 1)[0].strip()
-        if not line:
-            continue
-        if line.startswith("[") and line.endswith("]"):
-            section = line[1:-1]
-            continue
-        if section != "grad_shafranov" or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        values[key.strip()] = _parse_scalar(value)
-    return values
+    """Load the exact common typed physical case contract before benchmarking."""
+    return dict(case_from_toml(path).as_mapping())
 
 
 def _matrix_from_csv(stdout: str) -> FloatArray:
+    """Decode the actual native solver CSV into a float64 matrix."""
     rows = [[float(cell) for cell in row] for row in csv.reader(stdout.splitlines())]
     return np.asarray(rows, dtype=float)
 
 
 def _run_python(case: dict[str, Any]) -> tuple[FloatArray, float]:
+    """Time the public NumPy physical solver with the admitted case."""
     t0 = time.perf_counter()
     psi = gs_solve_np(**case)
     return psi, time.perf_counter() - t0
 
 
 def _run_command(command: list[str], cwd: Path) -> tuple[FloatArray, float]:
+    """Time a real native CLI and require successful CSV output."""
     t0 = time.perf_counter()
     completed = subprocess.run(
         command,
@@ -92,20 +73,22 @@ def _run_command(command: list[str], cwd: Path) -> tuple[FloatArray, float]:
     return _matrix_from_csv(completed.stdout), time.perf_counter() - t0
 
 
-def _run_julia() -> tuple[FloatArray, float]:
+def _run_julia(case_path: Path = _CASE_PATH) -> tuple[FloatArray, float]:
+    """Execute the Julia project solver with the selected physical deck."""
     return _run_command(
         [
             "julia",
             f"--project={_JULIA_PROJECT}",
             "--startup-file=no",
             str(_JULIA_PROJECT / "bin" / "gs_picard_csv.jl"),
-            str(_CASE_PATH),
+            str(case_path),
         ],
         _REPO,
     )
 
 
-def _run_go() -> tuple[FloatArray, float]:
+def _run_go(case_path: Path = _CASE_PATH) -> tuple[FloatArray, float]:
+    """Build Go outside the measurement and time the actual solver binary."""
     with tempfile.TemporaryDirectory() as build_dir:
         binary = Path(build_dir) / "gs_picard_csv"
         subprocess.run(
@@ -115,10 +98,11 @@ def _run_go() -> tuple[FloatArray, float]:
             text=True,
             capture_output=True,
         )
-        return _run_command([str(binary), str(_CASE_PATH)], _GO_PROJECT)
+        return _run_command([str(binary), str(case_path)], _GO_PROJECT)
 
 
 def _build_rust_binary() -> None:
+    """Build the optimized native Rust physical solver before timing."""
     subprocess.run(
         ["cargo", "build", "--release", "-q", "-p", "fusion-polyglot"],
         cwd=_RUST_PROJECT,
@@ -128,23 +112,29 @@ def _build_rust_binary() -> None:
     )
 
 
-def _run_rust() -> tuple[FloatArray, float]:
+def _run_rust(case_path: Path = _CASE_PATH) -> tuple[FloatArray, float]:
+    """Time the optimized Rust solver against the selected physical deck."""
     _build_rust_binary()
-    return _run_command([str(_RUST_RELEASE_BINARY), str(_CASE_PATH)], _RUST_PROJECT)
+    return _run_command([str(_RUST_RELEASE_BINARY), str(case_path)], _RUST_PROJECT)
 
 
-def _run_lean() -> tuple[FloatArray, float]:
-    return _run_command(["lake", "exe", "gs_picard_csv", str(_CASE_PATH)], _LEAN_PROJECT)
+def _run_lean(case_path: Path = _CASE_PATH) -> tuple[FloatArray, float]:
+    """Run the pinned Lean project executable with the selected physical deck."""
+    return _run_command(["lake", "exe", "gs_picard_csv", str(case_path)], _LEAN_PROJECT)
 
 
-def _tool_version(command: list[str]) -> str:
+def _tool_version(command: list[str], cwd: Path | None = None) -> str:
+    """Read a real tool version or return its actual availability failure."""
     try:
-        return subprocess.run(command, check=True, text=True, capture_output=True).stdout.strip()
+        return subprocess.run(
+            command, cwd=cwd, check=True, text=True, capture_output=True
+        ).stdout.strip()
     except (OSError, subprocess.SubprocessError) as exc:
         return f"unavailable: {exc}"
 
 
 def _hardware_metadata() -> dict[str, str]:
+    """Record actual host and solver toolchain versions for timing provenance."""
     cpu_model = "unknown"
     cpuinfo = Path("/proc/cpuinfo")
     if cpuinfo.exists():
@@ -159,12 +149,13 @@ def _hardware_metadata() -> dict[str, str]:
         "julia": _tool_version(["julia", "--version"]),
         "go": _tool_version(["go", "version"]),
         "rust": _tool_version(["rustc", "--version"]),
-        "lean": _tool_version(["lean", "--version"]),
+        "lean": _tool_version(["lake", "env", "lean", "--version"], _LEAN_PROJECT),
         "os": platform.platform(),
     }
 
 
 def _boundary_abs_max(psi: FloatArray) -> float:
+    """Measure the largest absolute flux on the complete boundary ring."""
     return float(
         max(
             np.max(np.abs(psi[0, :])),
@@ -176,22 +167,26 @@ def _boundary_abs_max(psi: FloatArray) -> float:
 
 
 def _vertical_symmetry_abs_max(psi: FloatArray) -> float:
+    """Measure vertical reflection error across the full flux grid."""
     return float(np.max(np.abs(psi - np.flipud(psi))))
 
 
 def _axis_midplane_offset_cells(psi: FloatArray) -> int:
+    """Measure the interior flux-axis offset from the vertical midplane."""
     axis_z_index = int(np.unravel_index(np.argmax(psi), psi.shape)[0])
     midplane_index = psi.shape[0] // 2
     return abs(axis_z_index - midplane_index)
 
 
 def _axis_radial_center_offset_cells(psi: FloatArray) -> int:
+    """Measure the interior flux-axis offset from the radial grid center."""
     axis_r_index = int(np.unravel_index(np.argmax(psi), psi.shape)[1])
     radial_center_index = psi.shape[1] // 2
     return abs(axis_r_index - radial_center_index)
 
 
 def _axis_boundary_distance_cells(psi: FloatArray) -> int:
+    """Measure the nearest boundary distance of the interior flux maximum."""
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     return int(
         min(
@@ -204,6 +199,7 @@ def _axis_boundary_distance_cells(psi: FloatArray) -> int:
 
 
 def _axis_local_dominance_margin(psi: FloatArray) -> float:
+    """Compare peak flux with its direct interior neighbors."""
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     axis_value = float(psi[axis_z_index, axis_r_index])
     neighbor_values = [
@@ -216,6 +212,7 @@ def _axis_local_dominance_margin(psi: FloatArray) -> float:
 
 
 def _axis_discrete_laplacian(psi: FloatArray) -> float:
+    """Measure the discrete Laplacian at the interior flux maximum."""
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     return float(
         psi[axis_z_index - 1, axis_r_index]
@@ -227,10 +224,12 @@ def _axis_discrete_laplacian(psi: FloatArray) -> float:
 
 
 def _axis_flux_value(psi: FloatArray) -> float:
+    """Return the largest interior poloidal flux value."""
     return float(np.max(psi))
 
 
 def _midplane_radial_monotonicity_violations(psi: FloatArray) -> int:
+    """Count departures from radial monotonicity toward the midplane peak."""
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     midplane = psi[axis_z_index, :]
     violations = 0
@@ -244,6 +243,7 @@ def _midplane_radial_monotonicity_violations(psi: FloatArray) -> int:
 
 
 def _axis_column_vertical_monotonicity_violations(psi: FloatArray) -> int:
+    """Count vertical monotonicity departures along the peak column."""
     axis_z_index, axis_r_index = np.unravel_index(np.argmax(psi), psi.shape)
     axis_column = psi[:, axis_r_index]
     violations = 0
@@ -257,10 +257,12 @@ def _axis_column_vertical_monotonicity_violations(psi: FloatArray) -> int:
 
 
 def _negative_flux_abs_max(psi: FloatArray) -> float:
+    """Measure the largest magnitude of negative interior flux."""
     return max(0.0, -float(np.min(psi)))
 
 
 def _gs_equation_residual_abs_max(psi: FloatArray, case: dict[str, Any]) -> float:
+    """Evaluate the public reference equation residual over the interior."""
     return gs_equation_residual_np(
         psi,
         float(case["R_min"]),
@@ -276,6 +278,7 @@ def _gs_equation_residual_abs_max(psi: FloatArray, case: dict[str, Any]) -> floa
 
 
 def _gs_equation_residual_relative_max(psi: FloatArray, case: dict[str, Any]) -> float:
+    """Normalize the equation residual by the source magnitude."""
     return gs_equation_residual_np(
         psi,
         float(case["R_min"]),
@@ -291,21 +294,30 @@ def _gs_equation_residual_relative_max(psi: FloatArray, case: dict[str, Any]) ->
 
 
 def _relative_l2(candidate: FloatArray, reference: FloatArray) -> float:
+    """Measure interior L2 error normalized by the reference flux norm."""
     denominator = float(np.linalg.norm(reference[1:-1, 1:-1])) + 1e-30
     return float(np.linalg.norm(candidate[1:-1, 1:-1] - reference[1:-1, 1:-1])) / denominator
 
 
 def _interior_max_abs_error(candidate: FloatArray, reference: FloatArray) -> float:
+    """Measure the largest interior absolute error against the reference."""
     return float(np.max(np.abs(candidate[1:-1, 1:-1] - reference[1:-1, 1:-1])))
 
 
-def main() -> None:
-    case: dict[str, int | float | str] = _read_case(_CASE_PATH)
+def main(
+    *,
+    case_path: Path = _CASE_PATH,
+    report_json: Path = _REPORT_JSON,
+    report_md: Path = _REPORT_MD,
+) -> None:
+    """Run all five real solver CLIs and emit timing, parity and provenance reports."""
+    case_path = case_path.resolve()
+    case: dict[str, Any] = _read_case(case_path)
     python_psi, python_seconds = _run_python(case)
-    julia_psi, julia_seconds = _run_julia()
-    go_psi, go_seconds = _run_go()
-    rust_psi, rust_seconds = _run_rust()
-    lean_psi, lean_seconds = _run_lean()
+    julia_psi, julia_seconds = _run_julia(case_path)
+    go_psi, go_seconds = _run_go(case_path)
+    rust_psi, rust_seconds = _run_rust(case_path)
+    lean_psi, lean_seconds = _run_lean(case_path)
 
     parity_by_language = {
         "Julia": {
@@ -527,9 +539,33 @@ def main() -> None:
         ],
         "parity": {"by_language": parity_by_language, "shape": list(python_psi.shape)},
     }
+    report["case_sha256"] = hashlib.sha256(case_path.read_bytes()).hexdigest()
+    source_paths = (
+        "benchmarks/polyglot_gs_solver_comparison.py",
+        "src/scpn_fusion/core/physical_case.py",
+        "src/scpn_fusion/core/jax_gs_solver.py",
+        "scpn-fusion-go/gssolver/case.go",
+        "scpn-fusion-go/gssolver/solver.go",
+        "scpn-fusion-go/go.mod",
+        "scpn-fusion-go/go.sum",
+        "scpn-fusion-jl/src/physical_case.jl",
+        "scpn-fusion-jl/src/SCPNFusionSolvers.jl",
+        "scpn-fusion-rs/crates/fusion-polyglot/src/case.rs",
+        "scpn-fusion-rs/crates/fusion-polyglot/src/lib.rs",
+        "scpn-fusion-rs/crates/fusion-polyglot/Cargo.toml",
+        "scpn-fusion-rs/Cargo.lock",
+        "scpn-fusion-lean/SCPNFusionSolvers.lean",
+        "scpn-fusion-lean/SCPNFusionSolvers/PhysicalCase.lean",
+        "scpn-fusion-lean/SCPNFusionSolvers/CSV.lean",
+        "scpn-fusion-lean/Main.lean",
+        "scpn-fusion-lean/lean-toolchain",
+    )
+    report["source_sha256"] = {
+        path: hashlib.sha256((_REPO / path).read_bytes()).hexdigest() for path in source_paths
+    }
     solvers = cast(list[dict[str, Any]], report["solvers"])
     hardware = cast(dict[str, Any], report["hardware"])
-    _REPORT_JSON.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    report_json.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     lines = [
         "<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->",
@@ -614,8 +650,8 @@ def main() -> None:
             "These local timings include process start-up for CLI paths. The Go and Rust rows build solver binaries before timing and exclude toolchain orchestration from the measured solver invocation. Use long-lived processes or cloud CPU/GPU runners for throughput comparisons.",
         ]
     )
-    _REPORT_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(_REPORT_MD)
+    report_md.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(report_md)
     print(json.dumps(report["parity"], sort_keys=True))
 
 

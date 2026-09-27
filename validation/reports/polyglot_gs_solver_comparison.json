@@ -23,15 +23,16 @@
     "n_picard": 8,
     "omega_j": 0.6666666666666666
   },
+  "case_sha256": "3836c33598d4b98d44991e26a945ccc504c1076179696d98b2133e6b1ce50257",
   "hardware": {
     "cpu_model": "11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz",
-    "go": "go version go1.24.0 linux/amd64",
-    "julia": "julia version 1.12.6",
-    "lean": "Lean (version 4.31.0, x86_64-unknown-linux-gnu, commit 68218e876d2a38b1985b8590fff244a83c321783, Release)",
+    "go": "go version go1.27.1 linux/amd64",
+    "julia": "julia version 1.13.0",
+    "lean": "Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)",
     "machine": "x86_64",
-    "os": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "os": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
     "python": "3.12.3",
-    "rust": "rustc 1.96.0 (ac68faa20 2026-05-25)"
+    "rust": "rustc 1.98.1 (48a229cea 2026-09-01)"
   },
   "parity": {
     "by_language": {
@@ -44,12 +45,12 @@
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
-        "gs_equation_residual_abs_max": 0.9034945604966906,
-        "gs_equation_residual_relative_max": 0.8617210268428003,
+        "gs_equation_residual_abs_max": 0.9034945604966924,
+        "gs_equation_residual_relative_max": 0.8617210268428019,
         "max_abs_error_interior": 1.3877787807814457e-17,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 1.7906252983703998e-16,
+        "relative_l2_interior": 1.82917011640988e-16,
         "vertical_symmetry_abs_max": 0.0
       },
       "Julia": {
@@ -72,18 +73,18 @@
       "Lean": {
         "axis_boundary_distance_cells": 8,
         "axis_column_vertical_monotonicity_violations": 0,
-        "axis_discrete_laplacian": -0.0023217583747220105,
-        "axis_flux_abs_error": 2.8449465006019636e-16,
+        "axis_discrete_laplacian": -0.002321758374722288,
+        "axis_flux_abs_error": 3.469446951953614e-17,
         "axis_local_dominance_margin": 0.00013683238963600047,
         "axis_midplane_offset_cells": 0,
         "axis_radial_center_offset_cells": 0,
         "boundary_abs_max": 0.0,
-        "gs_equation_residual_abs_max": 0.9034945604967042,
-        "gs_equation_residual_relative_max": 0.861721026842818,
-        "max_abs_error_interior": 4.85722573273506e-16,
+        "gs_equation_residual_abs_max": 0.9034945604966924,
+        "gs_equation_residual_relative_max": 0.8617210268428019,
+        "max_abs_error_interior": 4.163336342344337e-17,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 1.1233083104582504e-14,
+        "relative_l2_interior": 5.692323999904449e-16,
         "vertical_symmetry_abs_max": 0.0
       },
       "Rust": {
@@ -100,7 +101,7 @@
         "max_abs_error_interior": 4.163336342344337e-17,
         "midplane_radial_monotonicity_violations": 0,
         "negative_flux_abs_max": 0.0,
-        "relative_l2_interior": 5.906398378511105e-16,
+        "relative_l2_interior": 5.719832368172567e-16,
         "vertical_symmetry_abs_max": 0.0
       }
     },
@@ -125,7 +126,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.007884488004492596
+      "wall_time_s": 0.0661532039521262
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -142,7 +143,7 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 5.462642664002487
+      "wall_time_s": 48.760162462014705
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -152,14 +153,14 @@
       "axis_local_dominance_margin": 0.0001368323896359866,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
-      "gs_equation_residual_abs_max": 0.9034945604966906,
-      "gs_equation_residual_relative_max": 0.8617210268428003,
+      "gs_equation_residual_abs_max": 0.9034945604966924,
+      "gs_equation_residual_relative_max": 0.8617210268428019,
       "implementation": "gssolver.Solve",
       "language": "Go",
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.003616000001784414
+      "wall_time_s": 0.23452915996313095
     },
     {
       "axis_boundary_distance_cells": 8,
@@ -176,24 +177,44 @@
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 0.004898338986095041
+      "wall_time_s": 0.019471243023872375
     },
     {
       "axis_boundary_distance_cells": 8,
       "axis_column_vertical_monotonicity_violations": 0,
-      "axis_discrete_laplacian": -0.0023217583747220105,
-      "axis_flux_value": 0.042651828900105,
+      "axis_discrete_laplacian": -0.002321758374722288,
+      "axis_flux_value": 0.04265182890010525,
       "axis_local_dominance_margin": 0.00013683238963600047,
       "axis_midplane_offset_cells": 0,
       "axis_radial_center_offset_cells": 0,
-      "gs_equation_residual_abs_max": 0.9034945604967042,
-      "gs_equation_residual_relative_max": 0.861721026842818,
+      "gs_equation_residual_abs_max": 0.9034945604966924,
+      "gs_equation_residual_relative_max": 0.8617210268428019,
       "implementation": "SCPNFusionSolvers.solveGradShafranov",
       "language": "Lean",
       "midplane_radial_monotonicity_violations": 0,
       "negative_flux_abs_max": 0.0,
       "vertical_symmetry_abs_max": 0.0,
-      "wall_time_s": 9.135552210995229
+      "wall_time_s": 31.566577618941665
     }
-  ]
+  ],
+  "source_sha256": {
+    "benchmarks/polyglot_gs_solver_comparison.py": "0fba3ac24d27b11db571a2ea901f33d3685dca9a8bdb940bb528d34e2c6eb07f",
+    "scpn-fusion-go/go.mod": "d58edce4aa837ea168be614ceb39fe8352db24b2e95941872991f8d3308c44b8",
+    "scpn-fusion-go/go.sum": "007a964dbce64eda861a3bcff3c2c59b984c33fbcfd68b4f1f47baed16b5c1d7",
+    "scpn-fusion-go/gssolver/case.go": "2a1ed44790cd359f61bbe338045f3376add3bd61d74f93db0b843c4ed6df0a96",
+    "scpn-fusion-go/gssolver/solver.go": "315de1b6962e7f4d0d362719ae615291c66172a26306364ef209a1d1616ca55c",
+    "scpn-fusion-jl/src/SCPNFusionSolvers.jl": "e9599dc5dc83dccf53f1740f88771a16f901c0065cc2357ab29d330c17b01aca",
+    "scpn-fusion-jl/src/physical_case.jl": "1cfd859484cf8767535d33d998ddabae8d1745b5c83c7e6ac31108894b4ff24a",
+    "scpn-fusion-lean/Main.lean": "3d19279ddee0873b39f26baf47432cc73eb9afa0906d2aaa6a03c737b5802d76",
+    "scpn-fusion-lean/SCPNFusionSolvers.lean": "5736ffabebd12abebbdad07bf7acfd21df180f2a832fa253a11251540c4516f8",
+    "scpn-fusion-lean/SCPNFusionSolvers/CSV.lean": "a4414d27add24367017f92eb07199e26d416817f56fbf0f8fb3bd56a98811afe",
+    "scpn-fusion-lean/SCPNFusionSolvers/PhysicalCase.lean": "26c3d82d08970820cdeb74d4e64ef3e0a0fdaf88fa5880ca3400a1ff543afe9e",
+    "scpn-fusion-lean/lean-toolchain": "7dc000621e0046d1aada809e2b7177e64454645cf4c741e9daaf79c99ec2e7a2",
+    "scpn-fusion-rs/Cargo.lock": "8b1124caa090bca1bb305d1f8127c39a84f222f9b4c0833722a97743772d5ad9",
+    "scpn-fusion-rs/crates/fusion-polyglot/Cargo.toml": "7a39bb1cd260933ae995e9a565a7c64121f4f8d9590bf8384fee6ec5d46a7c47",
+    "scpn-fusion-rs/crates/fusion-polyglot/src/case.rs": "3ed4d0fb55ced44a1c3fcf2ddffe00b23e555c03fc00429df7e2cdfd09b40ddc",
+    "scpn-fusion-rs/crates/fusion-polyglot/src/lib.rs": "a15a4a67932e7cd5eafa05eec61acde904f148df621b9527bbe299999514eb59",
+    "src/scpn_fusion/core/jax_gs_solver.py": "c9e4af89924791e6e96145c868f59454eb58a719193538e0ad6f26af469434cb",
+    "src/scpn_fusion/core/physical_case.py": "dd08ed5f06ea3277c395c3f0a97616732dc86ffaf275f3311564398b145b719e"
+  }
 }

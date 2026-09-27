@@ -121,12 +121,16 @@ Rust-only extension symbols without a NumPy floor are resolved through
 | `shafranov_bv` | ✓ | ✓ | bit-exact parity |
 | `solve_coil_currents` | ✓ | ✓ | tolerance-aware (ridge) |
 | `measure_magnetics` | ✓ | ✓ | tolerance-aware (bilinear + probe θ) |
-| `multigrid_solve` | ✓ | ✓ | machine-precision parity |
+| `multigrid_solve` | ✓ | ✓ | same GS operator and strict admission; algorithm-dependent convergence histories |
 | `simulate_tearing_mode` | ✓ | ✓ | deterministic-step bit-exact + statistical trajectory |
 | `kuramoto_step` | ✓ (`fusion-phase`) | ✓ | deterministic; agreement bounded by fp summation order (measured rel L2 ~1e-16) |
 | `upde_tick` / `upde_run` | ✓ (`fusion-phase`) | ✓ | flat multi-layer contract (non-uniform N); `upde_run` batches the whole loop behind one boundary crossing |
 | `gs_rb_sor_smooth` | GPU tier (`PyGpuSolver`, wgpu f32) | ✓ (`mg_smooth`, f64) | fixed-sweep Red-Black SOR of the toroidal GS* operator; f32-bounded agreement (rel L2 ~5e-6); GPU tier exists only when the extension is built with `--features gpu` AND a physical adapter passes the runtime probe |
 | `transport_cn_rollout` | JAX tier (explicit JAX/XLA rollout) | ✓ | reconciled cylindrical CN; local small-grid evidence order is NumPy → JAX |
+
+Magnetic sensing and full multigrid share [strict numerical contracts](NUMERICAL_CONTRACTS.md)
+for delivered types, derived geometry, failures and owned output. Invalid
+inputs and numerical failures propagate without backend fallback.
 
 All dispatched kernels have a **NumPy floor** — the package runs with no Rust extension
 present. In addition, `diagnostics.PlasmaTomography.reconstruct` prefers the Rust

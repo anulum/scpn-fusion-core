@@ -37,3 +37,11 @@ lean_lib InterlockReplayInvariance where
 @[default_target]
 lean_exe gs_picard_csv where
   root := `Main
+
+/-- Native public physical-case corpus and numerical failure regression runner. -/
+lean_exe case_contract where
+  root := `CaseContract
+
+/-- Native finite binary64 CSV serialization and round-trip regression runner. -/
+lean_exe csv_contract where
+  root := `CSVContract

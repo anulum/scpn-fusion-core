@@ -8,6 +8,9 @@ This is the entry map for public interfaces before navigating generated API refe
 This page maps the main public Python and native-extension surfaces. Use it as
 an orientation layer before reading generated Sphinx API pages.
 
+The [numerical contracts](NUMERICAL_CONTRACTS.md) specify physical case admission,
+strict magnetic/multigrid array inputs, typed failures and output ownership.
+
 ## Python package
 
 Primary package: `scpn_fusion`

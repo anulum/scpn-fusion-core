@@ -16,6 +16,16 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from numpy.typing import NDArray
 
+from scpn_fusion.core.array_contract import (
+    array_input,
+    scalar_kind,
+    integer_value,
+    real_value,
+    checked_grid,
+    grid_spacing,
+    finite_array,
+)
+
 from scpn_fusion.diagnostics.forward import ForwardDiagnosticChannels, generate_forward_channels
 
 FloatArray = NDArray[np.float64]
@@ -80,22 +90,66 @@ def measure_magnetics(
     Raises
     ------
     ValueError
-        If ``psi`` does not have shape ``(nz, nr)``.
+        If dimensions, shape, finite values, or derived spacing are invalid.
+    TypeError
+        If inputs violate the strict native float64 ndarray or scalar kind contract.
+    RuntimeError
+        If accepted input causes nonfinite interpolation arithmetic.
+
+    Notes
+    -----
+    Array-like and dtype conversions are explicit caller responsibilities. Readonly
+    and strided arrays are accepted; the returned native float64 C array is fresh.
     """
-    psi_arr = np.asarray(psi, dtype=np.float64)
+    psi_arr = array_input(psi, "psi")
+    for name, value, integer in (
+        ("nr", nr, True),
+        ("nz", nz, True),
+        ("r_min", r_min, False),
+        ("r_max", r_max, False),
+        ("z_min", z_min, False),
+        ("z_max", z_max, False),
+    ):
+        scalar_kind(value, name, integer=integer)
+    nr, nz = integer_value(nr, "nr", 2), integer_value(nz, "nz", 2)
+    checked_grid(nr, nz)
     if psi_arr.shape != (nz, nr):
         raise ValueError(f"psi must have shape (nz, nr) = ({nz}, {nr}); got {psi_arr.shape}.")
-    dr = (r_max - r_min) / (nr - 1) if nr > 1 else 1.0
-    dz = (z_max - z_min) / (nz - 1) if nz > 1 else 1.0
+    r_min, r_max = real_value(r_min, "r_min"), real_value(r_max, "r_max")
+    z_min, z_max = real_value(z_min, "z_min"), real_value(z_max, "z_max")
+    dr = grid_spacing(r_min, r_max, nr, "R")
+    dz = grid_spacing(z_min, z_max, nz, "Z")
+    finite_array(psi_arr, "psi")
+    try:
+        with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
+            return _measure_magnetics_validated(psi_arr, nr, nz, r_min, z_min, dr, dz)
+    except (FloatingPointError, OverflowError) as error:
+        raise RuntimeError("magnetic interpolation arithmetic became nonfinite") from error
 
+
+def _measure_magnetics_validated(
+    psi_arr: FloatArray,
+    nr: int,
+    nz: int,
+    r_min: float,
+    z_min: float,
+    dr: float,
+    dz: float,
+) -> FloatArray:
+    """Evaluate the unchanged truncation stencil after complete strict admission."""
     wall_r, wall_z = magnetic_probe_positions()
     measurements = np.empty(wall_r.size, dtype=np.float64)
     for i in range(wall_r.size):
         r = float(wall_r[i])
         z = float(wall_z[i])
-        ir = int((r - r_min) / dr)
-        iz = int((z - z_min) / dz)
-        if 0 <= ir < nr - 1 and 0 <= iz < nz - 1:
+        qr = (r - r_min) / dr
+        qz = (z - z_min) / dz
+        if not np.isfinite(qr) or not np.isfinite(qz):
+            raise RuntimeError("magnetic coordinate arithmetic became nonfinite")
+        ir = int(qr) if -1.0 < qr < nr - 1 else (0 if qr <= -1.0 else nr - 1)
+        iz = int(qz) if -1.0 < qz < nz - 1 else (0 if qz <= -1.0 else nz - 1)
+        inside = -1.0 < qr < nr - 1 and -1.0 < qz < nz - 1
+        if inside:
             wr = (r - (r_min + ir * dr)) / dr
             wz = (z - (z_min + iz * dz)) / dz
             v00 = psi_arr[iz, ir]
@@ -110,6 +164,8 @@ def measure_magnetics(
             )
         else:
             measurements[i] = psi_arr[int(np.clip(iz, 0, nz - 1)), int(np.clip(ir, 0, nr - 1))]
+    if not np.all(np.isfinite(measurements)):
+        raise RuntimeError("magnetic interpolation result became nonfinite")
     return measurements
 
 
@@ -127,6 +183,7 @@ class SensorSuite:
         seed: Optional[int] = None,
         rng: Optional[np.random.Generator] = None,
     ) -> None:
+        """Bind the kernel and select one optional random source for simulated noise."""
         if seed is not None and rng is not None:
             raise ValueError("Provide either seed or rng, not both.")
         self.kernel = kernel
@@ -142,10 +199,12 @@ class SensorSuite:
         self.bolo_chords = self._generate_bolo_chords()
 
     def _generate_sensor_positions(self) -> tuple[FloatArray, FloatArray]:
+        """Return the canonical endpoint-inclusive wall probe positions."""
         # Place the magnetic probes around the D-shaped wall.
         return magnetic_probe_positions()
 
     def _generate_bolo_chords(self) -> list[Chord]:
+        """Build the bolometer fan from the top port to the lower wall."""
         # 16 Chords fanning out from a top port (R=6, Z=5)
         # Watching the Divertor region (R=4..8, Z=-4)
         origin = np.array([6.0, 5.0])
@@ -159,6 +218,7 @@ class SensorSuite:
         return chords
 
     def _noise(self, scale: float) -> float:
+        """Draw nonnegative-scale noise from the selected or legacy random source."""
         sigma = float(max(scale, 0.0))
         if self._rng is not None:
             return float(self._rng.normal(0.0, sigma))
@@ -169,7 +229,8 @@ class SensorSuite:
 
         The deterministic bilinear measurement is delegated to the free function
         :func:`measure_magnetics`; this method adds the simulated Gaussian sensor
-        noise on top.
+        noise on top. Kernel arrays, dimensions and bounds are explicitly converted
+        here before invoking the strict free function.
         """
         clean = measure_magnetics(
             np.asarray(self.kernel.Psi, dtype=np.float64),

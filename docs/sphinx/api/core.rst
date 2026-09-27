@@ -386,6 +386,19 @@ Current Diffusion
    :undoc-members:
    :show-inheritance:
 
+Physical Case and Full Multigrid Contracts
+------------------------------------------
+
+The shared thirteen-field TOML case and strict NumPy/Rust full-solve admission,
+geometry, output ownership and errors are specified in
+`Numerical contracts <../../NUMERICAL_CONTRACTS.md>`_.
+
+.. automodule:: scpn_fusion.core.physical_case
+   :members:
+
+.. automodule:: scpn_fusion.core.multigrid_solve
+   :members:
+
 Current Drive Sources
 -----------------------
 

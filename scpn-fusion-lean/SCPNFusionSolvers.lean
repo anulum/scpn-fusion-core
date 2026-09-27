@@ -7,23 +7,9 @@ ORCID: 0009-0009-3560-0851
 Contact: www.anulum.li | protoscience@anulum.li
 SCPN Fusion Core — Native Lean Solvers
 -/
-namespace SCPNFusionSolvers
+import SCPNFusionSolvers.PhysicalCase
 
-structure GradShafranovCase where
-  rMin : Float
-  rMax : Float
-  zMin : Float
-  zMax : Float
-  nr : Nat
-  nz : Nat
-  ipTarget : Float
-  mu0 : Float
-  nPicard : Nat
-  nJacobi : Nat
-  alpha : Float
-  omegaJ : Float
-  betaMix : Float
-  deriving Repr
+namespace SCPNFusionSolvers
 
 structure GradShafranovResult where
   psi : Array (Array Float)
@@ -39,132 +25,6 @@ def fmax (a b : Float) : Float :=
 
 def fmin (a b : Float) : Float :=
   if a <= b then a else b
-
-def pow10Float : Nat → Float
-  | 0 => 1.0
-  | n + 1 => 10.0 * pow10Float n
-
-def stripComment (line : String) : String :=
-  match line.splitOn "#" with
-  | head :: _ => head.trimAscii.toString
-  | [] => ""
-
-def parseUnsignedDecimal (raw : String) : Except String Float :=
-  match raw.splitOn "." with
-  | whole :: [] =>
-      match whole.toNat? with
-      | some value => pure (Float.ofNat value)
-      | none => throw ("invalid decimal value: " ++ raw)
-  | whole :: frac :: [] =>
-      match whole.toNat?, frac.toNat? with
-      | some wholeValue, some fracValue =>
-          pure (Float.ofNat wholeValue + Float.ofNat fracValue / pow10Float frac.length)
-      | _, _ => throw ("invalid decimal value: " ++ raw)
-  | _ => throw ("invalid decimal value: " ++ raw)
-
-def applyScientificExponent (value : Float) (exponent : Int) : Float :=
-  if exponent < 0 then
-    match (-exponent).toNat? with
-    | some n => value / pow10Float n
-    | none => value
-  else
-    match exponent.toNat? with
-    | some n => value * pow10Float n
-    | none => value
-
-def parseFloatValue (raw : String) : Except String Float := do
-  let stripped := raw.trimAscii.toString
-  let sign := if stripped.startsWith "-" then -1.0 else 1.0
-  let unsigned := if stripped.startsWith "-" || stripped.startsWith "+" then (stripped.drop 1).toString else stripped
-  let parts := unsigned.splitOn "e"
-  let parts := if parts.length == 1 then unsigned.splitOn "E" else parts
-  match parts with
-  | mantissa :: [] =>
-      return sign * (← parseUnsignedDecimal mantissa)
-  | mantissa :: exponentText :: [] =>
-      match exponentText.toInt? with
-      | some exponent => return sign * applyScientificExponent (← parseUnsignedDecimal mantissa) exponent
-      | none => throw ("invalid exponent value: " ++ raw)
-  | _ => throw ("invalid float value: " ++ raw)
-
-def parseNatValue (raw : String) : Except String Nat :=
-  match raw.trimAscii.toString.toNat? with
-  | some value => pure value
-  | none => throw ("invalid natural value: " ++ raw)
-
-def requiredCaseFields : List String :=
-  [ "R_min", "R_max", "Z_min", "Z_max", "NR", "NZ", "Ip_target", "mu0",
-    "n_picard", "n_jacobi", "alpha", "omega_j", "beta_mix" ]
-
-def hasField (fields : List String) (target : String) : Bool :=
-  fields.any (fun field => field == target)
-
-def validateRequiredFields (fields : List String) : Except String Unit := do
-  for required in requiredCaseFields do
-    if !hasField fields required then
-      throw ("missing required Grad-Shafranov case field: " ++ required)
-
-def referenceCase : GradShafranovCase :=
-  { rMin := 1.0, rMax := 3.0, zMin := -1.2, zMax := 1.2, nr := 17, nz := 17,
-    ipTarget := 1000000.0, mu0 := 1.2566370614359173e-6, nPicard := 8,
-    nJacobi := 16, alpha := 0.1, omegaJ := 0.6666666666666666, betaMix := 0.5 }
-
-def validateCase (c : GradShafranovCase) : Except String Unit :=
-  if !(c.rMax > c.rMin) || !(c.zMax > c.zMin) then
-    throw "invalid domain bounds"
-  else if c.nr < 3 || c.nz < 3 then
-    throw "grid dimensions must be at least 3"
-  else if !(c.mu0 > 0.0) || c.nPicard < 1 || c.nJacobi < 1 then
-    throw "invalid positive solver scalar"
-  else if !(c.alpha > 0.0 && c.alpha <= 1.0) || !(c.omegaJ > 0.0 && c.omegaJ < 2.0) || !(c.betaMix >= 0.0 && c.betaMix <= 1.0) then
-    throw "invalid relaxation or profile scalar"
-  else
-    pure ()
-
-def updateCaseField (c : GradShafranovCase) (key value : String) : Except String GradShafranovCase := do
-  match key with
-  | "R_min" => pure { c with rMin := ← parseFloatValue value }
-  | "R_max" => pure { c with rMax := ← parseFloatValue value }
-  | "Z_min" => pure { c with zMin := ← parseFloatValue value }
-  | "Z_max" => pure { c with zMax := ← parseFloatValue value }
-  | "NR" => pure { c with nr := ← parseNatValue value }
-  | "NZ" => pure { c with nz := ← parseNatValue value }
-  | "Ip_target" => pure { c with ipTarget := ← parseFloatValue value }
-  | "mu0" => pure { c with mu0 := ← parseFloatValue value }
-  | "n_picard" => pure { c with nPicard := ← parseNatValue value }
-  | "n_jacobi" => pure { c with nJacobi := ← parseNatValue value }
-  | "alpha" => pure { c with alpha := ← parseFloatValue value }
-  | "omega_j" => pure { c with omegaJ := ← parseFloatValue value }
-  | "beta_mix" => pure { c with betaMix := ← parseFloatValue value }
-  | _ => pure c
-
-def caseFromToml (path : System.FilePath) : IO (Except String GradShafranovCase) := do
-  let content ← IO.FS.readFile path
-  let mut inSection := false
-  let mut c := referenceCase
-  let mut seenFields : List String := []
-  for rawLine in content.splitOn "\n" do
-    let line := stripComment rawLine
-    if line == "" then
-      pure ()
-    else if line.startsWith "[" && line.endsWith "]" then
-      inSection := line == "[grad_shafranov]"
-    else if inSection then
-      match line.splitOn "=" with
-      | key :: value :: [] =>
-          let field := key.trimAscii.toString
-          match updateCaseField c field value.trimAscii.toString with
-          | Except.ok next => c := next
-          | Except.error err => return Except.error err
-          if hasField requiredCaseFields field && !hasField seenFields field then
-            seenFields := field :: seenFields
-      | _ => return Except.error ("invalid TOML assignment: " ++ line)
-  match validateRequiredFields seenFields with
-  | Except.error err => return Except.error err
-  | Except.ok _ => pure ()
-  match validateCase c with
-  | Except.ok _ => return Except.ok c
-  | Except.error err => return Except.error err
 
 def zeros (nz nr : Nat) : Matrix :=
   Array.replicate nz (Array.replicate nr 0.0)
@@ -211,13 +71,31 @@ def applyZeroBoundary (psi : Matrix) : Matrix := Id.run do
     out := set2D out iz (nr - 1) 0.0
   return out
 
-def initialPsi (c : GradShafranovCase) (rr : Matrix) : Matrix := Id.run do
+/-- Fail typed numerical execution before nonfinite values enter reductions or clipping. -/
+def requireFinite (value : Float) (label : String) : Except String Unit :=
+  if value.isFinite then pure () else throw s!"nonfinite arithmetic: {label}"
+
+/-- Inspect every cell before a numerical reduction can hide a nonfinite value. -/
+def requireFiniteMatrix (matrix : Matrix) (label : String) : Except String Unit := do
+  for row in matrix do
+    for value in row do
+      requireFinite value label
+
+/-- Construct the existing Gaussian seed with checked intermediate arithmetic. -/
+def initialPsi (c : GradShafranovCase) (rr : Matrix) : Except String Matrix := do
   let rCenter := 0.5 * (c.rMin + c.rMax)
+  requireFinite rCenter "seed radius centre"
   let mut psi := zeros c.nz c.nr
   for iz in List.range c.nz do
     for ir in List.range c.nr do
       let delta := get2D rr iz ir - rCenter
-      psi := set2D psi iz ir (Float.exp (-(delta * delta) / 0.5) * 0.01)
+      let square := delta * delta
+      requireFinite square "seed radius square"
+      let exponent := -square / 0.5
+      requireFinite exponent "seed Gaussian exponent"
+      let value := Float.exp exponent * 0.01
+      requireFinite value "seed flux"
+      psi := set2D psi iz ir value
   return applyZeroBoundary psi
 
 def maxInterior (psi : Matrix) (nz nr : Nat) : Float := Id.run do
@@ -229,7 +107,9 @@ def maxInterior (psi : Matrix) (nz nr : Nat) : Float := Id.run do
           best := fmax best (get2D psi iz ir)
   return best
 
-def computeSource (c : GradShafranovCase) (psi rr : Matrix) (dR dZ : Float) : Matrix := Id.run do
+/-- Compute the existing profile source while refusing nonfinite intermediate current. -/
+def computeSource (c : GradShafranovCase) (psi rr : Matrix) (dR dZ : Float) : Except String Matrix := do
+  requireFiniteMatrix psi "source input flux"
   let psiAxis := maxInterior psi c.nz c.nr
   let mut denom := -psiAxis
   if Float.abs denom < 1.0e-9 then
@@ -239,46 +119,73 @@ def computeSource (c : GradShafranovCase) (psi rr : Matrix) (dR dZ : Float) : Ma
   for iz in List.range c.nz do
     for ir in List.range c.nr do
       let psiNorm0 := (get2D psi iz ir - psiAxis) / denom
+      requireFinite psiNorm0 "normalized flux before clipping"
       let psiNorm := fmin 1.0 (fmax 0.0 psiNorm0)
       let profile := if psiNorm >= 0.0 && psiNorm < 1.0 then 1.0 - psiNorm else 0.0
       let rVal := get2D rr iz ir
       let rSafe := fmax rVal 1.0e-10
       let jP := rVal * profile
-      let jF := profile / (c.mu0 * rSafe)
+      let currentDenom := c.mu0 * rSafe
+      requireFinite currentDenom "profile current denominator"
+      if currentDenom == 0.0 then throw "zero profile current denominator"
+      let jF := profile / currentDenom
+      requireFinite jP "pressure current profile"
+      requireFinite jF "toroidal current profile"
       let j := c.betaMix * jP + (1.0 - c.betaMix) * jF
+      requireFinite j "mixed current profile"
       jRaw := set2D jRaw iz ir j
       current := current + j * dR * dZ
+      requireFinite current "integrated current"
   let scale := c.ipTarget / fmax (Float.abs current) 1.0e-9
+  requireFinite scale "current scale"
   let mut source := zeros c.nz c.nr
   for iz in List.range c.nz do
     for ir in List.range c.nr do
-      source := set2D source iz ir (-c.mu0 * get2D rr iz ir * get2D jRaw iz ir * scale)
+      let scaledCurrent := get2D jRaw iz ir * scale
+      requireFinite scaledCurrent "scaled toroidal current"
+      let value := -c.mu0 * get2D rr iz ir * scaledCurrent
+      requireFinite value "physical source"
+      source := set2D source iz ir value
   return source
 
-def jacobiStep (c : GradShafranovCase) (psi source rr : Matrix) (dR dZ : Float) : Matrix := Id.run do
+/-- Apply one existing Jacobi sweep with checked coefficients, update and flux. -/
+def jacobiStep (c : GradShafranovCase) (psi source rr : Matrix) (dR dZ : Float) : Except String Matrix := do
   let dR2 := dR * dR
   let dZ2 := dZ * dZ
   let aNS := 1.0 / dZ2
   let aC := 2.0 / dR2 + 2.0 / dZ2
+  requireFinite aNS "vertical coefficient"
+  requireFinite aC "centre coefficient"
   let mut out := psi
   for iz in List.range c.nz do
     if iz > 0 && iz + 1 < c.nz then
       for ir in List.range c.nr do
         if ir > 0 && ir + 1 < c.nr then
           let rSafe := fmax (get2D rr iz ir) 1.0e-10
-          let aE := 1.0 / dR2 - 1.0 / (2.0 * rSafe * dR)
-          let aW := 1.0 / dR2 + 1.0 / (2.0 * rSafe * dR)
+          let radialDenom := 2.0 * rSafe * dR
+          requireFinite radialDenom "radial coefficient denominator"
+          if radialDenom == 0.0 then throw "zero radial coefficient denominator"
+          let aE := 1.0 / dR2 - 1.0 / radialDenom
+          let aW := 1.0 / dR2 + 1.0 / radialDenom
+          requireFinite aE "east coefficient"
+          requireFinite aW "west coefficient"
           let update := (aE * get2D psi iz (ir + 1) + aW * get2D psi iz (ir - 1) + aNS * (get2D psi (iz - 1) ir + get2D psi (iz + 1) ir) - get2D source iz ir) / aC
-          out := set2D out iz ir ((1.0 - c.omegaJ) * get2D psi iz ir + c.omegaJ * update)
+          requireFinite update "Jacobi update"
+          let value := (1.0 - c.omegaJ) * get2D psi iz ir + c.omegaJ * update
+          requireFinite value "Jacobi flux"
+          out := set2D out iz ir value
   return out
 
-def maxChange (a b : Matrix) : Float := Id.run do
+/-- Measure finite flux change before a maximum reduction can hide NaN. -/
+def maxChange (a b : Matrix) : Except String Float := do
   let nz := a.size
   let nr := match a[0]? with | some row => row.size | none => 0
   let mut best := 0.0
   for iz in List.range nz do
     for ir in List.range nr do
-      best := fmax best (Float.abs (get2D a iz ir - get2D b iz ir))
+      let change := Float.abs (get2D a iz ir - get2D b iz ir)
+      requireFinite change "Picard flux change"
+      best := fmax best change
   return best
 
 def deltaStar (c : GradShafranovCase) (psi : Matrix) : Matrix := Id.run do
@@ -347,23 +254,29 @@ def totalToroidalCurrentFromFluxMasked
           total := total + get2D currentDensity iz ir * dR * dZ
   return total
 
+/-- Execute an admitted physical case; arithmetic failures return typed errors. -/
 def solveGradShafranov (c : GradShafranovCase) : Except String GradShafranovResult := do
   validateCase c
   let rr := rGrid c
   let dR := (c.rMax - c.rMin) / Float.ofNat (c.nr - 1)
   let dZ := (c.zMax - c.zMin) / Float.ofNat (c.nz - 1)
-  let mut psi := initialPsi c rr
+  requireFinite (dR * dR) "radial spacing square"
+  requireFinite (dZ * dZ) "vertical spacing square"
+  if dR * dR == 0.0 || dZ * dZ == 0.0 then throw "zero squared grid spacing"
+  let mut psi ← initialPsi c rr
   let mut residuals := #[]
   for _ in List.range c.nPicard do
-    let source := computeSource c psi rr dR dZ
+    let source ← computeSource c psi rr dR dZ
     let mut psiElliptic := psi
     for _ in List.range c.nJacobi do
-      psiElliptic := jacobiStep c psiElliptic source rr dR dZ
+      psiElliptic ← jacobiStep c psiElliptic source rr dR dZ
     let mut psiNext := zeros c.nz c.nr
     for iz in List.range c.nz do
       for ir in List.range c.nr do
-        psiNext := set2D psiNext iz ir ((1.0 - c.alpha) * get2D psi iz ir + c.alpha * get2D psiElliptic iz ir)
-    residuals := residuals.push (maxChange psiNext psi)
+        let value := (1.0 - c.alpha) * get2D psi iz ir + c.alpha * get2D psiElliptic iz ir
+        requireFinite value "Picard flux"
+        psiNext := set2D psiNext iz ir value
+    residuals := residuals.push (← maxChange psiNext psi)
     psi := psiNext
   return { psi := applyZeroBoundary psi, residualHistory := residuals }
 

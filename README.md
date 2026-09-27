@@ -24,6 +24,9 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/12163/badge)](https://www.bestpractices.dev/projects/12163)
 
+The public [numerical contracts](docs/NUMERICAL_CONTRACTS.md) describe the shared
+five-language TOML case and strict NumPy/Rust sensing and multigrid boundaries.
+
 ## Dual Licensing
 
 SCPN Fusion Core uses a deliberate dual-licensing model:

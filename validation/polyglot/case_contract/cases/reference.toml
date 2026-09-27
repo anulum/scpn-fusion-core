@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — Polyglot Grad-Shafranov Case
+[grad_shafranov]
+R_min = 1.0
+R_max = 3.0
+Z_min = -1.2
+Z_max = 1.2
+NR = 17
+NZ = 17
+Ip_target = 1.0e6
+mu0 = 1.2566370614359173e-6
+n_picard = 8
+n_jacobi = 16
+alpha = 0.1
+omega_j = 0.6666666666666666
+beta_mix = 0.5

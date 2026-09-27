@@ -13,25 +13,10 @@
 #![deny(missing_docs)]
 #![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
-use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
+mod case;
 
-const REQUIRED_FIELDS: [&str; 13] = [
-    "R_min",
-    "R_max",
-    "Z_min",
-    "Z_max",
-    "NR",
-    "NZ",
-    "Ip_target",
-    "mu0",
-    "n_picard",
-    "n_jacobi",
-    "alpha",
-    "omega_j",
-    "beta_mix",
-];
+use case::validate_case;
+pub use case::{load_case, parse_case};
 
 #[derive(Clone, Debug)]
 /// Inputs for one fixed-boundary Grad-Shafranov solve.
@@ -59,9 +44,9 @@ pub struct GradShafranovCase {
     pub n_picard: usize,
     /// Number of inner Jacobi sweeps per Picard iteration; must be non-zero.
     pub n_jacobi: usize,
-    /// Picard update fraction in the inclusive interval `[0, 1]`.
+    /// Picard update fraction in the interval `(0, 1]`.
     pub alpha: f64,
-    /// Jacobi relaxation fraction in the inclusive interval `[0, 1]`.
+    /// Jacobi relaxation fraction in the interval `(0, 2)`.
     pub omega_j: f64,
     /// Pressure-versus-poloidal-current source mixture in `[0, 1]`.
     pub beta_mix: f64,
@@ -76,80 +61,6 @@ pub struct GradShafranovResult {
     pub z: Vec<f64>,
     /// Row-major flux matrix indexed as `psi[z_index][r_index]`.
     pub psi: Vec<Vec<f64>>,
-}
-
-/// Loads and parses a governed Grad-Shafranov case file.
-///
-/// # Errors
-///
-/// Returns an error string if the file cannot be read or [`parse_case`]
-/// rejects its contents.
-pub fn load_case(path: &Path) -> Result<GradShafranovCase, String> {
-    let text = fs::read_to_string(path)
-        .map_err(|err| format!("failed to read Grad-Shafranov case: {err}"))?;
-    parse_case(&text)
-}
-
-/// Parses a `[grad_shafranov]` case from UTF-8 text.
-///
-/// Inline `#` comments and unrelated sections are ignored. All thirteen
-/// governed fields are required and the resulting case is validated.
-///
-/// # Errors
-///
-/// Returns an error string for malformed assignments, missing or unparsable
-/// fields, non-finite scalars, invalid bounds, undersized grids, zero iteration
-/// counts, or mixing coefficients outside `[0, 1]`.
-pub fn parse_case(text: &str) -> Result<GradShafranovCase, String> {
-    let mut values: HashMap<String, String> = HashMap::new();
-    let mut in_section = false;
-
-    for raw_line in text.lines() {
-        let line = raw_line
-            .split_once('#')
-            .map_or(raw_line, |(before, _)| before)
-            .trim();
-        if line.is_empty() {
-            continue;
-        }
-        if line.starts_with('[') && line.ends_with(']') {
-            in_section = line == "[grad_shafranov]";
-            continue;
-        }
-        if !in_section {
-            continue;
-        }
-        let (key, value) = line
-            .split_once('=')
-            .ok_or_else(|| format!("invalid Grad-Shafranov case line: {line}"))?;
-        values.insert(key.trim().to_string(), value.trim().to_string());
-    }
-
-    for field in REQUIRED_FIELDS {
-        if !values.contains_key(field) {
-            return Err(format!(
-                "missing required Grad-Shafranov case field: {field}"
-            ));
-        }
-    }
-
-    let case = GradShafranovCase {
-        r_min: parse_f64(&values, "R_min")?,
-        r_max: parse_f64(&values, "R_max")?,
-        z_min: parse_f64(&values, "Z_min")?,
-        z_max: parse_f64(&values, "Z_max")?,
-        nr: parse_usize(&values, "NR")?,
-        nz: parse_usize(&values, "NZ")?,
-        ip_target: parse_f64(&values, "Ip_target")?,
-        mu0: parse_f64(&values, "mu0")?,
-        n_picard: parse_usize(&values, "n_picard")?,
-        n_jacobi: parse_usize(&values, "n_jacobi")?,
-        alpha: parse_f64(&values, "alpha")?,
-        omega_j: parse_f64(&values, "omega_j")?,
-        beta_mix: parse_f64(&values, "beta_mix")?,
-    };
-    validate_case(&case)?;
-    Ok(case)
 }
 
 /// Solves one validated fixed-boundary Grad-Shafranov case.
@@ -168,25 +79,41 @@ pub fn solve_grad_shafranov(case: &GradShafranovCase) -> Result<GradShafranovRes
     let z = linspace(case.z_min, case.z_max, case.nz);
     let dr = (case.r_max - case.r_min) / ((case.nr - 1) as f64);
     let dz = (case.z_max - case.z_min) / ((case.nz - 1) as f64);
+    if !((dr * dr).is_finite() && (dz * dz).is_finite() && dr * dr > 0.0 && dz * dz > 0.0) {
+        return Err("solver spacing arithmetic became non-finite or degenerate".to_owned());
+    }
     let r_center = 0.5 * (case.r_min + case.r_max);
+    if !r_center.is_finite() {
+        return Err("initial Gaussian centre became non-finite".to_owned());
+    }
 
     let mut psi = vec![vec![0.0; case.nr]; case.nz];
     for row in &mut psi {
         for (ir, value) in row.iter_mut().enumerate() {
-            *value = (-((r[ir] - r_center).powi(2)) / 0.5).exp() * 0.01;
+            let exponent = -((r[ir] - r_center).powi(2)) / 0.5;
+            if !exponent.is_finite() {
+                return Err("initial Gaussian exponent became non-finite".to_owned());
+            }
+            *value = exponent.exp() * 0.01;
+            if !value.is_finite() {
+                return Err("initial flux became non-finite".to_owned());
+            }
         }
     }
     enforce_boundary(&mut psi);
 
     for _ in 0..case.n_picard {
-        let source = compute_source(case, &r, &psi, dr, dz);
+        let source = compute_source(case, &r, &psi, dr, dz)?;
         let mut elliptic = psi.clone();
         for _ in 0..case.n_jacobi {
-            elliptic = jacobi_step(case, &r, &elliptic, &source);
+            elliptic = jacobi_step(case, &r, &elliptic, &source)?;
         }
         for iz in 0..case.nz {
             for ir in 0..case.nr {
                 psi[iz][ir] = (1.0 - case.alpha) * psi[iz][ir] + case.alpha * elliptic[iz][ir];
+                if !psi[iz][ir].is_finite() {
+                    return Err("Picard flux became non-finite".to_owned());
+                }
             }
         }
         enforce_boundary(&mut psi);
@@ -195,68 +122,19 @@ pub fn solve_grad_shafranov(case: &GradShafranovCase) -> Result<GradShafranovRes
     Ok(GradShafranovResult { r, z, psi })
 }
 
-fn parse_f64(values: &HashMap<String, String>, field: &str) -> Result<f64, String> {
-    values[field]
-        .parse::<f64>()
-        .map_err(|err| format!("invalid Grad-Shafranov field {field}: {err}"))
-}
-
-fn parse_usize(values: &HashMap<String, String>, field: &str) -> Result<usize, String> {
-    values[field]
-        .parse::<usize>()
-        .map_err(|err| format!("invalid Grad-Shafranov field {field}: {err}"))
-}
-
-fn validate_case(case: &GradShafranovCase) -> Result<(), String> {
-    if !(case.r_min.is_finite()
-        && case.r_max.is_finite()
-        && case.z_min.is_finite()
-        && case.z_max.is_finite()
-        && case.ip_target.is_finite()
-        && case.mu0.is_finite()
-        && case.alpha.is_finite()
-        && case.omega_j.is_finite()
-        && case.beta_mix.is_finite())
-    {
-        return Err("Grad-Shafranov case contains non-finite scalar".to_string());
-    }
-    if case.nr < 3 || case.nz < 3 {
-        return Err("Grad-Shafranov grid must have at least 3 x 3 points".to_string());
-    }
-    if case.r_min <= 0.0 || case.r_max <= case.r_min {
-        return Err(
-            "Grad-Shafranov major-radius bounds must be positive and increasing".to_string(),
-        );
-    }
-    if case.z_max <= case.z_min {
-        return Err("Grad-Shafranov vertical bounds must be increasing".to_string());
-    }
-    if case.mu0 <= 0.0 || case.n_picard == 0 || case.n_jacobi == 0 {
-        return Err(
-            "Grad-Shafranov physical constants and iteration counts must be positive".to_string(),
-        );
-    }
-    if !(0.0..=1.0).contains(&case.alpha) || !(0.0..=1.0).contains(&case.beta_mix) {
-        return Err("Grad-Shafranov mixing coefficients must be bounded in [0, 1]".to_string());
-    }
-    if !(0.0..=1.0).contains(&case.omega_j) {
-        return Err("Grad-Shafranov Jacobi relaxation must be bounded in [0, 1]".to_string());
-    }
-    Ok(())
-}
-
 fn linspace(min: f64, max: f64, count: usize) -> Vec<f64> {
     let step = (max - min) / ((count - 1) as f64);
     (0..count).map(|idx| min + step * (idx as f64)).collect()
 }
 
+/// Build the current profile without hiding non-finite arithmetic in clamps/reductions.
 fn compute_source(
     case: &GradShafranovCase,
     r: &[f64],
     psi: &[Vec<f64>],
     dr: f64,
     dz: f64,
-) -> Vec<Vec<f64>> {
+) -> Result<Vec<Vec<f64>>, String> {
     let mut psi_axis = f64::NEG_INFINITY;
     for row in psi.iter().take(case.nz - 1).skip(1) {
         for value in row.iter().take(case.nr - 1).skip(1) {
@@ -277,57 +155,95 @@ fn compute_source(
     let mut current = 0.0;
     for iz in 0..case.nz {
         for (ir, radius) in r.iter().enumerate() {
-            let psi_norm = ((psi[iz][ir] - psi_axis) / denominator).clamp(0.0, 1.0);
+            let psi_norm = (psi[iz][ir] - psi_axis) / denominator;
+            if !psi_norm.is_finite() {
+                return Err("normalised flux became non-finite".to_owned());
+            }
+            let psi_norm = psi_norm.clamp(0.0, 1.0);
             let profile = if (0.0..1.0).contains(&psi_norm) {
                 1.0 - psi_norm
             } else {
                 0.0
             };
             let jp = radius * profile;
-            let jf = profile / (case.mu0 * radius.max(1.0e-6));
+            let denominator = case.mu0 * radius.max(1.0e-6);
+            if !denominator.is_finite() || denominator == 0.0 {
+                return Err("source denominator became non-finite or zero".to_owned());
+            }
+            let jf = profile / denominator;
             raw[iz][ir] = case.beta_mix * jp + (1.0 - case.beta_mix) * jf;
+            if !(jp.is_finite() && jf.is_finite() && raw[iz][ir].is_finite()) {
+                return Err("current profile became non-finite".to_owned());
+            }
             current += raw[iz][ir] * dr * dz;
+            if !current.is_finite() {
+                return Err("profile current became non-finite".to_owned());
+            }
         }
     }
 
     let scale = case.ip_target / current.abs().max(1.0e-9);
+    if !scale.is_finite() {
+        return Err("current scaling became non-finite".to_owned());
+    }
     let mut source = vec![vec![0.0; case.nr]; case.nz];
     for iz in 0..case.nz {
         for (ir, radius) in r.iter().enumerate() {
-            source[iz][ir] = -case.mu0 * radius * raw[iz][ir] * scale;
+            let scaled_current = raw[iz][ir] * scale;
+            if !scaled_current.is_finite() {
+                return Err("scaled current became non-finite".to_owned());
+            }
+            source[iz][ir] = -case.mu0 * radius * scaled_current;
+            if !source[iz][ir].is_finite() {
+                return Err("GS source became non-finite".to_owned());
+            }
         }
     }
-    source
+    Ok(source)
 }
 
+/// Apply one checked relaxation sweep and propagate numerical failure.
 fn jacobi_step(
     case: &GradShafranovCase,
     r: &[f64],
     psi: &[Vec<f64>],
     source: &[Vec<f64>],
-) -> Vec<Vec<f64>> {
+) -> Result<Vec<Vec<f64>>, String> {
     let dr = (case.r_max - case.r_min) / ((case.nr - 1) as f64);
     let dz = (case.z_max - case.z_min) / ((case.nz - 1) as f64);
     let dr2 = dr * dr;
     let dz2 = dz * dz;
     let a_ns = 1.0 / dz2;
     let a_c = 2.0 / dr2 + 2.0 / dz2;
+    if !(a_ns.is_finite() && a_c.is_finite() && a_ns > 0.0 && a_c > 0.0) {
+        return Err("Jacobi coefficient arithmetic failed".to_owned());
+    }
 
     let mut out = psi.to_vec();
     for iz in 1..case.nz - 1 {
         for (ir, radius) in r.iter().enumerate().take(case.nr - 1).skip(1) {
             let ae = 1.0 / dr2 - 1.0 / (2.0 * radius * dr);
             let aw = 1.0 / dr2 + 1.0 / (2.0 * radius * dr);
+            if !((2.0 * radius * dr).is_finite()
+                && 2.0 * radius * dr > 0.0
+                && ae.is_finite()
+                && aw.is_finite())
+            {
+                return Err("radial Jacobi coefficient arithmetic failed".to_owned());
+            }
             let update = (ae * psi[iz][ir + 1]
                 + aw * psi[iz][ir - 1]
                 + a_ns * (psi[iz - 1][ir] + psi[iz + 1][ir])
                 - source[iz][ir])
                 / a_c;
             out[iz][ir] = (1.0 - case.omega_j) * psi[iz][ir] + case.omega_j * update;
+            if !(update.is_finite() && out[iz][ir].is_finite()) {
+                return Err("Jacobi flux became non-finite".to_owned());
+            }
         }
     }
     enforce_boundary(&mut out);
-    out
+    Ok(out)
 }
 
 fn enforce_boundary(psi: &mut [Vec<f64>]) {

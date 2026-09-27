@@ -31,6 +31,17 @@ when a compatible native wheel is unavailable. Backend availability is not a
 blanket performance claim; use the repository's checksummed benchmark reports
 for equivalent workload and hardware comparisons.
 
+## Numerical boundaries
+
+`measure_magnetics` and the full-solve `multigrid_vcycle` require actual native
+float64 ndarrays, accept valid strided/readonly layouts and return independent
+C-contiguous output. Invalid kinds, domains and numerical arithmetic propagate
+as TypeError, ValueError and RuntimeError; ordinary allocation failure is
+MemoryError. Initial multigrid convergence returns zero cycles. See the full
+[numerical contracts](../../../docs/NUMERICAL_CONTRACTS.md) for scalar kinds,
+dimensions, geometry and explicit dtype migration. Backend availability does
+not turn input or numerical errors into fallback.
+
 ## Source build
 
 From the repository root:

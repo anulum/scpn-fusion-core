@@ -67,6 +67,38 @@ impl Grid2D {
             zz,
         }
     }
+    /// Create a native grid with recoverable allocation failures and checked element arithmetic.
+    pub fn try_new(
+        nr: usize,
+        nz: usize,
+        r_min: f64,
+        r_max: f64,
+        z_min: f64,
+        z_max: f64,
+    ) -> Result<Self, String> {
+        let r = crate::array_storage::try_axis(r_min, r_max, nr)?;
+        let z = crate::array_storage::try_axis(z_min, z_max, nz)?;
+        let dr = r[1] - r[0];
+        let dz = z[1] - z[0];
+        let mut rr = crate::array_storage::try_zeros(nz, nr)?;
+        let mut zz = crate::array_storage::try_zeros(nz, nr)?;
+        for iz in 0..nz {
+            for ir in 0..nr {
+                rr[[iz, ir]] = r[ir];
+                zz[[iz, ir]] = z[iz];
+            }
+        }
+        Ok(Self {
+            nr,
+            nz,
+            r,
+            z,
+            dr,
+            dz,
+            rr,
+            zz,
+        })
+    }
 }
 
 /// Complete plasma equilibrium state.

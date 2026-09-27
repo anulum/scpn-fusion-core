@@ -420,9 +420,7 @@ def _rust_measure_magnetics(
 
     from scpn_fusion_rs import measure_magnetics as _rs_measure_magnetics
 
-    measurements = _rs_measure_magnetics(
-        np.asarray(psi, dtype=np.float64), nr, nz, r_min, r_max, z_min, z_max
-    )
+    measurements = _rs_measure_magnetics(psi, nr, nz, r_min, r_max, z_min, z_max)
     return np.asarray(measurements, dtype=np.float64)
 
 

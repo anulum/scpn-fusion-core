@@ -14,12 +14,12 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 - CPU: 11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz
 - Machine: x86_64
-- OS: Linux-6.17.0-35-generic-x86_64-with-glibc2.39
+- OS: Linux-7.0.0-31-generic-x86_64-with-glibc2.39
 - Python: 3.12.3
-- Julia: julia version 1.12.6
-- Go: go version go1.24.0 linux/amd64
-- Rust: rustc 1.96.0 (ac68faa20 2026-05-25)
-- Lean: Lean (version 4.31.0, x86_64-unknown-linux-gnu, commit 68218e876d2a38b1985b8590fff244a83c321783, Release)
+- Julia: julia version 1.13.0
+- Go: go version go1.27.1 linux/amd64
+- Rust: rustc 1.98.1 (48a229cea 2026-09-01)
+- Lean: Lean (version 4.29.1, x86_64-unknown-linux-gnu, commit f72c35b3f637c8c6571d353742168ab66cc22c00, Release)
 
 ## Case
 
@@ -32,20 +32,20 @@ Local workstation benchmark for native Python, Julia, Go, Rust, and Lean fixed-b
 
 | Language | Implementation | Wall time (s) |
 |----------|----------------|---------------|
-| Python | `gs_solve_np` | 0.007884 |
-| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 5.462643 |
-| Go | `gssolver.Solve` | 0.003616 |
-| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.004898 |
-| Lean | `SCPNFusionSolvers.solveGradShafranov` | 9.135552 |
+| Python | `gs_solve_np` | 0.066153 |
+| Julia | `SCPNFusionSolvers.solve_grad_shafranov` | 48.760162 |
+| Go | `gssolver.Solve` | 0.234529 |
+| Rust | `fusion_polyglot::solve_grad_shafranov` | 0.019471 |
+| Lean | `SCPNFusionSolvers.solveGradShafranov` | 31.566578 |
 
 ## Numerical Parity
 
 | Language | Interior relative L2 vs Python | Interior max abs error vs Python | Axis flux abs error vs Python | Boundary absolute maximum |
 |----------|--------------------------------|----------------------------------|-------------------------------|---------------------------|
 | Julia | 8.983125e-17 | 1.387779e-17 | 0.000000e+00 | 0.000000e+00 |
-| Go | 1.790625e-16 | 1.387779e-17 | 0.000000e+00 | 0.000000e+00 |
-| Rust | 5.906398e-16 | 4.163336e-17 | 3.469447e-17 | 0.000000e+00 |
-| Lean | 1.123308e-14 | 4.857226e-16 | 2.844947e-16 | 0.000000e+00 |
+| Go | 1.829170e-16 | 1.387779e-17 | 0.000000e+00 | 0.000000e+00 |
+| Rust | 5.719832e-16 | 4.163336e-17 | 3.469447e-17 | 0.000000e+00 |
+| Lean | 5.692324e-16 | 4.163336e-17 | 3.469447e-17 | 0.000000e+00 |
 
 ## Physics Invariants
 

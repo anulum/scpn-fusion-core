@@ -8,12 +8,8 @@
 package gssolver
 
 import (
-	"bufio"
 	"fmt"
 	"math"
-	"os"
-	"strconv"
-	"strings"
 )
 
 // Case defines the grid, physical constants, and iteration controls for one
@@ -40,118 +36,6 @@ type Result struct {
 	ResidualHistory []float64
 }
 
-// CaseFromTOML loads and validates a grad_shafranov table from path.
-func CaseFromTOML(path string) (Case, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return Case{}, err
-	}
-	defer file.Close()
-
-	values := map[string]string{}
-	section := ""
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(strings.Split(scanner.Text(), "#")[0])
-		if line == "" {
-			continue
-		}
-		if strings.HasPrefix(line, "[") && strings.HasSuffix(line, "]") {
-			section = strings.TrimSuffix(strings.TrimPrefix(line, "["), "]")
-			continue
-		}
-		if section != "grad_shafranov" || !strings.Contains(line, "=") {
-			continue
-		}
-		parts := strings.SplitN(line, "=", 2)
-		values[strings.TrimSpace(parts[0])] = strings.Trim(strings.TrimSpace(parts[1]), `"`)
-	}
-	if err := scanner.Err(); err != nil {
-		return Case{}, err
-	}
-
-	parseFloat := func(key string) (float64, error) {
-		value, ok := values[key]
-		if !ok {
-			return 0, fmt.Errorf("missing %s", key)
-		}
-		return strconv.ParseFloat(value, 64)
-	}
-	parseInt := func(key string) (int, error) {
-		value, ok := values[key]
-		if !ok {
-			return 0, fmt.Errorf("missing %s", key)
-		}
-		parsed, err := strconv.Atoi(value)
-		return parsed, err
-	}
-
-	var c Case
-	if c.RMin, err = parseFloat("R_min"); err != nil {
-		return Case{}, err
-	}
-	if c.RMax, err = parseFloat("R_max"); err != nil {
-		return Case{}, err
-	}
-	if c.ZMin, err = parseFloat("Z_min"); err != nil {
-		return Case{}, err
-	}
-	if c.ZMax, err = parseFloat("Z_max"); err != nil {
-		return Case{}, err
-	}
-	if c.NR, err = parseInt("NR"); err != nil {
-		return Case{}, err
-	}
-	if c.NZ, err = parseInt("NZ"); err != nil {
-		return Case{}, err
-	}
-	if c.IpTarget, err = parseFloat("Ip_target"); err != nil {
-		return Case{}, err
-	}
-	if c.Mu0, err = parseFloat("mu0"); err != nil {
-		return Case{}, err
-	}
-	if c.NPicard, err = parseInt("n_picard"); err != nil {
-		return Case{}, err
-	}
-	if c.NJacobi, err = parseInt("n_jacobi"); err != nil {
-		return Case{}, err
-	}
-	if c.Alpha, err = parseFloat("alpha"); err != nil {
-		return Case{}, err
-	}
-	if c.OmegaJ, err = parseFloat("omega_j"); err != nil {
-		return Case{}, err
-	}
-	if c.BetaMix, err = parseFloat("beta_mix"); err != nil {
-		return Case{}, err
-	}
-	return c, c.Validate()
-}
-
-// Validate rejects invalid grid geometry, iteration controls, relaxation
-// factors, and non-finite physical scalars.
-func (c Case) Validate() error {
-	if !(c.RMax > c.RMin) || !(c.ZMax > c.ZMin) {
-		return fmt.Errorf("invalid domain bounds")
-	}
-	if c.NR < 3 || c.NZ < 3 {
-		return fmt.Errorf("grid dimensions must be at least 3")
-	}
-	if c.Mu0 <= 0 || c.NPicard < 1 || c.NJacobi < 1 {
-		return fmt.Errorf("invalid positive solver scalar")
-	}
-	if !(c.Alpha > 0 && c.Alpha <= 1) || !(c.OmegaJ > 0 && c.OmegaJ < 2) || !(c.BetaMix >= 0 && c.BetaMix <= 1) {
-		return fmt.Errorf("invalid relaxation or profile scalar")
-	}
-	for _, value := range []float64{c.RMin, c.RMax, c.ZMin, c.ZMax, c.IpTarget, c.Mu0, c.Alpha, c.OmegaJ, c.BetaMix} {
-		if math.IsNaN(value) || math.IsInf(value, 0) {
-			return fmt.Errorf("non-finite case scalar")
-		}
-	}
-	return nil
-}
-
 // Solve runs the native fixed-boundary Picard/Jacobi reference algorithm.
 func Solve(c Case) (Result, error) {
 	if err := c.Validate(); err != nil {
@@ -159,20 +43,39 @@ func Solve(c Case) (Result, error) {
 	}
 	r, _, rr, dR, dZ := grid(c)
 	_ = r
-	psi := initialPsi(c, rr)
+	if !finite(dR*dR) || !finite(dZ*dZ) || dR*dR == 0 || dZ*dZ == 0 {
+		return Result{}, fmt.Errorf("solver spacing arithmetic became non-finite or degenerate")
+	}
+	psi, err := initialPsi(c, rr)
+	if err != nil {
+		return Result{}, err
+	}
+	if err := validateFluxMatrix(c, psi); err != nil {
+		return Result{}, err
+	}
 	residuals := make([]float64, 0, c.NPicard)
 	for outer := 0; outer < c.NPicard; outer++ {
-		source := computeSource(c, psi, rr, dR, dZ)
+		source, err := computeSource(c, psi, rr, dR, dZ)
+		if err != nil {
+			return Result{}, err
+		}
 		psiElliptic := clone(psi)
 		for inner := 0; inner < c.NJacobi; inner++ {
-			psiElliptic = jacobiStep(c, psiElliptic, source, rr, dR, dZ)
+			psiElliptic, err = jacobiStep(c, psiElliptic, source, rr, dR, dZ)
+			if err != nil {
+				return Result{}, err
+			}
 		}
 		psiNext := zeros(c.NZ, c.NR)
 		maxChange := 0.0
 		for iz := 0; iz < c.NZ; iz++ {
 			for ir := 0; ir < c.NR; ir++ {
 				psiNext[iz][ir] = (1-c.Alpha)*psi[iz][ir] + c.Alpha*psiElliptic[iz][ir]
-				maxChange = math.Max(maxChange, math.Abs(psiNext[iz][ir]-psi[iz][ir]))
+				change := math.Abs(psiNext[iz][ir] - psi[iz][ir])
+				if !finite(psiNext[iz][ir]) || !finite(change) {
+					return Result{}, fmt.Errorf("flux or update residual became non-finite")
+				}
+				maxChange = math.Max(maxChange, change)
 			}
 		}
 		residuals = append(residuals, maxChange)
@@ -219,17 +122,25 @@ func clone(in [][]float64) [][]float64 {
 	return out
 }
 
-func initialPsi(c Case, rr [][]float64) [][]float64 {
+// initialPsi checks Gaussian arithmetic before exponentiation can hide overflow.
+func initialPsi(c Case, rr [][]float64) ([][]float64, error) {
 	psi := zeros(c.NZ, c.NR)
 	rCenter := 0.5 * (c.RMin + c.RMax)
+	if !finite(rCenter) {
+		return nil, fmt.Errorf("initial Gaussian centre became non-finite")
+	}
 	for iz := range psi {
 		for ir := range psi[iz] {
 			delta := rr[iz][ir] - rCenter
-			psi[iz][ir] = math.Exp(-(delta*delta)/0.5) * 0.01
+			exponent := -(delta * delta) / 0.5
+			if !finite(exponent) {
+				return nil, fmt.Errorf("initial Gaussian exponent became non-finite")
+			}
+			psi[iz][ir] = math.Exp(exponent) * 0.01
 		}
 	}
 	applyZeroBoundary(psi)
-	return psi
+	return psi, nil
 }
 
 func applyZeroBoundary(psi [][]float64) {
@@ -245,7 +156,8 @@ func applyZeroBoundary(psi [][]float64) {
 	}
 }
 
-func computeSource(c Case, psi, rr [][]float64, dR, dZ float64) [][]float64 {
+// computeSource builds the current profile, refusing non-finite intermediate arithmetic.
+func computeSource(c Case, psi, rr [][]float64, dR, dZ float64) ([][]float64, error) {
 	psiAxis := psi[1][1]
 	for iz := 1; iz < c.NZ-1; iz++ {
 		for ir := 1; ir < c.NR-1; ir++ {
@@ -265,6 +177,9 @@ func computeSource(c Case, psi, rr [][]float64, dR, dZ float64) [][]float64 {
 	for iz := range psi {
 		for ir := range psi[iz] {
 			psiNorm := (psi[iz][ir] - psiAxis) / denom
+			if !finite(psiNorm) {
+				return nil, fmt.Errorf("normalised flux became non-finite")
+			}
 			psiNorm = math.Min(1, math.Max(0, psiNorm))
 			profile := 0.0
 			if psiNorm >= 0 && psiNorm < 1 {
@@ -272,37 +187,67 @@ func computeSource(c Case, psi, rr [][]float64, dR, dZ float64) [][]float64 {
 			}
 			rSafe := math.Max(rr[iz][ir], 1e-10)
 			jP := rr[iz][ir] * profile
-			jF := profile / (c.Mu0 * rSafe)
+			denominator := c.Mu0 * rSafe
+			if !finite(denominator) || denominator == 0 {
+				return nil, fmt.Errorf("source denominator became non-finite or zero")
+			}
+			jF := profile / denominator
 			jRaw[iz][ir] = c.BetaMix*jP + (1-c.BetaMix)*jF
+			if !finite(jP) || !finite(jF) || !finite(jRaw[iz][ir]) {
+				return nil, fmt.Errorf("current profile became non-finite")
+			}
 			current += jRaw[iz][ir] * dR * dZ
+			if !finite(current) {
+				return nil, fmt.Errorf("profile current became non-finite")
+			}
 		}
 	}
 	scale := c.IpTarget / math.Max(math.Abs(current), 1e-9)
+	if !finite(scale) {
+		return nil, fmt.Errorf("current scaling became non-finite")
+	}
 	source := zeros(c.NZ, c.NR)
 	for iz := range source {
 		for ir := range source[iz] {
-			source[iz][ir] = -c.Mu0 * rr[iz][ir] * jRaw[iz][ir] * scale
+			scaledCurrent := jRaw[iz][ir] * scale
+			if !finite(scaledCurrent) {
+				return nil, fmt.Errorf("scaled current became non-finite")
+			}
+			source[iz][ir] = -c.Mu0 * rr[iz][ir] * scaledCurrent
+			if !finite(source[iz][ir]) {
+				return nil, fmt.Errorf("GS source became non-finite")
+			}
 		}
 	}
-	return source
+	return source, nil
 }
 
-func jacobiStep(c Case, psi, source, rr [][]float64, dR, dZ float64) [][]float64 {
+// jacobiStep applies one checked relaxation step without hiding numerical failure.
+func jacobiStep(c Case, psi, source, rr [][]float64, dR, dZ float64) ([][]float64, error) {
 	out := clone(psi)
 	dR2 := dR * dR
 	dZ2 := dZ * dZ
 	aNS := 1 / dZ2
 	aC := 2/dR2 + 2/dZ2
+	if !finite(aNS) || !finite(aC) || aNS <= 0 || aC <= 0 {
+		return nil, fmt.Errorf("Jacobi coefficient arithmetic failed")
+	}
 	for iz := 1; iz < c.NZ-1; iz++ {
 		for ir := 1; ir < c.NR-1; ir++ {
 			rSafe := math.Max(rr[iz][ir], 1e-10)
 			aE := 1/dR2 - 1/(2*rSafe*dR)
 			aW := 1/dR2 + 1/(2*rSafe*dR)
+			if !finite(2*rSafe*dR) || 2*rSafe*dR == 0 || !finite(aE) || !finite(aW) {
+				return nil, fmt.Errorf("radial Jacobi coefficient arithmetic failed")
+			}
 			update := (aE*psi[iz][ir+1] + aW*psi[iz][ir-1] + aNS*(psi[iz-1][ir]+psi[iz+1][ir]) - source[iz][ir]) / aC
 			out[iz][ir] = (1-c.OmegaJ)*psi[iz][ir] + c.OmegaJ*update
+			if !finite(update) || !finite(out[iz][ir]) {
+				return nil, fmt.Errorf("Jacobi flux became non-finite")
+			}
 		}
 	}
-	return out
+	return out, nil
 }
 
 func validateFluxMatrix(c Case, psi [][]float64) error {

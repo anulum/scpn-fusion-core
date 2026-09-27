@@ -23,12 +23,13 @@ import numpy as np
 
 import benchmarks.polyglot_gs_solver_comparison as benchmark
 from scpn_fusion.core.jax_gs_solver import gs_solve_np
+from scpn_fusion.core.physical_case import CaseMapping
 
 
 _REPO = Path(__file__).resolve().parents[1]
 _JULIA_PROJECT = _REPO / "scpn-fusion-jl"
 _REFERENCE_CASE = _REPO / "validation" / "polyglot" / "gs_picard_reference.toml"
-_CASE = {
+_CASE: CaseMapping = {
     "R_min": 1.0,
     "R_max": 3.0,
     "Z_min": -1.2,
@@ -43,7 +44,7 @@ _CASE = {
     "omega_j": 2.0 / 3.0,
     "beta_mix": 0.5,
 }
-_ALTERNATE_CASE = {
+_ALTERNATE_CASE: CaseMapping = {
     "R_min": 0.9,
     "R_max": 2.7,
     "Z_min": -1.0,
@@ -60,7 +61,8 @@ _ALTERNATE_CASE = {
 }
 
 
-def _write_case(path: Path, case: dict[str, float | int]) -> None:
+def _write_case(path: Path, case: CaseMapping) -> None:
+    """Write all thirteen requested physical values to a real case file."""
     path.write_text(
         "\n".join(
             [
@@ -86,6 +88,7 @@ def _write_case(path: Path, case: dict[str, float | int]) -> None:
 
 
 def _write_case_missing_beta_mix(path: Path) -> None:
+    """Write an otherwise valid case with a deliberately missing required field."""
     path.write_text(
         "\n".join(
             [
@@ -109,7 +112,8 @@ def _write_case_missing_beta_mix(path: Path) -> None:
     )
 
 
-def _run_julia_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
+def _run_julia_case(case_path: Path = _REFERENCE_CASE) -> benchmark.FloatArray:
+    """Run the native Julia file loader and solver and decode their actual CSV."""
     completed = subprocess.run(
         [
             "julia",
@@ -127,7 +131,8 @@ def _run_julia_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
     return np.asarray(rows, dtype=float)
 
 
-def _run_go_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
+def _run_go_case(case_path: Path = _REFERENCE_CASE) -> benchmark.FloatArray:
+    """Run the native Go file loader and solver and decode their actual CSV."""
     completed = subprocess.run(
         ["go", "run", "./cmd/gs_picard_csv", str(case_path)],
         check=True,
@@ -139,7 +144,8 @@ def _run_go_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
     return np.asarray(rows, dtype=float)
 
 
-def _run_rust_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
+def _run_rust_case(case_path: Path = _REFERENCE_CASE) -> benchmark.FloatArray:
+    """Run the native Rust file loader and solver and decode their actual CSV."""
     completed = subprocess.run(
         [
             "cargo",
@@ -161,7 +167,8 @@ def _run_rust_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
     return np.asarray(rows, dtype=float)
 
 
-def _run_lean_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
+def _run_lean_case(case_path: Path = _REFERENCE_CASE) -> benchmark.FloatArray:
+    """Run the native Lean file loader and solver and decode their actual CSV."""
     completed = subprocess.run(
         ["lake", "exe", "gs_picard_csv", str(case_path)],
         check=True,
@@ -173,11 +180,13 @@ def _run_lean_case(case_path: Path = _REFERENCE_CASE) -> np.ndarray:
     return np.asarray(rows, dtype=float)
 
 
-def _assert_matches_python_reference(candidate_psi: np.ndarray) -> None:
+def _assert_matches_python_reference(candidate_psi: benchmark.FloatArray) -> None:
+    """Require a native grid to match the affordable common NumPy reference."""
     _assert_matches_case(candidate_psi, _CASE)
 
 
-def _assert_matches_case(candidate_psi: np.ndarray, case: dict[str, float | int]) -> None:
+def _assert_matches_case(candidate_psi: benchmark.FloatArray, case: CaseMapping) -> None:
+    """Check actual native flux, boundaries, symmetry, axis and equation residual parity."""
     python_psi = gs_solve_np(**case)
 
     assert candidate_psi.shape == python_psi.shape
@@ -223,8 +232,12 @@ def _assert_matches_case(candidate_psi: np.ndarray, case: dict[str, float | int]
     assert relative_l2 < 5e-12
     assert np.max(np.abs(interior_error)) < 5e-12
 
-    python_gs_residual_relative_max = benchmark._gs_equation_residual_relative_max(python_psi, case)
-    gs_residual_relative_max = benchmark._gs_equation_residual_relative_max(candidate_psi, case)
+    python_gs_residual_relative_max = benchmark._gs_equation_residual_relative_max(
+        python_psi, dict(case)
+    )
+    gs_residual_relative_max = benchmark._gs_equation_residual_relative_max(
+        candidate_psi, dict(case)
+    )
     assert abs(gs_residual_relative_max - python_gs_residual_relative_max) < 5e-12
     assert gs_residual_relative_max < 0.95
 
@@ -367,3 +380,16 @@ def test_native_lean_grad_shafranov_rejects_missing_required_case_field(
 
     assert completed.returncode != 0
     assert "missing required Grad-Shafranov case field: beta_mix" in completed.stderr
+
+
+def test_native_lean_csv_preserves_large_admitted_current(tmp_path: Path) -> None:
+    """Serialize actual large finite solver values without scaled integer saturation."""
+    case = _CASE.copy()
+    case["Ip_target"] = 1.0e14
+    path = tmp_path / "lean_large_current.toml"
+    _write_case(path, case)
+    expected = gs_solve_np(**case)
+    actual = _run_lean_case(path)
+    assert np.max(expected) > 18446.74407370955
+    assert np.max(actual) > 18446.74407370955
+    np.testing.assert_allclose(actual, expected, rtol=5e-12, atol=5e-12)

@@ -10,3 +10,6 @@ pandas>=1.5,<4
 # Dependabot security floor for runtime plotting/image transitive tooling.
 pillow>=12.2.0
 tzdata>=2026.2
+
+# TOML 1.0 backport for the supported Python 3.10 physical case loader.
+tomli==2.2.1; python_version < "3.11"

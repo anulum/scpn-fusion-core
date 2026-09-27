@@ -546,10 +546,36 @@ Key measured diagnostics:
 | `bench_hall_mhd_step_128` | `5.2128 ms` |
 | `bench_hall_mhd_run_100_64` | `82.088 ms` |
 
-### Polyglot Grad-Shafranov scaling
+### Strict physical-case comparison (2026-09-27)
 
-The polyglot benchmark executes independent Python, Julia, Go, Rust, and Lean
-implementations, not wrappers. These timings include the benchmark driver's
+The current thirteen-field TOML contract is shared by Python, Julia, Go, Rust
+and Lean. [Numerical contracts](NUMERICAL_CONTRACTS.md) specifies admission,
+work limits, strict array migration and numerical failure behavior.
+The reference deck remains SHA256
+`3836c33598d4b98d44991e26a945ccc504c1076179696d98b2133e6b1ce50257`.
+
+The actual five-language rerun is recorded in
+[`polyglot_gs_solver_comparison.json`](../validation/reports/polyglot_gs_solver_comparison.json)
+and [its report](../validation/reports/polyglot_gs_solver_comparison.md),
+including eighteen implementation/dependency source hashes and toolchain metadata.
+The shared host was loaded during this run; timing is regression evidence,
+not a speedup or isolated throughput claim. Go/Rust compilation is excluded;
+native CLI process startup is included.
+
+| Grid | Python | Go | Rust | Julia | Lean |
+|---|---:|---:|---:|---:|---:|
+| `17x17` | `66.153 ms` | `234.529 ms` | `19.471 ms` | `48760.162 ms` | `31566.578 ms` |
+
+The largest relative interior L2 difference from the independent NumPy solve
+is below `6e-16`; boundary values remain zero. The short Picard/Jacobi deck's
+equation residual remains approximately `0.9035` and is reported explicitly;
+cross-language agreement is not a claim that this case has converged.
+
+### Historical polyglot Grad-Shafranov scaling
+
+The following retained scaling baseline predates the strict physical-case
+contract. It records independent Python, Julia, Go, Rust and Lean implementations
+and does not describe the current validation overhead. These timings include the benchmark driver's
 process invocation cost for CLI implementations, so Julia and Lean are
 startup-dominated in this mode.
 
@@ -568,9 +594,11 @@ Startup-excluded in-process Lean timing is still missing; without that surface,
 the Lean process-startup row above must not be interpreted as steady-state
 solver throughput.
 
-### Polyglot warm-throughput timing
+### Historical polyglot warm-throughput timing
 
-Warm-throughput timing excludes language/tool startup for Python, Go, Rust, and
+This retained warm-throughput baseline also predates the strict contract; it
+is not a current throughput measurement. It excludes language/tool startup for
+Python, Go, Rust, and
 Julia by running `100` solves in a single long-lived process after `5`
 warm-up solves on the `65x65` case.
 

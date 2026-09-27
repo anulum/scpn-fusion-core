@@ -22,73 +22,12 @@ export GradShafranovCase, GradShafranovResult, case_from_toml,
 
 using TOML
 
-const DEFAULT_MU0 = 4.0e-7 * pi
-
-"""Fixed-boundary Grad-Shafranov Picard/Jacobi case definition."""
-struct GradShafranovCase
-    R_min::Float64
-    R_max::Float64
-    Z_min::Float64
-    Z_max::Float64
-    NR::Int
-    NZ::Int
-    Ip_target::Float64
-    mu0::Float64
-    n_picard::Int
-    n_jacobi::Int
-    alpha::Float64
-    omega_j::Float64
-    beta_mix::Float64
-end
-
-"""Construct and validate a fixed-boundary Grad-Shafranov solver case."""
-function GradShafranovCase(; R_min::Real=0.1, R_max::Real=2.0,
-    Z_min::Real=-1.5, Z_max::Real=1.5, NR::Integer=33, NZ::Integer=33,
-    Ip_target::Real=1.0e6, mu0::Real=DEFAULT_MU0, n_picard::Integer=80,
-    n_jacobi::Integer=200, alpha::Real=0.1, omega_j::Real=2.0 / 3.0,
-    beta_mix::Real=0.5)
-    case = GradShafranovCase(Float64(R_min), Float64(R_max), Float64(Z_min), Float64(Z_max),
-        Int(NR), Int(NZ), Float64(Ip_target), Float64(mu0), Int(n_picard), Int(n_jacobi),
-        Float64(alpha), Float64(omega_j), Float64(beta_mix))
-    _validate_case(case)
-    return case
-end
+include("physical_case.jl")
 
 """Native Julia Grad-Shafranov solve result."""
 struct GradShafranovResult
     psi::Matrix{Float64}
     residual_history::Vector{Float64}
-end
-
-function _validate_case(case::GradShafranovCase)::Nothing
-    finite_values = (case.R_min, case.R_max, case.Z_min, case.Z_max, case.Ip_target,
-        case.mu0, case.alpha, case.omega_j, case.beta_mix)
-    if any(value -> !isfinite(value), finite_values)
-        throw(ArgumentError("Grad-Shafranov case contains a non-finite scalar"))
-    end
-    case.R_max > case.R_min || throw(ArgumentError("R_max must exceed R_min"))
-    case.Z_max > case.Z_min || throw(ArgumentError("Z_max must exceed Z_min"))
-    case.NR >= 3 || throw(ArgumentError("NR must be at least 3"))
-    case.NZ >= 3 || throw(ArgumentError("NZ must be at least 3"))
-    case.mu0 > 0.0 || throw(ArgumentError("mu0 must be positive"))
-    case.n_picard >= 1 || throw(ArgumentError("n_picard must be at least 1"))
-    case.n_jacobi >= 1 || throw(ArgumentError("n_jacobi must be at least 1"))
-    0.0 < case.alpha <= 1.0 || throw(ArgumentError("alpha must be in (0, 1]"))
-    0.0 < case.omega_j < 2.0 || throw(ArgumentError("omega_j must be in (0, 2)"))
-    0.0 <= case.beta_mix <= 1.0 || throw(ArgumentError("beta_mix must be in [0, 1]"))
-    return nothing
-end
-
-"""Load and validate a `grad_shafranov` case table from a TOML file."""
-function case_from_toml(path::AbstractString)::GradShafranovCase
-    data = TOML.parsefile(path)
-    case_data = get(data, "grad_shafranov", data)
-    return GradShafranovCase(; R_min=case_data["R_min"], R_max=case_data["R_max"],
-        Z_min=case_data["Z_min"], Z_max=case_data["Z_max"], NR=case_data["NR"],
-        NZ=case_data["NZ"], Ip_target=case_data["Ip_target"],
-        mu0=get(case_data, "mu0", DEFAULT_MU0), n_picard=case_data["n_picard"],
-        n_jacobi=case_data["n_jacobi"], alpha=case_data["alpha"],
-        omega_j=case_data["omega_j"], beta_mix=case_data["beta_mix"])
 end
 
 function _linspace(start::Float64, stop::Float64, count::Int)::Vector{Float64}
@@ -107,9 +46,13 @@ function _r_grid(case::GradShafranovCase)::Tuple{Vector{Float64}, Vector{Float64
     return r, z, rr, r[2] - r[1], z[2] - z[1]
 end
 
+"""Check the Gaussian exponent before exponentiation can hide overflow."""
 function _initial_psi(case::GradShafranovCase, rr::Matrix{Float64})::Matrix{Float64}
     r_center = 0.5 * (case.R_min + case.R_max)
-    psi = exp.(-((rr .- r_center) .^ 2) ./ 0.5) .* 0.01
+    _require_numerics(r_center, "initial Gaussian centre")
+    exponent = -((rr .- r_center) .^ 2) ./ 0.5
+    _require_numerics(exponent, "initial Gaussian exponent")
+    psi = exp.(exponent) .* 0.01
     psi[1, :] .= 0.0
     psi[end, :] .= 0.0
     psi[:, 1] .= 0.0
@@ -117,6 +60,14 @@ function _initial_psi(case::GradShafranovCase, rr::Matrix{Float64})::Matrix{Floa
     return psi
 end
 
+"""Refuse nonfinite accepted-input arithmetic rather than hiding it in a reduction."""
+function _require_numerics(value::Union{Float64,AbstractArray{Float64}}, stage::String)::Nothing
+    valid = value isa Float64 ? isfinite(value) : all(isfinite, value)
+    valid || error("$stage became nonfinite")
+    return nothing
+end
+
+"""Build the checked reference current profile while retaining its radius policy."""
 function _compute_source(case::GradShafranovCase, psi::Matrix{Float64}, rr::Matrix{Float64}, dR::Float64, dZ::Float64)::Matrix{Float64}
     psi_axis = maximum(@view psi[2:end-1, 2:end-1])
     psi_boundary = 0.0
@@ -125,33 +76,57 @@ function _compute_source(case::GradShafranovCase, psi::Matrix{Float64}, rr::Matr
         denom = denom == 0.0 ? 1.0e-9 : sign(denom) * 1.0e-9
     end
 
-    psi_norm = clamp.((psi .- psi_axis) ./ denom, 0.0, 1.0)
+    psi_norm = (psi .- psi_axis) ./ denom
+    _require_numerics(psi_norm, "normalised flux")
+    psi_norm = clamp.(psi_norm, 0.0, 1.0)
     profile = ifelse.((psi_norm .>= 0.0) .& (psi_norm .< 1.0), 1.0 .- psi_norm, 0.0)
     r_safe = max.(rr, 1.0e-10)
     j_p = rr .* profile
-    j_f = profile ./ (case.mu0 .* r_safe)
+    denominator = case.mu0 .* r_safe
+    _require_numerics(denominator, "source denominator")
+    all(>(0.0), denominator) || error("source denominator became zero")
+    j_f = profile ./ denominator
+    _require_numerics(j_p, "pressure profile")
+    _require_numerics(j_f, "poloidal-current profile")
     j_raw = case.beta_mix .* j_p .+ (1.0 - case.beta_mix) .* j_f
+    _require_numerics(j_raw, "current profile")
     current = sum(j_raw) * dR * dZ
+    _require_numerics(current, "profile current")
     scale = case.Ip_target / max(abs(current), 1.0e-9)
+    _require_numerics(scale, "current scale")
     j_phi = j_raw .* scale
-    return -case.mu0 .* rr .* j_phi
+    _require_numerics(j_phi, "scaled current")
+    source = -case.mu0 .* rr .* j_phi
+    _require_numerics(source, "GS source")
+    return source
 end
 
+"""Apply one Jacobi relaxation step with checked coefficients and flux arithmetic."""
 function _jacobi_step(psi::Matrix{Float64}, source::Matrix{Float64}, rr::Matrix{Float64}, dR::Float64, dZ::Float64, omega_j::Float64)::Matrix{Float64}
     psi_new = copy(psi)
     dR2 = dR * dR
     dZ2 = dZ * dZ
     a_ns = 1.0 / dZ2
     a_c = 2.0 / dR2 + 2.0 / dZ2
+    _require_numerics(a_ns, "Jacobi vertical coefficient")
+    _require_numerics(a_c, "Jacobi center coefficient")
+    a_ns > 0.0 && a_c > 0.0 || error("Jacobi coefficient became degenerate")
 
     nz, nr = size(psi)
     for iz in 2:nz-1, ir in 2:nr-1
         r_safe = max(rr[iz, ir], 1.0e-10)
-        a_e = 1.0 / dR2 - 1.0 / (2.0 * r_safe * dR)
-        a_w = 1.0 / dR2 + 1.0 / (2.0 * r_safe * dR)
+        denominator = 2.0 * r_safe * dR
+        _require_numerics(denominator, "radial Jacobi denominator")
+        denominator > 0.0 || error("radial Jacobi denominator became zero")
+        a_e = 1.0 / dR2 - 1.0 / denominator
+        a_w = 1.0 / dR2 + 1.0 / denominator
+        _require_numerics(a_e, "east Jacobi coefficient")
+        _require_numerics(a_w, "west Jacobi coefficient")
         update = (a_e * psi[iz, ir + 1] + a_w * psi[iz, ir - 1] +
             a_ns * (psi[iz - 1, ir] + psi[iz + 1, ir]) - source[iz, ir]) / a_c
         psi_new[iz, ir] = (1.0 - omega_j) * psi[iz, ir] + omega_j * update
+        _require_numerics(update, "Jacobi update")
+        _require_numerics(psi_new[iz, ir], "Jacobi flux")
     end
     return psi_new
 end
@@ -238,11 +213,14 @@ function _max_change(a::Matrix{Float64}, b::Matrix{Float64})::Float64
     return maximum(abs.(a .- b))
 end
 
-"""Run the native fixed-boundary Picard/Jacobi Grad-Shafranov solve."""
+"""Run a validated reference solve; numerical failure throws before any result is returned."""
 function solve_grad_shafranov(case::GradShafranovCase)::GradShafranovResult
     _validate_case(case)
     _, _, rr, dR, dZ = _r_grid(case)
+    isfinite(dR*dR) && isfinite(dZ*dZ) && dR*dR > 0.0 && dZ*dZ > 0.0 ||
+        error("solver spacing arithmetic became nonfinite or degenerate")
     psi = _initial_psi(case, rr)
+    _require_numerics(psi, "initial flux")
     residual_history = Float64[]
 
     for _ in 1:case.n_picard
@@ -252,7 +230,10 @@ function solve_grad_shafranov(case::GradShafranovCase)::GradShafranovResult
             psi_elliptic = _jacobi_step(psi_elliptic, source, rr, dR, dZ, case.omega_j)
         end
         psi_next = (1.0 - case.alpha) .* psi .+ case.alpha .* psi_elliptic
-        push!(residual_history, _max_change(psi_next, psi))
+        _require_numerics(psi_next, "Picard flux")
+        residual = _max_change(psi_next, psi)
+        _require_numerics(residual, "update residual")
+        push!(residual_history, residual)
         psi = psi_next
     end
 

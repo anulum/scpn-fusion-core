@@ -12,8 +12,8 @@
 //! analytic Shafranov / coil-current helpers, magnetics sensing, and the
 //! standalone geometric-multigrid GS* solve to Python, mirroring the NumPy tier.
 
-use ndarray::Array2;
-use numpy::{IntoPyArray, PyArray1, PyArray2, PyReadonlyArray2};
+use super::array_contract as abi;
+use numpy::{IntoPyArray, PyArray1, PyArray2};
 use pyo3::prelude::*;
 
 use fusion_core::ignition::calculate_thermodynamics;
@@ -344,18 +344,44 @@ pub(crate) fn solve_coil_currents(
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn measure_magnetics<'py>(
     py: Python<'py>,
-    psi: PyReadonlyArray2<'py, f64>,
-    nr: usize,
-    nz: usize,
-    r_min: f64,
-    r_max: f64,
-    z_min: f64,
-    z_max: f64,
-) -> Bound<'py, PyArray1<f64>> {
-    let psi_arr: Array2<f64> = psi.as_array().to_owned();
-    let suite = fusion_diagnostics::sensors::SensorSuite::new(nr, nz, r_min, r_max, z_min, z_max);
-    let measurements = suite.measure_magnetics(&psi_arr);
-    ndarray::Array1::from_vec(measurements).into_pyarray(py)
+    psi: &Bound<'py, PyAny>,
+    nr: &Bound<'py, PyAny>,
+    nz: &Bound<'py, PyAny>,
+    r_min: &Bound<'py, PyAny>,
+    r_max: &Bound<'py, PyAny>,
+    z_min: &Bound<'py, PyAny>,
+    z_max: &Bound<'py, PyAny>,
+) -> PyResult<Bound<'py, PyArray1<f64>>> {
+    let array = abi::array_input(py, psi, "psi")?;
+    for (name, value, integer) in [
+        ("nr", nr, true),
+        ("nz", nz, true),
+        ("r_min", r_min, false),
+        ("r_max", r_max, false),
+        ("z_min", z_min, false),
+        ("z_max", z_max, false),
+    ] {
+        abi::scalar_kind(py, value, name, integer)?;
+    }
+    let nr = abi::integer_value(py, nr, "nr", 2)?;
+    let nz = abi::integer_value(py, nz, "nz", 2)?;
+    abi::checked_grid(nr, nz)?;
+    abi::shape(&array, nr, nz, "psi")?;
+    let r_min = abi::real_value(py, r_min, "r_min")?;
+    let r_max = abi::real_value(py, r_max, "r_max")?;
+    let z_min = abi::real_value(py, z_min, "z_min")?;
+    let z_max = abi::real_value(py, z_max, "z_max")?;
+    abi::grid_spacing(r_min, r_max, nr)?;
+    abi::grid_spacing(z_min, z_max, nz)?;
+    abi::finite_array(py, &array, "psi")?;
+    let psi_arr = abi::owned_array(py, &array)?;
+    let suite =
+        fusion_diagnostics::sensors::SensorSuite::try_new(nr, nz, r_min, r_max, z_min, z_max)
+            .map_err(|error| abi::native_error(error, true))?;
+    let measurements = suite
+        .try_measure_magnetics(&psi_arr)
+        .map_err(|error| abi::native_error(error, false))?;
+    Ok(ndarray::Array1::from_vec(measurements).into_pyarray(py))
 }
 
 /// Standalone geometric multigrid solve of the Grad-Shafranov GS* operator.
@@ -366,36 +392,87 @@ pub(crate) fn measure_magnetics<'py>(
 /// tier (`scpn_fusion.core.multigrid_solve.multigrid_solve`): both relax the
 /// identical toroidal GS* operator to the same fixed point within tolerance.
 #[pyfunction]
-#[pyo3(signature = (source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol = 1e-6, max_cycles = 500))]
+#[pyo3(signature = (source, psi_bc, r_min, r_max, z_min, z_max, nr, nz,
+    tol = abi::ScalarArgument::RealDefault(1e-6), max_cycles = abi::ScalarArgument::IntegerDefault(500)),
+    text_signature = "(source, psi_bc, r_min, r_max, z_min, z_max, nr, nz, tol=1e-6, max_cycles=500)")]
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn multigrid_vcycle<'py>(
     py: Python<'py>,
-    source: PyReadonlyArray2<'py, f64>,
-    psi_bc: PyReadonlyArray2<'py, f64>,
-    r_min: f64,
-    r_max: f64,
-    z_min: f64,
-    z_max: f64,
-    nr: usize,
-    nz: usize,
-    tol: f64,
-    max_cycles: usize,
-) -> (Bound<'py, PyArray2<f64>>, f64, usize, bool) {
-    let grid = Grid2D::new(nr, nz, r_min, r_max, z_min, z_max);
-    let source_arr: Array2<f64> = source.as_array().to_owned();
-    let mut psi: Array2<f64> = psi_bc.as_array().to_owned();
-    let result = fusion_math::multigrid::multigrid_solve(
+    source: &Bound<'py, PyAny>,
+    psi_bc: &Bound<'py, PyAny>,
+    r_min: &Bound<'py, PyAny>,
+    r_max: &Bound<'py, PyAny>,
+    z_min: &Bound<'py, PyAny>,
+    z_max: &Bound<'py, PyAny>,
+    nr: &Bound<'py, PyAny>,
+    nz: &Bound<'py, PyAny>,
+    tol: abi::ScalarArgument<'py>,
+    max_cycles: abi::ScalarArgument<'py>,
+) -> PyResult<(Bound<'py, PyArray2<f64>>, f64, usize, bool)> {
+    let tol = tol.into_object(py)?;
+    let max_cycles = max_cycles.into_object(py)?;
+    let source_array = abi::array_input(py, source, "source")?;
+    let initial = abi::array_input(py, psi_bc, "psi_bc")?;
+    for (name, value, integer) in [
+        ("r_min", r_min, false),
+        ("r_max", r_max, false),
+        ("z_min", z_min, false),
+        ("z_max", z_max, false),
+        ("nr", nr, true),
+        ("nz", nz, true),
+        ("tol", &tol, false),
+        ("max_cycles", &max_cycles, true),
+    ] {
+        abi::scalar_kind(py, value, name, integer)?;
+    }
+    let nr = abi::integer_value(py, nr, "nr", 3)?;
+    let nz = abi::integer_value(py, nz, "nz", 3)?;
+    let max_cycles = abi::integer_value(py, &max_cycles, "max_cycles", 1)?;
+    abi::checked_grid(nr, nz)?;
+    abi::shape(&source_array, nr, nz, "source")?;
+    abi::shape(&initial, nr, nz, "psi_bc")?;
+    let r_min = abi::real_value(py, r_min, "r_min")?;
+    let r_max = abi::real_value(py, r_max, "r_max")?;
+    let z_min = abi::real_value(py, z_min, "z_min")?;
+    let z_max = abi::real_value(py, z_max, "z_max")?;
+    let tol = abi::real_value(py, &tol, "tol")?;
+    if tol <= 0.0 || r_min <= 0.0 {
+        return Err(pyo3::exceptions::PyValueError::new_err(
+            "tol and r_min must be positive",
+        ));
+    }
+    abi::grid_spacing(r_min, r_max, nr)?;
+    abi::grid_spacing(z_min, z_max, nz)?;
+    let numpy_r = abi::actual_axis(py, r_min, r_max, nr)?;
+    let numpy_z = abi::actual_axis(py, z_min, z_max, nz)?;
+    let grid = Grid2D::try_new(nr, nz, r_min, r_max, z_min, z_max)
+        .map_err(|error| abi::native_error(error, true))?;
+    let config = fusion_math::multigrid::MultigridConfig::default();
+    fusion_math::multigrid::validate_multigrid_geometry(&grid, &config)
+        .map_err(|error| abi::native_error(error, true))?;
+    fusion_math::multigrid::validate_numpy_multigrid_geometry(
+        &numpy_r,
+        &numpy_z,
+        config.min_grid_size,
+    )
+    .map_err(|error| abi::native_error(error, true))?;
+    abi::finite_array(py, &source_array, "source")?;
+    abi::finite_array(py, &initial, "psi_bc")?;
+    let source_arr = abi::owned_array(py, &source_array)?;
+    let mut psi = abi::owned_array(py, &initial)?;
+    let result = fusion_math::multigrid::try_multigrid_solve(
         &mut psi,
         &source_arr,
         &grid,
-        &fusion_math::multigrid::MultigridConfig::default(),
+        &config,
         max_cycles,
         tol,
-    );
-    (
+    )
+    .map_err(|error| abi::native_error(error, false))?;
+    Ok((
         psi.into_pyarray(py),
         result.residual,
         result.cycles,
         result.converged,
-    )
+    ))
 }

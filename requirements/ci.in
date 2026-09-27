@@ -35,3 +35,6 @@ tzdata>=2026.2
 Pygments>=2.20.0
 pillow>=12.2.0
 pytest>=9.1.1
+
+# TOML 1.0 backport for the supported Python 3.10 physical case loader.
+tomli==2.2.1; python_version < "3.11"

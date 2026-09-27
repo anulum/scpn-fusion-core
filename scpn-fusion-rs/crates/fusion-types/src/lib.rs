@@ -12,6 +12,8 @@
 #![deny(missing_docs)]
 #![cfg_attr(not(test), deny(clippy::expect_used, clippy::unwrap_used))]
 
+/// Fallible numerical array storage for checked solver boundaries.
+pub mod array_storage;
 /// Governed reactor and solver configuration schema.
 pub mod config;
 /// Physical and mathematical constants used across native crates.

@@ -5,10 +5,11 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Polyglot Benchmark Report Tests
-"""Report-generation tests for the polyglot Grad-Shafranov benchmark."""
+"""Real five-language benchmark workflow and report provenance regressions."""
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -53,138 +54,63 @@ def _sample_case() -> dict[str, Any]:
     }
 
 
-def test_case_parser_matrix_parser_and_command_runner(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Case parsing and command execution use the tracked file/CSV contracts."""
-    case_path = tmp_path / "case.toml"
-    case_path.write_text(
-        "\n".join(
-            [
-                "[ignored]",
-                "value = 7",
-                "",
-                "[grad_shafranov]",
-                "NR = 5",
-                "NZ = 5",
-                "enabled = true",
-                'label = "reference"',
-            ]
-        )
-        + "\n",
-        encoding="utf-8",
+def test_case_parser_matrix_parser_and_command_runner(tmp_path: Path) -> None:
+    """Load a real typed case and compare actual native CSV with the NumPy solve."""
+    path = tmp_path / "case.toml"
+    expected = _sample_case()
+    path.write_text(
+        '["grad_shafranov"]\n'
+        + "\n".join(f"{key} = {value}" for key, value in expected.items())
+        + "\n"
     )
-    calls: list[tuple[list[str], Path]] = []
-
-    def fake_run(
-        command: list[str],
-        cwd: Path,
-        check: bool,
-        text: bool,
-        capture_output: bool,
-    ) -> subprocess.CompletedProcess[str]:
-        calls.append((command, cwd))
-        assert check is True
-        assert text is True
-        assert capture_output is True
-        return subprocess.CompletedProcess(command, 0, stdout="0,1\n2,3\n", stderr="")
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
-
-    case = benchmark._read_case(case_path)
-    matrix, seconds = benchmark._run_command(["solver", str(case_path)], tmp_path)
-
-    assert case == {"NR": 5, "NZ": 5, "enabled": True, "label": "reference"}
-    assert np.array_equal(matrix, np.array([[0.0, 1.0], [2.0, 3.0]]))
-    assert seconds >= 0.0
-    assert calls == [(["solver", str(case_path)], tmp_path)]
+    case = benchmark._read_case(path)
+    assert case == expected
+    matrix, seconds = benchmark._run_go(path)
+    reference, _ = benchmark._run_python(case)
+    np.testing.assert_allclose(matrix, reference, rtol=5e-12, atol=5e-12)
+    assert seconds > 0.0
+    path.write_text(path.read_text() + "enabled = true\n")
+    with pytest.raises(ValueError):
+        benchmark._read_case(path)
+    with pytest.raises(subprocess.CalledProcessError):
+        benchmark._run_go(path)
 
 
 def test_python_runner_executes_reference_solver() -> None:
-    """The Python timing path executes the NumPy reference solver."""
+    """The actual Python timing path returns a finite fixed-boundary physical solve."""
     psi, seconds = benchmark._run_python(_sample_case())
-
-    assert psi.shape == (5, 5)
-    assert np.all(np.isfinite(psi))
-    assert seconds >= 0.0
+    assert psi.shape == (5, 5) and np.all(np.isfinite(psi)) and seconds > 0.0
+    assert np.all(psi[[0, -1]] == 0.0) and np.all(psi[:, [0, -1]] == 0.0)
 
 
-def test_native_command_wrappers_build_expected_commands(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Julia and Lean wrappers route through their native command lines."""
-    calls: list[tuple[list[str], Path]] = []
-
-    def fake_run_command(command: list[str], cwd: Path) -> tuple[benchmark.FloatArray, float]:
-        calls.append((command, cwd))
-        return _sample_psi(), 0.01
-
-    monkeypatch.setattr(benchmark, "_run_command", fake_run_command)
-
-    julia_psi, julia_seconds = benchmark._run_julia()
-    lean_psi, lean_seconds = benchmark._run_lean()
-
-    assert julia_psi.shape == (5, 5)
-    assert lean_psi.shape == (5, 5)
-    assert julia_seconds == 0.01
-    assert lean_seconds == 0.01
-    assert calls[0][0][:3] == [
-        "julia",
-        f"--project={benchmark._JULIA_PROJECT}",
-        "--startup-file=no",
-    ]
-    assert calls[0][1] == benchmark._REPO
-    assert calls[1][0] == ["lake", "exe", "gs_picard_csv", str(benchmark._CASE_PATH)]
-    assert calls[1][1] == benchmark._LEAN_PROJECT
+def test_native_command_wrappers_build_expected_commands() -> None:
+    """Exercise real Julia and Lean wrappers through their pinned CLI toolchains."""
+    reference, _ = benchmark._run_python(benchmark._read_case(benchmark._CASE_PATH))
+    for run in (benchmark._run_julia, benchmark._run_lean):
+        psi, seconds = run()
+        assert seconds > 0.0 and psi.shape == reference.shape
+        np.testing.assert_allclose(psi, reference, rtol=5e-12, atol=5e-12)
 
 
-def test_tool_version_records_subprocess_output(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Tool-version probing records command stdout."""
-
-    def fake_run(
-        command: list[str],
-        check: bool,
-        text: bool,
-        capture_output: bool,
-    ) -> subprocess.CompletedProcess[str]:
-        assert check is True
-        assert text is True
-        assert capture_output is True
-        return subprocess.CompletedProcess(command, 0, stdout=f"{command[0]} 1.0\n", stderr="")
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
-
-    assert benchmark._tool_version(["julia", "--version"]) == "julia 1.0"
+def test_tool_version_records_subprocess_output() -> None:
+    """Record version output from the real available Julia executable."""
+    version = benchmark._tool_version(["julia", "--version"])
+    assert "julia" in version.lower() and not version.startswith("unavailable:")
 
 
-def test_tool_version_reports_unavailable_command(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Tool-version probing reports unavailable binaries without raising."""
-
-    def fake_run(
-        command: list[str],
-        check: bool,
-        text: bool,
-        capture_output: bool,
-    ) -> subprocess.CompletedProcess[str]:
-        raise OSError(f"{command[0]} missing")
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
-
-    assert benchmark._tool_version(["julia", "--version"]) == "unavailable: julia missing"
+def test_tool_version_reports_unavailable_command(tmp_path: Path) -> None:
+    """Report an actual missing executable as an availability diagnostic."""
+    assert benchmark._tool_version([str(tmp_path / "missing-executable")]).startswith(
+        "unavailable:"
+    )
 
 
-def test_hardware_metadata_records_tool_versions(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Hardware metadata records runtime and toolchain version fields."""
-    monkeypatch.setattr(benchmark, "_tool_version", lambda command: f"{command[0]} 1.0")
+def test_hardware_metadata_records_tool_versions() -> None:
+    """Qualify actual host metadata and the pinned Lean toolchain version."""
     metadata = benchmark._hardware_metadata()
-
-    assert metadata["julia"] == "julia 1.0"
-    assert metadata["go"] == "go 1.0"
-    assert metadata["rust"] == "rustc 1.0"
-    assert metadata["lean"] == "lean 1.0"
-    assert metadata["python"]
-    assert metadata["machine"]
+    for key in ("julia", "go", "rust", "lean", "python", "machine"):
+        assert metadata[key] and not metadata[key].startswith("unavailable:")
+    assert "4.29.1" in metadata["lean"]
 
 
 def test_boundary_and_error_metrics_cover_report_scalars() -> None:
@@ -206,48 +132,18 @@ def test_boundary_and_error_metrics_cover_report_scalars() -> None:
 
 
 def test_main_writes_json_and_markdown_reports(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """The benchmark main path writes the tracked JSON/Markdown report schema."""
-    psi = _sample_psi()
-    case = _sample_case()
-    report_json = tmp_path / "polyglot.json"
-    report_md = tmp_path / "polyglot.md"
-
-    monkeypatch.setattr(benchmark, "_CASE_PATH", tmp_path / "case.toml")
-    monkeypatch.setattr(benchmark, "_REPORT_JSON", report_json)
-    monkeypatch.setattr(benchmark, "_REPORT_MD", report_md)
-    monkeypatch.setattr(benchmark, "_read_case", lambda _path: case)
-    monkeypatch.setattr(benchmark, "_run_python", lambda _case: (psi, 0.10))
-    monkeypatch.setattr(benchmark, "_run_julia", lambda: (psi, 0.20))
-    monkeypatch.setattr(benchmark, "_run_go", lambda: (psi, 0.30))
-    monkeypatch.setattr(benchmark, "_run_rust", lambda: (psi, 0.40))
-    monkeypatch.setattr(benchmark, "_run_lean", lambda: (psi, 0.50))
-    monkeypatch.setattr(
-        benchmark,
-        "_hardware_metadata",
-        lambda: {
-            "cpu_model": "test cpu",
-            "machine": "x86_64",
-            "python": "3.12",
-            "julia": "julia 1.0",
-            "go": "go1.0",
-            "rust": "rustc 1.0",
-            "lean": "Lean 4",
-            "os": "Linux",
-        },
-    )
-
-    benchmark.main()
-    out = capsys.readouterr().out
-    report = json.loads(report_json.read_text(encoding="utf-8"))
-    rendered = report_md.read_text(encoding="utf-8")
-
-    assert str(report_md) in out
-    assert report["case"] == case
-    assert report["parity"]["shape"] == [5, 5]
+    """Run all five actual solver paths and verify report schema, physics and byte provenance."""
+    report_json, report_md = tmp_path / "polyglot.json", tmp_path / "polyglot.md"
+    benchmark.main(report_json=report_json, report_md=report_md)
+    output = capsys.readouterr().out
+    report = json.loads(report_json.read_text())
+    rendered = report_md.read_text()
+    assert str(report_md) in output
+    assert report["case"] == benchmark._read_case(benchmark._CASE_PATH)
+    assert report["case_sha256"] == hashlib.sha256(benchmark._CASE_PATH.read_bytes()).hexdigest()
+    assert report["parity"]["shape"] == [17, 17]
     assert [row["language"] for row in report["solvers"]] == [
         "Python",
         "Julia",
@@ -255,5 +151,10 @@ def test_main_writes_json_and_markdown_reports(
         "Rust",
         "Lean",
     ]
+    for row in report["solvers"]:
+        assert row["wall_time_s"] > 0.0
+    for row in report["parity"]["by_language"].values():
+        assert row["relative_l2_interior"] < 5e-12
+        assert row["boundary_abs_max"] == 0.0
     assert "# Polyglot Grad-Shafranov Solver Benchmark" in rendered
-    assert "| Python | `gs_solve_np` | 0.100000 |" in rendered
+    assert "| Python | `gs_solve_np` |" in rendered

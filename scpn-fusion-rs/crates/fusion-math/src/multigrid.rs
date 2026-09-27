@@ -18,14 +18,20 @@
 //!
 //! # Grid Size Requirements
 //!
-//! For correct coarsening, grid dimensions should satisfy: n = 2^k + 1
-//! (e.g., 17, 33, 65, 129, 257). The solver handles other sizes but
-//! may truncate to the nearest coarsenable dimension.
+//! Both even and odd rectangular grids are supported. Every active level must
+//! have finite increasing axes and representable positive stencil denominators.
 
+/// Shared preflight for native and NumPy geometric multigrid operation sequences.
+pub use crate::multigrid_geometry::{
+    validate_multigrid_geometry, validate_numpy_multigrid_geometry,
+};
+use fusion_types::array_storage::try_zeros;
 use fusion_types::state::Grid2D;
 use ndarray::Array2;
 
-use crate::sor::{sor_residual, sor_step};
+#[cfg(test)]
+use crate::sor::sor_residual;
+use crate::sor::sor_step;
 
 /// Configuration for the multigrid V-cycle solver.
 #[derive(Debug, Clone)]
@@ -160,14 +166,18 @@ fn prolongate(coarse: &Array2<f64>, fine: &mut Array2<f64>) {
 /// Compute the residual vector r = source - L[psi] on the given grid.
 ///
 /// The operator L is the Grad-Shafranov 5-point stencil with toroidal 1/R terms.
-fn compute_residual_vector(psi: &Array2<f64>, source: &Array2<f64>, grid: &Grid2D) -> Array2<f64> {
+fn compute_residual_vector(
+    psi: &Array2<f64>,
+    source: &Array2<f64>,
+    grid: &Grid2D,
+) -> Result<Array2<f64>, String> {
     let (nz, nr) = psi.dim();
     let dr = grid.dr;
     let dz = grid.dz;
     let dr_sq = dr * dr;
     let dz_sq = dz * dz;
 
-    let mut residual = Array2::zeros((nz, nr));
+    let mut residual = try_zeros(nz, nr)?;
 
     for iz in 1..nz - 1 {
         for ir in 1..nr - 1 {
@@ -187,7 +197,7 @@ fn compute_residual_vector(psi: &Array2<f64>, source: &Array2<f64>, grid: &Grid2
         }
     }
 
-    residual
+    Ok(residual)
 }
 
 /// Compute coarse grid dimensions from fine grid.
@@ -196,14 +206,14 @@ fn coarse_size(n: usize) -> usize {
 }
 
 /// Build a coarsened Grid2D from a fine Grid2D.
-fn coarsen_grid(fine_grid: &Grid2D) -> Grid2D {
+fn coarsen_grid(fine_grid: &Grid2D) -> Result<Grid2D, String> {
     let cnr = coarse_size(fine_grid.nr);
     let cnz = coarse_size(fine_grid.nz);
     let r_min = fine_grid.r[0];
     let r_max = fine_grid.r[fine_grid.nr - 1];
     let z_min = fine_grid.z[0];
     let z_max = fine_grid.z[fine_grid.nz - 1];
-    Grid2D::new(cnr, cnz, r_min, r_max, z_min, z_max)
+    Grid2D::try_new(cnr, cnz, r_min, r_max, z_min, z_max)
 }
 
 /// Perform one multigrid V-cycle.
@@ -211,44 +221,54 @@ fn coarsen_grid(fine_grid: &Grid2D) -> Grid2D {
 /// Recursive: smooths on the current level, restricts the residual to
 /// a coarser grid, solves the coarse correction, prolongs it back, and
 /// post-smooths.
-fn v_cycle(psi: &mut Array2<f64>, source: &Array2<f64>, grid: &Grid2D, config: &MultigridConfig) {
+fn v_cycle(
+    psi: &mut Array2<f64>,
+    source: &Array2<f64>,
+    grid: &Grid2D,
+    config: &MultigridConfig,
+) -> Result<(), String> {
     let (nz, nr) = psi.dim();
 
     // Base case: grid too small for further coarsening — solve directly
     if nr <= config.min_grid_size || nz <= config.min_grid_size {
         for _ in 0..config.coarse_iters {
             sor_step(psi, source, grid, config.omega);
+            require_finite(psi, "coarse smoothing")?;
         }
-        return;
+        return Ok(());
     }
 
     // 1. Pre-smoothing
     for _ in 0..config.pre_smooth {
         sor_step(psi, source, grid, config.omega);
+        require_finite(psi, "smoothing")?;
     }
 
     // 2. Compute residual on fine grid
-    let residual_fine = compute_residual_vector(psi, source, grid);
+    let residual_fine = compute_residual_vector(psi, source, grid)?;
+    require_finite(&residual_fine, "fine residual")?;
 
     // 3. Restrict residual to coarse grid
-    let coarse_grid = coarsen_grid(grid);
+    let coarse_grid = coarsen_grid(grid)?;
     let cnz = coarse_grid.nz;
     let cnr = coarse_grid.nr;
-    let mut residual_coarse = Array2::zeros((cnz, cnr));
+    let mut residual_coarse = try_zeros(cnz, cnr)?;
     restrict(&residual_fine, &mut residual_coarse);
+    require_finite(&residual_coarse, "restricted residual")?;
 
     // 4. Solve correction on coarse grid (e = 0 initially)
-    let mut correction_coarse = Array2::zeros((cnz, cnr));
+    let mut correction_coarse = try_zeros(cnz, cnr)?;
     v_cycle(
         &mut correction_coarse,
         &residual_coarse,
         &coarse_grid,
         config,
-    );
+    )?;
 
     // 5. Prolongate correction to fine grid and add
-    let mut correction_fine = Array2::zeros((nz, nr));
+    let mut correction_fine = try_zeros(nz, nr)?;
     prolongate(&correction_coarse, &mut correction_fine);
+    require_finite(&correction_fine, "prolongated correction")?;
 
     // Add correction to solution
     for iz in 1..nz - 1 {
@@ -257,10 +277,14 @@ fn v_cycle(psi: &mut Array2<f64>, source: &Array2<f64>, grid: &Grid2D, config: &
         }
     }
 
+    require_finite(psi, "corrected flux")?;
+
     // 6. Post-smoothing
     for _ in 0..config.post_smooth {
         sor_step(psi, source, grid, config.omega);
+        require_finite(psi, "smoothing")?;
     }
+    Ok(())
 }
 
 /// Solve the Grad-Shafranov equation using multigrid V-cycles.
@@ -300,30 +324,85 @@ pub fn multigrid_solve(
     max_cycles: usize,
     tol: f64,
 ) -> MultigridResult {
-    let mut residual = sor_residual(psi, source, grid);
-    let mut residual_history = vec![residual];
+    match try_multigrid_solve(psi, source, grid, config, max_cycles, tol) {
+        Ok(result) => result,
+        Err(error) => panic!("invalid legacy multigrid call: {error}"),
+    }
+}
 
+/// Refuse any nonfinite numerical entry before a reduction can conceal it.
+fn require_finite(field: &Array2<f64>, stage: &str) -> Result<(), String> {
+    if !field.iter().all(|value| value.is_finite()) {
+        return Err(format!("{stage} arithmetic became nonfinite"));
+    }
+    Ok(())
+}
+
+/// Solve with typed numerical refusal and a truthful zero-cycle initial convergence return.
+/// Internal callers may select tol=0 to force their fixed cycle budget without convergence.
+pub fn try_multigrid_solve(
+    psi: &mut Array2<f64>,
+    source: &Array2<f64>,
+    grid: &Grid2D,
+    config: &MultigridConfig,
+    max_cycles: usize,
+    tol: f64,
+) -> Result<MultigridResult, String> {
+    if psi.dim() != (grid.nz, grid.nr)
+        || source.dim() != psi.dim()
+        || !tol.is_finite()
+        || tol < 0.0
+        || !config.omega.is_finite()
+        || !(1.0..2.0).contains(&config.omega)
+    {
+        return Err("invalid multigrid shape or controls".to_owned());
+    }
+    validate_multigrid_geometry(grid, config)?;
+    require_finite(source, "source input")?;
+    require_finite(psi, "initial flux")?;
+    let residual_measurement = |field: &Array2<f64>| -> Result<f64, String> {
+        let residual = compute_residual_vector(field, source, grid)?;
+        require_finite(&residual, "stencil residual")?;
+        Ok(residual
+            .iter()
+            .fold(0.0_f64, |best, value| best.max(value.abs())))
+    };
+    let mut residual = residual_measurement(psi)?;
+    let mut residual_history = Vec::new();
+    residual_history
+        .try_reserve(1)
+        .map_err(|error| format!("allocation failure: {error}"))?;
+    residual_history.push(residual);
+    if residual < tol {
+        return Ok(MultigridResult {
+            cycles: 0,
+            residual,
+            converged: true,
+            residual_history,
+        });
+    }
     for cycle in 1..=max_cycles {
-        v_cycle(psi, source, grid, config);
-        residual = sor_residual(psi, source, grid);
+        v_cycle(psi, source, grid, config)?;
+        residual = residual_measurement(psi)?;
+        residual_history
+            .try_reserve(1)
+            .map_err(|error| format!("allocation failure: {error}"))?;
         residual_history.push(residual);
-
         if residual < tol {
-            return MultigridResult {
+            return Ok(MultigridResult {
                 cycles: cycle,
                 residual,
                 converged: true,
                 residual_history,
-            };
+            });
         }
     }
-
-    MultigridResult {
+    Ok(MultigridResult {
         cycles: max_cycles,
         residual,
-        converged: residual < tol,
+        converged: false,
         residual_history,
-    }
+    })
 }
 
 #[cfg(test)]

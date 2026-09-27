@@ -98,14 +98,51 @@ impl SensorSuite {
     /// at least two points per axis and finite increasing bounds for meaningful
     /// measurement geometry.
     pub fn new(nr: usize, nz: usize, r_min: f64, r_max: f64, z_min: f64, z_max: f64) -> Self {
+        match Self::try_new(nr, nz, r_min, r_max, z_min, z_max) {
+            Ok(suite) => suite,
+            Err(error) => panic!("invalid legacy sensor construction: {error}"),
+        }
+    }
+
+    /// Construct canonical sensor geometry with recoverable allocation and domain failures.
+    pub fn try_new(
+        nr: usize,
+        nz: usize,
+        r_min: f64,
+        r_max: f64,
+        z_min: f64,
+        z_max: f64,
+    ) -> Result<Self, String> {
+        if nr < 2
+            || nz < 2
+            || ![r_min, r_max, z_min, z_max]
+                .iter()
+                .all(|value| value.is_finite())
+            || r_min >= r_max
+            || z_min >= z_max
+        {
+            return Err("invalid magnetic geometry".to_owned());
+        }
         let dr = (r_max - r_min) / (nr - 1) as f64;
         let dz = (z_max - z_min) / (nz - 1) as f64;
 
         // Generate magnetic probe positions on the D-shaped wall. theta is an
         // endpoint-inclusive linspace(0, 2*pi, N_PROBES) to match the NumPy tier
         // (`scpn_fusion.diagnostics.synthetic_sensors.magnetic_probe_positions`).
-        let mut probe_r = Vec::with_capacity(N_PROBES);
-        let mut probe_z = Vec::with_capacity(N_PROBES);
+        if ![dr, dz]
+            .iter()
+            .all(|value| value.is_finite() && *value > 0.0)
+        {
+            return Err("invalid magnetic spacing".to_owned());
+        }
+        let mut probe_r = Vec::new();
+        let mut probe_z = Vec::new();
+        probe_r
+            .try_reserve_exact(N_PROBES)
+            .map_err(|error| format!("allocation failure: {error}"))?;
+        probe_z
+            .try_reserve_exact(N_PROBES)
+            .map_err(|error| format!("allocation failure: {error}"))?;
         let wall_radius = A_MINOR + WALL_OFFSET;
         for i in 0..N_PROBES {
             let theta = 2.0 * PI * i as f64 / (N_PROBES - 1) as f64;
@@ -114,7 +151,10 @@ impl SensorSuite {
         }
 
         // Generate bolometer fan chords
-        let mut bolo_chords = Vec::with_capacity(N_BOLO);
+        let mut bolo_chords = Vec::new();
+        bolo_chords
+            .try_reserve_exact(N_BOLO)
+            .map_err(|error| format!("allocation failure: {error}"))?;
         for i in 0..N_BOLO {
             let target_r = BOLO_R_MIN + (BOLO_R_MAX - BOLO_R_MIN) * i as f64 / (N_BOLO - 1) as f64;
             bolo_chords.push(BoloChord {
@@ -123,7 +163,7 @@ impl SensorSuite {
             });
         }
 
-        SensorSuite {
+        Ok(SensorSuite {
             probe_r,
             probe_z,
             bolo_chords,
@@ -133,7 +173,7 @@ impl SensorSuite {
             dz,
             nr,
             nz,
-        }
+        })
     }
 
     /// Map (R, Z) to grid indices, clamped.
@@ -159,15 +199,49 @@ impl SensorSuite {
     /// Panics if `psi` does not contain every `(iz, ir)` index required by the
     /// suite's declared `(nz, nr)` grid.
     pub fn measure_magnetics(&self, psi: &Array2<f64>) -> Vec<f64> {
+        self.try_measure_magnetics(psi)
+            .expect("invalid magnetic measurement input or arithmetic")
+    }
+
+    /// Evaluate the truncation stencil while refusing nonfinite coordinate/interpolation arithmetic.
+    pub fn try_measure_magnetics(&self, psi: &Array2<f64>) -> Result<Vec<f64>, String> {
+        if self.nr < 2
+            || self.nz < 2
+            || psi.dim() != (self.nz, self.nr)
+            || !psi.iter().all(|value| value.is_finite())
+        {
+            return Err("invalid magnetic grid or input".to_owned());
+        }
         let nr = self.nr as i64;
         let nz = self.nz as i64;
-        let mut measurements = Vec::with_capacity(self.probe_r.len());
+        let mut measurements = Vec::new();
+        measurements
+            .try_reserve_exact(self.probe_r.len())
+            .map_err(|error| format!("allocation failure: {error}"))?;
         for i in 0..self.probe_r.len() {
             let r = self.probe_r[i];
             let z = self.probe_z[i];
-            let ir = ((r - self.r_min) / self.dr) as i64;
-            let iz = ((z - self.z_min) / self.dz) as i64;
-            let val = if ir >= 0 && ir < nr - 1 && iz >= 0 && iz < nz - 1 {
+            let qr = (r - self.r_min) / self.dr;
+            let qz = (z - self.z_min) / self.dz;
+            if !qr.is_finite() || !qz.is_finite() {
+                return Err("magnetic coordinate arithmetic became nonfinite".to_owned());
+            }
+            let inside = qr > -1.0 && qr < (nr - 1) as f64 && qz > -1.0 && qz < (nz - 1) as f64;
+            let ir = if qr <= -1.0 {
+                0
+            } else if qr >= (nr - 1) as f64 {
+                nr - 1
+            } else {
+                qr as i64
+            };
+            let iz = if qz <= -1.0 {
+                0
+            } else if qz >= (nz - 1) as f64 {
+                nz - 1
+            } else {
+                qz as i64
+            };
+            let val = if inside {
                 let iru = ir as usize;
                 let izu = iz as usize;
                 let wr = (r - (self.r_min + ir as f64 * self.dr)) / self.dr;
@@ -185,9 +259,12 @@ impl SensorSuite {
                 let izc = iz.clamp(0, nz - 1) as usize;
                 psi[[izc, irc]]
             };
+            if !val.is_finite() {
+                return Err("magnetic interpolation arithmetic became nonfinite".to_owned());
+            }
             measurements.push(val);
         }
-        measurements
+        Ok(measurements)
     }
 
     /// Measures noisy bolometer line integrals for every configured chord.

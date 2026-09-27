@@ -32,6 +32,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.physical_case import GradShafranovCase
+
 FloatArray = NDArray[np.float64]
 
 try:
@@ -95,6 +97,8 @@ def _compute_source_np(
     dZ: float,
 ) -> FloatArray:
     """Compute GS RHS = -μ₀ R J_φ from L-mode profiles (NumPy)."""
+    if not np.all(np.isfinite(psi)):
+        raise RuntimeError("source input flux is nonfinite")
     psi_axis = float(np.max(psi[1:-1, 1:-1]))
     psi_bdry = 0.0  # Dirichlet ψ=0 on boundary
     denom = psi_bdry - psi_axis
@@ -102,6 +106,8 @@ def _compute_source_np(
         denom = float(np.sign(denom)) * 1e-9 if denom != 0 else 1e-9
 
     psi_norm = (psi - psi_axis) / denom
+    if not np.all(np.isfinite(psi_norm)):
+        raise RuntimeError("normalized source flux is nonfinite")
     psi_norm = np.clip(psi_norm, 0.0, 1.0)
     in_plasma = (psi_norm >= 0.0) & (psi_norm < 1.0)
 
@@ -113,6 +119,8 @@ def _compute_source_np(
     J_raw = beta_mix * J_p + (1.0 - beta_mix) * J_f
 
     I_current = np.sum(J_raw) * dR * dZ
+    if not np.isfinite(I_current):
+        raise RuntimeError("source current is nonfinite")
     scale = Ip_target / max(abs(I_current), 1e-9)
     J_phi = J_raw * scale
 
@@ -137,8 +145,73 @@ def gs_solve_np(
 ) -> FloatArray:
     """Fixed-boundary GS solve via Picard iteration (NumPy reference backend).
 
-    Returns psi on the (NZ, NR) grid with zero Dirichlet boundary.
+    The shared physical case is validated before allocating the full mesh.
+    The existing case equation retains its radius regularisation policy.
+
+    Parameters
+    ----------
+    R_min, R_max : float
+        Finite, strictly positive ordered radial bounds in metres.
+    Z_min, Z_max : float
+        Finite ordered vertical bounds in metres.
+    NR, NZ : int
+        Actual integer grid counts in [3, 1025], excluding Boolean.
+    Ip_target : float
+        Signed target toroidal current in amperes, including zero.
+    mu0 : float
+        Finite positive vacuum permeability in H/m.
+    n_picard, n_jacobi : int
+        Actual integer iteration counts in [1, 10000]. The product of both
+        grid and both iteration counts is at most 100000000.
+    alpha : float
+        Picard relaxation in (0, 1].
+    omega_j : float
+        Jacobi damping in (0, 2).
+    beta_mix : float
+        Pressure/current profile weight in [0, 1].
+
+    Returns
+    -------
+    numpy.ndarray
+        Finite binary64 flux on the (NZ, NR) grid with zero boundary.
+
+    Raises
+    ------
+    TypeError
+        A delivered scalar has an unsupported kind.
+    ValueError
+        Exactness, finite domains, work limits or actual mesh admission fail.
+    RuntimeError
+        Arithmetic for an admitted case becomes nonfinite.
     """
+    case = GradShafranovCase(
+        R_min,
+        R_max,
+        Z_min,
+        Z_max,
+        NR,
+        NZ,
+        Ip_target,
+        mu0,
+        n_picard,
+        n_jacobi,
+        alpha,
+        omega_j,
+        beta_mix,
+    )
+    try:
+        with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
+            return _gs_solve_case_np(case)
+    except (FloatingPointError, OverflowError, ZeroDivisionError) as exc:
+        raise RuntimeError("nonfinite arithmetic in admitted physical case") from exc
+
+
+def _gs_solve_case_np(case: GradShafranovCase) -> FloatArray:
+    """Execute the existing Picard equation after shared physical admission."""
+    R_min, R_max, Z_min, Z_max = case.R_min, case.R_max, case.Z_min, case.Z_max
+    NR, NZ, n_picard, n_jacobi = case.NR, case.NZ, case.n_picard, case.n_jacobi
+    Ip_target, mu0 = case.Ip_target, case.mu0
+    alpha, omega_j, beta_mix = case.alpha, case.omega_j, case.beta_mix
     R = np.linspace(R_min, R_max, NR)
     Z = np.linspace(Z_min, Z_max, NZ)
     RR, _ = np.meshgrid(R, Z)
@@ -163,6 +236,8 @@ def gs_solve_np(
             psi_elliptic = _jacobi_gs_step_np(psi_elliptic, source, R_interior, dR, dZ, omega_j)
         psi = (1.0 - alpha) * psi + alpha * psi_elliptic
 
+    if not np.all(np.isfinite(psi)):
+        raise RuntimeError("solver returned nonfinite flux")
     result: FloatArray = psi
     return result
 

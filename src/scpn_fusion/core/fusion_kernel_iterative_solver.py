@@ -182,8 +182,8 @@ class FusionKernelIterativeSolverMixin:
         omega: float,
         n_sweeps: int,
     ) -> FloatArray:
-        """Red-Black SOR smoother with the toroidal 1/R stencil for multigrid."""
-        return _mg_smooth_free(Psi, Source, R_grid, dR, dZ, omega, n_sweeps)
+        """Smooth with the legacy kernel's explicit 1e-10 radius policy."""
+        return _mg_smooth_free(Psi, Source, R_grid, dR, dZ, omega, n_sweeps, radius_floor=1e-10)
 
     def _mg_residual(
         self,
@@ -193,8 +193,8 @@ class FusionKernelIterativeSolverMixin:
         dR: float,
         dZ: float,
     ) -> FloatArray:
-        """Compute the GS* residual r = L*[Psi] - Source on the given grid."""
-        return _mg_residual_free(Psi, Source, R_grid, dR, dZ)
+        """Compute the GS* residual using the legacy kernel's explicit radius floor."""
+        return _mg_residual_free(Psi, Source, R_grid, dR, dZ, radius_floor=1e-10)
 
     def _multigrid_vcycle(
         self,
@@ -243,6 +243,7 @@ class FusionKernelIterativeSolverMixin:
             pre_smooth=pre_smooth,
             post_smooth=post_smooth,
             min_grid=min_grid,
+            radius_floor=1e-10,
         )
 
     def _anderson_step(
