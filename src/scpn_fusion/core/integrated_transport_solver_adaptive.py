@@ -74,7 +74,7 @@ class AdaptiveTimeController:
         dt_max: float = 1.0,
         tol: float = 1e-3,
         safety: float = 0.9,
-    ):
+    ) -> None:
         self.dt = dt_init
         self.dt_min = dt_min
         self.dt_max = dt_max
@@ -168,10 +168,29 @@ class AdaptiveTimeController:
                 _install_trial_state(solver, original)
 
     def adapt_dt(self, error: float) -> None:
-        """Adjust dt using a PI controller.
+        """Adjust the next timestep from a finite positive Ti error estimate.
 
-        ``dt *= min(2, safety * (tol/err)^(0.7/p) * (err_prev/err)^(0.4/p))``
+        Parameters
+        ----------
+        error : float
+            Positive Richardson L2 estimate for Ti in keV.
+
+        Raises
+        ------
+        ValueError
+            If error is nonfinite or nonpositive. The controller state and
+            all diagnostic histories remain unchanged on refusal.
+
+        Notes
+        -----
+        The PI factor is ``safety * (tol/error)**(0.7/p) *
+        (err_prev/error)**(0.4/p)``, clamped to [0.1, 2]. The updated timestep
+        is clamped to ``[dt_min, dt_max]`` in seconds. Successful updates record
+        the supplied error and the timestep before adjustment.
         """
+        if not np.isfinite(error) or error <= 0.0:
+            raise ValueError("error must be finite and positive")
+
         self.error_history.append(error)
         self.dt_history.append(self.dt)
 

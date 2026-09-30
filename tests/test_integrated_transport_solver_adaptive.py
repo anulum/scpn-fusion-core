@@ -19,7 +19,11 @@ import numpy as np
 import pytest
 
 import scpn_fusion.core.integrated_transport_solver_adaptive as adaptive_mod
+from scpn_fusion.core.integrated_transport_solver import AdaptiveTimeController as public_controller
 from scpn_fusion.core.integrated_transport_solver import TransportSolver, PhysicsError
+from scpn_fusion.core.integrated_transport_solver_runtime import (
+    AdaptiveTimeController as runtime_controller,
+)
 
 
 @pytest.fixture
@@ -204,12 +208,64 @@ def test_estimate_error_restores_state_on_real_recovery_refusal(config_path: Pat
 
 
 def test_adapt_dt_respects_bounds() -> None:
+    """Valid errors keep the next timestep within the configured seconds bounds."""
     atc = adaptive_mod.AdaptiveTimeController(dt_init=0.01, dt_min=0.001, dt_max=0.02, tol=1e-3)
 
     atc.adapt_dt(error=1e-12)
     assert 0.001 <= atc.dt <= 0.02
     atc.adapt_dt(error=1e3)
     assert 0.001 <= atc.dt <= 0.02
+
+
+@pytest.mark.parametrize(
+    "controller_type",
+    [adaptive_mod.AdaptiveTimeController, public_controller, runtime_controller],
+    ids=["adaptive", "public", "runtime"],
+)
+@pytest.mark.parametrize("error", [0.0, -0.0, -1.0, np.nan, np.inf, -np.inf])
+def test_adapt_dt_refuses_invalid_error_without_mutation(
+    controller_type: type[adaptive_mod.AdaptiveTimeController], error: float
+) -> None:
+    """Every public route refuses invalid error and resumes the original PI trajectory."""
+    controller = controller_type()
+    reference = controller_type()
+    controller.adapt_dt(2e-3)
+    reference.adapt_dt(2e-3)
+    before = deepcopy(vars(controller))
+    histories = (
+        controller.dt_history,
+        controller.error_history,
+        controller.trial_difference_history,
+    )
+
+    with pytest.raises(ValueError, match="error must be finite and positive"):
+        controller.adapt_dt(error)
+
+    assert vars(controller) == before
+    assert controller.dt_history is histories[0]
+    assert controller.error_history is histories[1]
+    assert controller.trial_difference_history is histories[2]
+    for next_error in (5e-4, 4e-3):
+        controller.adapt_dt(next_error)
+        reference.adapt_dt(next_error)
+        assert controller.dt == reference.dt
+        assert controller.dt_history == reference.dt_history
+        assert controller.error_history == reference.error_history
+
+
+@pytest.mark.parametrize("error", [1e-12, 1e-3, 1e3])
+def test_adapt_dt_valid_errors_match_pi_update(error: float) -> None:
+    """Finite positive errors retain the PI update, factor bounds and timestep bounds."""
+    controller = public_controller(dt_init=0.01, dt_min=0.001, dt_max=0.015, tol=1e-3)
+    old_dt = controller.dt
+    factor = 0.9 * (1e-3 / error) ** 0.35 * (1e-3 / error) ** 0.2
+    expected = min(0.015, max(0.001, old_dt * max(0.1, min(2.0, factor))))
+
+    controller.adapt_dt(error)
+
+    assert controller.dt == pytest.approx(expected, rel=1e-14)
+    assert controller.dt_history == [old_dt]
+    assert controller.error_history == [error]
 
 
 def test_adaptive_driver_exposes_trial_differences(config_path: Path) -> None:
