@@ -206,6 +206,50 @@ class TransportSolverCouplingMixin(TransportSolverState):
     ) -> dict[str, Any]:
         """Run transport evolution until approximate steady state.
 
+        Parameters
+        ----------
+        P_aux : float
+            Auxiliary heating power in MW.
+        n_steps : int, optional
+            Positive number of fixed or adaptive transport steps. Ignored when
+            ``self_consistent=True``; that mode uses ``sc_n_inner/sc_n_outer``.
+        dt : float, optional
+            Fixed timestep in seconds, or initial adaptive timestep.
+        adaptive : bool, optional
+            Compare a full step with two half steps and adjust the next timestep.
+        tol : float, optional
+            Ti Richardson L2 error target in keV for adaptive stepping.
+        self_consistent : bool, optional
+            Delegate to the coupled GS/transport outer loop.
+        sc_n_inner : int, optional
+            Transport steps per self-consistent outer iteration.
+        sc_n_outer : int, optional
+            Maximum self-consistent outer iterations.
+        sc_psi_tol : float, optional
+            Relative flux-change stopping tolerance for the coupled loop.
+        enforce_numerical_recovery : bool, optional
+            Propagate recovery-budget refusals from profile evolution.
+        max_numerical_recoveries : int or None, optional
+            Per-evolution recovery limit; None uses the solver's configured limit.
+
+        Returns
+        -------
+        dict[str, Any]
+            Final mean/core Ti in keV, confinement time in seconds, executed
+            step count, and copied Ti/ne profiles in keV and 10^19 m^-3.
+            Adaptive results also contain the final timestep and diagnostic
+            histories. Self-consistent mode returns its coupled-loop result.
+
+        Raises
+        ------
+        ValueError
+            If fixed or adaptive mode receives a nonpositive ``n_steps``.
+            Refusal occurs before transport-model or profile mutation.
+        PhysicsError
+            If profile evolution exceeds an enforced numerical recovery budget.
+
+        Notes
+        -----
         Adaptive results include ``trial_difference_history``: raw full-versus-
         half L2 differences for Ti/Te (keV) and ne (10^19 m^-3). Only the existing
         Ti Richardson estimate controls the timestep; other differences are
@@ -222,6 +266,9 @@ class TransportSolverCouplingMixin(TransportSolverState):
                 enforce_numerical_recovery=enforce_numerical_recovery,
                 max_numerical_recoveries=max_numerical_recoveries,
             )
+
+        if n_steps <= 0:
+            raise ValueError("n_steps must be positive")
 
         if not adaptive:
             for _ in range(n_steps):
