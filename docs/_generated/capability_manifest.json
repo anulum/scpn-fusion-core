@@ -17,6 +17,7 @@
       "docs/MAST_COMPLETE_MAGNETIC_ARCHIVE.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
+      "docs/NUMERICAL_CONTRACTS.md",
       "docs/ONBOARDING.md",
       "docs/PERFORMANCE_METRIC_TAXONOMY.md",
       "docs/PHYSICS_METHODS_COMPLETE.md",
@@ -285,6 +286,10 @@
       {
         "name": "CQResult",
         "path": "src/scpn_fusion/core/disruption_sequence.py"
+      },
+      {
+        "name": "CaseMapping",
+        "path": "src/scpn_fusion/core/physical_case.py"
       },
       {
         "name": "ChainResult",
@@ -875,6 +880,10 @@
         "path": "src/scpn_fusion/control/_free_boundary_safety_supervisor.py"
       },
       {
+        "name": "FreeBoundaryState",
+        "path": "src/scpn_fusion/core/free_boundary_solver_state.py"
+      },
+      {
         "name": "FreeBoundaryStateEstimator",
         "path": "src/scpn_fusion/control/_free_boundary_estimator.py"
       },
@@ -1007,6 +1016,10 @@
         "path": "src/scpn_fusion/core/fusion_kernel_newton_runtime.py"
       },
       {
+        "name": "GradShafranovCase",
+        "path": "src/scpn_fusion/core/physical_case.py"
+      },
+      {
         "name": "GuidingCenterOrbit",
         "path": "src/scpn_fusion/core/orbit_following.py"
       },
@@ -1045,6 +1058,10 @@
       {
         "name": "HPCBridge",
         "path": "src/scpn_fusion/hpc/hpc_bridge.py"
+      },
+      {
+        "name": "HPCSolverState",
+        "path": "src/scpn_fusion/hpc/_hpc_solver_state.py"
       },
       {
         "name": "HallMHD",
@@ -2696,6 +2713,7 @@
       "src/scpn_fusion/core/_validators.py",
       "src/scpn_fusion/core/alfven_eigenmodes.py",
       "src/scpn_fusion/core/amr_patch.py",
+      "src/scpn_fusion/core/array_contract.py",
       "src/scpn_fusion/core/ballooning_second_stability.py",
       "src/scpn_fusion/core/ballooning_solver.py",
       "src/scpn_fusion/core/blob_transport.py",
@@ -2730,6 +2748,8 @@
       "src/scpn_fusion/core/frc_rigid_rotor_contracts.py",
       "src/scpn_fusion/core/frc_rigid_rotor_solver.py",
       "src/scpn_fusion/core/frc_rigid_rotor_validation.py",
+      "src/scpn_fusion/core/free_boundary_outer_solver.py",
+      "src/scpn_fusion/core/free_boundary_solver_state.py",
       "src/scpn_fusion/core/fusion_burn_physics.py",
       "src/scpn_fusion/core/fusion_ignition_sim.py",
       "src/scpn_fusion/core/fusion_kernel.py",
@@ -2833,6 +2853,7 @@
       "src/scpn_fusion/core/orbit_following.py",
       "src/scpn_fusion/core/pedestal.py",
       "src/scpn_fusion/core/pellet_injection.py",
+      "src/scpn_fusion/core/physical_case.py",
       "src/scpn_fusion/core/plasma_startup.py",
       "src/scpn_fusion/core/plasma_wall_interaction.py",
       "src/scpn_fusion/core/pretrained_fno_surrogate.py",
@@ -2880,6 +2901,7 @@
       "src/scpn_fusion/engineering/cad_raytrace.py",
       "src/scpn_fusion/engineering/thermal_hydraulics.py",
       "src/scpn_fusion/hpc/_hpc_native_trust.py",
+      "src/scpn_fusion/hpc/_hpc_solver_state.py",
       "src/scpn_fusion/hpc/hpc_bridge.py",
       "src/scpn_fusion/io/_tglf_constrained_targets.py",
       "src/scpn_fusion/io/_tglf_model_selection_data.py",
@@ -3010,15 +3032,15 @@
     ]
   },
   "counts": {
-    "capability_documentation_pages": 70,
+    "capability_documentation_pages": 71,
     "github_workflows": 36,
     "optional_extras": 14,
     "public_api_exports": 2,
-    "public_documentation_pages": 70,
-    "python_capability_classes": 629,
-    "python_capability_source_modules": 361,
+    "public_documentation_pages": 71,
+    "python_capability_classes": 633,
+    "python_capability_source_modules": 366,
     "rust_workspace_crates": 13,
-    "test_files": 662
+    "test_files": 668
   },
   "documentation": {
     "public_pages": [
@@ -3037,6 +3059,7 @@
       "docs/MAST_COMPLETE_MAGNETIC_ARCHIVE.md",
       "docs/NEURAL_TRANSPORT_TRAINING.md",
       "docs/NEURO_SYMBOLIC_LOGIC_COMPILER_REPORT.md",
+      "docs/NUMERICAL_CONTRACTS.md",
       "docs/ONBOARDING.md",
       "docs/PERFORMANCE_METRIC_TAXONOMY.md",
       "docs/PHYSICS_METHODS_COMPLETE.md",
@@ -3362,10 +3385,12 @@
       "tests/test_frc_rotating_bvp_acceptance_report.py",
       "tests/test_frc_to_gs_bridge.py",
       "tests/test_free_boundary_estimator.py",
+      "tests/test_free_boundary_outer_solver.py",
       "tests/test_free_boundary_plotting.py",
       "tests/test_free_boundary_public_machine_metadata_inventory.py",
       "tests/test_free_boundary_safety_supervisor.py",
       "tests/test_free_boundary_simulation.py",
+      "tests/test_free_boundary_solver_state.py",
       "tests/test_free_boundary_strict_parity_report.py",
       "tests/test_free_boundary_supervisory_control.py",
       "tests/test_free_boundary_supervisory_types.py",
@@ -3477,6 +3502,7 @@
       "tests/test_hpc_bridge.py",
       "tests/test_hpc_bridge_runtime_contracts.py",
       "tests/test_hpc_native_trust.py",
+      "tests/test_hpc_solver_state.py",
       "tests/test_hts_quench.py",
       "tests/test_hybrid_accuracy_benchmark_contract.py",
       "tests/test_hypothesis_physics_models.py",
@@ -3522,6 +3548,7 @@
       "tests/test_integrated_transport_solver_contracts.py",
       "tests/test_integrated_transport_solver_coupled.py",
       "tests/test_integrated_transport_solver_coupling_confinement.py",
+      "tests/test_integrated_transport_solver_coupling_driver.py",
       "tests/test_integrated_transport_solver_differentiable.py",
       "tests/test_integrated_transport_solver_init.py",
       "tests/test_integrated_transport_solver_model_backend.py",
@@ -3636,6 +3663,7 @@
       "tests/test_phase_properties.py",
       "tests/test_phase_properties_extended.py",
       "tests/test_phase_rust_tier.py",
+      "tests/test_physical_case_contract.py",
       "tests/test_physics.py",
       "tests/test_physics_edge_cases.py",
       "tests/test_physics_fidelity_claims.py",
@@ -3748,6 +3776,7 @@
       "tests/test_stress_campaign_contract.py",
       "tests/test_stress_campaign_policies.py",
       "tests/test_stress_campaign_recovery.py",
+      "tests/test_strict_array_contract.py",
       "tests/test_structure.py",
       "tests/test_studio_exactness.py",
       "tests/test_studio_manifest.py",

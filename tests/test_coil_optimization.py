@@ -8,6 +8,7 @@
 """Tests for coil current optimization and free-boundary shape control."""
 
 import json
+from decimal import Decimal, localcontext
 from pathlib import Path
 
 import numpy as np
@@ -36,6 +37,7 @@ MOCK_CONFIG = {
 
 @pytest.fixture
 def kernel(tmp_path: Path) -> FusionKernel:
+    """Build the legacy coarse-grid request for coil and failure contracts."""
     cfg = tmp_path / "cfg.json"
     cfg.write_text(json.dumps(MOCK_CONFIG), encoding="utf-8")
     return FusionKernel(str(cfg))
@@ -61,7 +63,7 @@ def _make_coils(n_coils: int = 4) -> CoilSet:
 # ── CoilSet dataclass ────────────────────────────────────────────────
 
 
-def test_coilset_defaults():
+def test_coilset_defaults() -> None:
     """Default CoilSet should have None limits and target."""
     cs = CoilSet()
     assert cs.current_limits is None
@@ -69,7 +71,7 @@ def test_coilset_defaults():
     assert cs.target_flux_values is None
 
 
-def test_coilset_with_limits():
+def test_coilset_with_limits() -> None:
     """CoilSet should accept current_limits array."""
     cs = _make_coils()
     limits = np.array([5e4, 5e4, 5e4, 5e4])
@@ -77,7 +79,7 @@ def test_coilset_with_limits():
     np.testing.assert_array_equal(cs.current_limits, limits)
 
 
-def test_coilset_with_target_points():
+def test_coilset_with_target_points() -> None:
     """CoilSet should accept target_flux_points."""
     cs = _make_coils()
     targets = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
@@ -85,7 +87,7 @@ def test_coilset_with_target_points():
     assert cs.target_flux_points.shape == (3, 2)
 
 
-def test_coilset_with_target_flux_values():
+def test_coilset_with_target_flux_values() -> None:
     """CoilSet should accept target_flux_values for shape control."""
     cs = _make_coils()
     cs.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
@@ -93,7 +95,7 @@ def test_coilset_with_target_flux_values():
     assert cs.target_flux_values.shape == (3,)
 
 
-def test_build_coilset_from_config_maps_free_boundary_contract(kernel: FusionKernel):
+def test_build_coilset_from_config_maps_free_boundary_contract(kernel: FusionKernel) -> None:
     """FusionKernel should expose a real config-backed coil contract."""
     kernel.cfg["coils"] = [
         {"name": "PF1", "r": 3.0, "z": 2.0, "current": 2.5, "turns": 12},
@@ -112,6 +114,12 @@ def test_build_coilset_from_config_maps_free_boundary_contract(kernel: FusionKer
     coils = kernel.build_coilset_from_config()
     direct_coils = build_coilset_from_config(kernel)
 
+    assert coils.current_limits is not None
+    assert coils.target_flux_points is not None
+    assert coils.target_flux_values is not None
+    assert coils.x_point_target is not None
+    assert coils.divertor_strike_points is not None
+    assert coils.divertor_flux_values is not None
     assert coils.positions == [(3.0, 2.0), (5.0, -2.0)]
     np.testing.assert_allclose(coils.currents, np.array([2.5, -1.5], dtype=np.float64))
     np.testing.assert_allclose(direct_coils.currents, coils.currents)
@@ -128,7 +136,7 @@ def test_build_coilset_from_config_maps_free_boundary_contract(kernel: FusionKer
     np.testing.assert_allclose(coils.divertor_flux_values, np.array([0.03]))
 
 
-def test_build_coilset_from_config_rejects_shape_mismatches(kernel: FusionKernel):
+def test_build_coilset_from_config_rejects_shape_mismatches(kernel: FusionKernel) -> None:
     """Free-boundary config must fail before a control shot starts."""
     kernel.cfg["coils"] = [
         {"name": "PF1", "r": 3.0, "z": 2.0, "current": 2.5},
@@ -149,7 +157,7 @@ def test_build_coilset_from_config_rejects_shape_mismatches(kernel: FusionKernel
         kernel.build_coilset_from_config()
 
 
-def test_sample_flux_at_points_uses_kernel_interpolator(kernel: FusionKernel):
+def test_sample_flux_at_points_uses_kernel_interpolator(kernel: FusionKernel) -> None:
     """Flux sampling should expose the same interpolation semantics as _interp_psi."""
     assert isinstance(kernel, FusionKernelFreeBoundaryMixin)
     kernel.Psi = kernel.RR + 2.0 * kernel.ZZ
@@ -167,7 +175,7 @@ def test_sample_flux_at_points_uses_kernel_interpolator(kernel: FusionKernel):
 # ── Mutual inductance matrix ────────────────────────────────────────
 
 
-def test_mutual_inductance_shape(kernel: FusionKernel):
+def test_mutual_inductance_shape(kernel: FusionKernel) -> None:
     """M matrix should have shape (n_coils, n_pts)."""
     coils = _make_coils(4)
     obs = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
@@ -175,7 +183,7 @@ def test_mutual_inductance_shape(kernel: FusionKernel):
     assert M.shape == (4, 3)
 
 
-def test_mutual_inductance_finite(kernel: FusionKernel):
+def test_mutual_inductance_finite(kernel: FusionKernel) -> None:
     """All mutual inductance values should be finite."""
     coils = _make_coils(4)
     obs = np.array([[5.0, 0.0], [6.0, 0.5], [7.0, -0.5]])
@@ -183,7 +191,7 @@ def test_mutual_inductance_finite(kernel: FusionKernel):
     assert np.all(np.isfinite(M)), "Mutual inductance has non-finite values"
 
 
-def test_mutual_inductance_symmetry(kernel: FusionKernel):
+def test_mutual_inductance_symmetry(kernel: FusionKernel) -> None:
     """Coils at symmetric Z-positions should produce symmetric flux at Z=0."""
     coils = _make_coils(4)
     obs = np.array([[6.0, 0.0]])
@@ -192,12 +200,12 @@ def test_mutual_inductance_symmetry(kernel: FusionKernel):
     assert abs(M[0, 0] - M[1, 0]) < 1e-8, "Symmetric coils should produce same flux at Z=0"
 
 
-def test_green_function_self_observation_is_regularised():
+def test_green_function_self_observation_is_regularised() -> None:
     """External-coil Green's function must not inject coil self-inductance."""
     assert green_function(5.0, 0.0, 5.0, 0.0) == 0.0
 
 
-def test_green_function_rejects_nonphysical_coordinates():
+def test_green_function_rejects_nonphysical_coordinates() -> None:
     """Vacuum Green's function should fail before invalid geometry enters solve."""
     with pytest.raises(ValueError, match="radii"):
         green_function(0.0, 0.0, 5.0, 0.0)
@@ -205,7 +213,7 @@ def test_green_function_rejects_nonphysical_coordinates():
         green_function(5.0, np.nan, 6.0, 0.0)
 
 
-def test_external_flux_is_linear_and_regularises_self_grid_point(kernel: FusionKernel):
+def test_external_flux_is_linear_and_regularises_self_grid_point(kernel: FusionKernel) -> None:
     """Vacuum boundary source should be linear in current and zero at coil self-point."""
     kernel.cfg["coils"] = [
         {"name": "SELF", "r": float(kernel.R[3]), "z": float(kernel.Z[4]), "current": 2.0},
@@ -220,7 +228,7 @@ def test_external_flux_is_linear_and_regularises_self_grid_point(kernel: FusionK
     np.testing.assert_allclose(psi_scaled, 3.0 * psi, rtol=1e-12, atol=1e-18)
 
 
-def test_boundary_reconstruction_reports_limiter_containment(kernel: FusionKernel):
+def test_boundary_reconstruction_reports_limiter_containment(kernel: FusionKernel) -> None:
     """Free-boundary contour diagnostics should prove limiter containment."""
     coils = _make_coils(4)
     boundary_points = np.array(
@@ -242,7 +250,7 @@ def test_boundary_reconstruction_reports_limiter_containment(kernel: FusionKerne
     assert reconstruction["boundary_containment_pass"] is True
 
 
-def test_boundary_reconstruction_reports_x_point_topology_residual(kernel: FusionKernel):
+def test_boundary_reconstruction_reports_x_point_topology_residual(kernel: FusionKernel) -> None:
     """Symmetric X-point metadata should produce a bounded vacuum-flux residual."""
     coils = CoilSet(
         positions=[(5.5, 0.0)],
@@ -269,7 +277,7 @@ def test_boundary_reconstruction_reports_x_point_topology_residual(kernel: Fusio
 # ── Coil current optimization ───────────────────────────────────────
 
 
-def test_optimize_raises_without_target_points(kernel: FusionKernel):
+def test_optimize_raises_without_target_points(kernel: FusionKernel) -> None:
     """Should raise ValueError if target_flux_points is None."""
     coils = _make_coils(4)
     coils.target_flux_points = None
@@ -278,7 +286,7 @@ def test_optimize_raises_without_target_points(kernel: FusionKernel):
         kernel.optimize_coil_currents(coils, target)
 
 
-def test_optimize_returns_correct_shape(kernel: FusionKernel):
+def test_optimize_returns_correct_shape(kernel: FusionKernel) -> None:
     """Optimised currents should have shape (n_coils,)."""
     coils = _make_coils(4)
     obs = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
@@ -288,7 +296,7 @@ def test_optimize_returns_correct_shape(kernel: FusionKernel):
     assert I_opt.shape == (4,)
 
 
-def test_optimize_respects_current_limits(kernel: FusionKernel):
+def test_optimize_respects_current_limits(kernel: FusionKernel) -> None:
     """Currents should stay within the specified limits."""
     coils = _make_coils(4)
     obs = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
@@ -301,7 +309,7 @@ def test_optimize_respects_current_limits(kernel: FusionKernel):
     )
 
 
-def test_optimize_finite_currents(kernel: FusionKernel):
+def test_optimize_finite_currents(kernel: FusionKernel) -> None:
     """Optimised currents should be finite."""
     coils = _make_coils(4)
     obs = np.array([[6.0, 0.0], [6.0, 1.0]])
@@ -311,7 +319,7 @@ def test_optimize_finite_currents(kernel: FusionKernel):
     assert np.all(np.isfinite(I_opt))
 
 
-def test_optimize_raises_on_target_length_mismatch(kernel: FusionKernel):
+def test_optimize_raises_on_target_length_mismatch(kernel: FusionKernel) -> None:
     """Target vector must match the number of target_flux_points."""
     coils = _make_coils(4)
     coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
@@ -319,7 +327,7 @@ def test_optimize_raises_on_target_length_mismatch(kernel: FusionKernel):
         kernel.optimize_coil_currents(coils, np.array([0.1, 0.2]))
 
 
-def test_optimize_raises_on_current_limits_shape_mismatch(kernel: FusionKernel):
+def test_optimize_raises_on_current_limits_shape_mismatch(kernel: FusionKernel) -> None:
     """current_limits must have one entry per coil."""
     coils = _make_coils(4)
     coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
@@ -331,7 +339,7 @@ def test_optimize_raises_on_current_limits_shape_mismatch(kernel: FusionKernel):
 def test_optimize_falls_back_to_prior_currents_on_solver_failure(
     kernel: FusionKernel,
     monkeypatch: pytest.MonkeyPatch,
-):
+) -> None:
     """Failed least-squares solve should safely return bounded prior currents."""
     coils = _make_coils(4)
     coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
@@ -348,7 +356,7 @@ def test_optimize_falls_back_to_prior_currents_on_solver_failure(
     np.testing.assert_allclose(out, coils.currents, atol=0.0)
 
 
-def test_optimize_reduces_residual(kernel: FusionKernel):
+def test_optimize_reduces_residual(kernel: FusionKernel) -> None:
     """Optimised currents should produce flux closer to target than random currents."""
     coils = _make_coils(4)
     obs = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
@@ -372,7 +380,7 @@ def test_optimize_reduces_residual(kernel: FusionKernel):
 # ── Bilinear interpolation ──────────────────────────────────────────
 
 
-def test_interp_psi_at_grid_point(kernel: FusionKernel):
+def test_interp_psi_at_grid_point(kernel: FusionKernel) -> None:
     """Interpolation at a grid point should return exact Psi value."""
     # Pick an interior grid point
     ir, iz = 5, 5
@@ -385,7 +393,7 @@ def test_interp_psi_at_grid_point(kernel: FusionKernel):
     )
 
 
-def test_interp_psi_finite(kernel: FusionKernel):
+def test_interp_psi_finite(kernel: FusionKernel) -> None:
     """Interpolation at any point in domain should return finite value."""
     R_mid = (kernel.R[0] + kernel.R[-1]) / 2.0
     Z_mid = (kernel.Z[0] + kernel.Z[-1]) / 2.0
@@ -396,7 +404,7 @@ def test_interp_psi_finite(kernel: FusionKernel):
 # ── Free-boundary with shape optimisation ────────────────────────────
 
 
-def test_solve_free_boundary_basic(kernel: FusionKernel):
+def test_solve_free_boundary_basic(kernel: FusionKernel) -> None:
     """solve_free_boundary should return expected keys."""
     coils = _make_coils(4)
     result = kernel.solve_free_boundary(coils, max_outer_iter=3, tol=1e-2)
@@ -406,7 +414,7 @@ def test_solve_free_boundary_basic(kernel: FusionKernel):
     assert result["outer_iterations"] >= 1
 
 
-def test_solve_equilibrium_preserves_explicit_boundary(kernel: FusionKernel):
+def test_solve_equilibrium_preserves_explicit_boundary(kernel: FusionKernel) -> None:
     """Explicit boundary maps should be preserved during GS iteration."""
     psi_boundary = np.zeros_like(kernel.Psi)
     psi_boundary[0, :] = 3.0
@@ -426,8 +434,8 @@ def test_solve_equilibrium_preserves_explicit_boundary(kernel: FusionKernel):
     np.testing.assert_allclose(kernel.Psi[:, -1], psi_boundary[:, -1], atol=1e-12)
 
 
-def test_solve_free_boundary_with_optimization(kernel: FusionKernel):
-    """solve_free_boundary with optimize_shape should update coil currents."""
+def test_solve_free_boundary_with_optimization(kernel: FusionKernel) -> None:
+    """An under-budget inner solve must preserve the solved diagnostic currents."""
     coils = _make_coils(4)
     obs = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
     coils.target_flux_points = obs
@@ -439,77 +447,56 @@ def test_solve_free_boundary_with_optimization(kernel: FusionKernel):
         tol=1e-2,
         optimize_shape=True,
     )
-    # Currents should have been updated and the integrated optimisation must
-    # report target residual diagnostics instead of acting as an opaque mutation.
-    assert not np.allclose(result["coil_currents"], I_before), (
-        "Coil currents were not updated during shape optimisation"
-    )
+    # This deliberately under-budget inner solve cannot authorize a current step.
+    np.testing.assert_array_equal(result["coil_currents"], I_before)
+    assert result["outer_outcome"] == "initial_solve_failed"
+    assert result["accepted_steps"] == 0
+    assert result["canonical_admission"] == "not_evaluated"
     shape = result["shape_optimization"]
     assert shape is not None
-    assert shape["solver_mode"] == "free_boundary_solver_shape_current_optimization"
-    assert shape["target_point_count"] == obs.shape[0]
-    assert shape["coil_count"] == 4
-    assert shape["response_rank"] <= shape["coil_count"]
-    assert np.isfinite(shape["response_condition"])
-    assert np.isfinite(shape["flux_relative_rmse"])
-    assert shape["target_flux"].shape == (obs.shape[0],)
-    assert shape["achieved_flux"].shape == (obs.shape[0],)
+    assert shape["target_point_count"] == len(obs)
+    np.testing.assert_array_equal(shape["achieved_flux"], kernel._sample_flux_at_points(obs))
+    residual = shape["achieved_flux"] - shape["target_flux"]
+    np.testing.assert_array_equal(shape["residual"], residual)
+    # Compare the mathematical RMS with an independent high-precision oracle,
+    # rather than require the exact rounding of one binary64 reduction order.
+    with localcontext() as context:
+        context.prec = 80
+        squares = [Decimal.from_float(float(value)) ** 2 for value in residual]
+        reference = (sum(squares, Decimal(0)) / len(squares)).sqrt()
+        error = abs(Decimal.from_float(shape["flux_rmse"]) - reference)
+        assert error <= Decimal.from_float(float(np.spacing(float(reference))))
 
 
-def test_solve_free_boundary_uses_explicit_target_flux_values(
-    kernel: FusionKernel,
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """Shape optimisation should pass explicit target_flux_values to optimiser."""
+def test_solve_free_boundary_uses_explicit_target_flux_values(kernel: FusionKernel) -> None:
+    """Inspect the real total-field target without replacing the optimizer."""
     coils = _make_coils(4)
     coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
     coils.target_flux_values = np.array([0.25, 0.25, 0.25])
-    captured: dict[str, np.ndarray] = {}
-
-    def _stub_optimize(
-        _self: FusionKernel,
-        _coils: CoilSet,
-        target_flux: np.ndarray,
-        tikhonov_alpha: float = 1e-4,
-    ) -> np.ndarray:
-        del tikhonov_alpha
-        captured["target_flux"] = np.asarray(target_flux, dtype=np.float64).copy()
-        return _coils.currents.copy()
-
-    monkeypatch.setattr(FusionKernel, "optimize_coil_currents", _stub_optimize)
-    kernel.solve_free_boundary(coils, max_outer_iter=1, tol=0.0, optimize_shape=True)
-
-    np.testing.assert_allclose(captured["target_flux"], coils.target_flux_values, atol=0.0)
+    result = kernel.solve_free_boundary(coils, max_outer_iter=1, tol=0.0, optimize_shape=True)
+    shape = result["shape_optimization"]
+    assert shape is not None
+    np.testing.assert_array_equal(shape["target_flux"], coils.target_flux_values)
+    np.testing.assert_array_equal(
+        shape["achieved_flux"], kernel._sample_flux_at_points(coils.target_flux_points)
+    )
 
 
 def test_solve_free_boundary_infers_isoflux_target_without_explicit_values(
     kernel: FusionKernel,
-    monkeypatch: pytest.MonkeyPatch,
-):
-    """Without explicit target_flux_values the inferred shape target should be isoflux."""
+) -> None:
+    """Report the real diagnostic initial-state isoflux target on inner failure."""
     coils = _make_coils(4)
     coils.target_flux_points = np.array([[6.0, 0.0], [6.0, 1.0], [6.0, -1.0]])
-    captured: dict[str, np.ndarray] = {}
-
-    def _stub_optimize(
-        _self: FusionKernel,
-        _coils: CoilSet,
-        target_flux: np.ndarray,
-        tikhonov_alpha: float = 1e-4,
-    ) -> np.ndarray:
-        del tikhonov_alpha
-        captured["target_flux"] = np.asarray(target_flux, dtype=np.float64).copy()
-        return _coils.currents.copy()
-
-    monkeypatch.setattr(FusionKernel, "optimize_coil_currents", _stub_optimize)
-    kernel.solve_free_boundary(coils, max_outer_iter=1, tol=0.0, optimize_shape=True)
-
-    target = captured["target_flux"]
-    assert target.shape == (3,)
-    assert float(np.max(target) - np.min(target)) < 1e-12
+    result = kernel.solve_free_boundary(coils, max_outer_iter=1, tol=0.0, optimize_shape=True)
+    shape = result["shape_optimization"]
+    assert shape is not None
+    samples = kernel._sample_flux_at_points(coils.target_flux_points)
+    np.testing.assert_array_equal(shape["target_flux"], np.full(3, float(np.mean(samples))))
+    assert result["outer_outcome"] == "initial_solve_failed"
 
 
-def test_solve_free_boundary_enforces_external_boundary_flux(kernel: FusionKernel):
+def test_solve_free_boundary_enforces_external_boundary_flux(kernel: FusionKernel) -> None:
     """Outer free-boundary loop must keep external coil boundary flux."""
     coils = _make_coils(4)
     psi_ext = kernel._compute_external_flux(coils)
@@ -521,7 +508,7 @@ def test_solve_free_boundary_enforces_external_boundary_flux(kernel: FusionKerne
     np.testing.assert_allclose(kernel.Psi[:, -1], psi_ext[:, -1], atol=1e-12)
 
 
-def test_solve_free_boundary_runs_multiple_iters(kernel: FusionKernel):
+def test_solve_free_boundary_runs_multiple_iters(kernel: FusionKernel) -> None:
     """Free-boundary solve should run multiple iterations without error."""
     coils = _make_coils(4)
     result = kernel.solve_free_boundary(coils, max_outer_iter=5, tol=1e-10)
@@ -531,13 +518,15 @@ def test_solve_free_boundary_runs_multiple_iters(kernel: FusionKernel):
     assert np.isfinite(result["final_diff"])
 
 
-def test_solve_free_boundary_rejects_invalid_outer_iter(kernel: FusionKernel):
+def test_solve_free_boundary_rejects_invalid_outer_iter(kernel: FusionKernel) -> None:
+    """Refuse an invalid solve budget before changing fields."""
     coils = _make_coils(4)
     with pytest.raises(ValueError, match="max_outer_iter"):
         kernel.solve_free_boundary(coils, max_outer_iter=0)
 
 
-def test_solve_free_boundary_rejects_invalid_tolerance(kernel: FusionKernel):
+def test_solve_free_boundary_rejects_invalid_tolerance(kernel: FusionKernel) -> None:
+    """Refuse a negative engineering stopping threshold."""
     coils = _make_coils(4)
     with pytest.raises(ValueError, match="tol"):
         kernel.solve_free_boundary(coils, max_outer_iter=1, tol=-1.0)

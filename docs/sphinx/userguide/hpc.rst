@@ -115,6 +115,21 @@ solver.
 This bridge is primarily used for prototyping custom solver kernels
 before porting them to Rust.
 
+Native state checkpoints
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+``HPCBridge.supports_state_snapshot()`` identifies an initialized library
+with complete state export and import support. ``snapshot_state()`` returns
+an owned checkpoint of the native flux, current profile and boundary value.
+``restore_state(checkpoint)`` restores that history before another solve.
+Checkpoint arrays have immutable byte storage; a checkpoint from another
+bridge or an earlier initialization is refused before native mutation.
+
+Free-boundary transactions require this capability when C++ is active.
+Older trusted libraries remain usable for ordinary solves, but cannot run
+the transactional free-boundary adapter. Checkpoint capability does not
+certify the native equation convention or equilibrium convergence.
+
 GPU Acceleration Status
 -----------------------
 

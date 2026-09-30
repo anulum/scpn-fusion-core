@@ -22,6 +22,7 @@ from typing import Any, Optional
 from numpy.typing import NDArray
 
 from scpn_fusion._data_paths import default_iter_config_path
+from scpn_fusion.hpc._hpc_solver_state import HPCSolverState, immutable_field
 from scpn_fusion.hpc._hpc_native_trust import (
     _CPP_ALLOWED_COMPILERS,
     _SHA256_HEX_LEN,
@@ -50,6 +51,7 @@ _CPP_BUILD_TIMEOUT_SECONDS = 300.0
 # and monkeypatched by the bridge tests) stays byte-identical after the split.
 __all__ = [
     "HPCBridge",
+    "HPCSolverState",
     "compile_cpp",
     "_CPP_ALLOWED_COMPILERS",
     "_CPP_BUILD_TIMEOUT_SECONDS",
@@ -113,6 +115,9 @@ class HPCBridge:
         self._destroy_symbol: Optional[str] = None
         self._has_converged_api: bool = False
         self._has_boundary_api: bool = False
+        self._has_state_api: bool = False
+        self._state_context: object = object()
+        self._state_grid: tuple[int, int, float, float, float, float] | None = None
 
         lib_name = "scpn_solver.dll" if platform.system() == "Windows" else "libscpn_solver.so"
         env_path = os.environ.get(_SOLVER_LIB_ENV)
@@ -238,6 +243,28 @@ class HPCBridge:
             self._has_boundary_api = False
 
         # void destroy_solver(void* solver) or void delete_solver(void* solver)
+        self._has_state_api = hasattr(self.lib, "export_solver_state") and hasattr(
+            self.lib, "import_solver_state"
+        )
+        if self._has_state_api:
+            field_pointer = np.ctypeslib.ndpointer(dtype=np.float64, flags="C_CONTIGUOUS")
+            self.lib.export_solver_state.argtypes = [
+                ctypes.c_void_p,
+                field_pointer,
+                field_pointer,
+                ctypes.c_int,
+                ctypes.POINTER(ctypes.c_double),
+            ]
+            self.lib.export_solver_state.restype = ctypes.c_int
+            self.lib.import_solver_state.argtypes = [
+                ctypes.c_void_p,
+                field_pointer,
+                field_pointer,
+                ctypes.c_int,
+                ctypes.c_double,
+            ]
+            self.lib.import_solver_state.restype = ctypes.c_int
+
         if hasattr(self.lib, "destroy_solver"):
             self.lib.destroy_solver.argtypes = [ctypes.c_void_p]
             self.lib.destroy_solver.restype = None
@@ -271,7 +298,89 @@ class HPCBridge:
         self.solver_ptr = self.lib.create_solver(
             nr, nz, r_range[0], r_range[1], z_range[0], z_range[1]
         )
+        self._state_context = object()
+        self._state_grid = (nr, nz, *r_range, *z_range)
         self.set_boundary_dirichlet(boundary_value)
+
+    def supports_state_snapshot(self) -> bool:
+        """Return whether the initialized library exports complete transactions.
+
+        Returns
+        -------
+        bool
+            True only for an available initialized checkpoint-capable solver.
+        """
+        return bool(self.loaded and self.solver_ptr is not None and self._has_state_api)
+
+    def snapshot_state(self) -> HPCSolverState:
+        """Export every mutable native field into an owned checkpoint.
+
+        Returns
+        -------
+        HPCSolverState
+            Immutable history bound to this solver initialization.
+
+        Raises
+        ------
+        RuntimeError
+            If the solver cannot export a complete native checkpoint.
+        """
+        if not self.supports_state_snapshot() or self.lib is None or self._state_grid is None:
+            raise RuntimeError("native solver does not support state checkpoints")
+        psi = np.empty((self.nz, self.nr), dtype=np.float64)
+        source = np.empty_like(psi)
+        boundary = ctypes.c_double()
+        status = self.lib.export_solver_state(
+            self.solver_ptr, psi, source, int(psi.size), ctypes.byref(boundary)
+        )
+        if status != 1:
+            raise RuntimeError("native solver checkpoint export failed")
+        return HPCSolverState(
+            immutable_field(psi),
+            immutable_field(source),
+            float(boundary.value),
+            self._state_context,
+            self._state_grid,
+            self.lib_sha256,
+        )
+
+    def restore_state(self, checkpoint: HPCSolverState) -> None:
+        """Restore a complete matching checkpoint after validation.
+
+        Parameters
+        ----------
+        checkpoint : HPCSolverState
+            Previously exported history from this initialization.
+
+        Raises
+        ------
+        ValueError
+            If context, geometry, arrays or finite values are incompatible.
+        RuntimeError
+            If the native transaction API is unavailable or refuses the import.
+        """
+        if not self.supports_state_snapshot() or self.lib is None:
+            raise RuntimeError("native solver does not support state checkpoints")
+        if (
+            checkpoint.context is not self._state_context
+            or checkpoint.grid != self._state_grid
+            or checkpoint.library_sha256 != self.lib_sha256
+        ):
+            raise ValueError("checkpoint belongs to a different solver")
+        shape = (self.nz, self.nr)
+        psi = _require_c_contiguous_f64(checkpoint.psi, shape, "checkpoint psi")
+        source = _require_c_contiguous_f64(checkpoint.j_phi, shape, "checkpoint source")
+        if not (
+            np.isfinite(checkpoint.boundary_value)
+            and np.all(np.isfinite(psi))
+            and np.all(np.isfinite(source))
+        ):
+            raise ValueError("checkpoint must contain only finite values")
+        status = self.lib.import_solver_state(
+            self.solver_ptr, psi, source, int(psi.size), checkpoint.boundary_value
+        )
+        if status != 1:
+            raise RuntimeError("native solver checkpoint restore failed")
 
     def set_boundary_dirichlet(self, boundary_value: float = 0.0) -> None:
         """Set a fixed Dirichlet boundary value for psi edges, if supported."""

@@ -4,14 +4,19 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — Free-Boundary Benchmark Tests
 """Behavioural contracts for validation/benchmark_free_boundary.py."""
 
 from __future__ import annotations
+
+from decimal import Decimal, localcontext
+from math import ulp
 
 from validation.benchmark_free_boundary import build_gate_summary, run_free_boundary_benchmark
 
 
 def test_free_boundary_gate_summary_fails_closed_for_missing_or_failed_rows() -> None:
+    """Keep missing or failed named rows out of the aggregate pass decision."""
     summary = build_gate_summary(
         {
             "single_coil": {"pass": True},
@@ -37,6 +42,7 @@ def test_free_boundary_gate_summary_fails_closed_for_missing_or_failed_rows() ->
 
 
 def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
+    """Run the actual benchmark and distinguish its equation and state contracts."""
     report = run_free_boundary_benchmark()
 
     assert report["benchmark_id"] == "free_boundary_coil_vacuum_reconstruction"
@@ -76,6 +82,20 @@ def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
     assert integrated_shape["flux_relative_rmse"] < 1.0e-12
     assert integrated_shape["vacuum_boundary_abs_error"] < 1.0e-12
     assert integrated_shape["pass"] is True
+    assert integrated_shape["grid"] == "5x5"
+    assert integrated_shape["outer_iterations"] == 2
+    assert integrated_shape["accepted_steps"] == 1
+    assert integrated_shape["inner_status"] == "converged"
+    assert integrated_shape["canonical_admission"] == "not_evaluated"
+    assert integrated_shape["returned_fields_match_kernel"] is True
+    with localcontext() as context:
+        context.prec = 80
+        residuals = [Decimal.from_float(float(x)) for x in integrated_shape["actual_residual"]]
+        reference = (sum((x * x for x in residuals), Decimal(0)) / len(residuals)).sqrt()
+        error = abs(Decimal.from_float(integrated_shape["flux_rmse"]) - reference)
+        assert error <= Decimal.from_float(ulp(float(reference)))
+        assert integrated_shape["actual_flux_rmse"] == float(reference)
+    assert integrated_shape["rms_reference"] == "80_digit_decimal_from_actual_binary64_residuals"
     assert (
         report["solve_free_boundary_vacuum_reconstruction"]["solver_mode"]
         == "free_boundary_solver_with_coil_vacuum_boundary"

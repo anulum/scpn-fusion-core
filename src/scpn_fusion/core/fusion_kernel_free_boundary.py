@@ -4,6 +4,7 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — Free-Boundary Helpers
 """Free-boundary and coil-optimisation helpers for ``FusionKernel``."""
 
 from __future__ import annotations
@@ -631,112 +632,47 @@ def solve_free_boundary(
     axis_point: FloatArray | None = None,
     x_points: FloatArray | None = None,
 ) -> dict[str, Any]:
-    """Solve the Grad-Shafranov system with externally driven coil boundary flux.
+    """Solve coherent total-field outer iterates within an actual-call budget.
 
-    Each outer iteration applies coil-generated boundary flux, runs the kernel
-    equilibrium solve, and optionally re-optimises coil currents against the
-    configured shape-control points.  The result reports the outer iteration
-    count, the final maximum flux-grid change, and the final coil currents.
+    Parameters
+    ----------
+    kernel : Any
+        Actual equilibrium kernel with bound flux, source and magnetic fields.
+    coils : CoilSet
+        Physical coil request, updated to the returned solved iterate.
+    max_outer_iter : int
+        Budget for all equilibrium executions, including rejected trials.
+    tol : float
+        Engineering accepted flux-change threshold in Wb/rad.
+    optimize_shape : bool
+        Enable bounded total-field target optimization.
+    tikhonov_alpha : float
+        Regularization in squared reduced flux per squared ampere.
+    limiter_points : FloatArray or None
+        Optional limiter coordinates for vacuum diagnostics.
+    axis_point : FloatArray or None
+        Optional axis coordinates for vacuum diagnostics.
+    x_points : FloatArray or None
+        Optional null coordinates for vacuum diagnostics.
+
+    Returns
+    -------
+    dict[str, Any]
+        Actual state and stopping reasons; canonical admission is not evaluated.
     """
-    if max_outer_iter < 1:
-        raise ValueError("max_outer_iter must be >= 1.")
-    if not np.isfinite(tol) or tol < 0.0:
-        raise ValueError("tol must be finite and >= 0.")
+    from scpn_fusion.core.free_boundary_outer_solver import run_outer_equilibrium
 
-    psi_ext = compute_external_flux(kernel, coils)
-    diff = float("inf")
-    shape_optimization: dict[str, Any] | None = None
-
-    for outer in range(max_outer_iter):
-        # Apply external flux as boundary condition
-        kernel.Psi[0, :] = psi_ext[0, :]
-        kernel.Psi[-1, :] = psi_ext[-1, :]
-        kernel.Psi[:, 0] = psi_ext[:, 0]
-        kernel.Psi[:, -1] = psi_ext[:, -1]
-
-        # Inner GS solve (use existing Picard iteration)
-        psi_old = kernel.Psi.copy()
-        kernel.solve_equilibrium(
-            preserve_initial_state=True,
-            boundary_flux=psi_ext,
-        )
-
-        # Optional: optimise coil currents to match target shape
-        if optimize_shape and coils.target_flux_points is not None:
-            target_psi = resolve_shape_target_flux(kernel, coils)
-            response = build_mutual_inductance_matrix(kernel, coils, coils.target_flux_points)
-            # Route through the kernel method to preserve monkeypatch/test hooks.
-            new_currents = kernel.optimize_coil_currents(
-                coils,
-                target_psi,
-                tikhonov_alpha=tikhonov_alpha,
-            )
-            new_currents = np.asarray(new_currents, dtype=np.float64).reshape(-1)
-            if new_currents.shape != (len(coils.positions),):
-                raise ValueError("optimised coil current vector length must match coil count.")
-            if not np.all(np.isfinite(new_currents)):
-                raise ValueError("optimised coil currents must contain finite values only.")
-            achieved_flux = response.T @ new_currents
-            residual = achieved_flux - target_psi
-            flux_rmse = float(np.sqrt(np.mean(residual**2)))
-            flux_scale = max(float(np.sqrt(np.mean(target_psi**2))), 1.0)
-            active_bounds = 0
-            if coils.current_limits is not None:
-                limits = _as_finite_vector(
-                    coils.current_limits, name="current_limits", length=len(coils.positions)
-                )
-                active_bounds = int(
-                    np.count_nonzero(np.isclose(np.abs(new_currents), limits, rtol=0.0))
-                )
-            shape_optimization = {
-                "solver_mode": "free_boundary_solver_shape_current_optimization",
-                "target_point_count": int(target_psi.shape[0]),
-                "coil_count": int(len(coils.positions)),
-                "response_rank": int(np.linalg.matrix_rank(response.T)),
-                "response_condition": float(np.linalg.cond(response.T)),
-                "flux_rmse": flux_rmse,
-                "flux_relative_rmse": float(flux_rmse / flux_scale),
-                "max_abs_flux_residual": float(np.max(np.abs(residual))),
-                "active_current_bounds": active_bounds,
-                "target_flux": target_psi.copy(),
-                "achieved_flux": achieved_flux.astype(np.float64, copy=False),
-            }
-            coils.currents = new_currents
-            psi_ext = compute_external_flux(kernel, coils)
-
-        # Check convergence
-        diff = float(np.max(np.abs(kernel.Psi - psi_old)))
-        if diff < tol:
-            logger.info("Free-boundary converged at outer iter %d (diff=%.2e)", outer, diff)
-            break
-
-    boundary_points = _kernel_boundary_points(kernel)
-    boundary_target = np.concatenate(
-        [
-            psi_ext[0, :],
-            psi_ext[1:, -1],
-            psi_ext[-1, -2::-1],
-            psi_ext[-2:0:-1, 0],
-        ]
-    ).astype(np.float64, copy=False)
-    boundary_reconstruction = reconstruct_boundary_flux_from_coils(
+    return run_outer_equilibrium(
         kernel,
         coils,
-        boundary_points=boundary_points,
-        limiter_points=limiter_points,
-        axis_point=axis_point,
-        x_points=x_points,
-        target_flux=boundary_target,
+        max_outer_iter,
+        tol,
+        optimize_shape,
+        tikhonov_alpha,
+        limiter_points,
+        axis_point,
+        x_points,
     )
-
-    return {
-        "outer_iterations": outer + 1,
-        "final_diff": diff,
-        "coil_currents": coils.currents.copy(),
-        "vacuum_boundary_abs_error": boundary_reconstruction["max_abs_error"],
-        "boundary_reconstruction": boundary_reconstruction,
-        "shape_optimization": shape_optimization,
-    }
 
 
 __all__ = [

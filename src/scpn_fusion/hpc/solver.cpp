@@ -1,10 +1,10 @@
-// ─────────────────────────────────────────────────────────────────────
-// SCPN Fusion Core — C++ Grad-Shafranov Elliptic Solver
-// © 1998–2026 Miroslav Šotek. All rights reserved.
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Commercial license available
+// © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+// © Code 2020–2026 Miroslav Šotek. All rights reserved.
+// ORCID: 0009-0009-3560-0851
 // Contact: www.anulum.li | protoscience@anulum.li
-// ORCID: https://orcid.org/0009-0009-3560-0851
-// License: GNU AGPL v3 | Commercial licensing available
-// ─────────────────────────────────────────────────────────────────────
+// SCPN Fusion Core — C++ Grad-Shafranov Elliptic Solver
 //
 // Red-Black SOR solver for the 2-D Poisson-like equation arising from
 // the Grad-Shafranov equilibrium:
@@ -144,6 +144,36 @@ public:
     /** Return the number of scalar grid entries owned by the solver. */
     size_t get_size() const { return psi.size(); }
 
+    /** Export every mutable field without changing the solver. */
+    bool export_state(double *psi_out, double *j_out, size_t size,
+                      double *boundary_out) const {
+        if (!psi_out || !j_out || !boundary_out || size != psi.size()) {
+            return false;
+        }
+        std::copy(psi.begin(), psi.end(), psi_out);
+        std::copy(j_phi.begin(), j_phi.end(), j_out);
+        *boundary_out = boundary_value;
+        return true;
+    }
+
+    /** Validate a complete checkpoint before restoring any mutable field. */
+    bool import_state(const double *psi_in, const double *j_in, size_t size,
+                      double boundary_in) {
+        if (!psi_in || !j_in || size != psi.size() ||
+            !std::isfinite(boundary_in)) {
+            return false;
+        }
+        for (size_t index = 0; index < size; ++index) {
+            if (!std::isfinite(psi_in[index]) || !std::isfinite(j_in[index])) {
+                return false;
+            }
+        }
+        std::copy(psi_in, psi_in + size, psi.begin());
+        std::copy(j_in, j_in + size, j_phi.begin());
+        boundary_value = boundary_in;
+        return true;
+    }
+
 private:
     inline void apply_dirichlet_boundaries() {
         if (cfg.nr <= 0 || cfg.nz <= 0) {
@@ -198,6 +228,22 @@ private:
 // ── C-linkage API (consumed by Python ctypes) ───────────────────────
 
 extern "C" {
+
+/** Export a complete native checkpoint; return zero on invalid arguments. */
+int export_solver_state(void *solver_ptr, double *psi_out,
+                                    double *j_out, int size, double *boundary_out) {
+    if (!solver_ptr || size <= 0) return 0;
+    return static_cast<FastSolver *>(solver_ptr)->export_state(
+        psi_out, j_out, static_cast<size_t>(size), boundary_out) ? 1 : 0;
+}
+
+/** Restore a validated native checkpoint atomically; return zero on refusal. */
+int import_solver_state(void *solver_ptr, const double *psi_in,
+                                    const double *j_in, int size, double boundary_in) {
+    if (!solver_ptr || size <= 0) return 0;
+    return static_cast<FastSolver *>(solver_ptr)->import_state(
+        psi_in, j_in, static_cast<size_t>(size), boundary_in) ? 1 : 0;
+}
 
 /// Create a new solver instance for an `nr` by `nz` grid.
 ///

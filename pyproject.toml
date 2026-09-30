@@ -178,6 +178,16 @@ ignore_missing_imports = false
 # currently gated typed surface and is expanded incrementally as modules are
 # brought to strict-clean status.
 files = [
+    "src/scpn_fusion/core/free_boundary_outer_solver.py",
+    "src/scpn_fusion/core/free_boundary_solver_state.py",
+    "src/scpn_fusion/hpc/_hpc_solver_state.py",
+    "tests/test_benchmark_free_boundary.py",
+    "tests/test_coil_optimization.py",
+    "tests/test_free_boundary_outer_solver.py",
+    "tests/test_free_boundary_solver_state.py",
+    "tests/test_fusion_kernel_free_boundary.py",
+    "tests/test_hpc_solver_state.py",
+    "validation/benchmark_free_boundary.py",
     "tools/build_rustbca_reference.py",
     "tools/check_definition_docstrings.py",
     "tools/check_ci_workflow_ownership.py",

@@ -2188,11 +2188,17 @@ reconstructed flux, residual RMSE, relative flux RMSE, response rank,
 condition number, and active current bounds. This ports the accepted Python
 shape-current inversion contract into Rust rather than leaving the benchmark
 as Python-only evidence. The Python `solve_free_boundary(..., optimize_shape=True)`
-path now also reports integrated shape-optimization diagnostics: latest local
-result recovered three bounded coil currents from five target-flux points with
-current relative L2 error `2.96e-15`, flux relative RMSE `8.44e-17`,
-vacuum-boundary absolute error `5.55e-17`, and response rank `3/3`, status
-`PASS`.
+benchmark separately exercises total flux from an actual solved grid. Its
+declared zero-source `5x5` fixture uses two bounded coils and two wall targets,
+with two equilibrium executions and one accepted current step. The report
+checks returned fields against the kernel, samples actual total-flux residuals,
+and compares the actual wall with the returned coil currents. A one-execution
+budget preserves the initial solved currents and fields. Rejected trials also
+count against the budget and restore both Python and native solver history.
+The benchmark reports `inner_status`, `outer_outcome` and
+`canonical_admission=not_evaluated`; its software `PASS` does not establish
+nonlinear plasma or facility-reference admission. The distinct Rust coil-only
+inversion does not implement this Python iterative total-field optimizer.
 Go, Julia, and Lean are not listed as free-boundary parity surfaces here because
 their current native packages do not expose equivalent coil Green-function,
 limiter, axis, or X-point reconstruction logic.

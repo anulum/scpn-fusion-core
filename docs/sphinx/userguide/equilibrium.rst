@@ -195,6 +195,28 @@ uses the same Green's-function model to fit coil currents from flux loops and
 finite-difference magnetic-probe responses with optional measurement
 uncertainties and Tikhonov regularisation.
 
+``solve_free_boundary(..., optimize_shape=True)`` fits total flux sampled
+from the solved grid. It removes the current coil contribution to form a
+frozen plasma term, then uses unit-coil grids sampled by the same bilinear
+operator for its bounded subproblem. Explicit targets remain fixed throughout
+the call; an implicit isoflux target is frozen from the initial solved state.
+Each candidate is re-solved and accepted only when the inner solver reports
+convergence and the actual regularized total-flux merit passes the line search.
+Rejected candidates restore the prior fields, currents and native history.
+
+``max_outer_iter`` bounds every equilibrium execution, including the initial
+solve and rejected trials. A budget of one returns the initial solved currents
+and fields. It cannot install new unsolved currents. The result includes
+``inner_status``, ``outer_outcome``, ``accepted_steps``, ``trial_log``, owned
+``fields`` and topology derived from the returned flux. A failed initial solve
+is an inspectable diagnostic state rather than an accepted iterate.
+
+Shape diagnostics sample the actual returned total flux; the wall error compares
+the actual returned wall against flux from the returned currents. Residuals
+use Wb/rad. A zero target RMS gives ``flux_relative_rmse=None``. Engineering
+stationarity and the inner solver's existing flag do not establish physical
+admission: ``canonical_admission`` remains ``not_evaluated``.
+
 Convergence Criteria
 ^^^^^^^^^^^^^^^^^^^^
 

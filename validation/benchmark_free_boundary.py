@@ -15,9 +15,12 @@ Validates vacuum flux and field calculations against analytic solutions
 from __future__ import annotations
 
 import json
+from decimal import Decimal, localcontext
 import sys
 import time
 from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import Any
 
 import numpy as np
 
@@ -27,6 +30,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from scpn_fusion.core.fusion_kernel import CoilSet, FusionKernel
 from scpn_fusion.core.fusion_kernel_free_boundary import (
     build_mutual_inductance_matrix,
+    compute_external_flux,
     green_function,
     reconstruct_boundary_flux_from_coils,
 )
@@ -37,7 +41,7 @@ def jackson_psi(Rc: float, Zc: float, R: float, Z: float, I: float = 1.0) -> flo
     return float(I * green_function(Rc, Zc, R, Z))
 
 
-def build_gate_summary(results: dict, gate_names: tuple[str, ...]) -> dict:
+def build_gate_summary(results: dict[str, Any], gate_names: tuple[str, ...]) -> dict[str, Any]:
     """Build a fail-closed benchmark gate summary from named result rows."""
     failed_gates = [
         name
@@ -52,16 +56,130 @@ def build_gate_summary(results: dict, gate_names: tuple[str, ...]) -> dict:
     }
 
 
-def run_free_boundary_benchmark() -> dict:
+def run_total_field_shape_benchmark() -> dict[str, Any]:
+    """Execute the declared zero-source grid target through the public adapter.
+
+    Returns
+    -------
+    dict[str, Any]
+        Actual state-coherence and shape residual metrics, without physics admission.
+    """
+    config = {
+        "reactor_name": "Public-vacuum-outer-contract",
+        "grid_resolution": [5, 5],
+        "dimensions": {"R_min": 4, "R_max": 8, "Z_min": -4, "Z_max": 4},
+        "physics": {"plasma_current_target": 0.0, "vacuum_permeability": 4e-7 * np.pi},
+        "coils": [{"name": "CS", "r": 3, "z": 0, "current": 100000}],
+        "solver": {
+            "max_iterations": 1000,
+            "convergence_threshold": 1e-12,
+            "relaxation_factor": 1.0,
+            "solver_method": "sor",
+            "require_gs_residual": True,
+            "gs_residual_threshold": 1e-12,
+            "fail_on_diverge": True,
+            "sor_omega": 1.0,
+        },
+    }
+    with TemporaryDirectory(prefix="scpn-free-boundary-shape-") as directory:
+        path = Path(directory) / "equilibrium.json"
+        path.write_text(json.dumps(config), encoding="utf-8")
+        kernel = FusionKernel(path)
+        declared = np.array([1e5, 2e5])
+        coils = CoilSet(
+            positions=[(3.0, 0.0), (9.0, 0.0)],
+            currents=declared.copy(),
+            turns=[1, 1],
+            current_limits=np.full(2, 2e6),
+            target_flux_points=np.array([[5.0, -4.0], [7.0, -4.0]]),
+        )
+        response = np.column_stack(
+            [
+                compute_external_flux(kernel, CoilSet(coils.positions, unit, coils.turns))[
+                    0, [1, 3]
+                ]
+                for unit in np.eye(2)
+            ]
+        )
+        coils.target_flux_values = response @ declared
+        coils.currents = np.zeros(2)
+        result = kernel.solve_free_boundary(
+            coils,
+            max_outer_iter=2,
+            tol=0.0,
+            optimize_shape=True,
+            tikhonov_alpha=0.0,
+        )
+        shape: dict[str, Any] = result["shape_optimization"]
+        relative_current_error = float(
+            np.linalg.norm(coils.currents - declared) / np.linalg.norm(declared)
+        )
+        actual_samples = kernel.Psi[0, [1, 3]]
+        actual_residual = actual_samples - coils.target_flux_values
+        with localcontext() as context:
+            context.prec = 80
+            squares = [Decimal.from_float(float(value)) ** 2 for value in actual_residual]
+            reference_rms = (sum(squares, Decimal(0)) / len(squares)).sqrt()
+            rms_error = abs(Decimal.from_float(float(shape["flux_rmse"])) - reference_rms)
+            rms_rounding_bound = Decimal.from_float(float(np.spacing(float(reference_rms))))
+            rms_matches = rms_error <= rms_rounding_bound
+            actual_rms = float(reference_rms)
+        coherent = all(
+            np.array_equal(result["fields"][name], getattr(kernel, name))
+            for name in ("Psi", "J_phi", "B_R", "B_Z")
+        )
+        row: dict[str, Any] = {
+            "physics_scope": "zero_source_total_grid_flux_shape_optimization",
+            "solver_mode": shape["solver_mode"],
+            "grid": "5x5",
+            "target_point_count": shape["target_point_count"],
+            "coil_count": shape["coil_count"],
+            "response_rank": shape["response_rank"],
+            "response_condition": shape["response_condition"],
+            "current_relative_l2_error": relative_current_error,
+            "flux_rmse": shape["flux_rmse"],
+            "flux_relative_rmse": shape["flux_relative_rmse"],
+            "max_abs_flux_residual": shape["max_abs_flux_residual"],
+            "active_current_bounds": shape["active_current_bounds"],
+            "vacuum_boundary_abs_error": result["vacuum_boundary_abs_error"],
+            "outer_iterations": result["outer_iterations"],
+            "accepted_steps": result["accepted_steps"],
+            "inner_status": result["inner_status"],
+            "outer_outcome": result["outer_outcome"],
+            "canonical_admission": result["canonical_admission"],
+            "actual_residual": actual_residual.tolist(),
+            "actual_flux_rmse": actual_rms,
+            "rms_reference": "80_digit_decimal_from_actual_binary64_residuals",
+            "rms_absolute_rounding_error": float(rms_error),
+            "rms_rounding_bound": float(rms_rounding_bound),
+            "returned_fields_match_kernel": coherent,
+            "pass": bool(
+                result["outer_iterations"] == 2
+                and result["accepted_steps"] == 1
+                and result["inner_status"] == "converged"
+                and coherent
+                and result["canonical_admission"] == "not_evaluated"
+                and relative_current_error < 1e-9
+                and shape["flux_relative_rmse"] < 1e-12
+                and result["vacuum_boundary_abs_error"] < 1e-12
+                and np.array_equal(shape["achieved_flux"], actual_samples)
+                and rms_matches
+            ),
+        }
+        return row
+
+
+def run_free_boundary_benchmark() -> dict[str, Any]:
     """Run vacuum-field and free-boundary reconstruction checks for coil contracts.
 
     The benchmark validates boundary contour reconstruction, limiter and x-point
     metadata consistency, and JAX free-boundary wall-flux contract behaviour.
     """
-    results = {
+    results: dict[str, Any] = {
         "schema_version": 2,
         "benchmark_id": "free_boundary_coil_vacuum_reconstruction",
         "benchmark_scope": "free_boundary_reconstruction",
+        "measurement_kind": "non_isolated_functional_parity",
         "benchmark_contract": (
             "External coil Green-function vacuum flux on boundary, limiter, axis, and X-point "
             "metadata; not a fixed-boundary Dirichlet replay or reduced-order surrogate."
@@ -77,8 +195,9 @@ def run_free_boundary_benchmark() -> dict:
         "coils": [{"name": "Coil1", "r": 1.0, "z": 0.0, "current": 1e6, "turns": 1}],
         "solver": {"max_iterations": 1, "convergence_threshold": 1.0},
     }
-    cfg_path = Path("tmp_fb_cfg.json")
-    cfg_path.write_text(json.dumps(cfg))
+    config_directory = TemporaryDirectory(prefix="scpn-free-boundary-benchmark-")
+    cfg_path = Path(config_directory.name) / "equilibrium.json"
+    cfg_path.write_text(json.dumps(cfg), encoding="utf-8")
 
     try:
         kernel = FusionKernel(cfg_path)
@@ -177,6 +296,7 @@ def run_free_boundary_benchmark() -> dict:
             shape_coils, target_shape_flux, tikhonov_alpha=0.0
         )
         recovered_flux = shape_response.T @ recovered_currents
+        assert shape_coils.current_limits is not None
         current_rel_l2 = float(
             np.linalg.norm(recovered_currents - true_currents) / np.linalg.norm(true_currents)
         )
@@ -207,51 +327,7 @@ def run_free_boundary_benchmark() -> dict:
             ),
         }
 
-        integrated_shape_coils = CoilSet(
-            positions=shape_coils.positions,
-            currents=np.zeros(3, dtype=np.float64),
-            turns=shape_coils.turns,
-            current_limits=shape_coils.current_limits.copy(),
-            target_flux_points=shape_points,
-            target_flux_values=target_shape_flux,
-        )
-        integrated_shape = kernel.solve_free_boundary(
-            integrated_shape_coils,
-            max_outer_iter=1,
-            tol=0.0,
-            optimize_shape=True,
-            tikhonov_alpha=0.0,
-            limiter_points=limiter_points,
-            axis_point=axis_point,
-            x_points=x_points,
-        )
-        shape_diag = integrated_shape["shape_optimization"]
-        if shape_diag is None:
-            raise RuntimeError("shape optimisation diagnostics were not reported")
-        integrated_current_rel_l2 = float(
-            np.linalg.norm(integrated_shape["coil_currents"] - true_currents)
-            / np.linalg.norm(true_currents)
-        )
-        results["solve_free_boundary_shape_optimization"] = {
-            "physics_scope": "free_boundary_integrated_shape_current_optimization",
-            "solver_mode": shape_diag["solver_mode"],
-            "target_point_count": int(shape_diag["target_point_count"]),
-            "coil_count": int(shape_diag["coil_count"]),
-            "response_rank": int(shape_diag["response_rank"]),
-            "response_condition": float(shape_diag["response_condition"]),
-            "current_relative_l2_error": integrated_current_rel_l2,
-            "flux_rmse": float(shape_diag["flux_rmse"]),
-            "flux_relative_rmse": float(shape_diag["flux_relative_rmse"]),
-            "max_abs_flux_residual": float(shape_diag["max_abs_flux_residual"]),
-            "active_current_bounds": int(shape_diag["active_current_bounds"]),
-            "vacuum_boundary_abs_error": float(integrated_shape["vacuum_boundary_abs_error"]),
-            "pass": bool(
-                shape_diag["response_rank"] == true_currents.shape[0]
-                and integrated_current_rel_l2 < 1.0e-9
-                and shape_diag["flux_relative_rmse"] < 1.0e-12
-                and integrated_shape["vacuum_boundary_abs_error"] < 1.0e-12
-            ),
-        }
+        results["solve_free_boundary_shape_optimization"] = run_total_field_shape_benchmark()
         solve_contract = kernel.solve_free_boundary(
             coils,
             max_outer_iter=1,
@@ -436,8 +512,7 @@ def run_free_boundary_benchmark() -> dict:
 
         return results
     finally:
-        if cfg_path.exists():
-            cfg_path.unlink()
+        config_directory.cleanup()
 
 
 def main() -> int:
@@ -449,11 +524,13 @@ def main() -> int:
 
     with open(report_dir / "free_boundary_benchmark.json", "w") as f:
         json.dump(res, f, indent=2)
+        f.write("\n")
 
     with open(report_dir / "free_boundary_benchmark.md", "w") as f:
         f.write("# Free-Boundary Validation Benchmark\n\n")
         f.write(f"- Benchmark ID: `{res['benchmark_id']}`\n")
         f.write(f"- Benchmark scope: `{res['benchmark_scope']}`\n")
+        f.write("- Measurement: non-isolated functional parity; timing is diagnostic only.\n")
         f.write(f"- Contract: {res['benchmark_contract']}\n\n")
         gs = res["gate_summary"]
         f.write(

@@ -4,13 +4,17 @@
 # © Code 2020–2026 Miroslav Šotek. All rights reserved.
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — Free-Boundary Helper Tests
 """Direct tests for extracted free-boundary FusionKernel helpers."""
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import numpy as np
 
-from scpn_fusion.core.fusion_kernel import CoilSet
+from scpn_fusion.core.fusion_kernel import CoilSet, FusionKernel
 from scpn_fusion.core.fusion_kernel_free_boundary import (
     build_magnetic_probe_response_matrix,
     build_mutual_inductance_matrix,
@@ -25,6 +29,8 @@ from scpn_fusion.core.fusion_kernel_free_boundary import (
 
 
 class _KernelStub:
+    """Grid-only input for vacuum helpers, without an equilibrium implementation."""
+
     def __init__(self) -> None:
         self.R = np.linspace(5.0, 6.0, 5, dtype=np.float64)
         self.Z = np.linspace(-0.5, 0.5, 5, dtype=np.float64)
@@ -35,17 +41,15 @@ class _KernelStub:
         self.Psi = np.zeros((self.NZ, self.NR), dtype=np.float64)
         self.solve_calls = 0
 
-    def solve_equilibrium(self, **kwargs) -> dict[str, object]:
-        self.solve_calls += 1
-        return {"converged": True, "kwargs": kwargs}
-
 
 def test_green_function_returns_finite_value() -> None:
+    """Evaluate a finite filament response away from its singularity."""
     value = green_function(5.2, 0.1, 5.5, -0.2)
     assert np.isfinite(value)
 
 
 def test_interp_psi_bilinear_center() -> None:
+    """Interpolate an independently prescribed bilinear grid cell."""
     k = _KernelStub()
     # Set a simple 2x2 cell in the lower-left corner.
     k.Psi[0, 0] = 0.0
@@ -57,6 +61,7 @@ def test_interp_psi_bilinear_center() -> None:
 
 
 def test_resolve_shape_target_flux_prefers_explicit_values() -> None:
+    """Preserve explicit shape targets over inferred isoflux values."""
     k = _KernelStub()
     coils = CoilSet(
         positions=[(5.2, 0.0)],
@@ -69,6 +74,7 @@ def test_resolve_shape_target_flux_prefers_explicit_values() -> None:
 
 
 def test_optimize_coil_currents_returns_finite_vector() -> None:
+    """Solve the distinct coil-only bounded inversion with SciPy."""
     k = _KernelStub()
     coils = CoilSet(
         positions=[(5.3, 0.0)],
@@ -88,6 +94,7 @@ def test_optimize_coil_currents_returns_finite_vector() -> None:
 
 
 def test_inverse_magnetic_probe_reconstruction_recovers_synthetic_currents() -> None:
+    """Recover declared currents from independent diagnostic channels."""
     k = _KernelStub()
     coils = CoilSet(
         positions=[(5.1, -0.35), (5.9, 0.35)],
@@ -125,6 +132,7 @@ def test_inverse_magnetic_probe_reconstruction_recovers_synthetic_currents() -> 
 
 
 def test_boundary_flux_reconstruction_uses_coil_green_functions() -> None:
+    """Reconstruct vacuum flux from the declared coil geometry."""
     k = _KernelStub()
     coils = CoilSet(
         positions=[(5.1, -0.35), (5.9, 0.35)],
@@ -149,6 +157,7 @@ def test_boundary_flux_reconstruction_uses_coil_green_functions() -> None:
 
 
 def test_boundary_flux_reconstruction_reports_limiter_and_topology_metadata() -> None:
+    """Report limiter distances and named vacuum metadata points."""
     k = _KernelStub()
     coils = CoilSet(
         positions=[(5.1, -0.35), (5.9, 0.35)],
@@ -180,6 +189,7 @@ def test_boundary_flux_reconstruction_reports_limiter_and_topology_metadata() ->
 
 
 def test_inverse_magnetic_probe_reconstruction_respects_current_limits() -> None:
+    """Bound currents when the requested diagnostic flux is infeasible."""
     k = _KernelStub()
     coils = CoilSet(
         positions=[(5.1, -0.35)],
@@ -195,11 +205,13 @@ def test_inverse_magnetic_probe_reconstruction_respects_current_limits() -> None
         tikhonov_alpha=0.0,
     )
 
+    assert coils.current_limits is not None
     assert np.all(np.abs(result["coil_currents"]) <= coils.current_limits + 1e-12)
     assert result["active_bounds"] >= 1
 
 
 def test_inverse_magnetic_probe_reconstruction_rejects_bad_probe_contract() -> None:
+    """Refuse mismatched measurements and unknown probe directions."""
     k = _KernelStub()
     coils = CoilSet(
         positions=[(5.1, -0.35)],
@@ -224,8 +236,25 @@ def test_inverse_magnetic_probe_reconstruction_rejects_bad_probe_contract() -> N
         )
 
 
-def test_solve_free_boundary_returns_contract() -> None:
-    k = _KernelStub()
+def test_solve_free_boundary_returns_contract(tmp_path: Path) -> None:
+    """Exercise the compatibility function using an actual zero-source kernel."""
+    config = {
+        "reactor_name": "Real-free-boundary-contract",
+        "grid_resolution": [5, 5],
+        "dimensions": {"R_min": 5.0, "R_max": 6.0, "Z_min": -0.5, "Z_max": 0.5},
+        "physics": {"plasma_current_target": 0.0, "vacuum_permeability": 4e-7 * np.pi},
+        "coils": [{"name": "CS", "r": 4.0, "z": 0.0, "current": 0.0}],
+        "solver": {
+            "max_iterations": 1000,
+            "convergence_threshold": 1e-12,
+            "solver_method": "sor",
+            "sor_omega": 1.0,
+            "relaxation_factor": 1.0,
+        },
+    }
+    path = tmp_path / "kernel.json"
+    path.write_text(json.dumps(config), encoding="utf-8")
+    k = FusionKernel(path)
     coils = CoilSet(
         positions=[(5.2, 0.0)],
         currents=np.array([0.0], dtype=np.float64),
@@ -252,4 +281,6 @@ def test_solve_free_boundary_returns_contract() -> None:
     assert result["boundary_reconstruction"]["limiter_point_count"] == 4
     assert result["boundary_reconstruction"]["x_point_count"] == 1
     assert result["boundary_reconstruction"]["axis_flux"] is not None
-    assert k.solve_calls == 1
+    assert result["inner_status"] == "converged"
+    assert result["canonical_admission"] == "not_evaluated"
+    np.testing.assert_array_equal(result["fields"]["Psi"], k.Psi)
