@@ -2,14 +2,18 @@
 Emit a Studio Federation Manifest
 =================================
 
-This tutorial shows the release-safe path for producing the Studio federation
-document.
+This tutorial shows how to emit and check the Studio federation document from
+the canonical source installation.
 
-Prerequisite: install the optional Studio SDK dependency.
+Prerequisite: use Python 3.11 or later and install this Fusion checkout with the
+canonical Platform SDK source. Follow the hash-locked source installation recipe
+in :doc:`../userguide/studio_federation` before continuing. That recipe pins
+Platform commit ``6488f45b49f74e6e1d1580db8563698787250913`` and installs its
+runtime and build dependencies before installing Fusion's ``studio`` extra.
 
-.. code-block:: bash
-
-   pip install 'scpn-fusion[studio]'
+Published SDK 0.11.2 does not implement the required v2 contract. A standalone
+PyPI-only extra installation remains gated until a compatible SDK release is
+authorised and available.
 
 1. Inspect the manifest in Python
 =================================

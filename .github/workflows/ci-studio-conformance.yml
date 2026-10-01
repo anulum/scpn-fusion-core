@@ -7,7 +7,10 @@
 # SCPN Fusion Core — reusable CI validation
 name: CI studio-conformance
 'on':
-  workflow_call: {}
+  workflow_call:
+    secrets:
+      SCPN_PLATFORM_TOKEN:
+        required: true
 permissions: {}
 env:
   GIT_CONFIG_COUNT: '1'
@@ -23,6 +26,15 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
         lfs: false
+    - name: Checkout exact Platform v2 contract
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        repository: anulum/scpn-studio-platform
+        ref: 6488f45b49f74e6e1d1580db8563698787250913
+        path: .ci/scpn-studio-platform
+        token: ${{ secrets.SCPN_PLATFORM_TOKEN }}
+        persist-credentials: false
+        lfs: false
     - name: Set up Python 3.12
       uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
       with:
@@ -32,8 +44,12 @@ jobs:
         pip install --require-hashes -r requirements/ci-py312.txt
         pip install --no-deps -e .
     - name: Install studio federation SDK
-      run: pip install --require-hashes -r requirements/studio.txt
-    - name: Studio schema-A federation tests
-      run: pytest tests/test_studio_manifest.py -v
+      run: |
+        test "$(git -C .ci/scpn-studio-platform rev-parse HEAD)" = 6488f45b49f74e6e1d1580db8563698787250913
+        pip install --require-hashes -r requirements/studio.txt
+        pip install --no-deps --no-build-isolation .ci/scpn-studio-platform
+        pip check
+    - name: Studio manifest, evidence ingest and exactness contracts
+      run: pytest tests/test_studio_manifest.py tests/test_studio_ingest.py tests/test_studio_exactness.py -v
     - name: Studio manifest drift guard
-      run: python -m scpn_fusion.studio.federation --check
+      run: scpn-emit-studio-manifest --check

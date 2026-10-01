@@ -308,8 +308,16 @@
       "permissions": {
         "contents": "read"
       },
-      "secrets": {},
-      "workflow_call": {}
+      "secrets": {
+        "SCPN_PLATFORM_TOKEN": "${{ secrets.SCPN_PLATFORM_TOKEN }}"
+      },
+      "workflow_call": {
+        "secrets": {
+          "SCPN_PLATFORM_TOKEN": {
+            "required": "true"
+          }
+        }
+      }
     },
     "reference-evidence": {
       "path": ".github/workflows/ci-reference-evidence.yml",

@@ -112,6 +112,8 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
   studio-conformance:
     uses: ./.github/workflows/ci-studio-conformance.yml
+    secrets:
+      SCPN_PLATFORM_TOKEN: ${{ secrets.SCPN_PLATFORM_TOKEN }}
     permissions:
       contents: read
     needs:

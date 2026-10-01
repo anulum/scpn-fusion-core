@@ -25,8 +25,8 @@ def test_manifest_builds_with_studio_identity() -> None:
     assert data["studio"] == "scpn-fusion-core"
     assert len(data["verbs"]) == len(verbs.FUSION_VERBS) == 8
     assert data["content_digest"].startswith("sha256:")
-    assert data["contract_era"] == "v1"
-    assert data["platform_sdk"] == ">=0.10,<0.11"
+    assert data["contract_era"] == "v2"
+    assert data["platform_sdk"] == ">=0.11.3.dev0,<0.12"
     assert data["transport_profile"] == "local-first"
 
 
@@ -176,12 +176,9 @@ def test_manifest_passes_studio_conformance_gate() -> None:
     Keeps the federation contract honest in CI: any schema-A drift (bad digest form,
     duplicate verb, unversioned evidence schema, unknown contract era) reds the build.
     """
-    from scpn_studio_platform import manifest as platform_manifest
+    from scpn_studio_platform.manifest import validate_studio_manifest
 
-    validate = getattr(platform_manifest, "validate_studio_manifest", None)
-    if validate is None:  # pragma: no cover - only on SDK < 0.8
-        pytest.skip("validate_studio_manifest unavailable (scpn-studio-platform < 0.8)")
-    verdict = validate(manifest.build_manifest().to_dict())
+    verdict = validate_studio_manifest(manifest.build_manifest().to_dict(), supported_eras={"v2"})
     assert verdict.admitted, f"manifest rejected: {verdict.rejections}"
     assert verdict.rejections == ()
     assert verdict.warnings == ()
@@ -214,7 +211,9 @@ def test_studio_manifest_drift_reports_stale_file(tmp_path: Path) -> None:
     assert "stale" in drift
 
 
-def test_main_emits_then_check_passes(tmp_path: Path, monkeypatch, capsys) -> None:
+def test_main_emits_then_check_passes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """``main`` writes the document, and a following ``--check`` sees it as current."""
     monkeypatch.chdir(tmp_path)
     assert federation.main([]) == 0
@@ -223,7 +222,9 @@ def test_main_emits_then_check_passes(tmp_path: Path, monkeypatch, capsys) -> No
     assert "is current" in capsys.readouterr().out
 
 
-def test_main_check_fails_when_artifact_missing(tmp_path: Path, monkeypatch, capsys) -> None:
+def test_main_check_fails_when_artifact_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """``--check`` fails closed (exit 1) when no artefact has been emitted."""
     monkeypatch.chdir(tmp_path)
     assert federation.main(["--check"]) == 1

@@ -1,4 +1,10 @@
-# Studio federation conformance dependency
+# Runtime and build dependencies for the exact Studio federation SDK source.
 # Regenerate: uv pip compile requirements/studio.in --generate-hashes --python-version 3.12 --python-platform linux -o requirements/studio.txt
-scpn-studio-platform==0.10.0
-cryptography>=50.0.0
+# Install Platform commit 6488f45b49f74e6e1d1580db8563698787250913 separately
+# with --no-deps --no-build-isolation after this hash-locked graph.
+# Published SDK 0.11.2 does not implement the required era-v2 contract.
+-c ci-py312.txt
+cryptography>=50.0.2
+jsonschema>=4.26,<5
+setuptools==84.0.0
+wheel==0.48.0

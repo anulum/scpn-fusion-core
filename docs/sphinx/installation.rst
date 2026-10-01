@@ -20,6 +20,7 @@ Optional runtime stacks are exposed via extras:
 - ``[ui]``: Streamlit dashboard
 - ``[ml]``: JAX/JAXLIB ML lanes
 - ``[rl]``: Gymnasium RL environments
+- ``[studio]``: Studio federation (Python 3.11 or later; Platform >= 0.11.3.dev0, < 0.12)
 - ``[full]``: all optional runtime stacks + physics extras
 
 From PyPI (Recommended)
@@ -35,6 +36,11 @@ Install optional stacks explicitly as needed::
     pip install "scpn-fusion[ml]"
     pip install "scpn-fusion[rl]"
     pip install "scpn-fusion[full]"
+
+The ``[studio]`` extra currently requires the exact canonical Platform source
+because published SDK 0.11.2 predates the v2 contract. Follow the source and
+hash-locked installation recipe in :doc:`userguide/studio_federation` before
+installing this extra.
 
 From Source (Pure Python)
 -------------------------

@@ -32,8 +32,11 @@ from scpn_studio_platform.manifest import (
 
 from .verbs import FUSION_VERBS, STUDIO_ID, evidence_schemas
 
-PLATFORM_SDK_RANGE = ">=0.10,<0.11"
+PLATFORM_SDK_RANGE = ">=0.11.3.dev0,<0.12"
 """The platform SDK SemVer range the studio builds on (matches the ``studio`` extra)."""
+
+CONTRACT_ERA = "v2"
+"""The freshness-required federation contract for new consumer admissions."""
 
 PROTOCOL_VERSION = "1"
 """The SYNAPSE wire protocol version the studio pins."""
@@ -88,7 +91,7 @@ def build_manifest(*, studio_version: str = STUDIO_VERSION) -> CapabilityManifes
 
     Parameters
     ----------
-    studio_version
+    studio_version : str
         The studio version to stamp; defaults to :data:`STUDIO_VERSION`.
 
     Returns
@@ -98,6 +101,7 @@ def build_manifest(*, studio_version: str = STUDIO_VERSION) -> CapabilityManifes
     """
     return CapabilityManifest(
         studio=STUDIO_ID,
+        contract_era=CONTRACT_ERA,
         studio_version=studio_version,
         platform_sdk=PLATFORM_SDK_RANGE,
         content_digest=content_digest(declared_surface()),

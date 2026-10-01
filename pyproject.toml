@@ -79,7 +79,7 @@ rust = [
 ]
 snn = []  # pure-numpy LIF+NEF engine, no external deps
 studio = [
-    "scpn-studio-platform>=0.10,<0.11",
+    "scpn-studio-platform>=0.11.3.dev0,<0.12",
 ]
 benchmark = [
     "freegs>=0.6",
@@ -1049,6 +1049,8 @@ files = [
     "src/scpn_fusion/fallback_telemetry.py",
     "src/scpn_fusion/neurocore_compat.py",
     # studio/ (SCPN-STUDIO federation surface, schema A)
+    "tests/test_studio_manifest.py",
+    "tests/test_studio_ingest.py",
     "src/scpn_fusion/studio/__init__.py",
     "src/scpn_fusion/studio/exactness.py",
     "src/scpn_fusion/studio/federation.py",

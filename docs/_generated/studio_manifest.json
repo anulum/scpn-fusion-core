@@ -310,7 +310,7 @@
   },
   "schema_a": {
     "content_digest": "sha256:a50c57523043009f83886dddc1ef64335f771e23d9675643a865f1755e28855f",
-    "contract_era": "v1",
+    "contract_era": "v2",
     "enumeration": "language-agnostic",
     "evidence_types": [
       "studio.equilibrium-reconstruction.v1",
@@ -323,7 +323,7 @@
       "studio.control-replay.v1",
       "studio.disruption-forecast.v1"
     ],
-    "platform_sdk": ">=0.10,<0.11",
+    "platform_sdk": ">=0.11.3.dev0,<0.12",
     "protocol_version": "1",
     "studio": "scpn-fusion-core",
     "studio_version": "4.0.0",
