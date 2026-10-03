@@ -18,8 +18,9 @@ Solver: Fixed-point Picard iteration with SOR, implemented as
 toroidal Green's function with complete elliptic integrals.
 
 Runs on GPU automatically when JAX has a GPU backend (CUDA/ROCm/Metal).
-All operations are XLA-compiled via ``@jit``, achieving sub-millisecond
-equilibrium solves on GPU hardware.
+Operations are XLA-compiled via ``@jit``. End-to-end latency depends on the
+backend, grid, nonlinear convergence and requested derivatives; it must be
+measured at the required physical accuracy.
 
 Reference: Grad & Rubin (1958), Shafranov (1966), Lao et al. (1985).
 """
@@ -40,6 +41,7 @@ _MU0_NORM = 1.0
 
 
 def _polyval(coeffs: jnp.ndarray, x: jnp.ndarray) -> jnp.ndarray:
+    """Evaluate descending-power coefficients with Horner's method."""
     value = jnp.zeros_like(x)
     for coeff in coeffs:
         value = value * x + coeff
@@ -133,7 +135,26 @@ def greens_psi(R: jnp.ndarray, Z: jnp.ndarray, Rc: float, Zc: float, I: float) -
     Ψ = (μ₀ I / 2π) √(R Rc) [(2/k - k) K(k²) - (2/k) E(k²)]
     where k² = 4 R Rc / ((R+Rc)² + (Z-Zc)²)
 
-    Grad & Shafranov (1958); Lao et al. (1985) Eq. 2.
+    Parameters
+    ----------
+    R, Z : jnp.ndarray
+        Broadcast-compatible evaluation coordinates. Radius must be positive.
+    Rc, Zc : float
+        Filament position in the same length convention. Radius must be positive.
+    I : float
+        Signed current in the solver's normalized convention with ``mu0=1``.
+
+    Returns
+    -------
+    jnp.ndarray
+        Normalized poloidal flux. Invalid inputs or nonfinite arithmetic return
+        NaN; consumers must refuse this state instead of dropping a conductor.
+
+    Notes
+    -----
+    This is a filament model with the existing elliptic-parameter regularisation,
+    not a qualified finite-conductor self-field. Grad & Shafranov (1958);
+    Lao et al. (1985), Eq. 2.
     """
     R_safe = jnp.maximum(R, 1e-6)
     denom = (R_safe + Rc) ** 2 + (Z - Zc) ** 2
@@ -143,7 +164,17 @@ def greens_psi(R: jnp.ndarray, Z: jnp.ndarray, Rc: float, Zc: float, I: float) -
     E_val = _ellipe_approx(k2)
     prefactor = _MU0_NORM * I / (2.0 * jnp.pi)
     psi = prefactor * jnp.sqrt(R_safe * Rc) * ((2.0 / k - k) * K_val - (2.0 / k) * E_val)
-    return cast(jnp.ndarray, jnp.where(jnp.isfinite(psi), psi, 0.0))
+    valid = (
+        jnp.isfinite(R)
+        & (R > 0.0)
+        & jnp.isfinite(Z)
+        & jnp.isfinite(Rc)
+        & (Rc > 0.0)
+        & jnp.isfinite(Zc)
+        & jnp.isfinite(I)
+        & jnp.isfinite(psi)
+    )
+    return cast(jnp.ndarray, jnp.where(valid, psi, jnp.nan))
 
 
 @jit
@@ -166,6 +197,7 @@ def vacuum_field(
     Z2d = Z_grid[:, jnp.newaxis]  # (NZ, 1)
 
     def single_coil(carry: jnp.ndarray, coil: jnp.ndarray) -> tuple[jnp.ndarray, None]:
+        """Add one filament's normalized flux to the running vacuum field."""
         psi_acc = carry
         rc, zc, ic = coil
         psi_acc = psi_acc + greens_psi(R2d, Z2d, rc, zc, ic)
@@ -332,12 +364,14 @@ def solve_equilibrium_jax(
     psi = psi_vac.copy()
 
     def picard_body(carry: jnp.ndarray, _: Any) -> tuple[jnp.ndarray, None]:
+        """Refresh the axis-dependent current source and blend the relaxed field."""
         psi_curr = carry
         psi_axis = _interior_axis_flux(psi_curr)
         psi_bnd = _boundary_flux_level(psi_vac)
         src = _plasma_source(psi_curr, R_grid, Ip, psi_axis, psi_bnd)
 
         def sor_body(p: jnp.ndarray, __: Any) -> tuple[jnp.ndarray, None]:
+            """Relax the frozen current source while retaining the vacuum wall."""
             return _sor_step(p, src, R_grid, dR, dZ, sor_omega, psi_vac), None
 
         psi_relaxed, _ = jax.lax.scan(sor_body, psi_curr, None, length=sor_per_picard)
@@ -498,11 +532,13 @@ def axis_sensitivity(
     """
 
     def R_fn(I: jnp.ndarray) -> jnp.ndarray:
+        """Solve for the radial magnetic-axis coordinate at the supplied currents."""
         psi = solve_equilibrium_jax(R_grid, Z_grid, coil_R, coil_Z, I, Ip)
         R_ax, _ = find_axis(psi, R_grid, Z_grid)
         return cast(jnp.ndarray, R_ax)
 
     def Z_fn(I: jnp.ndarray) -> jnp.ndarray:
+        """Solve for the vertical magnetic-axis coordinate at the supplied currents."""
         psi = solve_equilibrium_jax(R_grid, Z_grid, coil_R, coil_Z, I, Ip)
         _, Z_ax = find_axis(psi, R_grid, Z_grid)
         return cast(jnp.ndarray, Z_ax)

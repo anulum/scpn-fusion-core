@@ -75,8 +75,35 @@ def greens_psi_si(
 
     Ψ = (μ₀ I / 2π) √(R Rc) [(2/k − k) K(k²) − (2/k) E(k²)],  k² = 4 R Rc / ((R+Rc)² + (Z−Zc)²)
 
-    Identical form to :func:`jax_equilibrium_solver.greens_psi` but with an explicit
-    SI ``μ₀`` and current in amperes.  Grad & Shafranov (1958); Lao et al. (1985).
+    Parameters
+    ----------
+    R, Z : jnp.ndarray
+        Broadcast-compatible evaluation coordinates in metres. Radius must be
+        positive.
+    Rc, Zc : float
+        Filament position in metres. Radius must be positive.
+    current : float
+        Signed filament current in amperes. A winding quadrature must supply
+        its weighted ampere-turn strength for each equivalent filament.
+    mu0 : float, default=MU0_SI
+        Positive finite permeability in henries per metre.
+
+    Returns
+    -------
+    jnp.ndarray
+        Poloidal flux in the convention of the expression above. Invalid inputs
+        or nonfinite arithmetic return NaN.
+
+    Notes
+    -----
+    Identical form to :func:`jax_equilibrium_solver.greens_psi` with explicit
+    SI permeability. The existing elliptic-parameter regularisation is retained;
+    this is not a qualified finite-conductor self-field. Grad & Shafranov (1958);
+    Lao et al. (1985).
+
+    Nonfinite inputs, nonpositive radii or permeability, and nonfinite output
+    return NaN. A missing conductor must never become a zero field contribution;
+    consumers must reject invalid input before admitting an equilibrium.
     """
     R_safe = jnp.maximum(R, 1e-6)
     denom = (R_safe + Rc) ** 2 + (Z - Zc) ** 2
@@ -86,7 +113,19 @@ def greens_psi_si(
     e_val = _ellipe_approx(k2)
     prefactor = mu0 * current / (2.0 * jnp.pi)
     psi = prefactor * jnp.sqrt(R_safe * Rc) * ((2.0 / k - k) * k_val - (2.0 / k) * e_val)
-    return cast(jnp.ndarray, jnp.where(jnp.isfinite(psi), psi, 0.0))
+    valid = (
+        jnp.isfinite(R)
+        & (R > 0.0)
+        & jnp.isfinite(Z)
+        & jnp.isfinite(Rc)
+        & (Rc > 0.0)
+        & jnp.isfinite(Zc)
+        & jnp.isfinite(current)
+        & jnp.isfinite(mu0)
+        & (mu0 > 0.0)
+        & jnp.isfinite(psi)
+    )
+    return cast(jnp.ndarray, jnp.where(valid, psi, jnp.nan))
 
 
 @partial(jit, static_argnums=())
@@ -112,6 +151,7 @@ def vacuum_field_si(
     z2d = Z_grid[:, jnp.newaxis]
 
     def single_coil(carry: jnp.ndarray, coil: jnp.ndarray) -> tuple[jnp.ndarray, None]:
+        """Add one SI filament's flux to the running vacuum field."""
         rc, zc, ic = coil
         return carry + greens_psi_si(r2d, z2d, rc, zc, ic, mu0), None
 
@@ -271,6 +311,7 @@ def solve_free_boundary_gs(
     psi_vac = vacuum_field_si(R_grid, Z_grid, coil_R, coil_Z, coil_I, mu0)
 
     def picard_body(psi_curr: jnp.ndarray, _: Any) -> tuple[jnp.ndarray, None]:
+        """Reevaluate both flux profiles and blend the relaxed SI field."""
         psi_axis = _interior_axis_flux(psi_curr)
         psi_bnd = _boundary_flux_level(psi_vac)
         source = general_gs_source(
@@ -278,6 +319,7 @@ def solve_free_boundary_gs(
         )
 
         def sor_body(p: jnp.ndarray, __: Any) -> tuple[jnp.ndarray, None]:
+            """Relax the fixed SI source with the coil-derived wall values."""
             return _sor_step(p, source, R_grid, d_r, d_z, sor_omega, psi_vac), None
 
         psi_relaxed, _ = jax.lax.scan(sor_body, psi_curr, None, length=sor_per_picard)
