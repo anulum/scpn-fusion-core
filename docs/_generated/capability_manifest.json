@@ -3038,7 +3038,7 @@
   },
   "counts": {
     "capability_documentation_pages": 71,
-    "github_workflows": 36,
+    "github_workflows": 37,
     "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 71,
@@ -3207,6 +3207,7 @@
       ".github/workflows/pypi-downloads.yml",
       ".github/workflows/python-fuzz.yml",
       ".github/workflows/real-data-strict.yml",
+      ".github/workflows/refresh-validation-evidence.yml",
       ".github/workflows/rustbca.yml",
       ".github/workflows/sbom.yml",
       ".github/workflows/scorecard.yml",
