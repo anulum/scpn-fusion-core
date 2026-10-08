@@ -31,4 +31,4 @@ pub const ALPHA_FRACTION: f64 = 0.2;
 pub const K_BOLTZMANN: f64 = 1.380649e-23;
 
 /// Golden ratio (used in Lazarus bridge)
-pub const PHI_GOLDEN: f64 = 1.618033988749895;
+pub const PHI_GOLDEN: f64 = std::f64::consts::GOLDEN_RATIO;

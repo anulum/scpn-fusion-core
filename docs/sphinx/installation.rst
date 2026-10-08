@@ -97,7 +97,7 @@ evidence.
 
 Prerequisites:
 
-- Rust stable toolchain (``rustup`` recommended)
+- Rust 1.94 or later (``rustup`` recommended)
 - ``maturin`` (``pip install maturin``)
 
 Build steps::
