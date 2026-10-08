@@ -16,14 +16,13 @@ from typing import Any, cast
 import importlib
 
 import numpy as np
-from numpy.typing import NDArray
 import pytest
 
+from scpn_fusion.core.array_contract import FloatArray
 from scpn_fusion.core.multigrid_solve import multigrid_solve
 from scpn_fusion.diagnostics.synthetic_sensors import measure_magnetics
 from scpn_fusion.core._multi_compat import BackendTier, dispatch_for_tier
 
-FloatArray = NDArray[np.float64]
 Sensor = Callable[..., FloatArray]
 Multigrid = Callable[..., tuple[FloatArray, float, int, bool]]
 

@@ -21,6 +21,7 @@ import numpy as np
 import pytest
 
 from scpn_fusion.hpc.hpc_bridge import HPCBridge
+from scpn_fusion.hpc._hpc_solver_state import HPCSolverState
 from scpn_fusion.core.fusion_kernel import CoilSet, FusionKernel
 
 
@@ -78,6 +79,7 @@ def test_restore_replays_native_history(native_library: Path) -> None:
         initial_source = np.arange(25, dtype=np.float64).reshape(5, 5) / 100
         assert bridge.solve(initial_source, iterations=2) is not None
         checkpoint = bridge.snapshot_state()
+        assert isinstance(checkpoint, HPCSolverState)
         next_source = np.flip(initial_source).copy()
         expected = bridge.solve(next_source, iterations=3)
         assert expected is not None

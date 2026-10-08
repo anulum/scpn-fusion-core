@@ -66,6 +66,13 @@ jobs:
           pip install --require-hashes -r "requirements/ci-py${pytag}.txt"
         fi
         pip install --no-deps -e .
+    - name: Install Rust toolchain for native public tests
+      uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7
+    - name: Build and install this checkout's Rust extension
+      run: |
+        maturin build --release --manifest-path scpn-fusion-rs/crates/fusion-python/Cargo.toml --out artifacts/native-wheels
+        python -m pip install --no-deps artifacts/native-wheels/*.whl
+        python -c "import scpn_fusion_rs; print(scpn_fusion_rs.__file__)"
     - name: Verify distributed CI contracts
       run: |
         python tools/check_ci_workflow_ownership.py

@@ -15,12 +15,13 @@ types-PyYAML>=6.0.12.20260906
 ruff>=0.8
 bandit>=1.7
 pre-commit>=3.0
-virtualenv>=21.5.1,<22
+maturin>=1.14.1,<2.0
+virtualenv>=21.7.12,<21.8
 python-discovery>=1.5.0
 jax[cpu]
 gymnasium
 jsonschema>=4.26.0
-tornado>=6.5.8
+tornado>=6.5.9,<6.5.10
 
 # Light optional backends exercised in CI; keep torch soft.
 streamlit>=1.58.0,<2
@@ -28,7 +29,7 @@ optuna>=4.0,<5
 freegs>=0.6
 
 # Dependabot security floors for CI transitive tooling.
-GitPython>=3.1.59
+GitPython>=3.1.62,<3.2
 farama-notifications>=0.0.6
 platformdirs>=4.10.0
 tzdata>=2026.2
