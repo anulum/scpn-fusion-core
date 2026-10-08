@@ -1191,6 +1191,7 @@ skips = ["B101", "B311", "B404", "B603"]
 exclude_dirs = ["tests", "notebooks", "validation"]
 
 [tool.coverage.run]
+branch = true
 source = ["scpn_fusion"]
 omit = [
 ]

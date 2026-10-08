@@ -1,0 +1,88 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — source-bound validation evidence regeneration
+name: Refresh validation evidence
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  regenerate:
+    name: Regenerate ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: real-diiid
+            command: validation/validate_real_diiid_145419.py
+          - name: coil-gradient
+            command: validation/measure_coilgrad_adjoint_fd.py
+          - name: mg-iterations
+            command: validation/measure_mg_preconditioner_iterations.py
+          - name: compiled-forward
+            command: validation/measure_compiled_forward_speedup.py
+          - name: warm-start
+            command: validation/measure_warm_start_forward.py
+          - name: batched-forward
+            command: validation/measure_batched_forward.py
+          - name: disruption-transfer
+            command: validation/benchmark_disruption_transfer_generalization.py --commit-evidence --strict
+          - name: disruption-threshold
+            command: tools/sweep_disruption_threshold.py
+          - name: transport-jax
+            command: benchmarks/bench_transport_jax.py
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          lfs: false
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Install exact recorded environment
+        run: |
+          python -m pip install --require-hashes -r requirements/full.txt
+          python -m pip install --no-deps -e .
+      - name: Execute the complete maintained generator
+        env:
+          PYTHONPATH: src:.
+          JAX_PLATFORMS: cpu
+          COMMAND: ${{ matrix.command }}
+        run: |
+          git rev-parse HEAD > "$RUNNER_TEMP/source-head.txt"
+          sha256sum requirements/full.txt > "$RUNNER_TEMP/requirements.sha256"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import shlex
+          import subprocess
+          import sys
+
+          root = Path(os.environ['RUNNER_TEMP'])
+          command = [sys.executable, *shlex.split(os.environ['COMMAND'])]
+          with (root / 'generator.log').open('w') as log:
+              result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=False)
+          with (root / 'generated.patch').open('wb') as output:
+              subprocess.run(['git', 'diff', '--binary'], stdout=output, check=True)
+          (root / 'terminal.json').write_text(json.dumps({'argv': command, 'returncode': result.returncode}))
+          raise SystemExit(result.returncode)
+          PY
+      - name: Retain generated evidence and original command output
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: evidence-${{ matrix.name }}
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/generator.log
+            ${{ runner.temp }}/generated.patch
+            ${{ runner.temp }}/source-head.txt
+            ${{ runner.temp }}/requirements.sha256
+            ${{ runner.temp }}/terminal.json

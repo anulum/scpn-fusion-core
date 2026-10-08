@@ -741,11 +741,28 @@ def test_actual_kernel_retains_explicit_radius_policy(tmp_path: Path) -> None:
     np.testing.assert_allclose(cycled, field, rtol=1e-10, atol=1e-44)
 
 
-def test_actual_optional_backend_absence_preserves_availability_result() -> None:
+def test_actual_optional_backend_absence_preserves_availability_result(tmp_path: Path) -> None:
     """Run an actual clean subprocess without the extension and retain optional availability semantics."""
     import os
     import subprocess
-    import sys
+    import sysconfig
+    import venv
+
+    image = tmp_path / "without-rust"
+    builder = venv.EnvBuilder(with_pip=False)
+    builder.create(image)
+    context = builder.ensure_directories(image)
+    site = Path(
+        subprocess.check_output(
+            [context.env_exec_cmd, "-c", "import sysconfig; print(sysconfig.get_path('purelib'))"],
+            text=True,
+            timeout=10,
+        ).strip()
+    )
+    for dependency in Path(sysconfig.get_path("purelib")).iterdir():
+        if dependency.name.startswith("scpn_fusion_rs") or dependency.suffix == ".pth":
+            continue
+        (site / dependency.name).symlink_to(dependency, target_is_directory=dependency.is_dir())
 
     environment = os.environ.copy()
     environment["PYTHONPATH"] = str(Path(__file__).resolve().parents[1] / "src")
@@ -762,7 +779,11 @@ else:
     raise AssertionError('missing backend did not signal ImportError')
 """
     result = subprocess.run(
-        [sys.executable, "-c", code], env=environment, text=True, capture_output=True, timeout=60
+        [context.env_exec_cmd, "-c", code],
+        env=environment,
+        text=True,
+        capture_output=True,
+        timeout=60,
     )
     assert result.returncode == 0, result.stderr
     assert "actual optional backend absence" in result.stdout

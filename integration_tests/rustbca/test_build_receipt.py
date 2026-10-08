@@ -34,7 +34,7 @@ def build(tmp_path: Path) -> tuple[Path, str, str]:
     root = tmp_path / "build"
     root.mkdir()
     shutil.copytree(original.parent / "source", root / "source")
-    for name in ("build.log", "build_source.py"):
+    for name in ("build.log", "build_source.py", "upstream-Cargo.toml", "dependency-patch.json"):
         shutil.copy2(original.parent / name, root / name)
     record = json.loads(original.read_bytes())
     shutil.copy2(record["binary"], root / "native.so")
@@ -54,11 +54,73 @@ def test_retained_build_is_not_independent_attestation(build: tuple[Path, str, s
     assert not result["binary_reproducibility_verified"]
 
 
+def test_original_v1_build_receipt_remains_verifiable(tmp_path: Path) -> None:
+    """Compile the retained original recipe and verify its actual legacy observation."""
+    original = "c73414f2c8f3c53fbfa5ccf2ab32a82481c4e2e7"
+    root = Path(__file__).resolve().parents[2]
+    checkout = tmp_path / "legacy-checkout"
+    for name in (
+        "tools/__init__.py",
+        "validation/__init__.py",
+        "tools/build_rustbca_reference.py",
+        "validation/rustbca_build_receipt.py",
+        "validation/reference_data/rustbca_source_files.json",
+        "validation/reference_data/rustbca.Cargo.lock",
+    ):
+        destination = checkout / name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(
+            subprocess.check_output(["git", "show", original + ":" + name], cwd=root, timeout=10)
+        )
+    record = json.loads(Path(os.environ["RUSTBCA_BUILD_RECEIPT"]).read_bytes())
+    output = tmp_path / "legacy-build"
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "tools.build_rustbca_reference",
+            os.environ["RUSTBCA_SOURCE_ARCHIVE"],
+            str(output),
+            "--python",
+            record["environment"]["PYO3_PYTHON"],
+            "--cargo",
+            record["command"][0],
+            "--rustc",
+            record["environment"]["RUSTC"],
+            "--fetch-dependencies",
+            "--timeout-seconds",
+            "900",
+        ],
+        cwd=checkout,
+        env={
+            key: value
+            for key, value in os.environ.items()
+            if not key.startswith(("COVERAGE_", "COV_CORE_"))
+        }
+        | {"PYTHONPATH": str(checkout)},
+        capture_output=True,
+        timeout=910,
+        check=True,
+    )
+    receipt = output / "result.json"
+    legacy = json.loads(receipt.read_bytes())
+    assert legacy["schema"] == "scpn-fusion.rustbca-native-build-observation.v1"
+    result = verify_rustbca_build_receipt(
+        receipt,
+        expected_receipt_sha256=hashlib.sha256(receipt.read_bytes()).hexdigest(),
+        expected_binary_sha256=legacy["binary_sha256"],
+    )
+    assert result["retained_build_inputs_verified"]
+    assert not result["independent_attestation_verified"]
+
+
 @pytest.mark.parametrize(
     "name",
     [
         "source/src/lib.rs",
         "source/Cargo.lock",
+        "upstream-Cargo.toml",
+        "dependency-patch.json",
         "build.log",
         "build_source.py",
         "native.so",
@@ -97,6 +159,8 @@ def test_unrecorded_build_source_refuses(build: tuple[Path, str, str]) -> None:
         ("binary", None),
         ("cargo_lock_sha256", "0" * 64),
         ("binary_sha256", "0" * 64),
+        ("dependency_patch_sha256", "0" * 64),
+        ("schema", "scpn-fusion.rustbca-native-build-observation.unknown"),
     ],
 )
 def test_rehashed_invalid_record_refuses(

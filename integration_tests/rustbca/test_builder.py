@@ -46,6 +46,7 @@ def pinned_checkout(tmp_path: Path) -> Path:
         "validation/rustbca_build_receipt.py",
         "validation/reference_data/rustbca_source_files.json",
         "validation/reference_data/rustbca.Cargo.lock",
+        "validation/reference_data/rustbca_dependency_patch.json",
     ]
     for name in paths:
         destination = checkout / name
@@ -102,6 +103,7 @@ def changed_archive(request: pytest.FixtureRequest, tmp_path: Path) -> tuple[Pat
     [
         ("rustbca_source_files.json", "source inventory mismatch"),
         ("rustbca.Cargo.lock", "Cargo lock mismatch"),
+        ("rustbca_dependency_patch.json", "dependency patch mismatch"),
     ],
 )
 def test_changed_pinned_build_input_refuses_through_actual_cli(
@@ -286,6 +288,17 @@ def test_real_wheel_installs_and_runs(
             == (receipt.parent / "source/LICENSE").read_bytes()
         )
         assert b"libRustBCA" in archive.read("rustbca-3.0.0.dist-info/RECORD")
+        assert (
+            archive.read("rustbca-3.0.0.dist-info/dependency-patch.json")
+            == (receipt.parent / "dependency-patch.json").read_bytes()
+        )
+        assert record["dependency_patch_sha256"].encode() in archive.read(
+            "rustbca-3.0.0.dist-info/METADATA"
+        )
+    assert record["schema"] == "scpn-fusion.rustbca-native-build-observation.v2"
+    assert (receipt.parent / "upstream-Cargo.toml").read_bytes() != (
+        receipt.parent / "source/Cargo.toml"
+    ).read_bytes()
     runtime = tmp_path / "runtime"
     venv.EnvBuilder(with_pip=False).create(runtime)
     python = runtime / "bin/python"

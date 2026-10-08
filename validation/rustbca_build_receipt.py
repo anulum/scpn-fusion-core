@@ -16,7 +16,11 @@ from typing import Any
 
 SOURCE_COMMIT = "18920a26263c21b9e337db1bab1fd17f23f0fec5"
 SOURCE_MANIFEST_SHA256 = "0c99321189b5228fadce6e398929992ec5d97fc64880772d46a58c6529e1ca9d"
-CARGO_LOCK_SHA256 = "f34c453015ac022a34aecce5ef54a67ef886fdb42459241ffd0b4e03a692b1cf"
+LEGACY_CARGO_LOCK_SHA256 = "f34c453015ac022a34aecce5ef54a67ef886fdb42459241ffd0b4e03a692b1cf"
+CARGO_LOCK_SHA256 = "91469b740264c1175b381c7e8eaae2f9ad221d46b4032c0652f2181276522476"
+DEPENDENCY_PATCH_SHA256 = "55c73ebb3627ac9bb8fb5ce162abe98776569476950485f7542479a20d776717"
+BUILD_SOURCE_MANIFEST_SHA256 = "8ff7523ffc7b07bf505c78aeb74bd2142baa040871f6753c48f82d02a460e6c5"
+UPSTREAM_CARGO_SHA256 = "ad70939ed80206c62fd62186938b999393205ab5bdd53f61bfcb642e48332220"
 
 
 def verify_rustbca_build_receipt(
@@ -49,6 +53,8 @@ def verify_rustbca_build_receipt(
 
     Notes
     -----
+    Version two binds the dependency-patched build separately from the original
+    upstream archive. Version one retains its original source and lock identities.
     This validates the local record's consistency, not who produced it or whether
     its asserted compilation occurred. The source inventory is pinned separately
     from the caller's record. Host toolchain hermeticity and binary reproducibility
@@ -70,9 +76,19 @@ def verify_rustbca_build_receipt(
     }
     if upstream != expected_upstream:
         raise ValueError("RustBCA build upstream identity mismatch")
+    schema = record.get("schema")
+    if schema == "scpn-fusion.rustbca-native-build-observation.v1":
+        manifest_sha256 = SOURCE_MANIFEST_SHA256
+        lock_sha256 = LEGACY_CARGO_LOCK_SHA256
+    elif schema == "scpn-fusion.rustbca-native-build-observation.v2":
+        manifest_sha256 = BUILD_SOURCE_MANIFEST_SHA256
+        lock_sha256 = CARGO_LOCK_SHA256
+        if record.get("dependency_patch_sha256") != DEPENDENCY_PATCH_SHA256:
+            raise ValueError("RustBCA dependency patch identity mismatch")
+    else:
+        raise ValueError("RustBCA build observation schema mismatch")
     if (
-        record.get("schema") != "scpn-fusion.rustbca-native-build-observation.v1"
-        or type(record.get("returncode")) is not int
+        type(record.get("returncode")) is not int
         or record["returncode"] != 0
         or any(
             record.get(key) is not True
@@ -84,13 +100,13 @@ def verify_rustbca_build_receipt(
     if not isinstance(files, dict):
         raise ValueError("RustBCA source inventory must be an object")
     canonical = json.dumps(files, sort_keys=True, separators=(",", ":")).encode()
-    if hashlib.sha256(canonical).hexdigest() != SOURCE_MANIFEST_SHA256:
+    if hashlib.sha256(canonical).hexdigest() != manifest_sha256:
         raise ValueError("RustBCA source inventory mismatch")
     source = receipt.parent / "source"
     actual_files = {str(path.relative_to(source)) for path in source.rglob("*") if path.is_file()}
     if actual_files != set(files) | {"Cargo.lock"}:
         raise ValueError("RustBCA source tree contains missing or unrecorded files")
-    if record.get("cargo_lock_sha256") != CARGO_LOCK_SHA256:
+    if record.get("cargo_lock_sha256") != lock_sha256:
         raise ValueError("RustBCA lock identity mismatch")
     if record.get("binary_sha256") != expected_binary_sha256:
         raise ValueError("RustBCA build and runtime binary identities differ")
@@ -100,12 +116,19 @@ def verify_rustbca_build_receipt(
     required = {receipt.parent / "source" / name: digest for name, digest in files.items()}
     required.update(
         {
-            receipt.parent / "source/Cargo.lock": CARGO_LOCK_SHA256,
+            receipt.parent / "source/Cargo.lock": lock_sha256,
             receipt.parent / "build.log": record.get("log_sha256"),
             receipt.parent / "build_source.py": record.get("recipe_sha256"),
             Path(binary_name): expected_binary_sha256,
         }
     )
+    if schema == "scpn-fusion.rustbca-native-build-observation.v2":
+        required.update(
+            {
+                receipt.parent / "dependency-patch.json": DEPENDENCY_PATCH_SHA256,
+                receipt.parent / "upstream-Cargo.toml": UPSTREAM_CARGO_SHA256,
+            }
+        )
     for path, expected in required.items():
         if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
             raise ValueError(f"RustBCA retained build file changed: {path}")
@@ -113,9 +136,11 @@ def verify_rustbca_build_receipt(
         raise ValueError("RustBCA build receipt changed during verification")
     return {
         "receipt_sha256": actual,
+        "observation_schema": schema,
+        "dependency_patch_sha256": record.get("dependency_patch_sha256"),
         "source_commit": SOURCE_COMMIT,
-        "source_manifest_sha256": SOURCE_MANIFEST_SHA256,
-        "cargo_lock_sha256": CARGO_LOCK_SHA256,
+        "source_manifest_sha256": manifest_sha256,
+        "cargo_lock_sha256": lock_sha256,
         "binary_sha256": expected_binary_sha256,
         "retained_build_inputs_verified": True,
         "independent_attestation_verified": False,

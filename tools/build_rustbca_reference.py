@@ -24,6 +24,7 @@ from typing import Any, BinaryIO, cast
 
 from validation.rustbca_build_receipt import (
     CARGO_LOCK_SHA256,
+    DEPENDENCY_PATCH_SHA256,
     SOURCE_COMMIT,
     SOURCE_MANIFEST_SHA256,
     verify_rustbca_build_receipt,
@@ -55,9 +56,14 @@ def _wheel(binary: Path, source: Path, output: Path, runtime: dict[str, str]) ->
             info + "METADATA",
             "Metadata-Version: 2.1\nName: RustBCA\nVersion: 3.0.0\nLicense: GPLv3 (see included upstream LICENSE)\nHome-page: https://github.com/lcpp-org/RustBCA\n\nLocally compiled reference from upstream commit "
             + SOURCE_COMMIT
+            + ". Dependency manifest patched by SCPN Fusion Core, SHA256 "
+            + DEPENDENCY_PATCH_SHA256
             + ".\n",
         )
         archive.writestr(info + "LICENSE", (source / "LICENSE").read_bytes())
+        archive.writestr(
+            info + "dependency-patch.json", (source.parent / "dependency-patch.json").read_bytes()
+        )
     return destination
 
 
@@ -134,7 +140,8 @@ def build_rustbca_reference(
     Parameters
     ----------
     source_archive : Path
-        Exact pinned upstream tar.gz, already acquired by the caller.
+        Exact pinned upstream tar.gz, already acquired by the caller. The separately
+        pinned local Cargo dependency patch is applied after archive verification.
     output : Path
         New retained build directory. Existing directories are never overwritten.
     python : Path
@@ -197,13 +204,17 @@ def build_rustbca_reference(
     lock = data / "rustbca.Cargo.lock"
     if _sha(lock) != CARGO_LOCK_SHA256:
         raise ValueError("RustBCA Cargo lock mismatch")
+    patch_raw = (data / "rustbca_dependency_patch.json").read_bytes()
+    if hashlib.sha256(patch_raw).hexdigest() != DEPENDENCY_PATCH_SHA256:
+        raise ValueError("RustBCA dependency patch mismatch")
+    patch = json.loads(patch_raw)
     output = output.absolute()
     python, cargo, rustc = python.absolute(), cargo.absolute(), rustc.absolute()
     output.mkdir(parents=True, exist_ok=False)
     started = time.time()
     deadline = time.monotonic() + timeout_seconds
     record: dict[str, Any] = {
-        "schema": "scpn-fusion.rustbca-native-build-observation.v1",
+        "schema": "scpn-fusion.rustbca-native-build-observation.v2",
         "started_unix": started,
         "returncode": -1,
     }
@@ -234,6 +245,17 @@ def build_rustbca_reference(
                 seen.add(name)
         if seen != set(files):
             raise ValueError("Incomplete RustBCA source archive")
+        cargo_manifest = source / "Cargo.toml"
+        upstream_cargo = cargo_manifest.read_bytes()
+        (output / "upstream-Cargo.toml").write_bytes(upstream_cargo)
+        patched_cargo = upstream_cargo
+        for before, after in patch["replacements"].items():
+            patched_cargo = patched_cargo.replace(before.encode(), after.encode())
+        if hashlib.sha256(patched_cargo).hexdigest() != patch["patched_sha256"]:
+            raise ValueError("RustBCA patched Cargo manifest mismatch")
+        cargo_manifest.write_bytes(patched_cargo)
+        files["Cargo.toml"] = patch["patched_sha256"]
+        (output / "dependency-patch.json").write_bytes(patch_raw)
         (source / "Cargo.lock").write_bytes(lock.read_bytes())
         recipe = output / "build_source.py"
         recipe.write_bytes(Path(__file__).read_bytes())
@@ -279,6 +301,7 @@ def build_rustbca_reference(
                 "license_sha256": files["LICENSE"],
             },
             source_files=files,
+            dependency_patch_sha256=DEPENDENCY_PATCH_SHA256,
             cargo_lock_sha256=CARGO_LOCK_SHA256,
             command=command,
             environment=env,

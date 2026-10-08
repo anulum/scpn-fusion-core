@@ -1,0 +1,11 @@
+{
+  "schema": "scpn-fusion.rustbca-dependency-patch.v1",
+  "source_commit": "18920a26263c21b9e337db1bab1fd17f23f0fec5",
+  "path": "Cargo.toml",
+  "original_sha256": "ad70939ed80206c62fd62186938b999393205ab5bdd53f61bfcb642e48332220",
+  "patched_sha256": "137588a1822ce02a6b6e15f00558b794cb228d572f373d79dd572c8d402ac9e5",
+  "replacements": {
+    "geo = {version = \"0.25\", optional = false}": "geo = {version = \"0.28\", optional = false}",
+    "parry3d-f64 = {optional = true, version=\"0.2.0\"}": "parry3d-f64 = {optional = true, version=\"0.5.0\"}"
+  }
+}
