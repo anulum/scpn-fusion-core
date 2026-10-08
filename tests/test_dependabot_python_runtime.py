@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TORNADO_SECURITY_FLOOR = (6, 5, 8)
+TORNADO_SECURITY_FLOOR = (6, 5, 9)
 
 
 def _version_tuple(value: str) -> tuple[int, ...]:
@@ -38,7 +38,9 @@ def test_tornado_security_floor_is_locked_in_every_requirement_profile() -> None
     source_matches: list[tuple[Path, str]] = []
     lock_matches: list[tuple[Path, str]] = []
     for path in requirements.glob("*.in"):
-        match = re.search(r"(?m)^tornado>=([0-9.]+)$", path.read_text(encoding="utf-8"))
+        match = re.search(
+            r"(?m)^tornado>=([0-9.]+)(?:,<[0-9.]+)?$", path.read_text(encoding="utf-8")
+        )
         if match is not None:
             source_matches.append((path, match.group(1)))
     for path in requirements.glob("*.txt"):

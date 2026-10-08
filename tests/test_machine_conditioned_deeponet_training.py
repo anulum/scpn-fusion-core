@@ -11,13 +11,16 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 
+import jax.numpy as jnp
 import numpy as np
+from jax.experimental import disable_x64
 import pytest
 from numpy.typing import NDArray
 
@@ -492,10 +495,12 @@ def test_deeponet_cli_trains_a_runtime_loadable_artifact(
             "1",
         ],
         cwd=REPO,
-        check=True,
+        check=False,
+        env=os.environ | {"JAX_ENABLE_X64": "0"},
         capture_output=True,
         text=True,
     )
+    assert result.returncode == 0, result.stderr
     assert result.stdout == ""
     assert "completed_local_candidate_not_promoted" in result.stderr
     payload = json.loads(report.read_text(encoding="utf-8"))
@@ -547,10 +552,14 @@ def test_deeponet_cli_trains_a_runtime_loadable_artifact(
             "1",
         ],
     )
-    with caplog.at_level(
-        logging.INFO,
-        logger="scpn_fusion.io.machine_conditioned_deeponet_cli",
+    with (
+        disable_x64(),
+        caplog.at_level(
+            logging.INFO,
+            logger="scpn_fusion.io.machine_conditioned_deeponet_cli",
+        ),
     ):
         trainer.main()
+        assert jnp.ones(()).dtype.name == "float32"
     assert caplog.messages[-1] == "completed_local_candidate_not_promoted"
     DeepONetEquilibriumAccelerator().load_weights(direct_artifact)

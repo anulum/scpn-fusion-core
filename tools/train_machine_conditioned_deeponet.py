@@ -18,6 +18,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from jax import random
+from jax.experimental import enable_x64
 
 from scpn_fusion.core.deeponet_equilibrium import DeepONetEquilibriumAccelerator
 from scpn_fusion.core.deeponet_training import (
@@ -589,8 +590,9 @@ def run_training(
 
 
 def main() -> None:
-    """Run the DeepONet command-line adapter."""
-    run_deeponet_cli(run_training, default_basis_width=DEFAULT_BASIS_WIDTH)
+    """Run the DeepONet command-line adapter with FP64 scalar precision."""
+    with enable_x64():
+        run_deeponet_cli(run_training, default_basis_width=DEFAULT_BASIS_WIDTH)
 
 
 if __name__ == "__main__":
