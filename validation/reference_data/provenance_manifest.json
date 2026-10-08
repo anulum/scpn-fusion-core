@@ -269,7 +269,7 @@
       "license_redistributable": true,
       "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
       "source_type": "source_derived_reference_evidence",
-      "total_bytes": 410787
+      "total_bytes": 409905
     },
     {
       "file_count": 1,
@@ -348,7 +348,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 29465
+      "total_bytes": 29919
     },
     {
       "file_count": 1,
@@ -370,7 +370,18 @@
       "license_redistributable": true,
       "source": "Cargo-generated dependency resolution retained for the pinned optional RustBCA build. Records package versions and registry checksums, not vendored dependency source code.",
       "source_type": "repository_dependency_lock",
-      "total_bytes": 34146
+      "total_bytes": 32528
+    },
+    {
+      "file_count": 1,
+      "id": "rustbca_dependency_patch_json",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "source": "Repository-authored exact geo/parry dependency substitutions for the pinned optional RustBCA source, with upstream and patched Cargo hashes. Contains the declared build patch and custody digests; no Rust physics source or measured physical results.",
+      "source_type": "repository_dependency_patch",
+      "total_bytes": 558
     },
     {
       "file_count": 1,
@@ -563,7 +574,7 @@
       "total_bytes": 12073
     }
   ],
-  "file_count": 349,
+  "file_count": 350,
   "files": [
     {
       "dataset_id": "reference_data_metadata",
@@ -1468,8 +1479,8 @@
       "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/.",
       "license_redistributable": true,
       "path": "mast/disruption_shots/MAGNETIC_ARCHIVE_ENVELOPE.json",
-      "sha256": "6d4bf38305eeaab2e0d583877330763a32f2272420e0d191713b9ab734a613db",
-      "size_bytes": 232920,
+      "sha256": "c313bf2f229863b19a889f88d74f81ea627dc589d8ba10de6fa1846f2acfe7d8",
+      "size_bytes": 232136,
       "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
       "source_type": "source_derived_reference_evidence"
     },
@@ -1482,8 +1493,8 @@
       "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/.",
       "license_redistributable": true,
       "path": "mast/disruption_shots/MAGNETIC_ARCHIVE_PROVENANCE.json",
-      "sha256": "7330d4771803c8c7b3fd098e6297ea1c99881fa19440974fe1f355851265d670",
-      "size_bytes": 85588,
+      "sha256": "6924c7b5f7001402283647944317b9d330938bf7c963efb42b17a914115fb8c4",
+      "size_bytes": 85580,
       "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
       "source_type": "source_derived_reference_evidence"
     },
@@ -1496,8 +1507,8 @@
       "license_notice": "Creative Commons Attribution-ShareAlike 4.0 International, https://creativecommons.org/licenses/by-sa/4.0/.",
       "license_redistributable": true,
       "path": "mast/disruption_shots/MAGNETIC_DIAGNOSTIC_QUALIFICATION.json",
-      "sha256": "a8fbbf9149337d55590d4a382f264d8e9e16eadd6ad4c50fd01916e483c1270f",
-      "size_bytes": 92279,
+      "sha256": "11299e7e34f134975ce84466690457f6dad1b924082d121483bc0727f917ac97",
+      "size_bytes": 92189,
       "source": "Complete object, decoded-array, provenance, and fail-closed diagnostic-qualification evidence derived from the UKAEA FAIR-MAST shot 27707 magnetics archive.",
       "source_type": "source_derived_reference_evidence"
     },
@@ -1557,8 +1568,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "provenance_policy.json",
-      "sha256": "5ff27a642a0bf3266d8cc3b72d8cc43c953c5aa7f554f57d366374ada337159a",
-      "size_bytes": 25480,
+      "sha256": "9a30b57746ea25d7d0433c6577849def657f8a918a101e83b4f18e4b35e39e20",
+      "size_bytes": 25934,
       "source": "Repository-maintained provenance policy.",
       "source_type": "documentation"
     },
@@ -1594,10 +1605,22 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "rustbca.Cargo.lock",
-      "sha256": "f34c453015ac022a34aecce5ef54a67ef886fdb42459241ffd0b4e03a692b1cf",
-      "size_bytes": 34146,
+      "sha256": "91469b740264c1175b381c7e8eaae2f9ad221d46b4032c0652f2181276522476",
+      "size_bytes": 32528,
       "source": "Cargo-generated dependency resolution retained for the pinned optional RustBCA build. Records package versions and registry checksums, not vendored dependency source code.",
       "source_type": "repository_dependency_lock"
+    },
+    {
+      "dataset_id": "rustbca_dependency_patch_json",
+      "license": "AGPL-3.0-or-later",
+      "license_attribution_required": true,
+      "license_citation_required": false,
+      "license_redistributable": true,
+      "path": "rustbca_dependency_patch.json",
+      "sha256": "55c73ebb3627ac9bb8fb5ce162abe98776569476950485f7542479a20d776717",
+      "size_bytes": 558,
+      "source": "Repository-authored exact geo/parry dependency substitutions for the pinned optional RustBCA source, with upstream and patched Cargo hashes. Contains the declared build patch and custody digests; no Rust physics source or measured physical results.",
+      "source_type": "repository_dependency_patch"
     },
     {
       "dataset_id": "rustbca_request_json",
@@ -4880,7 +4903,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-09-12T13:31:32.357698+00:00",
+  "generated_at_utc": "2026-10-08T21:50:26.038813+00:00",
   "license_registry": [
     {
       "attribution_required": true,

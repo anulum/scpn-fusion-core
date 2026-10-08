@@ -389,7 +389,7 @@
       "source_type": "derived_reference_artifact",
       "source": "Fluid runaway same-case time series exported from a really-executed DREAM run (https://github.com/chalmersplasmatheory/DREAM, doi:10.1016/j.cpc.2021.108098) built from source in external/DREAM and driven by validation/dream_reference_runner.py; the artifact embeds the DREAM git SHA and settings SHA-256.",
       "license": "citation-required",
-      "citation": "Hoppe, M., Embreus, O., F\u00fcl\u00f6p, T., DREAM: A fluid-kinetic framework for tokamak disruption runaway electron simulations, Comput. Phys. Commun. 268, 108098 (2021), doi:10.1016/j.cpc.2021.108098."
+      "citation": "Hoppe, M., Embreus, O., Fülöp, T., DREAM: A fluid-kinetic framework for tokamak disruption runaway electron simulations, Comput. Phys. Commun. 268, 108098 (2021), doi:10.1016/j.cpc.2021.108098."
     },
     {
       "id": "dream_full_kinetic_radial_parity_deck",
@@ -491,6 +491,13 @@
       "glob": "rustbca.Cargo.lock",
       "source_type": "repository_dependency_lock",
       "source": "Cargo-generated dependency resolution retained for the pinned optional RustBCA build. Records package versions and registry checksums, not vendored dependency source code.",
+      "license": "AGPL-3.0-or-later"
+    },
+    {
+      "id": "rustbca_dependency_patch_json",
+      "glob": "rustbca_dependency_patch.json",
+      "source_type": "repository_dependency_patch",
+      "source": "Repository-authored exact geo/parry dependency substitutions for the pinned optional RustBCA source, with upstream and patched Cargo hashes. Contains the declared build patch and custody digests; no Rust physics source or measured physical results.",
       "license": "AGPL-3.0-or-later"
     }
   ]
