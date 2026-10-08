@@ -50,7 +50,7 @@ jobs:
     permissions:
       contents: read
     strategy:
-      fail-fast: 'false'
+      fail-fast: false
       matrix:
         lock:
         - requirements/build.txt

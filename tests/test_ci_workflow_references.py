@@ -131,6 +131,10 @@ def test_required_dependency_policy_covers_every_committed_lock() -> None:
     expected = sorted(str(path.relative_to(ROOT)) for path in (ROOT / "requirements").glob("*.txt"))
     assert python_job["strategy"]["matrix"]["lock"] == expected
     assert python_job["strategy"]["fail-fast"] == "false"
+    assert (
+        "fail-fast: 'false'"
+        not in (ROOT / ".github/workflows/ci-dependency-policy.yml").read_text()
+    )
     command = python_job["steps"][-1]["run"]
     assert (
         command
