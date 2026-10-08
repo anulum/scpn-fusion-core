@@ -20,6 +20,7 @@ import argparse
 import ast
 import importlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -567,9 +568,13 @@ def _committed_repo_files(repo: Path) -> frozenset[str] | None:
     staged or untracked work in the checkout. Source archives and repositories
     without a commit retain the filesystem-based fallback.
     """
+    git_environment = os.environ.copy()
+    for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_PREFIX"):
+        git_environment.pop(name, None)
     try:
         top_level = subprocess.run(
             ["git", "-C", str(repo), "rev-parse", "--show-toplevel"],
+            env=git_environment,
             capture_output=True,
             check=False,
             text=True,
@@ -583,6 +588,7 @@ def _committed_repo_files(repo: Path) -> frozenset[str] | None:
     try:
         committed = subprocess.run(
             ["git", "-C", str(repo), "ls-tree", "-r", "--name-only", "-z", "HEAD"],
+            env=git_environment,
             capture_output=True,
             check=False,
             text=True,

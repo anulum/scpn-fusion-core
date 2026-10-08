@@ -3038,7 +3038,7 @@
   },
   "counts": {
     "capability_documentation_pages": 71,
-    "github_workflows": 37,
+    "github_workflows": 38,
     "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 71,
@@ -3197,6 +3197,7 @@
       ".github/workflows/ci-validation-regression.yml",
       ".github/workflows/ci.yml",
       ".github/workflows/codeql.yml",
+      ".github/workflows/deeponet-parity.yml",
       ".github/workflows/docs.yml",
       ".github/workflows/freegs-strict.yml",
       ".github/workflows/freegsnke-inverse.yml",

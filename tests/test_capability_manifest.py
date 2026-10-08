@@ -13,8 +13,10 @@ from __future__ import annotations
 import csv
 import importlib.util
 import json
+import os
 import re
 import runpy
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -879,3 +881,62 @@ def test_index_check_requires_git_on_path() -> None:
         )
         assert result.returncode == 2
         assert "--index requires Git on PATH" in result.stderr
+
+
+def test_actual_repository_index_ignores_parent_hook_git_location(tmp_path: Path) -> None:
+    """Check real staged project files under the relative Git hook worktree context."""
+    root = _repo_root()
+    repo = tmp_path / "actual-project"
+    environment = os.environ.copy()
+    for name in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_PREFIX"):
+        environment.pop(name, None)
+    subprocess.run(
+        ["git", "clone", "--shared", "--no-checkout", str(root), str(repo)],
+        check=True,
+        capture_output=True,
+        env=environment,
+    )
+    for command in (["read-tree", "HEAD"], ["checkout-index", "--all"]):
+        subprocess.run(
+            ["git", *command], cwd=repo, env=environment, check=True, capture_output=True
+        )
+    shutil.copyfile(root / "tools/capability_manifest.py", repo / "tools/capability_manifest.py")
+    original = repo / ".github/workflows/rustbca.yml"
+    renamed = original.with_name("rustbca-native-case.yml")
+    original.rename(renamed)
+    subprocess.run(["git", "add", ".github/workflows"], cwd=repo, env=environment, check=True)
+    snapshot = tmp_path / "actual-index-archive"
+    snapshot.mkdir()
+    subprocess.run(
+        ["git", "checkout-index", "--all", f"--prefix={snapshot}/"],
+        cwd=repo,
+        env=environment,
+        check=True,
+    )
+    shutil.copyfile(
+        root / "tools/capability_manifest.py", snapshot / "tools/capability_manifest.py"
+    )
+    subprocess.run(
+        [sys.executable, str(snapshot / "tools/capability_manifest.py"), "--repo", str(snapshot)],
+        cwd=snapshot,
+        env=environment,
+        check=True,
+        capture_output=True,
+    )
+    projections = (
+        "README.md",
+        "docs/_generated/capability_manifest.json",
+        "docs/_generated/capability_snapshot.md",
+    )
+    for name in projections:
+        shutil.copyfile(snapshot / name, repo / name)
+    subprocess.run(["git", "add", *projections], cwd=repo, env=environment, check=True)
+    hook_environment = environment | {"GIT_DIR": str(repo / ".git"), "GIT_WORK_TREE": "."}
+    command = [sys.executable, "tools/capability_manifest.py", "--check", "--index"]
+    result = subprocess.run(command, cwd=repo, env=hook_environment, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    renamed.rename(original)
+    subprocess.run(["git", "add", ".github/workflows"], cwd=repo, env=environment, check=True)
+    stale = subprocess.run(command, cwd=repo, env=hook_environment, capture_output=True, text=True)
+    assert stale.returncode == 1
+    assert "stale generated manifest" in stale.stderr

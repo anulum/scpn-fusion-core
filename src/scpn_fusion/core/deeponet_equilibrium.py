@@ -21,12 +21,14 @@ FloatArray: TypeAlias = NDArray[np.float64]
 
 
 def _silu(values: FloatArray) -> FloatArray:
-    sigmoid = np.empty_like(values)
+    activation = np.empty_like(values)
     nonnegative = values >= 0.0
-    sigmoid[nonnegative] = 1.0 / (1.0 + np.exp(-values[nonnegative]))
+    activation[nonnegative] = values[nonnegative] / (1.0 + np.exp(-values[nonnegative]))
     negative_exponential = np.exp(values[~nonnegative])
-    sigmoid[~nonnegative] = negative_exponential / (1.0 + negative_exponential)
-    return np.asarray(values * sigmoid, dtype=np.float64)
+    activation[~nonnegative] = (
+        values[~nonnegative] * negative_exponential / (1.0 + negative_exponential)
+    )
+    return np.asarray(activation, dtype=np.float64)
 
 
 def _load_layers(archive: Any, prefix: str) -> list[tuple[FloatArray, FloatArray]]:
