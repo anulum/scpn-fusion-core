@@ -16,14 +16,13 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.jax_precision import _require_float64
+
 _OPTIONAL_BACKEND_IMPORT_ERRORS = (AttributeError, ImportError, OSError, RuntimeError)
 
 try:
     import jax
     import jax.numpy as jnp
-
-    # Enable float64 for high-precision control analysis
-    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
 
     _HAS_JAX = True
 except _OPTIONAL_BACKEND_IMPORT_ERRORS:
@@ -171,6 +170,7 @@ def _simulate_jax(
     if jnp is None or jax is None:
         raise RuntimeError("JAX backend requested but JAX imports are unavailable.")
 
+    _require_float64("traceable_control")
     cmd = jnp.asarray(commands, dtype=jnp.float64)
     alpha = jnp.asarray(spec.dt_s / (spec.tau_s + spec.dt_s), dtype=jnp.float64)
     gain = jnp.asarray(spec.gain, dtype=jnp.float64)
@@ -280,6 +280,7 @@ def _simulate_jax_batch(
     if jnp is None or jax is None:
         raise RuntimeError("JAX backend requested but JAX imports are unavailable.")
 
+    _require_float64("batched_traceable_control")
     cmd = jnp.asarray(commands, dtype=jnp.float64)
     x0 = jnp.asarray(initial_state, dtype=jnp.float64)
     alpha = jnp.asarray(spec.dt_s / (spec.tau_s + spec.dt_s), dtype=jnp.float64)

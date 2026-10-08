@@ -24,6 +24,8 @@ from typing import Any, Literal, cast
 import numpy as np
 from scipy.integrate import trapezoid
 
+from scpn_fusion.core.jax_precision import _require_float64
+
 from .frc_rigid_rotor_closures import (
     _ampere_current_closure_residual,
     _axial_field_derivative_from_steinhauer,
@@ -495,15 +497,13 @@ def frc_no_rotation_jax_observables(
     This helper intentionally does not implement the rotating rigid-rotor BVP.
     """
     try:
-        from jax import config as jax_config
-
-        cast(Any, jax_config).update("jax_enable_x64", True)
         import jax.numpy as jnp
     except ImportError as exc:
         raise ImportError(
             "frc_no_rotation_jax_observables requires the optional JAX dependency"
         ) from exc
 
+    _require_float64("steinhauer_no_rotation")
     x_np = _validate_normalized_grid(rho_normalized_grid)
     _validate_positive_concrete(T_i_eV, "T_i_eV")
     _validate_positive_concrete(T_e_eV, "T_e_eV")

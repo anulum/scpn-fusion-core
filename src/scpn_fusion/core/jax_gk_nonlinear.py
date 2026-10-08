@@ -23,6 +23,8 @@ import logging
 
 import numpy as np
 
+from scpn_fusion.core.jax_precision import _require_float64
+
 from scpn_fusion.core.gk_nonlinear import (
     NonlinearGKConfig,
     NonlinearGKInvariantDiagnostics,
@@ -36,7 +38,6 @@ _logger = logging.getLogger(__name__)
 try:
     import jax
 
-    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
     import jax.numpy as jnp
 
     _HAS_JAX = True
@@ -58,6 +59,8 @@ class JaxNonlinearGKSolver:
 
     def __init__(self, config: NonlinearGKConfig | None = None):
         """Create the JAX nonlinear GK solver with optional config override."""
+        if _HAS_JAX:
+            _require_float64("nonlinear_gyrokinetics")
         self.cfg = config or NonlinearGKConfig()
         self._np_solver = NonlinearGKSolver(self.cfg)
         if _HAS_JAX:
@@ -339,6 +342,8 @@ class JaxNonlinearGKSolver:
         if not _HAS_JAX:
             return self._np_solver.nonlinear_invariant_diagnostics(state)
 
+        _require_float64("nonlinear_gyrokinetics")
+
         c = self.cfg
         active_species = c.n_species if c.kinetic_electrons else min(c.n_species, 1)
         phi = jnp.asarray(state.phi)
@@ -380,6 +385,8 @@ class JaxNonlinearGKSolver:
         if not _HAS_JAX:
             _logger.info("JAX unavailable, falling back to NumPy solver")
             return self._np_solver.run(state)
+
+        _require_float64("nonlinear_gyrokinetics")
 
         c = self.cfg
         if state is None:

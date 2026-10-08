@@ -29,6 +29,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.jax_precision import _require_float64
+
 FloatArray = NDArray[np.float64]
 
 try:
@@ -36,7 +38,6 @@ try:
     import jax.numpy as jnp
     from jax import lax
 
-    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
     _HAS_JAX = True
 except ImportError:
     jax = None  # type: ignore[assignment]
@@ -296,6 +297,7 @@ def crank_nicolson_step_jax(
     """
     if not _HAS_JAX or jnp is None:
         raise RuntimeError("JAX transport requested but JAX is unavailable.")
+    _require_float64("crank_nicolson_transport")
     return _cn_step_jax(
         jnp.asarray(T, dtype=jnp.float64),
         jnp.asarray(chi, dtype=jnp.float64),
@@ -326,6 +328,7 @@ def thomas_solve(
     use_jax : attempt JAX backend (falls back to NumPy if unavailable)
     """
     if use_jax and _HAS_JAX:
+        _require_float64("thomas_transport")
         return np.asarray(
             _thomas_solve_jax_impl(
                 jnp.asarray(a, dtype=jnp.float64),
@@ -352,6 +355,7 @@ def diffusion_rhs(
     zero explicit inner-boundary row for the caller's boundary condition.
     """
     if use_jax and _HAS_JAX:
+        _require_float64("cylindrical_diffusion")
         return np.asarray(
             _diffusion_rhs_jax_impl(
                 jnp.asarray(T, dtype=jnp.float64),
@@ -402,6 +406,7 @@ def crank_nicolson_step(
         Updated temperature profile with the outer Dirichlet value applied.
     """
     if use_jax and _HAS_JAX:
+        _require_float64("crank_nicolson_transport")
         return np.asarray(
             _cn_step_jax(
                 jnp.asarray(T, dtype=jnp.float64),
@@ -473,6 +478,7 @@ def batched_crank_nicolson(
             ]
         )
 
+    _require_float64("batched_crank_nicolson_transport")
     chi_j = jnp.asarray(chi, dtype=jnp.float64)
     source_j = jnp.asarray(source, dtype=jnp.float64)
     rho_j = jnp.asarray(rho, dtype=jnp.float64)

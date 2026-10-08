@@ -16,6 +16,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.jax_precision import _require_float64
+
 FloatArray = NDArray[np.float64]
 
 try:
@@ -26,7 +28,6 @@ except Exception:  # pragma: no cover - optional dependency path
 try:
     import jax
 
-    jax.config.update("jax_enable_x64", True)  # type: ignore[no-untyped-call]
     import jax.numpy as jnp
 except Exception:  # pragma: no cover - optional dependency path
     jax = None  # type: ignore[assignment]
@@ -132,6 +133,7 @@ class GPURuntimeBridge:
     def _jax_multigrid(self, field: FloatArray, iterations: int = 4) -> FloatArray:
         if jax is None:
             raise RuntimeError("JAX backend requested but jax is not installed.")
+        _require_float64("gpu_runtime_multigrid")
         iterations = self._require_int_at_least(iterations, name="iterations", minimum=1)
         u = jnp.asarray(field, dtype=jnp.float64)
 

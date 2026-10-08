@@ -178,6 +178,8 @@ ignore_missing_imports = false
 # currently gated typed surface and is expanded incrementally as modules are
 # brought to strict-clean status.
 files = [
+    "src/scpn_fusion/core/jax_precision.py",
+    "tests/test_jax_precision.py",
     "src/scpn_fusion/core/free_boundary_outer_solver.py",
     "src/scpn_fusion/core/free_boundary_solver_state.py",
     "src/scpn_fusion/hpc/_hpc_solver_state.py",

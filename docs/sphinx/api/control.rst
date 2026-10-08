@@ -31,6 +31,13 @@ Digital Twin Ingest
 Traceable Runtime (JAX/TorchScript)
 -------------------------------------
 
+The JAX control model requires binary64 computation. The application selects
+X64 before creating arrays or tracing, for example through ``JAX_ENABLE_X64=1``
+at process startup. Imports preserve that setting. Disabled X64 causes the
+typed ``scpn_fusion.core.jax_precision.JaxPrecisionRefusal`` before a JAX
+rollout; it does not trigger a different backend or widen a float32 result on
+the host. The explicit NumPy and TorchScript routes retain their own policies.
+
 .. automodule:: scpn_fusion.control.jax_traceable_runtime
    :members:
    :undoc-members:

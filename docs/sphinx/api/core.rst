@@ -341,6 +341,27 @@ Geometry 3D
 GPU Runtime Bridge
 --------------------
 
+Declared JAX model precision
+----------------------------
+
+JAX precision is selected by the application before array creation and tracing,
+for example with ``JAX_ENABLE_X64=1`` at process startup. Importing the core
+package or its JAX modules does not change that setting.
+
+The GPU bridge, transport primitives, traceable control model, nonlinear
+gyrokinetic model and no-rotation FRC observables explicitly require binary64
+real components (complex128 for gyrokinetic distributions). If X64 support is
+disabled, their JAX paths raise ``JaxPrecisionRefusal`` before model work.
+They neither enable X64 nor silently substitute a NumPy execution. Existing
+explicit NumPy paths and missing-dependency policies remain separately declared.
+This requirement belongs to those models; it does not prescribe a dtype for
+other JAX models. A float64 host conversion cannot qualify float32 computation.
+
+.. automodule:: scpn_fusion.core.jax_precision
+   :members:
+   :show-inheritance:
+   :no-index:
+
 .. automodule:: scpn_fusion.core.gpu_runtime
    :members:
    :undoc-members:
