@@ -159,10 +159,10 @@
     "packages": {
       "matplotlib": "3.10.8",
       "numpy": "1.26.4",
-      "python": "3.12.3",
+      "python": "3.12.15",
       "torch": null
     },
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "b66321dc23b3a02241ca662a966b84534a1e84affe524a3610b4028d89b62474"
+    "pinned_requirements_sha256": "53132fd910d9e42fca6ea985f5530ec43946621ab9545c922e34d435c183017c"
   }
 }

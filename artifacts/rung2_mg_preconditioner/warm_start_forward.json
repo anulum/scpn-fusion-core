@@ -90,13 +90,13 @@
     "warm_vs_cold_fixed_point_span_rel": {
       "129x129": 2.225983643395166e-09,
       "129x129_warm_mg_richardson2": 3.951583856622673e-09,
-      "33x33": 1.8012601944330345e-09,
-      "33x33_warm_mg_richardson2": 2.394985787661759e-09,
+      "33x33": 1.8012618627183753e-09,
+      "33x33_warm_mg_richardson2": 2.394991209589116e-09,
       "65x65": 4.672425739654226e-09,
       "65x65_warm_mg_richardson2": null
     }
   },
-  "generated_utc": "2026-09-12T17:47:29+00:00",
+  "generated_utc": "2026-10-08T21:26:43+00:00",
   "jax_version": "0.7.1",
   "method": "base solve at nominal coil currents; perturb all coil currents by +0.5% (the documented in-basin FD-validation scale); warm solve = psi_init=base with the standard current ramp retained for cross-grid nonlinear stability; correctness = warm solve agrees with the COLD solve of the perturbed problem at span-relative tolerance",
   "provenance": {
@@ -114,9 +114,9 @@
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "f0b3c48632a1766eb43121cd51bd4eba9a329c9869e8ec3b5bc21ecbae3a9701",
+    "logic_sources_sha256": "f8b1cc6e1dc3f83f07dcde14a4e010fe4060d15dc667a2fae6e40062dbcad7ab",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "b66321dc23b3a02241ca662a966b84534a1e84affe524a3610b4028d89b62474"
+    "pinned_requirements_sha256": "53132fd910d9e42fca6ea985f5530ec43946621ab9545c922e34d435c183017c"
   },
   "settings": {
     "n_iter": 180,
@@ -126,69 +126,69 @@
   "task": "warm-start behaviour of the compiled predictive forward (IDA pattern)",
   "timings_indicative": {
     "device": "cpu (cpu)",
-    "host": "aaarthuus (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
+    "host": "runnervmmprz5 (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
     "rows": [
       {
-        "cold_median_ms": 238.7058628955856,
+        "cold_median_ms": 156.7995609999997,
         "cold_ms": [
-          238.7058628955856,
-          248.53365297894925,
-          208.07707402855158
+          160.34049099999947,
+          156.7995609999997,
+          156.1130360000078
         ],
         "grid": "33x33",
-        "warm_median_ms": 82.08515692967921,
-        "warm_mg_richardson2_median_ms": 60.08318602107465,
+        "warm_median_ms": 58.51917100000037,
+        "warm_mg_richardson2_median_ms": 44.535800000005565,
         "warm_mg_richardson2_ms": [
-          62.01114796567708,
-          60.08318602107465,
-          59.13049401715398
+          44.976435000009474,
+          43.67693499999348,
+          44.535800000005565
         ],
         "warm_ms": [
-          82.88992196321487,
-          80.44431498274207,
-          82.08515692967921
+          58.829528999993386,
+          58.51917100000037,
+          58.39585500000055
         ]
       },
       {
-        "cold_median_ms": 657.5489619281143,
+        "cold_median_ms": 630.6092089999993,
         "cold_ms": [
-          654.1894410038367,
-          657.5489619281143,
-          658.2034230232239
+          630.6092089999993,
+          616.2922850000143,
+          632.4965039999881
         ],
         "grid": "65x65",
-        "warm_median_ms": 322.2265380900353,
-        "warm_mg_richardson2_median_ms": 645.7373899174854,
+        "warm_median_ms": 279.1386320000129,
+        "warm_mg_richardson2_median_ms": 638.4663739999894,
         "warm_mg_richardson2_ms": [
-          684.6440059598535,
-          637.0425670174882,
-          645.7373899174854
+          636.1858510000218,
+          638.4663739999894,
+          643.0235139999922
         ],
         "warm_ms": [
-          355.14801600947976,
-          322.2265380900353,
-          281.20155294891447
+          294.93817599998806,
+          279.1386320000129,
+          277.66015299999935
         ]
       },
       {
-        "cold_median_ms": 1857.9074459848925,
+        "cold_median_ms": 1459.2518489999975,
         "cold_ms": [
-          1857.9074459848925,
-          1820.8524630172178,
-          1862.1620601043105
+          1527.4766459999967,
+          1459.2518489999975,
+          1454.0662409999925
         ],
         "grid": "129x129",
-        "warm_median_ms": 941.1884529981762,
-        "warm_mg_richardson2_median_ms": 780.5563600268215,
+        "warm_median_ms": 750.918452999997,
+        "warm_mg_richardson2_median_ms": 616.0440259999973,
         "warm_mg_richardson2_ms": [
-          761.5866590058431,
-          783.069936092943,
-          780.5563600268215
+          624.0852690000054,
+          608.1086179999886,
+          616.0440259999973
         ],
         "warm_ms": [
-          957.899475004524,
-          928.0320580583066,
-          941.1884529981762
+          777.4257659999932,
+          738.5198230000185,
+          750.918452999997
         ]
       }
     ]

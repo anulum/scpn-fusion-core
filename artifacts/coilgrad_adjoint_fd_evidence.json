@@ -7,75 +7,75 @@
     "fd": "central FD, WARM-STARTED from the base solution (psi_init=psi_base) to stay in-basin; sweep the step and require convergence toward the adjoint (truncation error grows with the step; a real missing term does not)"
   },
   "adjoint_g_ci": [
-    2.0167424781920596e-07,
-    2.9588669778123153e-07,
-    8.185576578622949e-08,
-    2.6291358699199766e-07,
-    2.0135640621875492e-07,
-    1.0328461627520323e-07
+    2.0167424781918256e-07,
+    2.958866977812522e-07,
+    8.185576578643426e-08,
+    2.6291358699237247e-07,
+    2.0135640621867927e-07,
+    1.0328461627547804e-07
   ],
   "measurements": [
     {
       "coil": 5,
       "eps_A": 100.0,
-      "warm_fd": 1.0328465174441054e-07,
-      "adjoint": 1.0328461627520323e-07,
-      "rel_diff": 3.4341217905035107e-07
+      "warm_fd": 1.0328465795376648e-07,
+      "adjoint": 1.0328461627547804e-07,
+      "rel_diff": 4.035283581826897e-07
     },
     {
       "coil": 5,
       "eps_A": 300.0,
-      "warm_fd": 1.0328461191782523e-07,
-      "adjoint": 1.0328461627520323e-07,
-      "rel_diff": 4.2188065747831504e-08
+      "warm_fd": 1.0328461648354224e-07,
+      "adjoint": 1.0328461627547804e-07,
+      "rel_diff": 2.014474314766368e-09
     },
     {
       "coil": 5,
       "eps_A": 1000.0,
-      "warm_fd": 1.032847085988102e-07,
-      "adjoint": 1.0328461627520323e-07,
-      "rel_diff": 8.938748844901194e-07
+      "warm_fd": 1.0328470756019309e-07,
+      "adjoint": 1.0328461627547804e-07,
+      "rel_diff": 8.838163674589493e-07
     },
     {
       "coil": 5,
       "eps_A": 3000.0,
-      "warm_fd": 1.0329556015649388e-07,
-      "adjoint": 1.0328461627520323e-07,
-      "rel_diff": 0.00010594725730782917
+      "warm_fd": 1.0329556043507717e-07,
+      "adjoint": 1.0328461627547804e-07,
+      "rel_diff": 0.00010594995131482204
     },
     {
       "coil": 4,
       "eps_A": 100.0,
-      "warm_fd": 2.013566524569285e-07,
-      "adjoint": 2.0135640621875492e-07,
-      "rel_diff": 1.2228956460209891e-06
+      "warm_fd": 2.0135665468771352e-07,
+      "adjoint": 2.0135640621867927e-07,
+      "rel_diff": 1.233974782883322e-06
     },
     {
       "coil": 4,
       "eps_A": 300.0,
-      "warm_fd": 2.0135594628087338e-07,
-      "adjoint": 2.0135640621875492e-07,
-      "rel_diff": 2.2842031240600813e-06
+      "warm_fd": 2.0135594985457723e-07,
+      "adjoint": 2.0135640621867927e-07,
+      "rel_diff": 2.266454516880982e-06
     },
     {
       "coil": 4,
       "eps_A": 1000.0,
-      "warm_fd": 2.0135661635627654e-07,
-      "adjoint": 2.0135640621875492e-07,
-      "rel_diff": 1.0436087247546663e-06
+      "warm_fd": 2.0135661548614966e-07,
+      "adjoint": 2.0135640621867927e-07,
+      "rel_diff": 1.039287782449185e-06
     },
     {
       "coil": 4,
       "eps_A": 3000.0,
-      "warm_fd": 2.01322324522496e-07,
-      "adjoint": 2.0135640621875492e-07,
-      "rel_diff": 0.00016928920495907812
+      "warm_fd": 2.0132232489945313e-07,
+      "adjoint": 2.0135640621867927e-07,
+      "rel_diff": 0.00016928733186029113
     }
   ],
-  "guarded_claim": "agreement within 2.284e-06 relative at 100-300 A steps on the tested strong and weak coils (this run, full precision); larger steps show the GROWING-with-eps truncation signature \u2014 the origin of the historical '~3 %' artefact figure",
+  "guarded_claim": "agreement within 2.266e-06 relative at 100-300 A steps on the tested strong and weak coils (this run, full precision); larger steps show the GROWING-with-eps truncation signature \u2014 the origin of the historical '~3 %' artefact figure",
   "regression_guard": "tests/test_jax_free_boundary_predictive.py::test_coil_gradient_matches_finite_difference (eps=300 A, rel<1e-3)",
-  "generated_utc": "2026-09-12T17:38:52+00:00",
-  "host_note": "aaarthuus \u2014 gradients/counts are load-independent; no timings recorded",
+  "generated_utc": "2026-10-08T21:28:48+00:00",
+  "host_note": "runnervmmprz5 \u2014 gradients/counts are load-independent; no timings recorded",
   "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_coilgrad_adjoint_fd.py",
@@ -90,8 +90,8 @@
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_x_point.py"
     ],
-    "logic_sources_sha256": "13d4fca2d1eb83b6c3be5350b3337f5c8ad6c266f92b658bb3bcdd5b65183893",
+    "logic_sources_sha256": "73d91c8c48b81ed589f1a71bfc793ab1cc3b918ac436d669183a7db5e23b5117",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "b66321dc23b3a02241ca662a966b84534a1e84affe524a3610b4028d89b62474"
+    "pinned_requirements_sha256": "53132fd910d9e42fca6ea985f5530ec43946621ab9545c922e34d435c183017c"
   }
 }

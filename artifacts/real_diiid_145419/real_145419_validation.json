@@ -19,9 +19,9 @@
       "src/scpn_fusion/core/jax_equilibrium_solver.py",
       "src/scpn_fusion/core/jax_o_point.py"
     ],
-    "logic_sources_sha256": "8d96e8b329867b09d91a2278f2eadf2625c12de71701ef2cc377295118e6f0b6",
+    "logic_sources_sha256": "4bce69425358cdab41df3dc82b48d6c560d72577e87f015ddba491b1e3f44371",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "b66321dc23b3a02241ca662a966b84534a1e84affe524a3610b4028d89b62474"
+    "pinned_requirements_sha256": "53132fd910d9e42fca6ea985f5530ec43946621ab9545c922e34d435c183017c"
   },
   "disclosure": "reproduction lanes are warm-started from the EFIT psi and use reference-derived normalisation anchors (psi_axis, psi_bnd, plasma-region Ip) - they are consistency/reproduction checks, not blind prediction or independent branch selection; the cold-start lane demonstrates that limitation explicitly",
   "operator": {
