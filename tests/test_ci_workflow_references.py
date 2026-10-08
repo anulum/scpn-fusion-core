@@ -10,8 +10,15 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import subprocess
+import sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from threading import Thread
+
+import pytest
 
 from tools.check_ci_workflow_ownership import workflow_sources
 
@@ -136,10 +143,13 @@ def test_required_dependency_policy_covers_every_committed_lock() -> None:
         not in (ROOT / ".github/workflows/ci-dependency-policy.yml").read_text()
     )
     command = python_job["steps"][-1]["run"]
-    assert (
-        command
-        == 'python -m pip_audit --strict --disable-pip --no-deps --requirement "${{ matrix.lock }}"'
+    assert command.endswith(
+        'python -m pip_audit --strict --disable-pip --no-deps --requirement "$RUNNER_TEMP/registry-requirements.txt"\n'
     )
+    assert python_job["steps"][-1]["env"]["LOCK_FILE"] == "${{ matrix.lock }}"
+    assert '"https://api.osv.dev/v1/query"' in command
+    assert 'query = {"commit": commit}' in command
+    assert python_job["timeout-minutes"] == "10"
     assert "continue-on-error" not in python_job
     rust_job = jobs["rust-audit"]
     assert rust_job["strategy"]["matrix"]["lock"] == [
@@ -150,3 +160,110 @@ def test_required_dependency_policy_covers_every_committed_lock() -> None:
     assert rust_job["strategy"]["fail-fast"] == "false"
     assert rust_job["steps"][-1]["run"] == 'cargo audit --deny warnings --file "${{ matrix.lock }}"'
     assert "continue-on-error" not in rust_job
+
+
+@pytest.mark.parametrize("name", ["cfspopcon", "process"])
+@pytest.mark.parametrize(
+    "outcome",
+    [
+        "clean",
+        "paginated",
+        "advisory",
+        "http-error",
+        "invalid-json",
+        "api-error",
+        "invalid-list",
+        "cycle",
+        "wrong-pin",
+        "unknown-source",
+    ],
+)
+def test_source_pinned_closure_queries_and_refusals(
+    tmp_path: Path, name: str, outcome: str
+) -> None:
+    """The actual CI preparation queries exact commits and refuses incomplete audits."""
+    import yaml
+
+    policy = yaml.safe_load((ROOT / ".github/workflows/ci-dependency-policy.yml").read_text())
+    command = policy["jobs"]["python-lock-audit"]["steps"][-1]["run"]
+    script = command.split("python - <<'PYTHON'\n", 1)[1].split("\nPYTHON\n", 1)[0]
+    source = next(
+        line
+        for line in (ROOT / f"requirements/{name}.txt").read_text().splitlines()
+        if " @ " in line
+    )
+    if outcome == "wrong-pin":
+        source = source[:-1] + ("0" if source[-1] != "0" else "1")
+    elif outcome == "unknown-source":
+        source = "unknown" + source[source.index(" @ ") :]
+    manifest_path = tmp_path / "validation/reference_data" / f"{name}_source.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_bytes((ROOT / f"validation/reference_data/{name}_source.json").read_bytes())
+    commit = json.loads(manifest_path.read_text())["commit"]
+    lock = tmp_path / "closure.txt"
+    registry = "# complete registry closure\ncertifi==2026.7.22\npackaging==26.3\n"
+    lock.write_text(source + "\n" + registry)
+    queries: list[object] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        """Serve deterministic advisory responses over the actual HTTP boundary."""
+
+        def do_POST(self) -> None:
+            """Record the request and return the selected database response."""
+            queries.append(
+                json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))))
+            )
+            self.send_response(503 if outcome == "http-error" else 200)
+            self.end_headers()
+            response = b"{}"
+            if outcome == "advisory":
+                response = b'{"vulns":[{"id":"test-advisory"}]}'
+            elif outcome == "invalid-json":
+                response = b"unavailable"
+            elif outcome == "api-error":
+                response = b'{"error":"unavailable"}'
+            elif outcome == "invalid-list":
+                response = b'{"vulns":null}'
+            elif outcome == "cycle" or (outcome == "paginated" and len(queries) == 1):
+                response = b'{"next_page_token":"second-page"}'
+            self.wfile.write(response)
+
+        def log_message(self, format: str, *args: object) -> None:
+            """Keep the test HTTP service silent."""
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            cwd=tmp_path,
+            env=os.environ
+            | {
+                "LOCK_FILE": str(lock),
+                "RUNNER_TEMP": str(tmp_path),
+                "OSV_API_URL": f"http://127.0.0.1:{server.server_port}/v1/query",
+            },
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+    assert not thread.is_alive()
+    if outcome in {"wrong-pin", "unknown-source"}:
+        assert queries == []
+    else:
+        assert queries[0] == {"commit": commit}
+    output = tmp_path / "registry-requirements.txt"
+    if outcome in {"clean", "paginated"}:
+        assert result.returncode == 0, result.stderr
+        assert output.read_text() == registry
+        if outcome == "paginated":
+            assert queries == [{"commit": commit}, {"commit": commit, "page_token": "second-page"}]
+    else:
+        assert result.returncode != 0
+        assert not output.exists()

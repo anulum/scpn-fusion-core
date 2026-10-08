@@ -47,6 +47,7 @@ jobs:
   python-lock-audit:
     name: Python lock advisory check (${{ matrix.lock }})
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
     strategy:
@@ -81,4 +82,61 @@ jobs:
     - name: Install hash-locked advisory tooling
       run: python -m pip install --require-hashes -r requirements/build.txt
     - name: Check every committed Python closure
-      run: python -m pip_audit --strict --disable-pip --no-deps --requirement "${{ matrix.lock }}"
+      env:
+        LOCK_FILE: ${{ matrix.lock }}
+      run: |
+        python - <<'PYTHON'
+        import json
+        import os
+        from pathlib import Path
+        import urllib.request
+
+        lock = Path(os.environ["LOCK_FILE"])
+        registry_lines = []
+        source_queries = []
+        sources = {
+            "cfspopcon": ("git+https://github.com/cfs-energy/cfspopcon.git@", "cfspopcon_source.json"),
+            "process": ("https://codeload.github.com/ukaea/PROCESS/tar.gz/", "process_source.json"),
+        }
+        for line in lock.read_text().splitlines():
+            if " @ " not in line or line.lstrip().startswith("#"):
+                registry_lines.append(line)
+                continue
+            name, url = line.split(" @ ", 1)
+            prefix, manifest_name = sources[name]
+            manifest = json.loads((Path("validation/reference_data") / manifest_name).read_text())
+            commit = manifest["commit"]
+            if url != prefix + commit or len(commit) != 40 or any(c not in "0123456789abcdef" for c in commit):
+                raise ValueError("Source requirement differs from its pinned reference manifest")
+            source_queries.append((name, commit))
+
+        endpoint = os.environ.get("OSV_API_URL", "https://api.osv.dev/v1/query")
+        for name, commit in source_queries:
+            query = {"commit": commit}
+            seen = set()
+            for page in range(100):
+                request = urllib.request.Request(endpoint, data=json.dumps(query).encode(), headers={"Content-Type": "application/json"})
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    result = json.load(response)
+                if not isinstance(result, dict) or set(result) - {"vulns", "next_page_token"}:
+                    raise ValueError("Invalid source advisory response")
+                vulns = result.get("vulns", [])
+                if not isinstance(vulns, list):
+                    raise ValueError("Invalid source advisory list")
+                if vulns:
+                    raise ValueError("Pinned source has reported advisories: " + name)
+                token = result.get("next_page_token")
+                if token is None:
+                    break
+                if not isinstance(token, str) or not token or token in seen:
+                    raise ValueError("Invalid source advisory pagination")
+                seen.add(token)
+                query["page_token"] = token
+            else:
+                raise ValueError("Source advisory pagination did not complete")
+            print("Source advisory query passed:", name, commit)
+
+        output = Path(os.environ["RUNNER_TEMP"]) / "registry-requirements.txt"
+        output.write_text("\n".join(registry_lines) + "\n")
+        PYTHON
+        python -m pip_audit --strict --disable-pip --no-deps --requirement "$RUNNER_TEMP/registry-requirements.txt"
