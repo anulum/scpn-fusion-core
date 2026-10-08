@@ -21,6 +21,7 @@ python-discovery>=1.5.0
 jax[cpu]
 gymnasium
 jsonschema>=4.26.0
+types-jsonschema==4.26.0.20260518
 tornado>=6.5.9,<6.5.10
 
 # Light optional backends exercised in CI; keep torch soft.

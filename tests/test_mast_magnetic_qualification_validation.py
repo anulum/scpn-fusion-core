@@ -14,7 +14,7 @@ import math
 from pathlib import Path
 from typing import cast
 
-import jsonschema  # type: ignore[import-untyped]
+import jsonschema
 import pytest
 
 from scpn_fusion.io import (
