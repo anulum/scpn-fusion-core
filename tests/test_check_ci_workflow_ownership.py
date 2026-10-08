@@ -39,7 +39,7 @@ def test_current_distributed_workflows_satisfy_ownership() -> None:
         == check_workflow_ownership(ROOT)
         == {
             "reusable_workflows": 17,
-            "executable_jobs": 21,
+            "executable_jobs": 22,
         }
     )
 

@@ -36,4 +36,49 @@ jobs:
     - name: Install cargo-audit
       run: cargo install cargo-audit --locked
     - name: Run security audit
-      run: cargo audit --deny warnings
+      run: cargo audit --deny warnings --file "${{ matrix.lock }}"
+    strategy:
+      fail-fast: false
+      matrix:
+        lock:
+        - Cargo.lock
+        - fuzz/Cargo.lock
+        - ../validation/reference_data/rustbca.Cargo.lock
+  python-lock-audit:
+    name: Python lock advisory check (${{ matrix.lock }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: 'false'
+      matrix:
+        lock:
+        - requirements/build.txt
+        - requirements/cfspopcon.txt
+        - requirements/ci-benchmark.txt
+        - requirements/ci-freegsnke.txt
+        - requirements/ci-interop.txt
+        - requirements/ci-py310.txt
+        - requirements/ci-py311.txt
+        - requirements/ci-py312.txt
+        - requirements/ci-stress.txt
+        - requirements/docs.txt
+        - requirements/full.txt
+        - requirements/fuzz.txt
+        - requirements/gpu-bootstrap.txt
+        - requirements/mast.txt
+        - requirements/minimal.txt
+        - requirements/process.txt
+        - requirements/rustbca.txt
+        - requirements/rustbca.unsupported-wheel.txt
+        - requirements/studio.txt
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+    - name: Install Python 3.12
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      with:
+        python-version: '3.12'
+    - name: Install hash-locked advisory tooling
+      run: python -m pip install --require-hashes -r requirements/build.txt
+    - name: Check every committed Python closure
+      run: python -m pip_audit --strict --disable-pip --no-deps --requirement "${{ matrix.lock }}"

@@ -342,7 +342,8 @@
       "category": 8,
       "jobs": [
         "github-token-format-guard",
-        "rust-audit"
+        "rust-audit",
+        "python-lock-audit"
       ],
       "needs": [
         "ci-chain-guard"

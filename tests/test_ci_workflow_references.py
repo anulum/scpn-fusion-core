@@ -117,3 +117,32 @@ def test_ci_materializes_the_pinned_dream_api_for_custody_tests() -> None:
     assert "persist-credentials: false" in checkout
     assert checkout_start < workflow.index("Python preflight release gate")
     assert checkout_start < workflow.index("Run release test suite")
+
+
+def test_required_dependency_policy_covers_every_committed_lock() -> None:
+    """Required CI checks every Python closure and all three Cargo locks."""
+    import yaml
+
+    policy = yaml.load(
+        (ROOT / ".github/workflows/ci-dependency-policy.yml").read_text(), Loader=yaml.BaseLoader
+    )
+    jobs = policy["jobs"]
+    python_job = jobs["python-lock-audit"]
+    expected = sorted(str(path.relative_to(ROOT)) for path in (ROOT / "requirements").glob("*.txt"))
+    assert python_job["strategy"]["matrix"]["lock"] == expected
+    assert python_job["strategy"]["fail-fast"] == "false"
+    command = python_job["steps"][-1]["run"]
+    assert (
+        command
+        == 'python -m pip_audit --strict --disable-pip --no-deps --requirement "${{ matrix.lock }}"'
+    )
+    assert "continue-on-error" not in python_job
+    rust_job = jobs["rust-audit"]
+    assert rust_job["strategy"]["matrix"]["lock"] == [
+        "Cargo.lock",
+        "fuzz/Cargo.lock",
+        "../validation/reference_data/rustbca.Cargo.lock",
+    ]
+    assert rust_job["strategy"]["fail-fast"] == "false"
+    assert rust_job["steps"][-1]["run"] == 'cargo audit --deny warnings --file "${{ matrix.lock }}"'
+    assert "continue-on-error" not in rust_job
