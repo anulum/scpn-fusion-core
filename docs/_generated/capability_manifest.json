@@ -1144,6 +1144,10 @@
         "path": "src/scpn_fusion/core/jax_gk_nonlinear.py"
       },
       {
+        "name": "JaxPrecisionRefusal",
+        "path": "src/scpn_fusion/core/jax_precision.py"
+      },
+      {
         "name": "KalmanDensityEstimator",
         "path": "src/scpn_fusion/control/density_controller.py"
       },
@@ -2828,6 +2832,7 @@
       "src/scpn_fusion/core/jax_neural_equilibrium.py",
       "src/scpn_fusion/core/jax_o_point.py",
       "src/scpn_fusion/core/jax_plasma_support.py",
+      "src/scpn_fusion/core/jax_precision.py",
       "src/scpn_fusion/core/jax_predictive_checkpoint_trace.py",
       "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
       "src/scpn_fusion/core/jax_profile_basis.py",
@@ -3037,10 +3042,10 @@
     "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 71,
-    "python_capability_classes": 633,
-    "python_capability_source_modules": 366,
+    "python_capability_classes": 634,
+    "python_capability_source_modules": 367,
     "rust_workspace_crates": 13,
-    "test_files": 669
+    "test_files": 671
   },
   "documentation": {
     "public_pages": [
@@ -3568,11 +3573,13 @@
       "tests/test_jax_free_boundary_gs_implicit.py",
       "tests/test_jax_free_boundary_predictive.py",
       "tests/test_jax_gk_solver.py",
+      "tests/test_jax_green_input_validity.py",
       "tests/test_jax_gs_solver.py",
       "tests/test_jax_multigrid_precond.py",
       "tests/test_jax_neural_equilibrium.py",
       "tests/test_jax_o_point.py",
       "tests/test_jax_plasma_support.py",
+      "tests/test_jax_precision.py",
       "tests/test_jax_predictive_compiled_trace.py",
       "tests/test_jax_predictive_forward_compiled.py",
       "tests/test_jax_profile_basis.py",
