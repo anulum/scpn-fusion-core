@@ -1661,10 +1661,12 @@ uncertainties==3.2.3 \
     --hash=sha256:313353900d8f88b283c9bad81e7d2b2d3d4bcc330cbace35403faaed7e78890a \
     --hash=sha256:76a5653e686f617a42922d546a239e9efce72e6b35411b7750a1d12dcba03031
     # via omas
-urllib3==2.7.0 \
-    --hash=sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c \
-    --hash=sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897
-    # via requests
+urllib3==2.8.0 \
+    --hash=sha256:0cf3cae568d36aa9576b28dfb35f11328f1cb974ca7647d9475ebb86c75ac6e3 \
+    --hash=sha256:63bf2ead4c879426ebf22ef2a781eeb4aa3b4ae798a0435506f8687fd5bb9b63
+    # via
+    #   -r requirements/ci-freegsnke.in
+    #   requests
 xarray==2026.7.0 \
     --hash=sha256:361b495928fdbf5b58d0969bb6775339019da5e93ca74d61ddf4eb5edd6ce604 \
     --hash=sha256:bf9dd130b93806dc78e90c1b7ac24851b31557b888674c53622235691cf21824

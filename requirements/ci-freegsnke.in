@@ -24,3 +24,5 @@ pydantic>=2.0,<3
 requests>=2.31,<3
 # The total-psi bridge imports the public IMAS/OMAS convention constant.
 omas>=0.70
+
+urllib3>=2.8.0
