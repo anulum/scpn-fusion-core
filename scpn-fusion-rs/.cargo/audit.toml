@@ -13,7 +13,8 @@
 
 [advisories]
 # RUSTSEC-2024-0436 — `paste` (proc-macro helper) is no longer maintained. It is
-# pulled in transitively only, via `nalgebra`/`simba` and `wgpu-hal`/`metal`;
-# neither exposes a way to drop it without a major upstream change. It is an
-# unmaintained notice, not a vulnerability. Re-audit when nalgebra/wgpu remove it.
+# present in the pinned external RustBCA dependency closure. The registry
+# still has no release beyond paste1.0.15; replacing it requires an upstream
+# dependency migration. This is an unmaintained notice, not a vulnerability.
+# Review-by: 2026-10-22. Remove this exception when the source closure drops paste.
 ignore = ["RUSTSEC-2024-0436"]
