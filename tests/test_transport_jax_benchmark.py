@@ -15,6 +15,8 @@ from typing import Any
 
 import jsonschema
 import pytest
+import jax.numpy as jnp
+from jax.experimental import disable_x64
 
 from benchmarks import bench_transport_jax as benchmark
 from benchmarks import bench_transport_polyglot as common
@@ -77,18 +79,20 @@ def test_cli_writes_real_schema_valid_reports(tmp_path: Path) -> None:
     """The command-line surface executes both backends and writes both formats."""
     output_json = tmp_path / "jax_transport.json"
     output_markdown = tmp_path / "jax_transport.md"
-    result = benchmark.main(
-        [
-            "--output-json",
-            str(output_json),
-            "--output-markdown",
-            str(output_markdown),
-            "--warmups",
-            "0",
-            "--samples",
-            "3",
-        ]
-    )
+    with disable_x64():
+        result = benchmark.main(
+            [
+                "--output-json",
+                str(output_json),
+                "--output-markdown",
+                str(output_markdown),
+                "--warmups",
+                "0",
+                "--samples",
+                "3",
+            ]
+        )
+        assert jnp.ones(()).dtype.name == "float32"
 
     payload = json.loads(output_json.read_text(encoding="utf-8"))
     schema = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))

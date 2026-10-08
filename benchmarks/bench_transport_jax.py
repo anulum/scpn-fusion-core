@@ -23,6 +23,7 @@ from typing import Any, TypeAlias, cast
 
 import jax
 import jax.numpy as jnp
+from jax.experimental import enable_x64
 import numpy as np
 from numpy.typing import NDArray
 from scipy.special import j0
@@ -462,15 +463,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--warmups", type=int, default=10)
     parser.add_argument("--samples", type=int, default=31)
     args = parser.parse_args(argv)
-    report = build_report(
-        common.BenchmarkConfig(
-            nodes=int(args.nodes),
-            steps=int(args.steps),
-            dt_s=float(args.dt),
-            discarded_warmups=int(args.warmups),
-            warm_samples=int(args.samples),
+    with enable_x64():
+        report = build_report(
+            common.BenchmarkConfig(
+                nodes=int(args.nodes),
+                steps=int(args.steps),
+                dt_s=float(args.dt),
+                discarded_warmups=int(args.warmups),
+                warm_samples=int(args.samples),
+            )
         )
-    )
     output_json = Path(args.output_json)
     output_markdown = Path(args.output_markdown)
     output_json.parent.mkdir(parents=True, exist_ok=True)

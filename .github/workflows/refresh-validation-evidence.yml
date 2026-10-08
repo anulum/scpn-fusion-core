@@ -8,6 +8,21 @@
 name: Refresh validation evidence
 on:
   workflow_dispatch:
+    inputs:
+      generator:
+        type: choice
+        default: all
+        options:
+          - all
+          - real-diiid
+          - coil-gradient
+          - mg-iterations
+          - compiled-forward
+          - warm-start
+          - batched-forward
+          - disruption-transfer
+          - disruption-threshold
+          - transport-jax
 permissions:
   contents: read
 jobs:
@@ -18,25 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: real-diiid
-            command: validation/validate_real_diiid_145419.py
-          - name: coil-gradient
-            command: validation/measure_coilgrad_adjoint_fd.py
-          - name: mg-iterations
-            command: validation/measure_mg_preconditioner_iterations.py
-          - name: compiled-forward
-            command: validation/measure_compiled_forward_speedup.py
-          - name: warm-start
-            command: validation/measure_warm_start_forward.py
-          - name: batched-forward
-            command: validation/measure_batched_forward.py
-          - name: disruption-transfer
-            command: validation/benchmark_disruption_transfer_generalization.py --commit-evidence --strict
-          - name: disruption-threshold
-            command: tools/sweep_disruption_threshold.py
-          - name: transport-jax
-            command: benchmarks/bench_transport_jax.py
+        name: ${{ fromJSON(inputs.generator == 'all' && '["real-diiid","coil-gradient","mg-iterations","compiled-forward","warm-start","batched-forward","disruption-transfer","disruption-threshold","transport-jax"]' || format('["{0}"]', inputs.generator)) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -53,7 +50,17 @@ jobs:
         env:
           PYTHONPATH: src:.
           JAX_PLATFORMS: cpu
-          COMMAND: ${{ matrix.command }}
+          GENERATOR: ${{ matrix.name }}
+          COMMANDS: >-
+            {"real-diiid":"validation/validate_real_diiid_145419.py",
+            "coil-gradient":"validation/measure_coilgrad_adjoint_fd.py",
+            "mg-iterations":"validation/measure_mg_preconditioner_iterations.py",
+            "compiled-forward":"validation/measure_compiled_forward_speedup.py",
+            "warm-start":"validation/measure_warm_start_forward.py",
+            "batched-forward":"validation/measure_batched_forward.py",
+            "disruption-transfer":"validation/benchmark_disruption_transfer_generalization.py --commit-evidence --strict",
+            "disruption-threshold":"tools/sweep_disruption_threshold.py",
+            "transport-jax":"benchmarks/bench_transport_jax.py"}
         run: |
           git rev-parse HEAD > "$RUNNER_TEMP/source-head.txt"
           sha256sum requirements/full.txt > "$RUNNER_TEMP/requirements.sha256"
@@ -66,7 +73,7 @@ jobs:
           import sys
 
           root = Path(os.environ['RUNNER_TEMP'])
-          command = [sys.executable, *shlex.split(os.environ['COMMAND'])]
+          command = [sys.executable, *shlex.split(json.loads(os.environ['COMMANDS'])[os.environ['GENERATOR']])]
           with (root / 'generator.log').open('w') as log:
               result = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=False)
           with (root / 'generated.patch').open('wb') as output:

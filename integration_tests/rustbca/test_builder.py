@@ -275,6 +275,66 @@ def completed_build() -> tuple[Path, dict[str, Any]]:
     return receipt, record
 
 
+def test_cargo_manifest_changed_after_extraction_refuses(
+    completed_build: tuple[Path, dict[str, Any]],
+    pinned_checkout: Path,
+    tmp_path: Path,
+) -> None:
+    """Stop the real extractor and change verified Cargo bytes before patch admission."""
+    _, record = completed_build
+    output = tmp_path / "changed-extracted-source"
+    cargo_manifest = output / "source/Cargo.toml"
+    with subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "tools.build_rustbca_reference",
+            os.environ["RUSTBCA_SOURCE_ARCHIVE"],
+            str(output),
+            "--python",
+            record["environment"]["PYO3_PYTHON"],
+            "--cargo",
+            record["command"][0],
+            "--rustc",
+            record["environment"]["RUSTC"],
+        ],
+        cwd=pinned_checkout,
+        env=os.environ | {"PYTHONPATH": str(pinned_checkout)},
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    ) as child:
+        try:
+            deadline = time.monotonic() + 30
+            while not cargo_manifest.is_file():
+                assert child.poll() is None, "builder exited before extracting Cargo.toml"
+                assert time.monotonic() < deadline, "Cargo extraction deadline expired"
+                time.sleep(0.0005)
+            os.kill(child.pid, signal.SIGSTOP)
+            while True:
+                stopped, status = os.waitpid(child.pid, os.WUNTRACED | os.WNOHANG)
+                if stopped:
+                    assert os.WIFSTOPPED(status)
+                    break
+                assert time.monotonic() < deadline, "extractor did not stop"
+                time.sleep(0.0005)
+            assert not (output / "upstream-Cargo.toml").exists()
+            cargo_manifest.write_bytes(
+                cargo_manifest.read_bytes() + b"\nchanged after extraction\n"
+            )
+            os.kill(child.pid, signal.SIGCONT)
+            _, stderr = child.communicate(timeout=30)
+        finally:
+            if child.poll() is None:
+                os.killpg(child.pid, signal.SIGKILL)
+                child.communicate(timeout=10)
+    assert child.returncode != 0
+    assert "RustBCA patched Cargo manifest mismatch" in stderr
+    assert not (output / "build.log").exists()
+    assert not (output / "inputs.json").exists()
+
+
 def test_real_wheel_installs_and_runs(
     completed_build: tuple[Path, dict[str, Any]], tmp_path: Path
 ) -> None:
