@@ -1,7 +1,7 @@
 {
   "dataset": {
     "device": "MAST",
-    "download_manifest_sha256": "e7e9556899829607171aaac012033a82ce9b707a25b101b014856bf447aa7960",
+    "download_manifest_sha256": "edb5dfecf4d905fe266c9376c08d11a6106549c4fad4ab5559a5a48957a0df73",
     "downloaded_groups": [
       "magnetics"
     ],
@@ -140,8 +140,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/b_field_pol_probe_cc_field/zarr.json",
-        "sha256": "841d5099906eedc1c269725e26c2986409095826cb27b77a43c935b45b932c3a",
-        "size_bytes": 1060,
+        "sha256": "6381153f8d88c36d468f1a2f12c8ec8a5cde4d7e43758600b718a5392cf306a3",
+        "size_bytes": 998,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/b_field_pol_probe_cc_field/zarr.json"
       },
       {
@@ -218,8 +218,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/b_field_pol_probe_ccbv_field/zarr.json",
-        "sha256": "001179dc90a0046f872e0406dec1f586ce5d2db255bd89495c312240628f56d1",
-        "size_bytes": 1036,
+        "sha256": "6d1060184035891c26e8555cf361adf7bd6a66bffbe761ca0e67813f4152473d",
+        "size_bytes": 980,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/b_field_pol_probe_ccbv_field/zarr.json"
       },
       {
@@ -320,8 +320,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/b_field_pol_probe_obr_field/zarr.json",
-        "sha256": "4d4d724126c37a2a53d8826d85256db36413b011b207e5b3ccccba6631cc3ea3",
-        "size_bytes": 1024,
+        "sha256": "1eefe4c266a20b7c15f8ea8cff292c215b649d91f7273c13b423d59eed68c6c0",
+        "size_bytes": 969,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/b_field_pol_probe_obr_field/zarr.json"
       },
       {
@@ -422,8 +422,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/b_field_pol_probe_obv_field/zarr.json",
-        "sha256": "982cf1adb2a197d2669a55896fb54c8c6c1c5d8ebfecee33c660a4c4585d4f20",
-        "size_bytes": 1024,
+        "sha256": "9b3c56aac7a9a9f641ae62e088aa566bf271c3f1d4d63d99ac249358abd1dab6",
+        "size_bytes": 969,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/b_field_pol_probe_obv_field/zarr.json"
       },
       {
@@ -620,8 +620,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/b_field_pol_probe_omv_voltage/zarr.json",
-        "sha256": "eca93ed6247f7e3561efb50a2371fbeaaaed80830332e8c2aee4c35515d91d55",
-        "size_bytes": 1054,
+        "sha256": "a5f1fce22f2e46d93699dcc6f9af83eff729a4750fdfa59b4e03eb2d3b8d68cd",
+        "size_bytes": 997,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/b_field_pol_probe_omv_voltage/zarr.json"
       },
       {
@@ -722,8 +722,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/b_field_tor_probe_cc_field/zarr.json",
-        "sha256": "a5c1676d09e71c875c02a961c58d9b20662a14f758b20dfc7d6b907dae39a355",
-        "size_bytes": 1060,
+        "sha256": "d42ae4acc50c5479c74dc56e65470521b20bd6086172984da66173e1e4497bb6",
+        "size_bytes": 998,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/b_field_tor_probe_cc_field/zarr.json"
       },
       {
@@ -980,8 +980,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/b_field_tor_probe_omaha_voltage/zarr.json",
-        "sha256": "5f98c3b4d14a71d0b732a3e38eeda6a73cdf485acfad6477380abb86477b0bcd",
-        "size_bytes": 1073,
+        "sha256": "7f56d9a0c97050dd5513f5e6407eafbe22bedc77d23eeb06bd37fb9037a9fb9e",
+        "size_bytes": 1015,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/b_field_tor_probe_omaha_voltage/zarr.json"
       },
       {
@@ -1034,8 +1034,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/b_field_tor_probe_saddle_field/zarr.json",
-        "sha256": "0222d883bff08974ae9a35fe533cb32a699ece134cc84419b89f55b42240a6fb",
-        "size_bytes": 1029,
+        "sha256": "34f768983bb56e72d32acc9f9a401568a67284ccd7e9462fd85a6edc95016e47",
+        "size_bytes": 979,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/b_field_tor_probe_saddle_field/zarr.json"
       },
       {
@@ -1244,8 +1244,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/b_field_tor_probe_saddle_voltage/zarr.json",
-        "sha256": "1ab75452183c578b3d5a36de40ce678f5993048d0600e5d728a234e84462d166",
-        "size_bytes": 1038,
+        "sha256": "bb1fd7a154dfbcb7672c7442a6a5c1b44e9244fa33873f4448f939e61d5ad2d7",
+        "size_bytes": 985,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/b_field_tor_probe_saddle_voltage/zarr.json"
       },
       {
@@ -1274,8 +1274,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_channel/c/0",
-        "sha256": "4c8fa77df06084e6fa05b6048f187a5509629a69625a07d5b4ec57b9f3d90bed",
-        "size_bytes": 80,
+        "sha256": "3887dc4c679358f742947b39d2d3e8775b4ec85bf5afe0775d1b500cf39a7fd4",
+        "size_bytes": 78,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_channel/c/0"
       },
       {
@@ -1286,56 +1286,56 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_flux/c/0/0",
-        "sha256": "e019a86de513efad4731b50a58aa02e3c28d51741c4723cef9ba185282cecc7b",
-        "size_bytes": 59284,
+        "sha256": "dd86bf7a66c5bc4beb2112290e45408c8ed88ea6deb9e9abd85ae36a55564237",
+        "size_bytes": 59122,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_flux/c/0/0"
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_flux/c/1/0",
-        "sha256": "a76310b614d7ae09b8a0933e6e2eaf04fdbfd6fe1420e50be46f39dff78b415d",
-        "size_bytes": 47846,
+        "sha256": "53076ca623e7f7146b45c8a18c652e7c5251091f7781348e77c2b3fc0da8166f",
+        "size_bytes": 48405,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_flux/c/1/0"
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_flux/zarr.json",
-        "sha256": "1417cc164b5a18c3b063ac281da58dffd4ce9c0cff225236aff6cfcd32af4163",
-        "size_bytes": 980,
+        "sha256": "189acf22adbeed2ade4f504568514d51da420a0bfd02d5fa16c76b473cf7c21e",
+        "size_bytes": 995,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_flux/zarr.json"
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_geometry_channel/c/0",
-        "sha256": "a8c25dc3fa0524938a5a458e889dc6069785ed985c480c0c2ff24fa3eef3a607",
-        "size_bytes": 134,
+        "sha256": "b356543f058ab13fa820629fc2deb23614f7cd3667325a89f3cb9333d325a3a6",
+        "size_bytes": 135,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_geometry_channel/c/0"
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_geometry_channel/zarr.json",
-        "sha256": "d5c45075236dbaaa261e3ca8b4186ef94aabdca981a875181f1d58f329f4369d",
-        "size_bytes": 648,
+        "sha256": "c61bc9971cdc2de314508abd24dce46d3f3397caece04925729aafb5115a2737",
+        "size_bytes": 678,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_geometry_channel/zarr.json"
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_r/c/0",
-        "sha256": "91f9bc1c075e5d01fe13f85dd284935fa99b41667212b0bc29e1923b6ab74c29",
-        "size_bytes": 111,
+        "sha256": "bb255ce8d90677311c42cb4efe0f7a0df189d4697d07e3f3015ec15f5fa357e9",
+        "size_bytes": 123,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_r/c/0"
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_r/zarr.json",
-        "sha256": "c2c934af0a42dccfabf380e6d1cce978949376d5aacaa6cede11ed914be090a1",
-        "size_bytes": 1620,
+        "sha256": "7ec170f4ea0dd030c964e956bfaa74635e133c65e46954c6eed7c9434ecb9eda",
+        "size_bytes": 1629,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_r/zarr.json"
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_z/c/0",
-        "sha256": "2f25093544001efaae4f62c80e1048919a112a528decdb0959bc2beb704f9fb3",
-        "size_bytes": 206,
+        "sha256": "0f9fa0508ef90774b1c0722b0912c2591c2229b317bafd3fc13b68c18c134898",
+        "size_bytes": 237,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_z/c/0"
       },
       {
         "path": "raw/27707.zarr/magnetics/flux_loop_z/zarr.json",
-        "sha256": "08a1e1deb543319ac9de8f7f422c2472b969891011a4046fc31e4f71fc899fbb",
-        "size_bytes": 1625,
+        "sha256": "786bdbf56c8d92dde9aa3ee5e5f400c9dcc7c3e0b3f99c5e64ae18a55ab71c13",
+        "size_bytes": 1634,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/flux_loop_z/zarr.json"
       },
       {
@@ -1346,8 +1346,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/ip/zarr.json",
-        "sha256": "61b96759fed7de565ba9afd0fc787e82156608f198d4e1e79cb827429eeb37c1",
-        "size_bytes": 925,
+        "sha256": "77a65008d4607f4ae6ffad389a37a86afdc552f0207b4959798363608ebf5385",
+        "size_bytes": 863,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/ip/zarr.json"
       },
       {
@@ -1520,8 +1520,8 @@
       },
       {
         "path": "raw/27707.zarr/magnetics/zarr.json",
-        "sha256": "741810918a4f884646a4fc2e49690092ad8378066e2954c622a4212f7413506e",
-        "size_bytes": 501,
+        "sha256": "2af3dde453f71104330f48bc28a7c109267334d0c9a28693f96e57fa9f6763c0",
+        "size_bytes": 493,
         "source_url": "https://s3.echo.stfc.ac.uk/mast/level2/shots/27707.zarr/magnetics/zarr.json"
       }
     ],

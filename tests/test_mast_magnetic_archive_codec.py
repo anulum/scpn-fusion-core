@@ -14,7 +14,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import cast
 
-import jsonschema  # type: ignore[import-untyped]
+import jsonschema
 import pytest
 
 from scpn_fusion.io import (
@@ -40,8 +40,9 @@ def test_complete_reference_envelope_covers_every_source_object_array_and_clock(
     clocks = cast(list[JsonObject], payload["clocks"])
 
     assert provenance["object_count"] == 253
-    assert provenance["total_bytes"] == 12_916_991
-    assert payload["source_ingestion_tree_state"] == "dirty"
+    assert provenance["total_bytes"] == 12_916_915
+    assert payload["source_ingestion_tree_state"] == "clean"
+    assert payload["source_ingestion_revision"] == "ed6ea4e2a81f2317ae474f7c5421071994220948"
     assert completeness == {
         "array_count": 72,
         "arrays_complete": True,
