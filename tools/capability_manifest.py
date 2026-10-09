@@ -841,6 +841,12 @@ def main(argv: Iterable[str] | None = None) -> int:
             subprocess.run(
                 [
                     git_executable,
+                    "-c",
+                    "filter.lfs.process=",
+                    "-c",
+                    "filter.lfs.smudge=",
+                    "-c",
+                    "filter.lfs.required=false",
                     "-C",
                     str(args.repo.resolve()),
                     "checkout-index",

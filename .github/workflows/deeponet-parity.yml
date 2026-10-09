@@ -64,7 +64,7 @@ jobs:
       - name: Execute original public runtime and CLI parity cases
         run: |
           set -o pipefail
-          python -m pytest tests/test_deeponet_equilibrium.py tests/test_machine_conditioned_deeponet_training.py::test_deeponet_cli_trains_a_runtime_loadable_artifact -v 2>&1 | tee "$RUNNER_TEMP/parity.log"
+          python -m pytest tests/test_deeponet_equilibrium.py tests/test_machine_conditioned_deeponet_training.py::test_deeponet_cli_trains_a_runtime_loadable_artifact tests/test_machine_conditioned_deeponet_training.py::test_large_update_preserves_parity_and_detects_field_polarity_breach -v 2>&1 | tee "$RUNNER_TEMP/parity.log"
       - name: Preserve diagnostics
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

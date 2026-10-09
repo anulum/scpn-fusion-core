@@ -20,7 +20,7 @@ from typing import Any
 
 import jax.numpy as jnp
 import numpy as np
-from jax.experimental import disable_x64
+from jax.experimental import disable_x64, enable_x64
 import pytest
 from numpy.typing import NDArray
 
@@ -442,13 +442,39 @@ def test_training_rejects_numerically_invalid_finalisation(
         trainer.run_training(**arguments, steps=1, learning_rate=learning_rate)
 
 
-def test_training_rejects_native_reference_parity_breach(tmp_path: Path) -> None:
+def test_large_update_preserves_parity_and_detects_field_polarity_breach(tmp_path: Path) -> None:
+    """Retain the large update and compare real runtimes after corrupting field polarity."""
     extension = pytest.importorskip("scpn_fusion_rs")
     if not hasattr(extension, "PyDeepOnetEquilibrium"):
         pytest.skip("installed Rust extension predates the DeepONet runtime")
-    arguments = _arguments(tmp_path, _training_fixture(tmp_path))
-    with pytest.raises(RuntimeError, match="Rust/NumPy untouched-test parity failed"):
-        trainer.run_training(**arguments, steps=1, learning_rate=0.4)
+    dataset_dir = _training_fixture(tmp_path)
+    arguments = _arguments(tmp_path, dataset_dir)
+    with enable_x64():
+        report = trainer.run_training(**arguments, steps=1, learning_rate=0.4)
+    assert report["artifact"]["rust_numpy_untouched_test_parity"]["within_tolerance"] is True
+    with np.load(arguments["output_path"], allow_pickle=False) as archive:
+        altered = {name: np.asarray(archive[name]) for name in archive.files}
+    assert np.any(altered["field_mean"] != 0.0)
+    altered["field_mean"] = -altered["field_mean"]
+    mismatched_artifact = tmp_path / "reversed_field_polarity.npz"
+    np.savez_compressed(mismatched_artifact, **altered)
+    native = DeepONetEquilibriumAccelerator(prefer_rust=True)
+    reference = DeepONetEquilibriumAccelerator(prefer_rust=False)
+    native.load_weights(arguments["output_path"])
+    reference.load_weights(mismatched_artifact)
+    assert native.backend == "rust"
+    data = load_machine_conditioned_training_data(dataset_dir, full_field_scan=True)
+    split = deterministic_four_way_split(
+        len(data.inputs),
+        seed=arguments["seed"],
+        validation_fraction=arguments["validation_fraction"],
+        calibration_fraction=arguments["calibration_fraction"],
+        test_fraction=arguments["test_fraction"],
+    )
+    breach = runtime_backend_parity(native, reference, data, split.test, chunk_rows=64)
+    assert breach["evaluated"] is True
+    assert breach["within_tolerance"] is False
+    assert breach["max_tolerance_ratio"] is not None and breach["max_tolerance_ratio"] > 1.0
 
 
 def test_deeponet_cli_trains_a_runtime_loadable_artifact(

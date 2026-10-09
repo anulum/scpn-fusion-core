@@ -896,10 +896,17 @@ def test_actual_repository_index_ignores_parent_hook_git_location(tmp_path: Path
         capture_output=True,
         env=environment,
     )
+    git = [
+        "git",
+        "-c",
+        "filter.lfs.process=",
+        "-c",
+        "filter.lfs.smudge=",
+        "-c",
+        "filter.lfs.required=false",
+    ]
     for command in (["read-tree", "HEAD"], ["checkout-index", "--all"]):
-        subprocess.run(
-            ["git", *command], cwd=repo, env=environment, check=True, capture_output=True
-        )
+        subprocess.run([*git, *command], cwd=repo, env=environment, check=True, capture_output=True)
     shutil.copyfile(root / "tools/capability_manifest.py", repo / "tools/capability_manifest.py")
     original = repo / ".github/workflows/rustbca.yml"
     renamed = original.with_name("rustbca-native-case.yml")
@@ -908,7 +915,7 @@ def test_actual_repository_index_ignores_parent_hook_git_location(tmp_path: Path
     snapshot = tmp_path / "actual-index-archive"
     snapshot.mkdir()
     subprocess.run(
-        ["git", "checkout-index", "--all", f"--prefix={snapshot}/"],
+        [*git, "checkout-index", "--all", f"--prefix={snapshot}/"],
         cwd=repo,
         env=environment,
         check=True,
@@ -916,6 +923,14 @@ def test_actual_repository_index_ignores_parent_hook_git_location(tmp_path: Path
     shutil.copyfile(
         root / "tools/capability_manifest.py", snapshot / "tools/capability_manifest.py"
     )
+    pointer = subprocess.run(
+        ["git", "show", "HEAD:weights/fno_turbulence_jax.npz"],
+        cwd=repo,
+        env=environment,
+        check=True,
+        capture_output=True,
+    ).stdout
+    assert (snapshot / "weights/fno_turbulence_jax.npz").read_bytes() == pointer
     subprocess.run(
         [sys.executable, str(snapshot / "tools/capability_manifest.py"), "--repo", str(snapshot)],
         cwd=snapshot,
