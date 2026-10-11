@@ -44,9 +44,12 @@ jobs:
           echo "cores: $(nproc)"
           echo "ram_mb: $(free -m | awk '/Mem:/{print $2}')"
           echo "rustc: $(rustc --version)"
+          echo "benchmark_scope: all workspace CPU crates; fusion-gpu requires a GPU runner"
         } > benchmark-results/hardware.txt
-    - name: Run benchmarks
-      run: cargo bench 2>&1 | tee benchmark-results/bench_output.txt
+    - name: Run CPU benchmarks
+      run: |
+        set -o pipefail
+        cargo bench --workspace --exclude fusion-gpu 2>&1 | tee benchmark-results/bench_output.txt
     - name: Collect Criterion JSON
       if: always()
       run: |
