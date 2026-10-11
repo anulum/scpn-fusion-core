@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any, TypeAlias, cast
 
@@ -20,11 +21,30 @@ from scpn_fusion.io.safe_loaders import checked_np_load
 FloatArray: TypeAlias = NDArray[np.float64]
 
 
+def _compensated_product(left: FloatArray, right: FloatArray) -> FloatArray:
+    """Accumulate in feature order, independently of BLAS and batch shape."""
+    result = np.zeros((left.shape[0], right.shape[1]), dtype=np.float64)
+    correction = np.zeros_like(result)
+    for index in range(left.shape[1]):
+        term = left[:, index, np.newaxis] * right[index, np.newaxis, :] - correction
+        updated = result + term
+        correction = (updated - result) - term
+        result = updated
+    return result
+
+
 def _silu(values: FloatArray) -> FloatArray:
+    """Evaluate x/(1+exp(-x)) without positive exponential overflow."""
     activation = np.empty_like(values)
     nonnegative = values >= 0.0
-    activation[nonnegative] = values[nonnegative] / (1.0 + np.exp(-values[nonnegative]))
-    negative_exponential = np.exp(values[~nonnegative])
+    # Scalar libm matches Rust's exp; SIMD approximations differ near cancellation.
+    positive_exponential = np.fromiter(
+        (math.exp(-value) for value in values[nonnegative]), dtype=np.float64
+    )
+    activation[nonnegative] = values[nonnegative] / (1.0 + positive_exponential)
+    negative_exponential = np.fromiter(
+        (math.exp(value) for value in values[~nonnegative]), dtype=np.float64
+    )
     activation[~nonnegative] = (
         values[~nonnegative] * negative_exponential / (1.0 + negative_exponential)
     )
@@ -32,6 +52,7 @@ def _silu(values: FloatArray) -> FloatArray:
 
 
 def _load_layers(archive: Any, prefix: str) -> list[tuple[FloatArray, FloatArray]]:
+    """Read finite, dimensionally connected dense layers from the NPZ archive."""
     count = int(archive[f"{prefix}_n_layers"][0])
     if count < 1 or count > 16:
         raise ValueError(f"{prefix} layer count is outside the supported range")
@@ -50,9 +71,10 @@ def _load_layers(archive: Any, prefix: str) -> list[tuple[FloatArray, FloatArray
 
 
 def _forward(layers: list[tuple[FloatArray, FloatArray]], values: FloatArray) -> FloatArray:
+    """Apply ordered dense products and SiLU on all hidden layers."""
     activation = values
     for index, (weight, bias) in enumerate(layers):
-        activation = activation @ weight + bias
+        activation = _compensated_product(activation, weight) + bias
         if index + 1 < len(layers):
             activation = _silu(activation)
     return np.asarray(activation, dtype=np.float64)
@@ -72,6 +94,8 @@ class DeepONetEquilibriumAccelerator:
     -----
     Call :meth:`load_weights` before inference. One instance represents only
     the machine manifest and coordinate grid stored in its NPZ artifact.
+    Both backends use feature-ordered compensated sums and scalar-libm SiLU
+    to keep inference independent of batch size and BLAS dispatch.
     """
 
     def __init__(self, *, prefer_rust: bool = True) -> None:
@@ -226,6 +250,7 @@ class DeepONetEquilibriumAccelerator:
     def _require_arrays(
         self,
     ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, FloatArray, FloatArray]:
+        """Return validated normalisation/grid arrays only after loading weights."""
         if not self.is_loaded:
             raise RuntimeError("DeepONet weights have not been loaded")
         return cast(
@@ -280,7 +305,9 @@ class DeepONetEquilibriumAccelerator:
                 if self._trunk_cache is None:
                     normalised_coordinates = (coordinates - coordinate_mean) / coordinate_std
                     self._trunk_cache = _forward(self._trunk, normalised_coordinates)
-                normalised_field = branch @ self._trunk_cache.T / np.sqrt(self._basis_width)
+                normalised_field = _compensated_product(branch, self._trunk_cache.T) / math.sqrt(
+                    self._basis_width
+                )
                 flat = field_mean[np.newaxis, :] + self._field_scale * normalised_field
         result = np.asarray(flat.reshape(len(matrix), *self._grid_shape), dtype=np.float64)
         if not np.all(np.isfinite(result)):

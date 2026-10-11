@@ -12,9 +12,11 @@
 //! form a scaled inner product. Python owns NPZ authentication and passes the
 //! validated numerical contract through PyO3; this module owns only native
 //! inference and shape/finiteness invariants.
+//! Feature-ordered compensated sums avoid batch-dependent BLAS rounding;
+//! scalar-libm SiLU preserves the NumPy reference's numerical contract.
 
 use fusion_types::error::{FusionError, FusionResult};
-use ndarray::{Array1, Array2, Axis};
+use ndarray::{Array1, Array2, ArrayView2, Axis, Zip};
 
 /// One fully connected layer stored in input-by-output orientation.
 #[derive(Clone, Debug)]
@@ -183,7 +185,8 @@ impl DeepOnetEquilibrium {
             }
         }
         let branch = forward(&self.branch, &normalised);
-        let mut fields = branch.dot(&self.trunk_basis.t()) / (self.basis_width as f64).sqrt();
+        let mut fields = compensated_product(branch.view(), self.trunk_basis.t())
+            / (self.basis_width as f64).sqrt();
         for mut row in fields.rows_mut() {
             for column in 0..self.field_mean.len() {
                 row[column] = self.field_mean[column] + self.field_scale * row[column];
@@ -240,10 +243,26 @@ fn validate_layers(name: &str, layers: &[DenseLayer]) -> FusionResult<()> {
     Ok(())
 }
 
+fn compensated_product(left: ArrayView2<'_, f64>, right: ArrayView2<'_, f64>) -> Array2<f64> {
+    let mut result = Array2::<f64>::zeros((left.nrows(), right.ncols()));
+    let mut correction = Array2::<f64>::zeros(result.raw_dim());
+    for index in 0..left.ncols() {
+        Zip::indexed(&mut result)
+            .and(&mut correction)
+            .for_each(|(row, column), sum, residual| {
+                let term = left[[row, index]] * right[[index, column]] - *residual;
+                let updated = *sum + term;
+                *residual = (updated - *sum) - term;
+                *sum = updated;
+            });
+    }
+    result
+}
+
 fn forward(layers: &[DenseLayer], values: &Array2<f64>) -> Array2<f64> {
     let mut activation = values.to_owned();
     for (index, layer) in layers.iter().enumerate() {
-        activation = activation.dot(&layer.weights) + &layer.bias;
+        activation = compensated_product(activation.view(), layer.weights.view()) + &layer.bias;
         if index + 1 < layers.len() {
             activation.mapv_inplace(silu);
         }

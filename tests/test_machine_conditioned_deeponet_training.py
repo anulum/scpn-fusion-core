@@ -461,9 +461,23 @@ def test_large_update_preserves_parity_and_detects_field_polarity_breach(tmp_pat
     native = DeepONetEquilibriumAccelerator(prefer_rust=True)
     reference = DeepONetEquilibriumAccelerator(prefer_rust=False)
     native.load_weights(arguments["output_path"])
-    reference.load_weights(mismatched_artifact)
+    reference.load_weights(arguments["output_path"])
     assert native.backend == "rust"
     data = load_machine_conditioned_training_data(dataset_dir, full_field_scan=True)
+    expected = reference.predict_batch(data.inputs)
+    for runtime in (native, reference):
+        for chunk_rows in (1, 2, 3, 12):
+            chunked = np.concatenate(
+                [
+                    runtime.predict_batch(data.inputs[start : start + chunk_rows])
+                    for start in range(0, len(data.inputs), chunk_rows)
+                ]
+            )
+            np.testing.assert_array_equal(chunked, expected)
+        strided = np.empty((len(data.inputs), 2 * data.inputs.shape[1]), dtype=np.float64)
+        strided[:, ::2] = data.inputs
+        np.testing.assert_array_equal(runtime.predict_batch(strided[:, ::2]), expected)
+    reference.load_weights(mismatched_artifact)
     split = deterministic_four_way_split(
         len(data.inputs),
         seed=arguments["seed"],
