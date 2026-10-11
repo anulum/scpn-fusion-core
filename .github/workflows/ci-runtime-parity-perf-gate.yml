@@ -17,6 +17,8 @@ jobs:
   runtime-parity-perf-gate:
     name: Runtime Parity + Perf Gate
     runs-on: ubuntu-latest
+    env:
+      JAX_ENABLE_X64: 'true'
     permissions:
       contents: read
     steps:
