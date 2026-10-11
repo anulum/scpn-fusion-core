@@ -27,22 +27,22 @@ const INTERNAL_INDUCTANCE: f64 = 0.8;
 /// Poloidal beta. Python line 68.
 const BETA_POLOIDAL: f64 = 0.5;
 
-/// Finite difference perturbation for Jacobian [m]. Python line 106.
+/// Finite difference perturbation for Jacobian `[m]`. Python line 106.
 const FORCE_PERTURBATION: f64 = 0.01;
 
 /// Maximum decay index for stability. Python line 139.
 const MAX_STABLE_DECAY_INDEX: f64 = 1.5;
 
-/// Force balance convergence tolerance [N]. Python line 39.
+/// Force balance convergence tolerance `[N]`. Python line 39.
 const FORCE_TOLERANCE: f64 = 1e4;
 
 /// Maximum Newton iterations. Python line 34.
 const MAX_NEWTON_ITER: usize = 10;
 
-/// Coil current perturbation for Jacobian [MA]. Python line 45.
+/// Coil current perturbation for Jacobian `[MA]`. Python line 45.
 const COIL_PERTURBATION_MA: f64 = 0.1;
 
-/// Maximum current correction per step [MA]. Python line 72.
+/// Maximum current correction per step `[MA]`. Python line 72.
 const MAX_CURRENT_CORRECTION_MA: f64 = 5.0;
 
 const MIN_RADIUS_M: f64 = 1e-6;

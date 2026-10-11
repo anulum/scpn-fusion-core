@@ -29,9 +29,9 @@ const CHI_NC_FLOOR: f64 = 0.01;
 
 /// Boltzmann constant in J/keV for neoclassical calculations.
 const NC_BOLTZMANN_J_PER_KEV: f64 = 1.602_176_634e-16;
-/// Elementary charge [C].
+/// Elementary charge `[C]`.
 const NC_ELEM_CHARGE: f64 = 1.602_176_634e-19;
-/// Proton mass [kg].
+/// Proton mass `[kg]`.
 const NC_PROTON_MASS: f64 = 1.672_621_923_69e-27;
 
 /// Turbulent transport multiplier. Python line 80.
@@ -46,12 +46,12 @@ const CRIT_GRADIENT: f64 = 2.0;
 /// Minimum transport multiplier inside the pedestal transport barrier.
 const HMODE_CHI_MIN_FACTOR: f64 = 0.08;
 
-/// H-mode power threshold [MW]. Python line 83.
+/// H-mode power threshold `[MW]`. Python line 83.
 const HMODE_POWER_THRESHOLD: f64 = 30.0;
 
-/// Edge boundary temperature [keV]. Python line 125.
+/// Edge boundary temperature `[keV]`. Python line 125.
 const EDGE_TEMPERATURE: f64 = 0.1;
-/// Stability cap for temperature updates [keV].
+/// Stability cap for temperature updates `[keV]`.
 const MAX_TEMPERATURE: f64 = 100.0;
 
 /// Radiation cooling coefficient. Python line 105.

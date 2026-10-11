@@ -451,3 +451,25 @@ SOL Two-Point Model
    :members:
    :undoc-members:
    :show-inheritance:
+
+Rust native owner checkpoints
+-----------------------------
+
+The native FusionKernel and Python PyFusionKernel expose snapshot_state and
+restore_state. A snapshot retains the complete original configuration, grid,
+plasma fields and optional topology/field presence, external source profiles,
+particle feedback and method selection. Original numerical algorithms and
+stopping limits are unchanged.
+
+Each token belongs to the exact kernel that issued it. Another instance with
+identical configuration cannot restore it. Tokens have no public constructor,
+state setters, byte decoder or detached installation authority. Restoration
+performs no numerical solve or normalisation. It preserves raw state and
+method selection, without granting equilibrium or physical acceptance.
+
+PyO3 copying releases the Python interpreter while native ownership remains
+borrowed. Snapshot allocation still needs an explicit caller resource budget
+and supervisor. These tokens restore the native kernel only. Python transport,
+wall models, profiles and RNG state require their respective owner checkpoints.
+A token does not add arbitrary mapped-current capability or qualify source,
+model, units or coupled physical operation.

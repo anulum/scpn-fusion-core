@@ -27,6 +27,10 @@ use fusion_types::config::ReactorConfig;
 use fusion_types::error::{FusionError, FusionResult};
 use fusion_types::state::{EquilibriumResult, Grid2D, PlasmaState};
 use ndarray::{s, Array1, Array2};
+use std::sync::Arc;
+
+mod checkpoint;
+pub use checkpoint::KernelCheckpoint;
 
 /// Gaussian sigma for seed current distribution (Python line 193: `sigma = 1.0`).
 const SEED_GAUSSIAN_SIGMA: f64 = 1.0;
@@ -307,6 +311,7 @@ pub enum SolverMethod {
 
 /// The Grad-Shafranov equilibrium solver.
 pub struct FusionKernel {
+    checkpoint_origin: Arc<()>,
     config: ReactorConfig,
     grid: Grid2D,
     state: PlasmaState,
@@ -325,6 +330,7 @@ impl FusionKernel {
         let state = PlasmaState::new(grid.nz, grid.nr);
 
         FusionKernel {
+            checkpoint_origin: Arc::new(()),
             config,
             grid,
             state,

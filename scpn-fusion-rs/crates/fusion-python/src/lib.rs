@@ -17,7 +17,7 @@ use bindings::control::{PyFnoController, PyMpcController};
 use bindings::diagnostics::PyTomography;
 use bindings::equilibrium::{
     measure_magnetics, multigrid_vcycle, shafranov_bv, solve_coil_currents, PyEquilibriumResult,
-    PyFusionKernel, PyInverseResult, PyInverseSolver, PyThermodynamicsResult,
+    PyFusionKernel, PyInverseResult, PyInverseSolver, PyKernelCheckpoint, PyThermodynamicsResult,
 };
 use bindings::flight::{
     PyFlightState, PyRustFlightSim, PyRustIsoFluxController, PySimulationReport, PyStepMetrics,
@@ -54,6 +54,7 @@ use bindings::transport::{
 fn scpn_fusion_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_class::<PyFusionKernel>()?;
+    m.add_class::<PyKernelCheckpoint>()?;
     m.add_class::<PyEquilibriumResult>()?;
     m.add_class::<PyThermodynamicsResult>()?;
     m.add_class::<PyNeuralTransport>()?;

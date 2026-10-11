@@ -19,6 +19,7 @@ use pyo3::prelude::*;
 use fusion_core::ignition::calculate_thermodynamics;
 use fusion_core::inverse::{reconstruct_equilibrium, InverseConfig, JacobianMode};
 use fusion_core::kernel::FusionKernel;
+use fusion_core::kernel::KernelCheckpoint;
 use fusion_core::source::ProfileParams;
 use fusion_types::state::Grid2D;
 
@@ -28,8 +29,34 @@ pub(crate) struct PyFusionKernel {
     inner: FusionKernel,
 }
 
+/// Opaque complete state minted by one Python-accessible native kernel.
+///
+/// Instances have no public constructor or state fields. Only the originating
+/// kernel may restore one; this token grants no detached or physical authority.
+#[pyclass(frozen)]
+pub(crate) struct PyKernelCheckpoint {
+    inner: KernelCheckpoint,
+}
+
 #[pymethods]
 impl PyFusionKernel {
+    /// Copy complete original native state into an origin-bound opaque token.
+    fn snapshot_state(&self, py: Python<'_>) -> PyKernelCheckpoint {
+        PyKernelCheckpoint {
+            inner: py.detach(|| self.inner.snapshot_state()),
+        }
+    }
+
+    /// Restore the complete original state without solving or accepting it.
+    fn restore_state(&mut self, py: Python<'_>, checkpoint: &PyKernelCheckpoint) -> PyResult<()> {
+        py.detach(|| self.inner.restore_state(&checkpoint.inner))
+            .map_err(|_| {
+                pyo3::exceptions::PyValueError::new_err(
+                    "Native checkpoint belongs to another kernel",
+                )
+            })
+    }
+
     /// Load reactor configuration from JSON file.
     #[new]
     fn new(config_path: &str) -> PyResult<Self> {
@@ -58,7 +85,7 @@ impl PyFusionKernel {
         })
     }
 
-    /// Calculate thermodynamics for given auxiliary power [MW].
+    /// Calculate thermodynamics for given auxiliary power in megawatts.
     fn calculate_thermodynamics(&self, p_aux_mw: f64) -> PyResult<PyThermodynamicsResult> {
         let result = calculate_thermodynamics(&self.inner, p_aux_mw)
             .map_err(|e| pyo3::exceptions::PyValueError::new_err(e.to_string()))?;

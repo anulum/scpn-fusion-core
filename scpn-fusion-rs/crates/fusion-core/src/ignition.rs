@@ -18,7 +18,7 @@ use fusion_types::state::ThermodynamicsResult;
 /// Peak density [m⁻³]. Python line 56.
 const N_PEAK: f64 = 1.0e20;
 
-/// Peak temperature [keV]. Python line 57.
+/// Peak temperature `[keV]`. Python line 57.
 const T_PEAK_KEV: f64 = 20.0;
 
 /// Density profile exponent. Python line 63.
@@ -31,7 +31,7 @@ const TEMPERATURE_EXPONENT: f64 = 1.0;
 /// Python line 82: `P_alpha = P_fusion * 0.2`
 const ALPHA_FRACTION: f64 = 0.2;
 
-/// Energy confinement time [s]. Python line 88.
+/// Energy confinement time `[s]`. Python line 88.
 const TAU_E: f64 = 3.0;
 
 /// keV to Joules conversion: 1 keV = 1000 eV × 1.602e-19 J/eV

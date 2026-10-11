@@ -13,31 +13,31 @@
 use fusion_types::constants::MU0_SI;
 use fusion_types::error::{FusionError, FusionResult};
 
-/// Deuterium charge [C]. Python line 23.
+/// Deuterium charge `[C]`. Python line 23.
 const Q_D: f64 = 1.602e-19;
 
-/// Deuterium mass [kg]. Python line 24.
+/// Deuterium mass `[kg]`. Python line 24.
 const M_D: f64 = 3.34e-27;
 
-/// ICRH frequency [Hz]. Python line 25.
+/// ICRH frequency `[Hz]`. Python line 25.
 const FREQ_HZ: f64 = 50e6;
 
 /// Angular frequency [rad/s].
 const OMEGA_WAVE: f64 = 2.0 * std::f64::consts::PI * FREQ_HZ;
 
-/// Magnetic field on axis [T]. Python line 34.
+/// Magnetic field on axis `[T]`. Python line 34.
 const B0: f64 = 5.3;
 
-/// Major radius [m]. Python line 35.
+/// Major radius `[m]`. Python line 35.
 const R0: f64 = 6.2;
 
 /// Peak electron density [m⁻³]. Python line 56.
 const N_E_PEAK: f64 = 1.0e20;
 
-/// Density Gaussian width [m²]. Python line 56.
+/// Density Gaussian width `[m²]`. Python line 56.
 const DENSITY_WIDTH: f64 = 2.0;
 
-/// Finite difference step for gradient [m]. Python line 96.
+/// Finite difference step for gradient `[m]`. Python line 96.
 const GRAD_EPS: f64 = 1e-3;
 
 /// Initial wavenumber [m⁻¹]. Python line 139.
@@ -46,10 +46,10 @@ const K0_INITIAL: f64 = 10.0;
 /// Number of rays to trace. Python line 131.
 const N_RAYS: usize = 10;
 
-/// Antenna radial position [m]. Python line 131.
+/// Antenna radial position `[m]`. Python line 131.
 const R_ANTENNA: f64 = 9.0;
 
-/// Resonance layer intersection tolerance [m]. Python line 179.
+/// Resonance layer intersection tolerance `[m]`. Python line 179.
 const RESONANCE_TOL: f64 = 0.1;
 
 /// Ray state: (R, Z, k_R, k_Z).
