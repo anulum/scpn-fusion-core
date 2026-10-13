@@ -3045,7 +3045,7 @@
     "python_capability_classes": 634,
     "python_capability_source_modules": 367,
     "rust_workspace_crates": 13,
-    "test_files": 671
+    "test_files": 672
   },
   "documentation": {
     "public_pages": [
@@ -3740,6 +3740,7 @@
       "tests/test_runtime_parity_perf_guard.py",
       "tests/test_rust_compat_solver_method.py",
       "tests/test_rust_compat_wrapper.py",
+      "tests/test_rust_equilibrium_checkpoint.py",
       "tests/test_rust_flight_sim_wrapper.py",
       "tests/test_rust_multigrid_wiring.py",
       "tests/test_rust_python_parity.py",
