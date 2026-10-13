@@ -22,4 +22,4 @@ name = "gs_picard_csv"
 path = "src/bin/gs_picard_csv.rs"
 
 [dependencies]
-toml = { version = "=0.8.23", default-features = false, features = ["parse"] }
+toml = { version = "=1.1.8", default-features = false, features = ["parse"] }
