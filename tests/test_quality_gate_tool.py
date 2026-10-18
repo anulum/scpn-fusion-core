@@ -17,7 +17,6 @@ from pathlib import Path
 
 import pytest
 
-
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "tools" / "coverage_guard.py"
 SPEC = importlib.util.spec_from_file_location("coverage_guard", MODULE_PATH)
@@ -330,6 +329,83 @@ def test_main_writes_summary_for_relative_inputs(
     assert "Domain control" in output
     assert payload["line_rate_pct"] == 90.0
     assert payload["domain_branch_rate_pct"] == {"control": 75.0}
+
+
+@pytest.mark.parametrize("threshold", [80, 95])
+def test_main_persists_all_file_gaps_even_when_the_gate_fails(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    threshold: int,
+) -> None:
+    """Inventory every measured file, independently of configured file floors."""
+    quality_xml = tmp_path / "quality.xml"
+    thresholds = tmp_path / "thresholds.json"
+    summary_path = tmp_path / "summary.json"
+    _write_branch_aware_quality_xml(quality_xml)
+    xml = quality_xml.read_text(encoding="utf-8").replace(
+        "</classes>",
+        """<class filename="complete.py" line-rate="1" branch-rate="0">
+          <lines><line number="3" hits="1" /></lines>
+        </class>
+        <class filename="branch_only.py" line-rate="1" branch-rate="0.5">
+          <lines><line number="7" hits="1" branch="true" condition-coverage="50% (1/2)" /></lines>
+        </class>
+        <class filename="unknown.py" line-rate="1">
+          <lines><line number="8" hits="1" branch="true" condition-coverage="unavailable" /></lines>
+        </class>
+        <class filename="empty.py" line-rate="1"><lines /></class>
+        </classes>""",
+    )
+    xml = xml.replace(
+        'line-rate="0.90" branch-rate="0.75" lines-covered="9" lines-valid="10" '
+        'branches-covered="3" branches-valid="4"',
+        'line-rate="0.9230769230769231" branch-rate="0.6666666666666666" '
+        'lines-covered="12" lines-valid="13" branches-covered="4" branches-valid="6"',
+    )
+    quality_xml.write_text(xml, encoding="utf-8")
+    thresholds.write_text(json.dumps({"global_min_line_rate": threshold}), encoding="utf-8")
+
+    rc = guard.main(
+        [
+            "--coverage-xml",
+            str(quality_xml),
+            "--thresholds",
+            str(thresholds),
+            "--summary-json",
+            str(summary_path),
+        ]
+    )
+
+    output = capsys.readouterr().out
+    payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    assert rc == int(threshold > 90)
+    assert payload["coverage_target_pct"] == 100
+    assert payload["measured_file_count"] == 5
+    assert payload["files_below_target"] == [
+        "branch_only.py",
+        "src/scpn_fusion/control/example.py",
+        "unknown.py",
+    ]
+    measured = payload["file_coverage"]
+    assert measured["src/scpn_fusion/control/example.py"] == {
+        "lines_covered": 9,
+        "lines_valid": 10,
+        "branches_covered": 3,
+        "branches_valid": 4,
+        "missing_lines": [10],
+        "missing_branches": {"2": 1},
+        "unknown_branch_lines": [],
+    }
+    assert measured["branch_only.py"]["missing_lines"] == []
+    assert measured["branch_only.py"]["missing_branches"] == {"7": 1}
+    assert measured["unknown.py"]["unknown_branch_lines"] == [8]
+    assert measured["complete.py"]["branches_valid"] == 0
+    assert measured["empty.py"]["lines_valid"] == 0
+    for filename in payload["files_below_target"]:
+        assert f"Below 100%: {filename} |" in output
+    assert "Below 100%: complete.py" not in output
+    assert "Below 100%: empty.py" not in output
+    assert "Below 100%: unknown.py | lines 1/1 | branches n/a" in output
 
 
 def test_evaluate_rejects_malformed_optional_mapping(tmp_path: Path) -> None:

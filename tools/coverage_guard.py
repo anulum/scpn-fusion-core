@@ -15,14 +15,35 @@ import math
 import re
 import xml.etree.ElementTree as ET
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import cast
-
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_COVERAGE_XML = REPO_ROOT / "coverage-python.xml"
 DEFAULT_THRESHOLDS = REPO_ROOT / "tools" / "coverage_guard_thresholds.json"
+
+
+@dataclass
+class FileCoverage:
+    """Exact measured line and branch gaps for one Cobertura source file."""
+
+    lines_covered: int = 0
+    lines_valid: int = 0
+    branches_covered: int = 0
+    branches_valid: int = 0
+    missing_lines: list[int] = field(default_factory=list)
+    missing_branches: dict[int, int] = field(default_factory=dict)
+    unknown_branch_lines: list[int] = field(default_factory=list)
+
+    @property
+    def below_target(self) -> bool:
+        """Return whether measured gaps or unknown branch counters remain."""
+        return (
+            self.lines_covered < self.lines_valid
+            or self.branches_covered < self.branches_valid
+            or bool(self.unknown_branch_lines)
+        )
 
 
 @dataclass(frozen=True)
@@ -39,6 +60,7 @@ class CoverageSummary:
     lines_valid: int
     branches_covered: int
     branches_valid: int
+    file_coverage: dict[str, FileCoverage]
 
 
 def _resolve(path_value: str) -> Path:
@@ -102,6 +124,7 @@ def load_coverage(path: Path) -> CoverageSummary:
     file_branch_rate_pct: dict[str, float] = {}
     domain_hits: dict[str, tuple[int, int]] = {}
     domain_branches: dict[str, tuple[int, int]] = {}
+    file_coverage: dict[str, FileCoverage] = {}
     for cls in root.findall(".//class"):
         filename = cls.get("filename", "").replace("\\", "/")
         if not filename:
@@ -122,16 +145,28 @@ def load_coverage(path: Path) -> CoverageSummary:
         total = 0
         branch_covered = 0
         branch_total = 0
+        measured = file_coverage.setdefault(filename, FileCoverage())
         for line in cls.findall("./lines/line"):
+            number = int(line.get("number", "0"))
             total += 1
+            measured.lines_valid += 1
             if int(line.get("hits", "0")) > 0:
                 covered += 1
+                measured.lines_covered += 1
+            else:
+                measured.missing_lines.append(number)
             if str(line.get("branch", "")).lower() == "true":
                 condition_coverage = line.get("condition-coverage", "")
                 parsed = _parse_condition_coverage(condition_coverage)
                 if parsed is not None:
                     branch_covered += parsed[0]
                     branch_total += parsed[1]
+                    measured.branches_covered += parsed[0]
+                    measured.branches_valid += parsed[1]
+                    if parsed[0] < parsed[1]:
+                        measured.missing_branches[number] = parsed[1] - parsed[0]
+                else:
+                    measured.unknown_branch_lines.append(number)
         domain = _domain_for(filename)
         existing = domain_hits.get(domain, (0, 0))
         domain_hits[domain] = (existing[0] + covered, existing[1] + total)
@@ -181,6 +216,7 @@ def load_coverage(path: Path) -> CoverageSummary:
         lines_valid=lines_valid,
         branches_covered=branches_covered,
         branches_valid=branches_valid,
+        file_coverage=file_coverage,
     )
 
 
@@ -306,6 +342,14 @@ def _write_summary(path: Path, summary: CoverageSummary) -> None:
         "domain_branch_rate_pct": summary.domain_branch_rate_pct,
         "file_line_rate_pct": summary.file_line_rate_pct,
         "file_branch_rate_pct": summary.file_branch_rate_pct,
+        "coverage_target_pct": 100,
+        "measured_file_count": len(summary.file_coverage),
+        "files_below_target": sorted(
+            name for name, measured in summary.file_coverage.items() if measured.below_target
+        ),
+        "file_coverage": {
+            name: asdict(measured) for name, measured in summary.file_coverage.items()
+        },
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -359,6 +403,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Domain {domain:12s}: {pct:6.2f}%")
     for domain, pct in sorted(summary.domain_branch_rate_pct.items()):
         print(f"Domain {domain:12s} (branch): {pct:6.2f}%")
+
+    print(f"Coverage target: 100% lines and branches; {len(summary.file_coverage)} measured files.")
+    print("Missing branches are counts by source line; unknown counters are not full coverage.")
+    for filename, measured in sorted(summary.file_coverage.items()):
+        if measured.below_target:
+            branches = (
+                f"{measured.branches_covered}/{measured.branches_valid}"
+                if measured.branches_valid
+                else "n/a"
+            )
+            print(
+                f"Below 100%: {filename} | lines {measured.lines_covered}/{measured.lines_valid}"
+                f" | branches {branches} | missing lines {measured.missing_lines}"
+                f" | missing branches {measured.missing_branches}"
+                f" | unknown branch lines {measured.unknown_branch_lines}"
+            )
 
     if args.summary_json:
         _write_summary(_resolve(args.summary_json), summary)

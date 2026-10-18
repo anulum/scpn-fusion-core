@@ -114,7 +114,8 @@ jobs:
           --deselect \
           tests/test_diagnose_ida_fixed_reference_operator.py::test_real_diiid_fixed_reference_operator_decomposition
     - name: Generate Python coverage report
-      if: matrix.python-version == '3.12'
+      # Measure even after an earlier gate fails; cancellation still stops the suite.
+      if: matrix.python-version == '3.12' && !cancelled()
       run: |
         mkdir -p artifacts
         set +e
@@ -145,14 +146,15 @@ jobs:
         fi
         exit "$rc"
     - name: Coverage regression guard
-      if: matrix.python-version == '3.12'
+      # Persist the complete 100% gap inventory even when tests or gates fail.
+      if: matrix.python-version == '3.12' && always()
       run: |
         python tools/coverage_guard.py \
           --coverage-xml coverage-python.xml \
           --thresholds tools/coverage_guard_thresholds.json \
           --summary-json artifacts/coverage_guard_summary.json
     - name: Coverage delta report
-      if: matrix.python-version == '3.12'
+      if: matrix.python-version == '3.12' && always()
       run: |
         python tools/coverage_delta_report.py \
           --coverage-summary artifacts/coverage_guard_summary.json \
