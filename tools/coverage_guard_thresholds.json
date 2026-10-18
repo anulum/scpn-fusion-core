@@ -1,43 +1,43 @@
 {
-  "global_min_line_rate": 84.0,
-  "global_min_branch_rate": 10.0,
+  "global_min_line_rate": 92.7,
+  "global_min_branch_rate": 84.41,
   "domain_min_line_rate": {
-    "cli.py": 80.0,
-    "control": 80.0,
-    "core": 78.0,
-    "diagnostics": 73.0,
-    "engineering": 66.0,
-    "io": 79.0,
-    "nuclear": 36.0,
-    "phase": 92.0,
-    "scpn": 87.0
+    "cli.py": 98.98,
+    "control": 94.12,
+    "core": 94.39,
+    "diagnostics": 99.83,
+    "engineering": 100.0,
+    "io": 85.46,
+    "nuclear": 100.0,
+    "phase": 97.67,
+    "scpn": 100.0
   },
   "domain_min_branch_rate": {
-    "cli.py": 85.0,
-    "control": 5.0,
-    "core": 10.0,
-    "scpn": 60.0
+    "cli.py": 93.05,
+    "control": 87.36,
+    "core": 85.28,
+    "scpn": 96.38
   },
   "file_min_line_rate": {
-    "src/scpn_fusion/cli.py": 80.0,
-    "src/scpn_fusion/control/disruption_contracts.py": 88.0,
-    "src/scpn_fusion/core/integrated_transport_solver.py": 85.0,
-    "src/scpn_fusion/core/integrated_transport_solver_runtime.py": 94.0,
-    "src/scpn_fusion/core/integrated_transport_solver_adaptive.py": 95.0,
-    "src/scpn_fusion/core/quasi_3d_contracts.py": 90.0,
-    "src/scpn_fusion/scpn/compiler.py": 77.0,
-    "src/scpn_fusion/scpn/contracts.py": 97.0,
-    "src/scpn_fusion/scpn/controller.py": 92.0
+    "src/scpn_fusion/cli.py": 98.98,
+    "src/scpn_fusion/control/disruption_contracts.py": 100.0,
+    "src/scpn_fusion/core/integrated_transport_solver.py": 94.53,
+    "src/scpn_fusion/core/integrated_transport_solver_runtime.py": 100.0,
+    "src/scpn_fusion/core/integrated_transport_solver_adaptive.py": 100.0,
+    "src/scpn_fusion/core/quasi_3d_contracts.py": 91.48,
+    "src/scpn_fusion/scpn/compiler.py": 100.0,
+    "src/scpn_fusion/scpn/contracts.py": 100.0,
+    "src/scpn_fusion/scpn/controller.py": 100.0
   },
   "file_min_branch_rate": {
-    "src/scpn_fusion/cli.py": 90.0,
-    "src/scpn_fusion/control/disruption_contracts.py": 60.0,
-    "src/scpn_fusion/core/integrated_transport_solver.py": 60.0,
-    "src/scpn_fusion/core/integrated_transport_solver_runtime.py": 75.0,
-    "src/scpn_fusion/core/integrated_transport_solver_adaptive.py": 90.0,
-    "src/scpn_fusion/core/quasi_3d_contracts.py": 65.0,
-    "src/scpn_fusion/scpn/compiler.py": 45.0,
-    "src/scpn_fusion/scpn/contracts.py": 45.0,
-    "src/scpn_fusion/scpn/controller.py": 75.0
+    "src/scpn_fusion/cli.py": 93.05,
+    "src/scpn_fusion/control/disruption_contracts.py": 100.0,
+    "src/scpn_fusion/core/integrated_transport_solver.py": 85.71,
+    "src/scpn_fusion/core/integrated_transport_solver_runtime.py": 97.61,
+    "src/scpn_fusion/core/integrated_transport_solver_adaptive.py": 100.0,
+    "src/scpn_fusion/core/quasi_3d_contracts.py": 70.58,
+    "src/scpn_fusion/scpn/compiler.py": 94.23,
+    "src/scpn_fusion/scpn/contracts.py": 100.0,
+    "src/scpn_fusion/scpn/controller.py": 100.0
   }
 }
