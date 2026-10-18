@@ -26,7 +26,7 @@ DEFAULT_THRESHOLDS = REPO_ROOT / "tools" / "coverage_guard_thresholds.json"
 
 @dataclass
 class FileCoverage:
-    """Exact measured line and branch gaps for one Cobertura source file."""
+    """Retain measured gaps and partial branch rates lacking detailed counters."""
 
     lines_covered: int = 0
     lines_valid: int = 0
@@ -35,6 +35,7 @@ class FileCoverage:
     missing_lines: list[int] = field(default_factory=list)
     missing_branches: dict[int, int] = field(default_factory=dict)
     unknown_branch_lines: list[int] = field(default_factory=list)
+    reported_branch_rate_pct: float | None = None
 
     @property
     def below_target(self) -> bool:
@@ -43,6 +44,7 @@ class FileCoverage:
             self.lines_covered < self.lines_valid
             or self.branches_covered < self.branches_valid
             or bool(self.unknown_branch_lines)
+            or self.reported_branch_rate_pct is not None
         )
 
 
@@ -180,6 +182,10 @@ def load_coverage(path: Path) -> CoverageSummary:
                 existing_branch[0] + branch_covered,
                 existing_branch[1] + branch_total,
             )
+        elif class_branch_rate is not None:
+            reported_rate = file_branch_rate_pct[filename]
+            if 0.0 < reported_rate < 100.0:
+                measured.reported_branch_rate_pct = reported_rate
 
     domain_line_rate_pct: dict[str, float] = {}
     for domain, (covered, total) in domain_hits.items():
@@ -413,6 +419,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if measured.branches_valid
                 else "n/a"
             )
+            if measured.reported_branch_rate_pct is not None:
+                branches = f"unknown (reported {measured.reported_branch_rate_pct:.2f}%)"
             print(
                 f"Below 100%: {filename} | lines {measured.lines_covered}/{measured.lines_valid}"
                 f" | branches {branches} | missing lines {measured.missing_lines}"

@@ -395,6 +395,7 @@ def test_main_persists_all_file_gaps_even_when_the_gate_fails(
         "missing_lines": [10],
         "missing_branches": {"2": 1},
         "unknown_branch_lines": [],
+        "reported_branch_rate_pct": None,
     }
     assert measured["branch_only.py"]["missing_lines"] == []
     assert measured["branch_only.py"]["missing_branches"] == {"7": 1}
@@ -406,6 +407,67 @@ def test_main_persists_all_file_gaps_even_when_the_gate_fails(
     assert "Below 100%: complete.py" not in output
     assert "Below 100%: empty.py" not in output
     assert "Below 100%: unknown.py | lines 1/1 | branches n/a" in output
+
+
+@pytest.mark.parametrize("reported_rate", [0.0, 0.5, 1.0])
+def test_main_retains_partial_branch_rates_without_inventing_counters(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    reported_rate: float,
+) -> None:
+    """Preserve supported class-rate fallback through the public report boundary."""
+    xml = tmp_path / "coverage.xml"
+    thresholds = tmp_path / "thresholds.json"
+    summary_path = tmp_path / "summary.json"
+    xml.write_text(
+        f'''<coverage line-rate="1" lines-covered="1" lines-valid="1"
+        branches-covered="{int(2 * reported_rate)}" branches-valid="{2 if reported_rate else 0}">
+          <packages><package><classes>
+            <class filename="branch_rate_only.py" line-rate="1" branch-rate="{reported_rate}">
+              <lines><line number="7" hits="1" /></lines>
+            </class>
+          </classes></package></packages>
+        </coverage>''',
+        encoding="utf-8",
+    )
+    thresholds.write_text('{"global_min_line_rate": 0}', encoding="utf-8")
+
+    assert (
+        guard.main(
+            [
+                "--coverage-xml",
+                str(xml),
+                "--thresholds",
+                str(thresholds),
+                "--summary-json",
+                str(summary_path),
+            ]
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    partial = reported_rate == 0.5
+    assert payload["file_branch_rate_pct"] == {"branch_rate_only.py": 100 * reported_rate}
+    assert payload["files_below_target"] == (["branch_rate_only.py"] if partial else [])
+    assert payload["file_coverage"]["branch_rate_only.py"] == {
+        "lines_covered": 1,
+        "lines_valid": 1,
+        "branches_covered": 0,
+        "branches_valid": 0,
+        "missing_lines": [],
+        "missing_branches": {},
+        "unknown_branch_lines": [],
+        "reported_branch_rate_pct": 50.0 if partial else None,
+    }
+    if partial:
+        assert (
+            "Below 100%: branch_rate_only.py | lines 1/1 | branches unknown (reported 50.00%)"
+            in output
+        )
+    else:
+        assert "Below 100%: branch_rate_only.py" not in output
 
 
 def test_evaluate_rejects_malformed_optional_mapping(tmp_path: Path) -> None:
