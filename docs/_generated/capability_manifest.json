@@ -564,6 +564,10 @@
         "path": "src/scpn_fusion/control/director_interface.py"
       },
       {
+        "name": "Discretisation",
+        "path": "src/scpn_fusion/core/linear_mhd_1d.py"
+      },
+      {
         "name": "DisruptionConfig",
         "path": "src/scpn_fusion/core/disruption_sequence.py"
       },
@@ -1002,6 +1006,10 @@
       {
         "name": "GainScheduledController",
         "path": "src/scpn_fusion/control/gain_scheduled_controller.py"
+      },
+      {
+        "name": "Geometry1D",
+        "path": "src/scpn_fusion/core/linear_mhd_1d.py"
       },
       {
         "name": "GlobalDesignExplorer",
@@ -2608,6 +2616,10 @@
         "path": "src/scpn_fusion/scpn/artifact.py"
       },
       {
+        "name": "WessonCylinder",
+        "path": "src/scpn_fusion/core/linear_mhd_1d.py"
+      },
+      {
         "name": "WholeDeviceModel",
         "path": "src/scpn_fusion/core/wdm_engine.py"
       }
@@ -2841,6 +2853,7 @@
       "src/scpn_fusion/core/jax_x_point.py",
       "src/scpn_fusion/core/kinetic_efit.py",
       "src/scpn_fusion/core/lh_transition.py",
+      "src/scpn_fusion/core/linear_mhd_1d.py",
       "src/scpn_fusion/core/locked_mode.py",
       "src/scpn_fusion/core/marfe.py",
       "src/scpn_fusion/core/mhd_sawtooth.py",
@@ -3042,10 +3055,10 @@
     "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 71,
-    "python_capability_classes": 634,
-    "python_capability_source_modules": 367,
+    "python_capability_classes": 637,
+    "python_capability_source_modules": 368,
     "rust_workspace_crates": 13,
-    "test_files": 672
+    "test_files": 673
   },
   "documentation": {
     "public_pages": [
@@ -3595,6 +3608,7 @@
       "tests/test_kuramoto_edge_paths.py",
       "tests/test_lazy_imports_all.py",
       "tests/test_lh_transition.py",
+      "tests/test_linear_mhd_1d.py",
       "tests/test_liquid_metal_temhd_divertor_validation.py",
       "tests/test_locked_mode.py",
       "tests/test_logging_config.py",

@@ -4,6 +4,15 @@
 
 ### Added
 
+- Add `scpn_fusion.core.linear_mhd_1d`, a linear resistive reduced-MHD
+  eigenvalue solver in a Harris slab or periodic cylinder (C1 cubic Hermite
+  Galerkin, shift-and-invert Arnoldi without an assumed growth-rate scale) and
+  an independent shooting solution for the cylindrical tearing index. The
+  fixed Stage 1 acceptance (`validation/linear_mhd_stage1_acceptance.py`)
+  passes 8 of 9 criteria: FKR to 0.2 % at S = 1e8, resistive kink to 3 %,
+  dense/sparse agreement to 3e-11; the cylindrical tearing slope over
+  S = 1e6–1e8 (0.554) misses its 0.60 ± 0.04 band because of the finite
+  Delta'·delta correction and is reported as a miss.
 - Add a source-reproducible FAIR-MAST magnetic diagnostic qualification bound to
   the complete shot 27707 archive envelope and exact upstream ingestion mapping.
   The canonical witness classifies all 72 arrays, covers all 11 measurements and

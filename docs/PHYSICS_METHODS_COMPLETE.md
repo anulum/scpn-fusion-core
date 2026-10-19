@@ -903,6 +903,21 @@ Furth, Killeen & Rosenbluth, *Phys. Fluids* 6, 459 (1963),
 doi:10.1063/1.1706761; Rutherford, *Phys. Fluids* 16, 1903 (1973),
 doi:10.1063/1.1694232.
 
+**Linear eigenvalue solver.** `core/linear_mhd_1d.py` solves the linear
+resistive reduced-MHD eigenproblem $\lambda\psi=iF\phi+\eta L\psi$,
+$\lambda L\phi=iFL\psi-i\kappa_bJ_0'\psi$ in a Harris slab or a periodic
+cylinder with C1 cubic Hermite elements (the radial treatment of the CASTOR
+family; Strumberger et al., *J. Plasma Phys.* 92, E113, 2026, App. A). The
+most unstable root is found by shift-and-invert Arnoldi with a geometrically
+lowered real shift, without an assumed growth-rate scale. It reproduces the
+Harris-sheet FKR contract above to 0.2 % at $S=10^8$ (slope 0.598), the
+resistive internal kink $\gamma=\eta^{1/3}|F'(r_s)|^{2/3}$ (Coppi et al.
+1976) to 3 % at $S=10^8$, and the cylindrical FKR law with an independently
+shot $\Delta'$ to 5 % at $S=10^8$. The cylindrical tearing slope over
+$S=10^6$–$10^8$ is 0.554, below the asymptotic 3/5 because of the finite
+$\Delta'\delta$ correction at $\Delta'=9.7$; this run is recorded as a miss
+against its fixed criterion (`validation/linear_mhd_stage1_acceptance.py`).
+
 ### 6.6 Neoclassical tearing mode (NTM)
 
 Reduced modified Rutherford equation for island width $w$:
@@ -927,10 +942,12 @@ is not a sign-only assertion.
 Coupled pedestal stability per Snyder et al., *Phys. Plasmas* 9, 2037 (2002) and *Nucl. Fusion* 51, 103016 (2011). The stability boundary is parameterised by normalised edge current $j_{\rm edge}/j_{\rm crit}$ (peeling drive) and normalised $\alpha / \alpha_{\rm crit}$ (ballooning drive). ELM type classification: Type-I (high $\alpha$, low $j$), Type-III (low $\alpha$, high $j$).
 
 **Key files:** `core/stability_mhd.py`, `core/stability_mhd_extended.py`,
-`core/tearing_mode_theory.py`, `core/tearing_mode_coupling.py`.
+`core/tearing_mode_theory.py`, `core/tearing_mode_coupling.py`,
+`core/linear_mhd_1d.py`.
 
 **Validation:** `tests/test_mhd_stability.py`, `tests/test_phase1_hardening.py`,
-`tests/test_tearing_mode_theory.py`.
+`tests/test_tearing_mode_theory.py`, `tests/test_linear_mhd_1d.py`,
+`validation/linear_mhd_stage1_acceptance.py`.
 
 ---
 
