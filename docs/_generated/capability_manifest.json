@@ -400,6 +400,10 @@
         "path": "src/scpn_fusion/core/gk_corrector.py"
       },
       {
+        "name": "CoupledDiscretisation",
+        "path": "src/scpn_fusion/core/linear_mhd_2d.py"
+      },
+      {
         "name": "CoupledResult",
         "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
       },
@@ -2144,6 +2148,10 @@
         "path": "src/scpn_fusion/control/shape_controller.py"
       },
       {
+        "name": "ShapedCylinder",
+        "path": "src/scpn_fusion/core/linear_mhd_2d.py"
+      },
+      {
         "name": "ShatteredPelletInjection",
         "path": "src/scpn_fusion/control/spi_mitigation.py"
       },
@@ -2854,6 +2862,7 @@
       "src/scpn_fusion/core/kinetic_efit.py",
       "src/scpn_fusion/core/lh_transition.py",
       "src/scpn_fusion/core/linear_mhd_1d.py",
+      "src/scpn_fusion/core/linear_mhd_2d.py",
       "src/scpn_fusion/core/locked_mode.py",
       "src/scpn_fusion/core/marfe.py",
       "src/scpn_fusion/core/mhd_sawtooth.py",
@@ -3055,10 +3064,10 @@
     "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 71,
-    "python_capability_classes": 637,
-    "python_capability_source_modules": 368,
+    "python_capability_classes": 639,
+    "python_capability_source_modules": 369,
     "rust_workspace_crates": 13,
-    "test_files": 673
+    "test_files": 674
   },
   "documentation": {
     "public_pages": [
@@ -3609,6 +3618,7 @@
       "tests/test_lazy_imports_all.py",
       "tests/test_lh_transition.py",
       "tests/test_linear_mhd_1d.py",
+      "tests/test_linear_mhd_2d.py",
       "tests/test_liquid_metal_temhd_divertor_validation.py",
       "tests/test_locked_mode.py",
       "tests/test_logging_config.py",

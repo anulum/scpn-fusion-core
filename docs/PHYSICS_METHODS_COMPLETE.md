@@ -918,6 +918,18 @@ $S=10^6$–$10^8$ is 0.554, below the asymptotic 3/5 because of the finite
 $\Delta'\delta$ correction at $\Delta'=9.7$; this run is recorded as a miss
 against its fixed criterion (`validation/linear_mhd_stage1_acceptance.py`).
 
+`core/linear_mhd_2d.py` extends the same model to a shaped periodic cylinder
+(elongation, triangularity, radial shift) in straight-field-line coordinates,
+where $B_0\cdot\nabla=(qR_0)^{-1}(\partial_{\theta^*}-inq)$ is exact and the
+poloidal harmonics couple only through the metric; poloidal integrals are done
+by quadrature on a uniform $\theta^*$ grid and the equilibrium current enters
+only undifferentiated. Its circular single-harmonic limit equals the 1-D
+solver to $10^{-8}$. On $\kappa=1.6$, $\delta=0.3$ the 2/1 tearing keeps its
+resistive scaling (slope 0.563 over $S=10^7$–$10^9$, m = 2 leading), harmonic
+truncation at $\Delta m=3$ versus 5 still changes $\gamma$ by 6.6 %, and the
+shaped 1/1 mode becomes resistivity-independent (ideal) — both recorded as
+misses against their fixed criteria. This stage has no toroidal 1/R terms.
+
 ### 6.6 Neoclassical tearing mode (NTM)
 
 Reduced modified Rutherford equation for island width $w$:
@@ -943,10 +955,11 @@ Coupled pedestal stability per Snyder et al., *Phys. Plasmas* 9, 2037 (2002) and
 
 **Key files:** `core/stability_mhd.py`, `core/stability_mhd_extended.py`,
 `core/tearing_mode_theory.py`, `core/tearing_mode_coupling.py`,
-`core/linear_mhd_1d.py`.
+`core/linear_mhd_1d.py`, `core/linear_mhd_2d.py`.
 
 **Validation:** `tests/test_mhd_stability.py`, `tests/test_phase1_hardening.py`,
 `tests/test_tearing_mode_theory.py`, `tests/test_linear_mhd_1d.py`,
+`tests/test_linear_mhd_2d.py`,
 `validation/linear_mhd_stage1_acceptance.py`.
 
 ---

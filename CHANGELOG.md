@@ -4,6 +4,14 @@
 
 ### Added
 
+- Add `scpn_fusion.core.linear_mhd_2d`, the coupled-harmonic extension of the
+  linear reduced-MHD solver to a shaped periodic cylinder (elongation,
+  triangularity, radial shift) in straight-field-line coordinates. Its
+  circular single-harmonic limit equals the 1-D solver to 1e-8; on a shaped
+  section the 2/1 tearing keeps its resistive scaling with m = 2 leading.
+  Against the fixed Stage 2a-i acceptance, harmonic truncation (6.6 % between
+  Delta m = 3 and 5) and the shaped 1/1 mode (resistivity-independent) are
+  reported as misses. No toroidal 1/R terms are included.
 - Add `scpn_fusion.core.linear_mhd_1d`, a linear resistive reduced-MHD
   eigenvalue solver in a Harris slab or periodic cylinder (C1 cubic Hermite
   Galerkin, shift-and-invert Arnoldi without an assumed growth-rate scale) and
