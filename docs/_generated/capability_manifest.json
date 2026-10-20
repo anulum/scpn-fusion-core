@@ -3068,7 +3068,7 @@
     "python_capability_classes": 639,
     "python_capability_source_modules": 370,
     "rust_workspace_crates": 13,
-    "test_files": 675
+    "test_files": 676
   },
   "documentation": {
     "public_pages": [
@@ -3588,6 +3588,7 @@
       "tests/test_integrated_transport_solver_runtime.py",
       "tests/test_integrated_transport_solver_runtime_physics.py",
       "tests/test_integrated_transport_solver_runtime_utils.py",
+      "tests/test_io_package_loading.py",
       "tests/test_ipb98y2_benchmark.py",
       "tests/test_iter_surrogate_tool.py",
       "tests/test_iter_synthetic_dataset_verifier.py",

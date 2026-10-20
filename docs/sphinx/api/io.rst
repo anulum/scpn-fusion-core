@@ -6,6 +6,10 @@ The IO subpackage provides data-interoperability adapters for the IMAS
 (Integrated Modelling & Analysis Suite) data exchange standard used in
 the fusion community.
 
+Bounded JSON and archive helpers do not load the optional IMAS/OMAS bridge.
+The existing package adapter names load that bridge when requested; direct,
+star and introspection imports retain their original objects.
+
 Complete FAIR-MAST Magnetic Archives
 ------------------------------------
 
