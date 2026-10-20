@@ -38,12 +38,15 @@ Force balance: with constant :math:`B_z` the static equilibrium needs
 :math:`J_0 = J_0(\psi_0)`, i.e. :math:`B_0\cdot\nabla J_0 = 0`.  A shaped
 section with an arbitrarily prescribed :math:`q(r)` does not satisfy it in
 general, so :func:`assemble_coupled` refuses a base state whose relative
-variation of :math:`J_0` along the surfaces,
+variation of :math:`J_0` along the surfaces (an approximate, sampled
+equilibrium-consistency check at the quadrature radii, not a proof of force
+balance),
 :math:`\max_r \mathrm{ptp}_{\theta^*} J_0 / \max|J_0|`, exceeds
 ``EQUILIBRIUM_TOL`` (a peak-to-peak measure: a spectral
 :math:`\partial_{\theta^*}` amplifies the finite-difference round-off of
 :math:`J_0` by about :math:`n_\theta/2`) unless ``allow_unbalanced_base=True`` marks the run as an
 operator/geometry experiment that is not a physical stability result.
+Non-finite :math:`q`, metric or :math:`J_0` are refused regardless of the flag.
 
 Radial derivatives of the geometry use central differences with the step
 :math:`h(r)=\min(10^{-5}, r/2)`; the metric is defined for :math:`r>0` only.
@@ -81,7 +84,13 @@ def _step(r: FloatArray) -> FloatArray:
 
 
 def _surface_variation(j0: FloatArray) -> float:
-    """Return max over radii of the peak-to-peak of J0 along theta*, relative to max|J0|."""
+    """Return max over radii of the peak-to-peak of J0 along theta*, relative to max|J0|.
+
+    Raises ``ValueError`` for a non-finite or identically zero current, which no
+    flag may admit.
+    """
+    if not np.all(np.isfinite(j0)) or not np.any(j0):
+        raise ValueError("the equilibrium current J0 is non-finite or identically zero")
     return float(np.max(np.ptp(j0, axis=1)) / np.max(np.abs(j0)))
 
 
@@ -260,8 +269,8 @@ def assemble_coupled(
     r_all = (x_nodes[:-1, None] + widths[:, None] * _GAUSS_T[None, :]).ravel()
     g_all = cyl.metric(r_all)
     j0_all = cyl.current(r_all)
-    imbalance = _surface_variation(j0_all)
-    if imbalance > EQUILIBRIUM_TOL and not allow_unbalanced_base:
+    imbalance = _surface_variation(j0_all)  # J0 is built from q and the metric: refuses any NaN
+    if not imbalance <= EQUILIBRIUM_TOL and not allow_unbalanced_base:
         raise ValueError(
             f"base state is not force balanced: max ptp(J0)/max|J0| = {imbalance:.3e}"
             f" > {EQUILIBRIUM_TOL:g}; pass allow_unbalanced_base=True only for an"

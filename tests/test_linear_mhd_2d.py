@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
 from scpn_fusion.core.linear_mhd_1d import (
     WessonCylinder,
@@ -31,11 +32,11 @@ from scpn_fusion.core.linear_mhd_2d import (
 ETA = 1e-4
 
 
-def _shift(r: np.ndarray) -> np.ndarray:
+def _shift(r: NDArray[np.float64]) -> NDArray[np.float64]:
     return 0.1 * (1.0 - r**2)
 
 
-def _shift_prime(r: np.ndarray) -> np.ndarray:
+def _shift_prime(r: NDArray[np.float64]) -> NDArray[np.float64]:
     return -0.2 * r
 
 
@@ -160,3 +161,14 @@ def test_near_axis_metric_is_the_circular_one_and_the_axis_is_refused() -> None:
     for bad in (0.0, -0.1):
         with pytest.raises(ValueError, match="radii must be finite and > 0"):
             cyl.metric(np.array([bad]))
+
+
+def test_non_finite_base_state_is_refused_even_when_flagged() -> None:
+    """A NaN safety factor cannot pass the gate, with or without the override (re-review R3)."""
+    cyl = ShapedCylinder(q=lambda r: np.full_like(r, np.nan), major_radius=10.0)
+    nodes = np.linspace(0.0, 1.0, 5)
+    for flag in (False, True):
+        with pytest.raises(ValueError, match="non-finite"):
+            assemble_coupled(cyl, nodes, ETA, 1, [2], allow_unbalanced_base=flag)
+    with pytest.raises(ValueError, match="non-finite"):
+        cyl.equilibrium_residual(np.array([0.5]))

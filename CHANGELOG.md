@@ -145,6 +145,13 @@
   near-axis radii are accepted and r <= 0 is refused explicitly (review F5);
   `assemble_coupled` refuses a base state that is not force balanced unless
   `allow_unbalanced_base=True` (review F1).
+- `unstable_search` counts roots that fail verification and no longer claims
+  completeness when any was rejected, keeps distinct dense roots unmerged,
+  merges iterative repeat sightings only within `merge_tol`, and reports the
+  exact shifts used; `cylinder_delta_prime_fit` validates supplied excisions
+  (finite, distinct, inside the plasma) and refuses a failed or divergent
+  shooting; the shaped-section equilibrium gate refuses a non-finite base
+  state even with `allow_unbalanced_base=True`.
 
 - Make optional DeepONet backend construction a shared dispatch contract,
   validate final optimiser metadata through the same authenticated loader used

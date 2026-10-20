@@ -353,13 +353,25 @@ def all_eigenvalues(disc: Discretisation) -> ComplexArray:
 
 @dataclass(frozen=True)
 class SpectralSearch:
-    """Verified unstable eigenvalues and the domain that was searched for them."""
+    """Verified unstable eigenvalues and the domain that was searched for them.
+
+    ``rejected`` counts eligible roots that failed verification (non-finite or
+    residual above the bound); ``complete`` is true only for a dense search
+    that rejected none, so an empty result with ``rejected > 0`` is a
+    numerical-qualification failure, not an empty unstable set.  ``shifts``
+    lists the shifts actually used (empty on the dense path); ``merge_tol`` is
+    the relative resolution below which repeat sightings were merged
+    (iterative path only).
+    """
 
     candidates: tuple[complex, ...]
     residuals: tuple[float, ...]
     method: str
     domain: str
     complete: bool
+    rejected: int = 0
+    shifts: tuple[float, ...] = ()
+    merge_tol: float = 0.0
 
     @property
     def most_unstable(self) -> complex | None:
@@ -407,6 +419,7 @@ def unstable_search(
     count: int = 6,
     dense_limit: int = 2000,
     residual_tol: float = 1e-8,
+    merge_tol: float = 1e-10,
     maxiter: int = 2000,
 ) -> SpectralSearch:
     """Return every verified unstable eigenvalue found, with the searched domain and completeness."""
@@ -417,14 +430,20 @@ def unstable_search(
         raise ValueError("factor must be > 1")
     if floor > top or ceil < top:
         raise ValueError("sigma_min <= sigma_max <= sigma_ceil is required")
+    if not math.isfinite(merge_tol) or merge_tol < 0.0:
+        raise ValueError("merge_tol must be finite and >= 0")
     norm_a = float(spla.norm(disc.a, 1))
     norm_b = float(spla.norm(disc.b, 1))
     found: list[tuple[complex, float]] = []
+    rejected = 0
 
-    def keep(lam: complex, x: ComplexArray) -> None:
+    def verified(lam: complex, x: ComplexArray) -> float | None:
+        nonlocal rejected
         res = _relative_residual(disc, lam, x, norm_a, norm_b)
-        if res <= residual_tol and all(abs(lam - z) > 1e-8 * max(abs(z), floor) for z, _ in found):
-            found.append((complex(lam), res))
+        if not res <= residual_tol:  # also rejects a NaN residual
+            rejected += 1
+            return None
+        return res
 
     if disc.a.shape[0] <= dense_limit:
         from scipy.linalg import eig
@@ -432,14 +451,17 @@ def unstable_search(
         values, vectors = eig(disc.a.toarray(), disc.b.toarray())
         for k, lam in enumerate(values):
             if np.isfinite(lam) and lam.real > floor:
-                keep(complex(lam), vectors[:, k])
+                res = verified(complex(lam), vectors[:, k])
+                if res is not None:
+                    found.append((complex(lam), res))
         found.sort(key=lambda item: -item[0].real)
         return SpectralSearch(
             tuple(z for z, _ in found),
             tuple(r for _, r in found),
             "dense-qz",
-            f"full spectrum, Re > {floor:g}",
-            True,
+            f"all finite generalised eigenvalues with Re > {floor:g}",
+            rejected == 0,
+            rejected,
         )
     shifts = [top]
     while shifts[-1] / factor >= floor:
@@ -449,16 +471,27 @@ def unstable_search(
     for sigma in shifts:
         values, vectors = _pairs_near(disc, sigma, count, maxiter)
         for k, lam in enumerate(values):
-            if lam.real > 0.0 and abs(lam - sigma) < sigma:
-                keep(complex(lam), vectors[:, k])
+            if not (lam.real > 0.0 and abs(lam - sigma) < sigma):
+                continue
+            res = verified(complex(lam), vectors[:, k])
+            if res is None:
+                continue
+            same = [i for i, (z, _) in enumerate(found) if abs(lam - z) <= merge_tol * abs(z)]
+            if not same:
+                found.append((complex(lam), res))
+            elif lam.real > found[same[0]][0].real:
+                found[same[0]] = (complex(lam), res)
     found.sort(key=lambda item: -item[0].real)
     return SpectralSearch(
         tuple(z for z, _ in found),
         tuple(r for _, r in found),
         "shift-invert",
-        f"union of disks |z - s| < s, s = {shifts[-1]:.3g} ... {shifts[0]:.3g} (factor {factor:g}),"
-        f" {count} roots per shift",
+        f"union of the disks |z - s| < s over the listed shifts (sigma_min {floor:g},"
+        f" sigma_ceil {ceil:g}, factor {factor:g}), {count} roots per shift",
         False,
+        rejected,
+        tuple(shifts),
+        merge_tol,
     )
 
 
@@ -546,8 +579,19 @@ def cylinder_delta_prime_fit(
         if excisions is None
         else np.asarray(excisions, dtype=np.float64)
     )
-    if eps_values.size < 4 or np.any(eps_values <= 0.0):
-        raise ValueError("excisions must hold at least four positive values")
+    r_start = 1e-4
+    if (
+        eps_values.ndim != 1
+        or eps_values.size < 4
+        or not np.all(np.isfinite(eps_values))
+        or np.any(eps_values <= 0.0)
+        or np.unique(eps_values).size != eps_values.size
+    ):
+        raise ValueError("excisions must hold at least four finite, positive, distinct values")
+    if np.any(rs - eps_values <= r_start) or np.any(rs + eps_values >= 1.0):
+        raise ValueError(
+            "every excision must keep r_s - eps above the axis start and r_s + eps < 1"
+        )
 
     def rhs(r: float, y: FloatArray) -> FloatArray:
         radius = np.array([r])
@@ -555,7 +599,6 @@ def cylinder_delta_prime_fit(
         jp = cylinder.current_prime(radius)[0]
         return np.array([y[1], -y[1] / r + (m * m / (r * r)) * y[0] + (m / r) * jp * y[0] / f])
 
-    r_start = 1e-4
     jumps = []
     for eps in eps_values:
         left = solve_ivp(
@@ -569,12 +612,10 @@ def cylinder_delta_prime_fit(
         right = solve_ivp(
             rhs, (1.0, rs + eps), [0.0, -1.0], method="DOP853", rtol=1e-12, atol=1e-14
         )
-        if not (left.success and right.success):
-            raise RuntimeError(f"outer-equation shooting failed at excision {eps:g}")
         with np.errstate(divide="ignore", invalid="ignore"):
             jump = right.y[1, -1] / right.y[0, -1] - left.y[1, -1] / left.y[0, -1]
-        if not np.isfinite(jump):
-            raise RuntimeError(f"non-finite logarithmic-derivative jump at excision {eps:g}")
+        if not (left.success and right.success) or not np.isfinite(jump):
+            raise RuntimeError(f"outer-equation shooting failed or diverged at excision {eps:g}")
         jumps.append(jump)
     log_eps = np.log(eps_values)
     design = np.stack(

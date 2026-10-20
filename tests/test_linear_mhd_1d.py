@@ -16,6 +16,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 import scipy.sparse as sp
+from numpy.typing import NDArray
 
 from scpn_fusion.core.linear_mhd_1d import (
     Discretisation,
@@ -36,7 +37,7 @@ from scpn_fusion.core.tearing_mode_theory import HarrisSheetTearingModel
 ETA = 1e-4
 
 
-def _slab_discretisation(ka: float = 0.5, n_side: int = 40):
+def _slab_discretisation(ka: float = 0.5, n_side: int = 40) -> Discretisation:
     geom = harris_slab(ka, 20.0)
     nodes = clustered_grid(geom.x_min, geom.x_max, geom.resonant_x, 0.02 * ETA ** (1 / 3), n_side)
     return assemble(geom, nodes, ETA)
@@ -98,11 +99,37 @@ def test_shift_invert_matches_the_dense_spectrum() -> None:
     assert np.min(np.abs(near - found)) < 1e-8
 
 
-def test_unverified_and_infinite_roots_are_not_candidates() -> None:
-    """A zero residual bound rejects every (round-off-afflicted) root; a singular B's infinite root is skipped."""
-    assert unstable_search(_slab_discretisation(n_side=10), residual_tol=0.0).most_unstable is None
+def test_rejected_roots_void_the_completeness_claim() -> None:
+    """A root that fails verification is counted, and the dense result is then not complete."""
+    disc = _slab_discretisation(n_side=6)
+    accepted = unstable_search(disc)
+    assert accepted.complete and accepted.rejected == 0
+    assert accepted.most_unstable is not None and accepted.most_unstable.real > 0.0
+    refused = unstable_search(disc, residual_tol=0.0)
+    assert refused.candidates == () and refused.rejected >= 1 and not refused.complete
+    iterative = unstable_search(disc, dense_limit=0, residual_tol=0.0)
+    assert iterative.candidates == () and iterative.rejected >= 1
     singular = unstable_search(_diagonal([0.4, 0.2, -1.0], b_diagonal=[1.0, 0.0, 1.0]))
-    assert singular.candidates == pytest.approx((0.4,))
+    assert singular.candidates == pytest.approx((0.4,)) and singular.complete
+
+
+def test_dense_search_keeps_distinct_close_roots() -> None:
+    """Exact distinct roots 1e-9 apart are both returned; the stronger one leads (re-review R2)."""
+    search = unstable_search(_diagonal([0.55, 0.550000001, -1.0]))
+    assert len(search.candidates) == 2
+    assert search.most_unstable == pytest.approx(0.550000001, abs=1e-15)
+
+
+def test_shift_ladder_is_reported_exactly() -> None:
+    """The reported shifts are the ladder sigma_max * 4^k inside [sigma_min, sigma_ceil]."""
+    search = unstable_search(
+        _diagonal(HIDDEN_INSIDE), dense_limit=0, sigma_min=1e-3, sigma_ceil=10.0
+    )
+    expected = sorted((0.3 * 4.0**k for k in range(-4, 3)), reverse=True)
+    assert search.shifts == pytest.approx(tuple(expected))
+    assert search.merge_tol == 1e-10 and "sigma_ceil 10" in search.domain
+    with pytest.raises(ValueError, match="merge_tol"):
+        unstable_search(_diagonal(HIDDEN_INSIDE), dense_limit=0, merge_tol=float("nan"))
 
 
 def test_unconverged_arpack_is_tolerated_and_reported_as_no_root() -> None:
@@ -147,19 +174,35 @@ def test_cylinder_delta_prime_is_stable_across_excision_windows() -> None:
     assert default.value == pytest.approx(narrow, rel=1e-6)
     assert default.value == pytest.approx(9.69474, abs=1e-4)
     assert default.coefficients.size == 4 and default.residual < 1e-4
-    with pytest.raises(ValueError, match="excisions"):
-        cylinder_delta_prime(cyl, 2, 1, excisions=np.array([1e-3, 1e-4, 1e-5]))
-
-
-def test_cylinder_delta_prime_refuses_failed_or_non_finite_shooting() -> None:
-    """Shooting through the axis fails; an excision reaching the wall gives an infinite jump."""
-    cyl = WessonCylinder(1.2, 1.5, 10.0)
     rs = cyl.resonant_radius(2, 1)
-    with pytest.raises(RuntimeError, match="non-finite"):
-        cylinder_delta_prime(cyl, 2, 1, excisions=np.array([1.0 - rs, 1e-3, 1e-4, 1e-5]))
-    # the left shot is driven through r = 0, where the profile functions are undefined
-    with np.errstate(invalid="ignore"), pytest.raises(RuntimeError, match="shooting failed"):
-        cylinder_delta_prime(cyl, 2, 1, excisions=np.array([rs + 0.01, 1e-3, 1e-4, 1e-5]))
+    for bad in (
+        np.array([1e-3, 1e-4, 1e-5]),
+        np.array([1e-3, 1e-4, 1e-5, float("nan")]),
+        np.array([1e-3, 1e-4, 1e-5, 1e-5]),
+    ):
+        with pytest.raises(ValueError, match="finite, positive, distinct"):
+            cylinder_delta_prime(cyl, 2, 1, excisions=bad)
+    for reach in (rs, 1.0 - rs):
+        with pytest.raises(ValueError, match="axis start"):
+            cylinder_delta_prime(cyl, 2, 1, excisions=np.array([reach, 1e-3, 1e-4, 1e-5]))
+
+
+class _SteepEdgeCylinder(WessonCylinder):
+    """A cylinder whose current gradient jumps to 1e300 outside r = 0.99 (a stiff edge input)."""
+
+    def current_prime(self, r: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Return the Wesson gradient inside r = 0.99 and 1e300 outside."""
+        rr = np.asarray(r, dtype=np.float64)
+        return np.asarray(np.where(rr > 0.99, 1e300, super().current_prime(rr)), dtype=np.float64)
+
+
+def test_cylinder_delta_prime_refuses_a_failed_shooting() -> None:
+    """An edge too stiff to integrate makes the wall-side shooting fail: refused, not extrapolated."""
+    with (
+        np.errstate(over="ignore", invalid="ignore"),
+        pytest.raises(RuntimeError, match="failed or diverged"),
+    ):
+        cylinder_delta_prime(_SteepEdgeCylinder(1.2, 1.5, 10.0), 2, 1)
 
 
 def test_cylinder_profile_quantities() -> None:
