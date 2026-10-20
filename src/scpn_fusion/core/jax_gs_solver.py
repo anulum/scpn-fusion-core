@@ -32,6 +32,15 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.gs_flux_diagnostics import (
+    gs_delta_star_np as gs_delta_star_np,
+)
+from scpn_fusion.core.gs_flux_diagnostics import (
+    gs_toroidal_current_density_np as gs_toroidal_current_density_np,
+)
+from scpn_fusion.core.gs_flux_diagnostics import (
+    gs_total_toroidal_current_np as gs_total_toroidal_current_np,
+)
 from scpn_fusion.core.physical_case import GradShafranovCase
 
 FloatArray = NDArray[np.float64]
@@ -242,89 +251,6 @@ def _gs_solve_case_np(case: GradShafranovCase) -> FloatArray:
     return result
 
 
-def _validate_operator_inputs_np(
-    psi: FloatArray,
-    R_min: float,
-    R_max: float,
-    Z_min: float,
-    Z_max: float,
-) -> tuple[FloatArray, int, int, float, float, FloatArray]:
-    """Validate a flux grid before applying the native GS operator."""
-    psi_arr = np.asarray(psi, dtype=float)
-    if psi_arr.ndim != 2:
-        raise ValueError("psi must be a two-dimensional array")
-    NZ, NR = psi_arr.shape
-    if NR < 3 or NZ < 3:
-        raise ValueError("psi shape must be at least 3x3 for centered GS diagnostics")
-    if not (np.isfinite(R_min) and np.isfinite(R_max) and 0.0 < R_min < R_max):
-        raise ValueError("R_min and R_max must be finite, positive, increasing values")
-    if not (np.isfinite(Z_min) and np.isfinite(Z_max) and Z_min < Z_max):
-        raise ValueError("Z_min and Z_max must be finite, increasing values")
-    if not np.all(np.isfinite(psi_arr)):
-        raise ValueError("psi must contain only finite values")
-
-    dR = (R_max - R_min) / (NR - 1)
-    dZ = (Z_max - Z_min) / (NZ - 1)
-    R = np.linspace(R_min, R_max, NR).astype(np.float64)
-    return np.asarray(psi_arr, dtype=np.float64), NR, NZ, dR, dZ, R
-
-
-def gs_delta_star_np(
-    psi: FloatArray,
-    R_min: float,
-    R_max: float,
-    Z_min: float,
-    Z_max: float,
-) -> FloatArray:
-    r"""Evaluate the native cylindrical Grad-Shafranov operator ``Delta* psi``.
-
-    The centered finite-difference operator is
-    ``d2psi/dR2 - (1/R) dpsi/dR + d2psi/dZ2``. Boundary cells are returned as
-    zero because the centered stencil is defined on the interior only.
-    """
-    psi_arr, NR, NZ, dR, dZ, R = _validate_operator_inputs_np(psi, R_min, R_max, Z_min, Z_max)
-    delta_star = np.zeros_like(psi_arr, dtype=float)
-
-    d2_dR2 = (psi_arr[1:-1, 2:] - 2.0 * psi_arr[1:-1, 1:-1] + psi_arr[1:-1, :-2]) / (dR * dR)
-    d_dR_over_R = (psi_arr[1:-1, 2:] - psi_arr[1:-1, :-2]) / (2.0 * dR * R[None, 1:-1])
-    d2_dZ2 = (psi_arr[2:, 1:-1] - 2.0 * psi_arr[1:-1, 1:-1] + psi_arr[:-2, 1:-1]) / (dZ * dZ)
-
-    delta_star[1 : NZ - 1, 1 : NR - 1] = d2_dR2 - d_dR_over_R + d2_dZ2
-    return delta_star
-
-
-def gs_toroidal_current_density_np(
-    psi: FloatArray,
-    R_min: float,
-    R_max: float,
-    Z_min: float,
-    Z_max: float,
-    mu0: float = 4e-7 * np.pi,
-) -> FloatArray:
-    r"""Return ``J_phi`` implied by ``Delta*psi = -mu0 R J_phi``."""
-    if not (np.isfinite(mu0) and mu0 > 0.0):
-        raise ValueError("mu0 must be finite and positive")
-    psi_arr, NR, NZ, _dR, _dZ, R = _validate_operator_inputs_np(psi, R_min, R_max, Z_min, Z_max)
-    delta_star = gs_delta_star_np(psi_arr, R_min, R_max, Z_min, Z_max)
-    current_density = np.zeros_like(psi_arr, dtype=float)
-    current_density[1 : NZ - 1, 1 : NR - 1] = -delta_star[1:-1, 1:-1] / (mu0 * R[None, 1:-1])
-    return current_density
-
-
-def gs_total_toroidal_current_np(
-    psi: FloatArray,
-    R_min: float,
-    R_max: float,
-    Z_min: float,
-    Z_max: float,
-    mu0: float = 4e-7 * np.pi,
-) -> float:
-    """Integrate the toroidal current density implied by a flux grid."""
-    _psi_arr, _NR, _NZ, dR, dZ, _R = _validate_operator_inputs_np(psi, R_min, R_max, Z_min, Z_max)
-    current_density = gs_toroidal_current_density_np(psi, R_min, R_max, Z_min, Z_max, mu0=mu0)
-    return float(np.sum(current_density[1:-1, 1:-1]) * dR * dZ)
-
-
 def gs_equation_residual_np(
     psi: FloatArray,
     R_min: float,
@@ -344,51 +270,90 @@ def gs_equation_residual_np(
 
         a_E psi_E + a_W psi_W + a_NS (psi_N + psi_S) - a_C psi_C - source = 0
 
-    Returns absolute max, source-normalized max, and source-normalized L2
-    residuals on the interior grid. This is a diagnostic for equation
-    imbalance; low-iteration Picard/Jacobi runs can be physically consistent
-    across implementations while still reporting a nonzero residual.
+    Parameters
+    ----------
+    psi : FloatArray
+        Finite flux matrix on the declared grid.
+    R_min, R_max, Z_min, Z_max : float
+        Ordered finite bounds of the original rectangular model.
+    NR, NZ : int
+        Declared radial and vertical counts matching the flux matrix.
+    Ip_target : float
+        Signed current target used by the original nonlinear source.
+    mu0 : float, optional
+        Configured model permeability.
+    beta_mix : float, optional
+        Existing pressure/current profile mixture.
+
+    Returns
+    -------
+    dict[str, float]
+        Finite absolute maximum and original relative maximum/L2 diagnostics.
+
+    Raises
+    ------
+    ValueError
+        Flux support or geometry is invalid.
+    RuntimeError
+        Source, coefficient, stencil or reduction arithmetic is nonfinite.
+
+    Notes
+    -----
+    Relative diagnostics retain the original source-derived denominator and
+    floor. They do not replace independently frozen canonical acceptance bounds.
     """
-    psi_array = np.asarray(psi, dtype=float)
-    if psi_array.shape != (NZ, NR):
-        raise ValueError(f"psi shape must be (NZ, NR)=({NZ}, {NR}), got {psi_array.shape}")
-    if NR < 3 or NZ < 3:
-        raise ValueError("Grad-Shafranov residual requires at least a 3 x 3 grid")
-    if R_min <= 0.0 or R_max <= R_min or Z_max <= Z_min:
-        raise ValueError("Grad-Shafranov residual requires positive, increasing R and Z bounds")
-    if not np.all(np.isfinite(psi_array)):
-        raise ValueError("psi must contain only finite values")
+    try:
+        with np.errstate(over="raise", invalid="raise", divide="raise", under="ignore"):
+            psi_array = np.asarray(psi, dtype=float)
+            if psi_array.shape != (NZ, NR):
+                raise ValueError(f"psi shape must be (NZ, NR)=({NZ}, {NR}), got {psi_array.shape}")
+            if NR < 3 or NZ < 3:
+                raise ValueError("Grad-Shafranov residual requires at least a 3 x 3 grid")
+            if R_min <= 0.0 or R_max <= R_min or Z_max <= Z_min:
+                raise ValueError(
+                    "Grad-Shafranov residual requires positive, increasing R and Z bounds"
+                )
+            if not np.all(np.isfinite(psi_array)):
+                raise ValueError("psi must contain only finite values")
 
-    R = np.linspace(R_min, R_max, NR)
-    Z = np.linspace(Z_min, Z_max, NZ)
-    RR, _ = np.meshgrid(R, Z)
-    dR = R[1] - R[0]
-    dZ = Z[1] - Z[0]
-    source = _compute_source_np(psi_array, RR, mu0, Ip_target, beta_mix, dR, dZ)
+            R = np.linspace(R_min, R_max, NR)
+            Z = np.linspace(Z_min, Z_max, NZ)
+            RR, _ = np.meshgrid(R, Z)
+            dR = R[1] - R[0]
+            dZ = Z[1] - Z[0]
+            source = _compute_source_np(psi_array, RR, mu0, Ip_target, beta_mix, dR, dZ)
 
-    dR2 = dR * dR
-    dZ2 = dZ * dZ
-    R_interior = np.maximum(R[1:-1], 1.0e-10)[None, :]
-    a_e = 1.0 / dR2 - 1.0 / (2.0 * R_interior * dR)
-    a_w = 1.0 / dR2 + 1.0 / (2.0 * R_interior * dR)
-    a_ns = 1.0 / dZ2
-    a_c = 2.0 / dR2 + 2.0 / dZ2
-    residual = (
-        a_e * psi_array[1:-1, 2:]
-        + a_w * psi_array[1:-1, :-2]
-        + a_ns * (psi_array[:-2, 1:-1] + psi_array[2:, 1:-1])
-        - a_c * psi_array[1:-1, 1:-1]
-        - source[1:-1, 1:-1]
-    )
-    source_interior = source[1:-1, 1:-1]
-    source_abs_max = float(np.max(np.abs(source_interior))) + 1.0e-30
-    source_l2 = float(np.linalg.norm(source_interior)) + 1.0e-30
-    residual_abs_max = float(np.max(np.abs(residual)))
-    return {
-        "abs_max": residual_abs_max,
-        "relative_max": residual_abs_max / source_abs_max,
-        "relative_l2": float(np.linalg.norm(residual)) / source_l2,
-    }
+            dR2 = dR * dR
+            dZ2 = dZ * dZ
+            R_interior = np.maximum(R[1:-1], 1.0e-10)[None, :]
+            a_e = 1.0 / dR2 - 1.0 / (2.0 * R_interior * dR)
+            a_w = 1.0 / dR2 + 1.0 / (2.0 * R_interior * dR)
+            a_ns = 1.0 / dZ2
+            a_c = 2.0 / dR2 + 2.0 / dZ2
+            residual = (
+                a_e * psi_array[1:-1, 2:]
+                + a_w * psi_array[1:-1, :-2]
+                + a_ns * (psi_array[:-2, 1:-1] + psi_array[2:, 1:-1])
+                - a_c * psi_array[1:-1, 1:-1]
+                - source[1:-1, 1:-1]
+            )
+            source_interior = source[1:-1, 1:-1]
+            source_abs_max = float(np.max(np.abs(source_interior))) + 1.0e-30
+            source_l2 = float(np.linalg.norm(source_interior)) + 1.0e-30
+            residual_abs_max = float(np.max(np.abs(residual)))
+            residual_l2 = float(np.linalg.norm(residual))
+            if not all(
+                np.isfinite(value)
+                for value in (source_abs_max, source_l2, residual_abs_max, residual_l2)
+            ):
+                raise RuntimeError("nonfinite residual reduction")
+            return {
+                "abs_max": residual_abs_max,
+                "relative_max": residual_abs_max / source_abs_max,
+                "relative_l2": residual_l2 / source_l2,
+            }
+    except (FloatingPointError, OverflowError, ZeroDivisionError) as failure:
+        raise RuntimeError("nonfinite equation-residual arithmetic") from failure
 
 
 # ── JAX implementation ────────────────────────────────────────────

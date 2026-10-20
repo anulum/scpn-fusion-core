@@ -15,6 +15,17 @@ Equilibrium Solver
    :show-inheritance:
    :no-index:
 
+Checked Flux and Current Diagnostics
+------------------------------------
+
+These functions measure the existing centred Grad-Shafranov stencil and its
+signed toroidal current. Invalid support and nonfinite arithmetic are refused;
+finite diagnostic values alone do not establish equilibrium acceptance.
+
+.. automodule:: scpn_fusion.core.gs_flux_diagnostics
+   :members:
+   :no-index:
+
 FRC Rigid-Rotor Equilibrium
 ----------------------------
 

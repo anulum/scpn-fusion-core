@@ -2808,6 +2808,7 @@
       "src/scpn_fusion/core/gk_verification_report.py",
       "src/scpn_fusion/core/global_design_scanner.py",
       "src/scpn_fusion/core/gpu_runtime.py",
+      "src/scpn_fusion/core/gs_flux_diagnostics.py",
       "src/scpn_fusion/core/gs_transport_surrogate_training.py",
       "src/scpn_fusion/core/gyro_swin_surrogate.py",
       "src/scpn_fusion/core/gyrokinetic_transport.py",
@@ -3065,9 +3066,9 @@
     "public_api_exports": 2,
     "public_documentation_pages": 71,
     "python_capability_classes": 639,
-    "python_capability_source_modules": 369,
+    "python_capability_source_modules": 370,
     "rust_workspace_crates": 13,
-    "test_files": 674
+    "test_files": 675
   },
   "documentation": {
     "public_pages": [
@@ -3500,6 +3501,7 @@
       "tests/test_gpu_phase1_readiness.py",
       "tests/test_grad_shafranov_solovev.py",
       "tests/test_gs_convergence.py",
+      "tests/test_gs_flux_diagnostics.py",
       "tests/test_gs_operator_current_closure_benchmark.py",
       "tests/test_gs_residual_gate.py",
       "tests/test_gs_transport_coupling.py",
