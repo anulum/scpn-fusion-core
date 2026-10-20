@@ -14,6 +14,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from coverage import Coverage
+
 
 def test_bounded_json_then_original_public_ids_storage(tmp_path: Path) -> None:
     """Keep optional bridges out of bounded reads, then use the real IDS exports.
@@ -24,10 +26,33 @@ def test_bounded_json_then_original_public_ids_storage(tmp_path: Path) -> None:
         Real isolated directory for both bounded JSON and IDS round trips.
 
     """
+    active_coverage = Coverage.current()
+    coverage_options = (
+        None
+        if active_coverage is None
+        else {
+            name: active_coverage.get_option(f"run:{name}")
+            for name in ("data_file", "branch", "source", "include", "omit")
+        }
+    )
     program = r"""
+import atexit
 import json
 import sys
 from pathlib import Path
+
+from coverage import Coverage
+
+options = json.loads(sys.argv[2])
+if options is not None and Coverage.current() is None:
+    child_coverage = Coverage(config_file=False, data_suffix=True, **options)
+    child_coverage.start()
+
+    def finish_coverage():
+        child_coverage.stop()
+        child_coverage.save()
+
+    atexit.register(finish_coverage)
 
 from scpn_fusion.io.safe_loaders import checked_json_load
 import scpn_fusion.io as io
@@ -67,7 +92,7 @@ else:
 print(json.dumps({"bounded_read": True, "ids_roundtrip": True, "legacy_exports": True}))
 """
     result = subprocess.run(
-        [sys.executable, "-c", program, str(tmp_path)],
+        [sys.executable, "-c", program, str(tmp_path), json.dumps(coverage_options)],
         check=True,
         capture_output=True,
         text=True,
