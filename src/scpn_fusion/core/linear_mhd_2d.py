@@ -33,6 +33,20 @@ with :math:`v = ia(m'-nq)w`. All poloidal integrals are evaluated on a uniform
 grid is fine enough; the matrix elements follow Strumberger et al., J. Plasma
 Phys. 92, E113 (2026), Appendix A.2, with the Fourier convolution done by
 quadrature.
+
+Force balance: with constant :math:`B_z` the static equilibrium needs
+:math:`J_0 = J_0(\psi_0)`, i.e. :math:`B_0\cdot\nabla J_0 = 0`.  A shaped
+section with an arbitrarily prescribed :math:`q(r)` does not satisfy it in
+general, so :func:`assemble_coupled` refuses a base state whose relative
+variation of :math:`J_0` along the surfaces,
+:math:`\max_r \mathrm{ptp}_{\theta^*} J_0 / \max|J_0|`, exceeds
+``EQUILIBRIUM_TOL`` (a peak-to-peak measure: a spectral
+:math:`\partial_{\theta^*}` amplifies the finite-difference round-off of
+:math:`J_0` by about :math:`n_\theta/2`) unless ``allow_unbalanced_base=True`` marks the run as an
+operator/geometry experiment that is not a physical stability result.
+
+Radial derivatives of the geometry use central differences with the step
+:math:`h(r)=\min(10^{-5}, r/2)`; the metric is defined for :math:`r>0` only.
 """
 
 from __future__ import annotations
@@ -58,6 +72,23 @@ from scpn_fusion.core.linear_mhd_1d import (
 FloatArray = NDArray[np.float64]
 ComplexArray = NDArray[np.complex128]
 _FD_STEP = 1e-5
+EQUILIBRIUM_TOL = 1e-6
+
+
+def _step(r: FloatArray) -> FloatArray:
+    """Return the central-difference step min(1e-5, r/2), which keeps r - h > 0."""
+    return np.minimum(_FD_STEP, 0.5 * np.asarray(r, dtype=np.float64))
+
+
+def _surface_variation(j0: FloatArray) -> float:
+    """Return max over radii of the peak-to-peak of J0 along theta*, relative to max|J0|."""
+    return float(np.max(np.ptp(j0, axis=1)) / np.max(np.abs(j0)))
+
+
+def _theta_derivative(values: FloatArray) -> FloatArray:
+    """Return the spectral derivative along the last (uniform, periodic) axis."""
+    k = np.fft.fftfreq(values.shape[-1], d=1.0 / values.shape[-1])
+    return np.real(np.fft.ifft(1j * k * np.fft.fft(values, axis=-1), axis=-1))
 
 
 def _finite(name: str, value: float) -> float:
@@ -132,12 +163,17 @@ class ShapedCylinder:
         metric), all shaped (len(r), n_theta).
         """
         r = np.asarray(r, dtype=np.float64)
+        if r.ndim != 1 or not np.all(np.isfinite(r)) or np.any(r <= 0.0):
+            raise ValueError(
+                "radii must be finite and > 0 (the axis r = 0 is outside the metric's domain)"
+            )
         tstar_grid = np.linspace(0.0, 2.0 * np.pi, self.n_theta, endpoint=False)
         tg_fine, ts, mean = self._theta_star(r)
         # theta*(r +- h, tg) for the radial derivative at fixed tg
-        _, ts_p, _ = self._theta_star(r + _FD_STEP)
-        _, ts_m, _ = self._theta_star(r - _FD_STEP)
-        dts_dr_fine = (ts_p - ts_m) / (2.0 * _FD_STEP)
+        h = _step(r)
+        _, ts_p, _ = self._theta_star(r + h)
+        _, ts_m, _ = self._theta_star(r - h)
+        dts_dr_fine = (ts_p - ts_m) / (2.0 * h[:, None])
         tg_on = np.empty((r.size, self.n_theta))
         dts_dr = np.empty_like(tg_on)
         for i in range(r.size):
@@ -169,13 +205,16 @@ class ShapedCylinder:
             dpsi = g["jac"] / (self.q(rad)[:, None] * self.major_radius)
             return g["jac"] * g["grr"] * dpsi, g["jac"] * g["grt"] * dpsi, g["jac"]
 
-        fp, _, _ = radial_flux(r + _FD_STEP)
-        fm, _, _ = radial_flux(r - _FD_STEP)
+        h = _step(r)
+        fp, _, _ = radial_flux(r + h)
+        fm, _, _ = radial_flux(r - h)
         _, ftheta, jac = radial_flux(r)
-        d_r = (fp - fm) / (2.0 * _FD_STEP)
-        k = np.fft.fftfreq(self.n_theta, d=1.0 / self.n_theta)
-        d_t = np.real(np.fft.ifft(1j * k * np.fft.fft(ftheta, axis=1), axis=1))
-        return np.asarray((d_r + d_t) / jac, dtype=np.float64)
+        d_r = (fp - fm) / (2.0 * h[:, None])
+        return np.asarray((d_r + _theta_derivative(ftheta)) / jac, dtype=np.float64)
+
+    def equilibrium_residual(self, r: FloatArray) -> float:
+        """Return max over ``r`` of ptp_theta*(J0) / max|J0| (zero for a force-balanced base state)."""
+        return _surface_variation(self.current(r))
 
 
 @dataclass(frozen=True)
@@ -192,8 +231,14 @@ def assemble_coupled(
     eta: float,
     n: int,
     m_values: list[int],
+    *,
+    allow_unbalanced_base: bool = False,
 ) -> CoupledDiscretisation:
-    """Assemble ``A`` and ``B`` for the coupled-harmonic two-field problem."""
+    """Assemble ``A`` and ``B`` for the coupled-harmonic two-field problem.
+
+    Raises ``ValueError`` when the base state is not force balanced (module
+    docstring) unless ``allow_unbalanced_base`` is set.
+    """
     if eta <= 0.0 or not math.isfinite(eta):
         raise ValueError("eta must be finite and > 0")
     if not m_values or any(m < 1 for m in m_values) or len(set(m_values)) != len(m_values):
@@ -215,8 +260,16 @@ def assemble_coupled(
     r_all = (x_nodes[:-1, None] + widths[:, None] * _GAUSS_T[None, :]).ravel()
     g_all = cyl.metric(r_all)
     j0_all = cyl.current(r_all)
+    imbalance = _surface_variation(j0_all)
+    if imbalance > EQUILIBRIUM_TOL and not allow_unbalanced_base:
+        raise ValueError(
+            f"base state is not force balanced: max ptp(J0)/max|J0| = {imbalance:.3e}"
+            f" > {EQUILIBRIUM_TOL:g}; pass allow_unbalanced_base=True only for an"
+            " operator/geometry experiment"
+        )
     q_all = cyl.q(r_all)
-    dq_all = (cyl.q(r_all + _FD_STEP) - cyl.q(r_all - _FD_STEP)) / (2.0 * _FD_STEP)
+    h_all = _step(r_all)
+    dq_all = (cyl.q(r_all + h_all) - cyl.q(r_all - h_all)) / (2.0 * h_all)
     n_g = _GAUSS_T.size
     for e in range(x_nodes.size - 1):
         h = float(widths[e])
@@ -334,8 +387,12 @@ def coupled_growth_rate(
     resonant_r: float,
     n_side: int = 120,
     sigma_min: float = 1e-12,
+    allow_unbalanced_base: bool = False,
 ) -> float:
-    """Largest unstable Re(lambda) for toroidal number ``n`` and harmonics ``m_values``."""
+    """Largest unstable Re(lambda) found for toroidal number ``n`` and harmonics ``m_values``."""
     nodes = clustered_grid(0.0, 1.0, resonant_r, 0.02 * eta ** (1.0 / 3.0), n_side)
-    lam = most_unstable(assemble_coupled(cyl, nodes, eta, n, m_values), sigma_min=sigma_min)
+    disc = assemble_coupled(
+        cyl, nodes, eta, n, m_values, allow_unbalanced_base=allow_unbalanced_base
+    )
+    lam = most_unstable(disc, sigma_min=sigma_min)
     return 0.0 if lam is None else lam.real

@@ -7,11 +7,11 @@
 - Add `scpn_fusion.core.linear_mhd_2d`, the coupled-harmonic extension of the
   linear reduced-MHD solver to a shaped periodic cylinder (elongation,
   triangularity, radial shift) in straight-field-line coordinates. Its
-  circular single-harmonic limit equals the 1-D solver to 1e-8; on a shaped
-  section the 2/1 tearing keeps its resistive scaling with m = 2 leading.
-  Against the fixed Stage 2a-i acceptance, harmonic truncation (6.6 % between
-  Delta m = 3 and 5) and the shaped 1/1 mode (resistivity-independent) are
-  reported as misses. No toroidal 1/R terms are included.
+  circular single-harmonic limit equals the 1-D solver to 1e-8. A shaped
+  section with a prescribed q(r) is not force balanced (J0 varies along the
+  surfaces), so shaped runs are operator/geometry experiments only and must be
+  flagged with `allow_unbalanced_base=True`. No toroidal 1/R terms are
+  included.
 - Add `scpn_fusion.core.linear_mhd_1d`, a linear resistive reduced-MHD
   eigenvalue solver in a Harris slab or periodic cylinder (C1 cubic Hermite
   Galerkin, shift-and-invert Arnoldi without an assumed growth-rate scale) and
@@ -131,6 +131,20 @@
   and centroid shift without changing solver physics or promotion gates.
 
 ### Fixed
+
+- `linear_mhd_1d.most_unstable` no longer returns the first admissible root
+  near a shift: `unstable_search` solves problems of at most 2000 unknowns by
+  dense QZ and otherwise collects eigenvector-verified roots over all shifts,
+  lowered and raised, reporting the searched domain and whether the search is
+  complete (independent review F2).
+- The cylindrical Delta' extrapolation includes the eps ln^2 eps term of the
+  singular outer solution, checks both shootings and the finiteness of the
+  jump, and defaults to excisions 1e-4…1e-6; windows now agree to 3e-7
+  (`cylinder_delta_prime_fit` returns the fit details; review F4).
+- `linear_mhd_2d` radial differences use the step min(1e-5, r/2), so valid
+  near-axis radii are accepted and r <= 0 is refused explicitly (review F5);
+  `assemble_coupled` refuses a base state that is not force balanced unless
+  `allow_unbalanced_base=True` (review F1).
 
 - Make optional DeepONet backend construction a shared dispatch contract,
   validate final optimiser metadata through the same authenticated loader used

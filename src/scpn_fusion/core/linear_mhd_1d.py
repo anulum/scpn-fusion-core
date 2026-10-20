@@ -30,15 +30,27 @@ function vanishes at the walls and :math:`h(0)=0` on the cylinder axis):
     \int wLf\,h = -\int (w'f' + \kappa^2 wf)\,h, \qquad
     \int wFLf\,h = -\int ((w'F + wF')f' + \kappa^2 wFf)\,h.
 
-The most unstable eigenvalue is found by shift-and-invert Arnoldi with a
-real positive shift lowered geometrically: the ideal Alfvén continuum lies on
-or left of the imaginary axis, so a root with positive real part closer to
-the shift than the shift itself is a discrete unstable mode, not a continuum
-point.  No growth-rate scale is assumed.
+Unstable eigenvalues are searched by :func:`unstable_search`.  Problems with
+at most ``dense_limit`` unknowns are solved completely by dense QZ.  Larger
+problems use shift-and-invert Arnoldi over real positive shifts
+:math:`\sigma_{\max}f^{k}`, lowered to ``sigma_min`` and raised to
+``sigma_ceil``; every root with positive real part inside its disk
+:math:`|z-\sigma|<\sigma` is collected over all shifts (the ideal Alfvén
+continuum lies on or left of the imaginary axis, so such a root is a discrete
+unstable mode, not a continuum point).  Every candidate is verified by its
+eigenvector residual.  The iterative path cannot prove that no stronger root
+exists outside the searched disks, so its result is marked incomplete and
+"no root" means "none found in the searched domain", not stability.
 
 ``cylinder_delta_prime`` solves the ideal outer equation independently by
 shooting; it shares no code with the eigenvalue solver and is the reference
-for the cylindrical FKR check.
+for the cylindrical FKR check.  Near the resonant surface the nonzero outer
+solution is :math:`\psi = C[1 + a x\ln|x| + b_\pm x + \dots]`, with
+:math:`x = r - r_s` and :math:`a = (m/r_s)J_0'(r_s)/F'(r_s)`, so
+:math:`\psi'/\psi` holds :math:`a\ln|x|` (symmetric, cancels in the jump) and
+:math:`-a^2x\ln^2|x|`, which leaves :math:`-2a^2\epsilon\ln^2\epsilon` in
+the jump; the extrapolation basis is therefore
+:math:`\{1, \epsilon\ln\epsilon, \epsilon, \epsilon\ln^2\epsilon\}`.
 
 References
 ----------
@@ -339,30 +351,141 @@ def all_eigenvalues(disc: Discretisation) -> ComplexArray:
     return np.asarray(values[np.isfinite(values)], dtype=np.complex128)
 
 
+@dataclass(frozen=True)
+class SpectralSearch:
+    """Verified unstable eigenvalues and the domain that was searched for them."""
+
+    candidates: tuple[complex, ...]
+    residuals: tuple[float, ...]
+    method: str
+    domain: str
+    complete: bool
+
+    @property
+    def most_unstable(self) -> complex | None:
+        """Return the candidate with the largest real part, or ``None`` if none was found."""
+        if not self.candidates:
+            return None
+        return max(self.candidates, key=lambda z: z.real)
+
+
+def _relative_residual(
+    disc: Discretisation, lam: complex, x: ComplexArray, norm_a: float, norm_b: float
+) -> float:
+    """Return ``|Ax - lam Bx| / ((|A|_1 + |lam| |B|_1) |x|)``."""
+    vec = np.asarray(x, dtype=np.complex128)
+    defect = disc.a @ vec - lam * (disc.b @ vec)
+    scale = (norm_a + abs(lam) * norm_b) * float(np.linalg.norm(vec))
+    return float(np.linalg.norm(defect) / scale)
+
+
+def _pairs_near(
+    disc: Discretisation, sigma: float, count: int, maxiter: int
+) -> tuple[ComplexArray, ComplexArray]:
+    """Return eigenvalues and eigenvectors near ``sigma`` (converged ones only on ARPACK failure)."""
+    factor = spla.splu((disc.a - sigma * disc.b).tocsc())
+    operator = spla.LinearOperator(
+        disc.a.shape, matvec=lambda v: factor.solve(disc.b @ v), dtype=np.complex128
+    )
+    try:
+        mu, vectors = spla.eigs(operator, k=count, which="LM", tol=1e-10, ncv=40, maxiter=maxiter)
+    except spla.ArpackNoConvergence as exc:
+        mu = np.asarray(exc.eigenvalues, dtype=np.complex128)
+        vectors = np.asarray(exc.eigenvectors, dtype=np.complex128)
+    return np.asarray(sigma + 1.0 / mu, dtype=np.complex128), np.asarray(
+        vectors, dtype=np.complex128
+    )
+
+
+def unstable_search(
+    disc: Discretisation,
+    *,
+    sigma_max: float = 0.3,
+    sigma_min: float = 1e-12,
+    sigma_ceil: float = 10.0,
+    factor: float = 4.0,
+    count: int = 6,
+    dense_limit: int = 2000,
+    residual_tol: float = 1e-8,
+    maxiter: int = 2000,
+) -> SpectralSearch:
+    """Return every verified unstable eigenvalue found, with the searched domain and completeness."""
+    top = _finite_positive("sigma_max", sigma_max)
+    floor = _finite_positive("sigma_min", sigma_min)
+    ceil = _finite_positive("sigma_ceil", sigma_ceil)
+    if factor <= 1.0:
+        raise ValueError("factor must be > 1")
+    if floor > top or ceil < top:
+        raise ValueError("sigma_min <= sigma_max <= sigma_ceil is required")
+    norm_a = float(spla.norm(disc.a, 1))
+    norm_b = float(spla.norm(disc.b, 1))
+    found: list[tuple[complex, float]] = []
+
+    def keep(lam: complex, x: ComplexArray) -> None:
+        res = _relative_residual(disc, lam, x, norm_a, norm_b)
+        if res <= residual_tol and all(abs(lam - z) > 1e-8 * max(abs(z), floor) for z, _ in found):
+            found.append((complex(lam), res))
+
+    if disc.a.shape[0] <= dense_limit:
+        from scipy.linalg import eig
+
+        values, vectors = eig(disc.a.toarray(), disc.b.toarray())
+        for k, lam in enumerate(values):
+            if np.isfinite(lam) and lam.real > floor:
+                keep(complex(lam), vectors[:, k])
+        found.sort(key=lambda item: -item[0].real)
+        return SpectralSearch(
+            tuple(z for z, _ in found),
+            tuple(r for _, r in found),
+            "dense-qz",
+            f"full spectrum, Re > {floor:g}",
+            True,
+        )
+    shifts = [top]
+    while shifts[-1] / factor >= floor:
+        shifts.append(shifts[-1] / factor)
+    while shifts[0] * factor <= ceil:
+        shifts.insert(0, shifts[0] * factor)
+    for sigma in shifts:
+        values, vectors = _pairs_near(disc, sigma, count, maxiter)
+        for k, lam in enumerate(values):
+            if lam.real > 0.0 and abs(lam - sigma) < sigma:
+                keep(complex(lam), vectors[:, k])
+    found.sort(key=lambda item: -item[0].real)
+    return SpectralSearch(
+        tuple(z for z, _ in found),
+        tuple(r for _, r in found),
+        "shift-invert",
+        f"union of disks |z - s| < s, s = {shifts[-1]:.3g} ... {shifts[0]:.3g} (factor {factor:g}),"
+        f" {count} roots per shift",
+        False,
+    )
+
+
 def most_unstable(
     disc: Discretisation,
     *,
     sigma_max: float = 0.3,
     sigma_min: float = 1e-12,
+    sigma_ceil: float = 10.0,
     factor: float = 4.0,
+    dense_limit: int = 2000,
     maxiter: int = 2000,
 ) -> complex | None:
-    """Return the most unstable eigenvalue, or ``None`` if none lies above ``sigma_min``."""
-    sigma = _finite_positive("sigma_max", sigma_max)
-    floor = _finite_positive("sigma_min", sigma_min)
-    if factor <= 1.0:
-        raise ValueError("factor must be > 1")
-    while sigma >= floor:
-        try:
-            lam = eigenvalues_near(disc, sigma, maxiter=maxiter)
-        except spla.ArpackNoConvergence as exc:
-            converged = np.asarray(exc.eigenvalues, dtype=np.complex128)
-            lam = sigma + 1.0 / converged if converged.size else converged
-        unstable = [z for z in lam if z.real > 0.0 and abs(z - sigma) < 0.999 * sigma]
-        if unstable:
-            return complex(max(unstable, key=lambda z: z.real))
-        sigma /= factor
-    return None
+    """Return the most unstable verified eigenvalue found by :func:`unstable_search`, or ``None``.
+
+    ``None`` means no unstable root was found in the searched domain; on the
+    iterative path that does not establish stability (see :class:`SpectralSearch`).
+    """
+    return unstable_search(
+        disc,
+        sigma_max=sigma_max,
+        sigma_min=sigma_min,
+        sigma_ceil=sigma_ceil,
+        factor=factor,
+        dense_limit=dense_limit,
+        maxiter=maxiter,
+    ).most_unstable
 
 
 def growth_rate(
@@ -373,7 +496,7 @@ def growth_rate(
     h_min: float | None = None,
     sigma_min: float = 1e-12,
 ) -> float:
-    """Return the largest unstable :math:`\\mathrm{Re}\\,\\lambda` (0.0 when none is found).
+    """Return the largest unstable :math:`\\mathrm{Re}\\,\\lambda` (0.0 when none is found in the searched domain).
 
     The grid is clustered at ``geom.resonant_x`` with smallest spacing
     ``h_min`` (default :math:`0.02\\,\\eta^{1/3}`, a fraction of the resistive
@@ -386,30 +509,45 @@ def growth_rate(
     return 0.0 if lam is None else lam.real
 
 
-def cylinder_delta_prime(
+@dataclass(frozen=True)
+class DeltaPrimeFit:
+    """Extrapolated :math:`\\Delta'`, the fitted jumps and the least-squares residual."""
+
+    value: float
+    excisions: FloatArray
+    jumps: FloatArray
+    coefficients: FloatArray
+    residual: float
+
+
+def cylinder_delta_prime_fit(
     cylinder: WessonCylinder,
     m: int,
     n: int,
     *,
     excisions: FloatArray | None = None,
-) -> float:
-    """Return :math:`\\Delta'` of the ideal outer equation by two-sided shooting.
+) -> DeltaPrimeFit:
+    """Return :math:`\\Delta'` of the ideal outer equation by two-sided shooting, with fit details.
 
     The outer equation :math:`L\\psi-\\kappa_bJ_0'\\psi/F=0` is integrated from
     the axis (:math:`\\psi\\sim r^m`) and from the wall (:math:`\\psi=0`) to
     :math:`r_s\\mp\\epsilon`; the jump of :math:`\\psi'/\\psi` is extrapolated to
-    :math:`\\epsilon\\to0` with the model :math:`a+b\\,\\epsilon\\ln\\epsilon+c\\,\\epsilon`,
-    which removes the symmetric logarithmic terms of the singular solution.
+    :math:`\\epsilon\\to0` with the basis
+    :math:`\\{1,\\epsilon\\ln\\epsilon,\\epsilon,\\epsilon\\ln^2\\epsilon\\}` (module docstring).
+    The default excisions span :math:`10^{-4}\\ldots10^{-6}`: on the reference
+    case the window :math:`10^{-3}\\ldots10^{-5}` still carries higher-order
+    terms (2.7e-5 relative), while :math:`10^{-4}\\ldots10^{-6}` and
+    :math:`10^{-5}\\ldots10^{-7}` agree to 3e-7.
     """
     geom = cylinder.geometry(m, n)
     rs = geom.resonant_x
     eps_values = (
-        np.geomspace(1e-3, 1e-5, 9)
+        np.geomspace(1e-4, 1e-6, 9)
         if excisions is None
         else np.asarray(excisions, dtype=np.float64)
     )
-    if eps_values.size < 3 or np.any(eps_values <= 0.0):
-        raise ValueError("excisions must hold at least three positive values")
+    if eps_values.size < 4 or np.any(eps_values <= 0.0):
+        raise ValueError("excisions must hold at least four positive values")
 
     def rhs(r: float, y: FloatArray) -> FloatArray:
         radius = np.array([r])
@@ -431,9 +569,36 @@ def cylinder_delta_prime(
         right = solve_ivp(
             rhs, (1.0, rs + eps), [0.0, -1.0], method="DOP853", rtol=1e-12, atol=1e-14
         )
-        jumps.append(right.y[1, -1] / right.y[0, -1] - left.y[1, -1] / left.y[0, -1])
+        if not (left.success and right.success):
+            raise RuntimeError(f"outer-equation shooting failed at excision {eps:g}")
+        with np.errstate(divide="ignore", invalid="ignore"):
+            jump = right.y[1, -1] / right.y[0, -1] - left.y[1, -1] / left.y[0, -1]
+        if not np.isfinite(jump):
+            raise RuntimeError(f"non-finite logarithmic-derivative jump at excision {eps:g}")
+        jumps.append(jump)
+    log_eps = np.log(eps_values)
     design = np.stack(
-        [np.ones_like(eps_values), eps_values * np.log(eps_values), eps_values], axis=1
+        [np.ones_like(eps_values), eps_values * log_eps, eps_values, eps_values * log_eps**2],
+        axis=1,
     )
-    coefficients, *_ = np.linalg.lstsq(design, np.asarray(jumps), rcond=None)
-    return float(coefficients[0])
+    jump_array = np.asarray(jumps, dtype=np.float64)
+    coefficients, *_ = np.linalg.lstsq(design, jump_array, rcond=None)
+    residual = float(np.linalg.norm(design @ coefficients - jump_array))
+    return DeltaPrimeFit(
+        value=float(coefficients[0]),
+        excisions=eps_values,
+        jumps=jump_array,
+        coefficients=np.asarray(coefficients, dtype=np.float64),
+        residual=residual,
+    )
+
+
+def cylinder_delta_prime(
+    cylinder: WessonCylinder,
+    m: int,
+    n: int,
+    *,
+    excisions: FloatArray | None = None,
+) -> float:
+    """Return :math:`\\Delta'` from :func:`cylinder_delta_prime_fit`."""
+    return cylinder_delta_prime_fit(cylinder, m, n, excisions=excisions).value

@@ -165,7 +165,7 @@ checksums, thresholds, grid or scaling evidence, and native comparisons.
 | Package version | 4.0.0 |
 | Public API exports | 2 |
 | Python capability source modules | 370 |
-| Python capability classes | 639 |
+| Python capability classes | 641 |
 | Capability documentation pages | 71 |
 | Rust workspace crates | 13 |
 | Optional extras | 14 |

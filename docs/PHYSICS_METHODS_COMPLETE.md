@@ -908,12 +908,17 @@ resistive reduced-MHD eigenproblem $\lambda\psi=iF\phi+\eta L\psi$,
 $\lambda L\phi=iFL\psi-i\kappa_bJ_0'\psi$ in a Harris slab or a periodic
 cylinder with C1 cubic Hermite elements (the radial treatment of the CASTOR
 family; Strumberger et al., *J. Plasma Phys.* 92, E113, 2026, App. A). The
-most unstable root is found by shift-and-invert Arnoldi with a geometrically
-lowered real shift, without an assumed growth-rate scale. It reproduces the
+unstable roots are searched by dense QZ (complete) for problems of at most
+2000 unknowns and otherwise by shift-and-invert Arnoldi over real shifts
+lowered and raised geometrically, collecting every eigenvector-verified root
+in the searched disks; the iterative result is marked incomplete, and "no
+root" means none in the searched domain, not stability. It reproduces the
 Harris-sheet FKR contract above to 0.2 % at $S=10^8$ (slope 0.598), the
 resistive internal kink $\gamma=\eta^{1/3}|F'(r_s)|^{2/3}$ (Coppi et al.
 1976) to 3 % at $S=10^8$, and the cylindrical FKR law with an independently
-shot $\Delta'$ to 5 % at $S=10^8$. The cylindrical tearing slope over
+shot $\Delta'$ to 5 % at $S=10^8$ (the $\Delta'$ extrapolation includes the
+$\epsilon\ln^2\epsilon$ term of the singular solution and is stable to
+$3\times10^{-7}$ between excision windows; $\Delta'=9.6947$). The cylindrical tearing slope over
 $S=10^6$–$10^8$ is 0.554, below the asymptotic 3/5 because of the finite
 $\Delta'\delta$ correction at $\Delta'=9.7$; this run is recorded as a miss
 against its fixed criterion (`validation/linear_mhd_stage1_acceptance.py`).
@@ -924,11 +929,15 @@ where $B_0\cdot\nabla=(qR_0)^{-1}(\partial_{\theta^*}-inq)$ is exact and the
 poloidal harmonics couple only through the metric; poloidal integrals are done
 by quadrature on a uniform $\theta^*$ grid and the equilibrium current enters
 only undifferentiated. Its circular single-harmonic limit equals the 1-D
-solver to $10^{-8}$. On $\kappa=1.6$, $\delta=0.3$ the 2/1 tearing keeps its
-resistive scaling (slope 0.563 over $S=10^7$–$10^9$, m = 2 leading), harmonic
-truncation at $\Delta m=3$ versus 5 still changes $\gamma$ by 6.6 %, and the
-shaped 1/1 mode becomes resistivity-independent (ideal) — both recorded as
-misses against their fixed criteria. This stage has no toroidal 1/R terms.
+solver to $10^{-8}$. A shaped section with an arbitrarily prescribed $q(r)$ is
+**not a static equilibrium** of this model: force balance with constant $B_z$
+needs $J_0=J_0(\psi_0)$, while the prescribed geometry makes $J_0$ vary along
+the surfaces (independent review, 2026-10-20). Such a base state is refused
+unless explicitly flagged as an operator/geometry experiment; the shaped runs
+recorded earlier (2/1 slope 0.563, 6.6 % harmonic-truncation change, an
+$\eta$-independent 1/1 root) are of that kind and carry no physical
+stability conclusion. Physical shaped and toroidal cases use a Grad–Shafranov
+equilibrium (Stage 2b). This stage has no toroidal 1/R terms.
 
 ### 6.6 Neoclassical tearing mode (NTM)
 

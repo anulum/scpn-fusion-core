@@ -15,17 +15,21 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+import scipy.sparse as sp
 
 from scpn_fusion.core.linear_mhd_1d import (
+    Discretisation,
     WessonCylinder,
     all_eigenvalues,
     assemble,
     clustered_grid,
     cylinder_delta_prime,
+    cylinder_delta_prime_fit,
     eigenvalues_near,
     growth_rate,
     harris_slab,
     most_unstable,
+    unstable_search,
 )
 from scpn_fusion.core.tearing_mode_theory import HarrisSheetTearingModel
 
@@ -52,27 +56,71 @@ def test_negative_delta_prime_sheet_has_no_unstable_root() -> None:
     assert growth_rate(harris_slab(1.2, 20.0), ETA, n_side=20, sigma_min=1e-3) == 0.0
 
 
+def _diagonal(values: list[float], b_diagonal: list[float] | None = None) -> Discretisation:
+    """Return a real generalised problem with a known spectrum (A, B diagonal)."""
+    a = sp.diags(np.asarray(values, dtype=np.complex128)).tocsc()
+    b_values = (
+        np.ones(len(values)) if b_diagonal is None else np.asarray(b_diagonal, dtype=np.float64)
+    )
+    b = sp.diags(b_values.astype(np.complex128)).tocsc()
+    return Discretisation(nodes=np.linspace(0.0, 1.0, 3), a=a, b=b)
+
+
+HIDDEN_INSIDE = [0.55, 0.29, 0.28, 0.27, 0.26, 0.25, 0.24] + [-float(k) for k in range(1, 14)]
+BEYOND_FIRST_DISK = [0.65, 0.01] + [-float(k) for k in range(1, 19)]
+
+
+@pytest.mark.parametrize("spectrum, expected", [(HIDDEN_INSIDE, 0.55), (BEYOND_FIRST_DISK, 0.65)])
+def test_search_finds_the_reviewer_counter_examples_on_both_paths(
+    spectrum: list[float], expected: float
+) -> None:
+    """Six closer roots, or a root beyond the first disk, no longer hide the strongest root."""
+    dense = unstable_search(_diagonal(spectrum))
+    assert dense.method == "dense-qz" and dense.complete
+    assert dense.most_unstable == pytest.approx(expected, abs=1e-12)
+    iterative = unstable_search(_diagonal(spectrum), dense_limit=0)
+    assert iterative.method == "shift-invert" and not iterative.complete
+    assert "disks" in iterative.domain
+    assert iterative.most_unstable == pytest.approx(expected, abs=1e-10)
+    assert max(iterative.residuals) <= 1e-8
+    assert len(set(np.round(iterative.candidates, 8))) == len(iterative.candidates)
+
+
 def test_shift_invert_matches_the_dense_spectrum() -> None:
-    """The most unstable root of the shift search equals the dense-spectrum maximum."""
+    """The iterative search, the dense search and the full dense spectrum agree on the slab."""
     disc = _slab_discretisation()
     dense = all_eigenvalues(disc)
-    found = most_unstable(disc)
+    found = most_unstable(disc, dense_limit=0)
     assert found is not None
     assert abs(found.real - dense.real.max()) <= 1e-8 * dense.real.max()
+    assert most_unstable(disc) == pytest.approx(found, rel=1e-8)
     near = eigenvalues_near(disc, found.real * 1.01, count=1)
     assert np.min(np.abs(near - found)) < 1e-8
+
+
+def test_unverified_and_infinite_roots_are_not_candidates() -> None:
+    """A zero residual bound rejects every (round-off-afflicted) root; a singular B's infinite root is skipped."""
+    assert unstable_search(_slab_discretisation(n_side=10), residual_tol=0.0).most_unstable is None
+    singular = unstable_search(_diagonal([0.4, 0.2, -1.0], b_diagonal=[1.0, 0.0, 1.0]))
+    assert singular.candidates == pytest.approx((0.4,))
 
 
 def test_unconverged_arpack_is_tolerated_and_reported_as_no_root() -> None:
     """With one Arnoldi iteration nothing converges; the search falls through to None."""
     disc = _slab_discretisation(n_side=20)
-    assert most_unstable(disc, sigma_max=0.3, sigma_min=0.1, maxiter=1) is None
+    assert (
+        most_unstable(disc, sigma_max=0.3, sigma_min=0.1, sigma_ceil=0.3, dense_limit=0, maxiter=1)
+        is None
+    )
 
 
-def test_most_unstable_rejects_a_non_contracting_factor() -> None:
-    """A shift factor at or below one would never lower the shift."""
+def test_search_rejects_inconsistent_shift_settings() -> None:
+    """A non-contracting factor or misordered shift bounds are refused."""
+    disc = _slab_discretisation(n_side=10)
     with pytest.raises(ValueError, match="factor"):
-        most_unstable(_slab_discretisation(n_side=10), factor=1.0)
+        most_unstable(disc, factor=1.0)
+    with pytest.raises(ValueError, match="sigma_min <= sigma_max <= sigma_ceil"):
+        unstable_search(disc, sigma_max=0.3, sigma_ceil=0.1)
 
 
 def test_cylinder_resistive_kink_and_tearing_are_unstable() -> None:
@@ -91,13 +139,27 @@ def test_cylinder_resistive_kink_and_tearing_are_unstable() -> None:
     assert 0.0 < gamma_kink < reference_kink
 
 
-def test_cylinder_delta_prime_is_positive_for_the_unstable_profile() -> None:
-    """Independent shooting gives the Delta' recorded in the Stage 1 results (9.6846)."""
-    assert cylinder_delta_prime(WessonCylinder(1.2, 1.5, 10.0), 2, 1) == pytest.approx(
-        9.6846, abs=1e-3
-    )
+def test_cylinder_delta_prime_is_stable_across_excision_windows() -> None:
+    """With the eps ln^2 eps term two windows agree to 1e-6 (9.69474, review F4 re-qualified)."""
+    cyl = WessonCylinder(1.2, 1.5, 10.0)
+    default = cylinder_delta_prime_fit(cyl, 2, 1)
+    narrow = cylinder_delta_prime(cyl, 2, 1, excisions=np.geomspace(1e-5, 1e-7, 9))
+    assert default.value == pytest.approx(narrow, rel=1e-6)
+    assert default.value == pytest.approx(9.69474, abs=1e-4)
+    assert default.coefficients.size == 4 and default.residual < 1e-4
     with pytest.raises(ValueError, match="excisions"):
-        cylinder_delta_prime(WessonCylinder(1.2, 1.5, 10.0), 2, 1, excisions=np.array([1e-3, 1e-4]))
+        cylinder_delta_prime(cyl, 2, 1, excisions=np.array([1e-3, 1e-4, 1e-5]))
+
+
+def test_cylinder_delta_prime_refuses_failed_or_non_finite_shooting() -> None:
+    """Shooting through the axis fails; an excision reaching the wall gives an infinite jump."""
+    cyl = WessonCylinder(1.2, 1.5, 10.0)
+    rs = cyl.resonant_radius(2, 1)
+    with pytest.raises(RuntimeError, match="non-finite"):
+        cylinder_delta_prime(cyl, 2, 1, excisions=np.array([1.0 - rs, 1e-3, 1e-4, 1e-5]))
+    # the left shot is driven through r = 0, where the profile functions are undefined
+    with np.errstate(invalid="ignore"), pytest.raises(RuntimeError, match="shooting failed"):
+        cylinder_delta_prime(cyl, 2, 1, excisions=np.array([rs + 0.01, 1e-3, 1e-4, 1e-5]))
 
 
 def test_cylinder_profile_quantities() -> None:

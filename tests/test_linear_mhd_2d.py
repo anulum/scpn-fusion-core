@@ -83,12 +83,16 @@ def test_straight_field_line_jacobian_is_a_flux_function_and_matches_the_area() 
 
 
 def test_shaped_tearing_is_unstable_and_led_by_its_resonant_harmonic() -> None:
-    """On the shaped section the 2/1 tearing grows and m = 2 carries most of psi."""
+    """Operator/geometry experiment: the shaped base state is refused unless flagged (review F1).
+
+    With the flag the 2/1 tearing grows and m = 2 carries most of the nodal psi.
+    """
     profile = WessonCylinder(1.02, 1.5, 10.0)
     rs = profile.resonant_radius(2, 1)
-    disc = assemble_coupled(
-        _shaped(profile), clustered_grid(0.0, 1.0, rs, 0.02 * ETA ** (1 / 3), 30), ETA, 1, [1, 2, 3]
-    )
+    nodes = clustered_grid(0.0, 1.0, rs, 0.02 * ETA ** (1 / 3), 30)
+    with pytest.raises(ValueError, match="not force balanced"):
+        assemble_coupled(_shaped(profile), nodes, ETA, 1, [1, 2, 3])
+    disc = assemble_coupled(_shaped(profile), nodes, ETA, 1, [1, 2, 3], allow_unbalanced_base=True)
     lam = most_unstable(disc)
     assert lam is not None and lam.real > 0.0
     shares = harmonic_fractions(disc, lam)
@@ -134,3 +138,25 @@ def test_input_validation() -> None:
         assemble_coupled(cyl, nodes, ETA, 1, [2, 2])
     with pytest.raises(ValueError, match="nodes"):
         assemble_coupled(cyl, np.linspace(0.1, 1.0, 5), ETA, 1, [2])
+
+
+def test_equilibrium_gate_separates_balanced_and_unbalanced_base_states() -> None:
+    """J0 varies along shaped surfaces (O(1)) but not along circles (round-off only)."""
+    profile = WessonCylinder(1.02, 1.5, 10.0)
+    radii = np.array([0.25, 0.5, 0.9])
+    assert ShapedCylinder(q=profile.q, major_radius=10.0).equilibrium_residual(radii) < 1e-8
+    assert _shaped(profile).equilibrium_residual(radii) > 0.1
+
+
+def test_near_axis_metric_is_the_circular_one_and_the_axis_is_refused() -> None:
+    """The adaptive step keeps r - h > 0 near the axis (review F5); r <= 0 is outside the domain."""
+    cyl = ShapedCylinder(q=lambda r: np.ones_like(r), major_radius=10.0)
+    radii = np.array([5e-6, 1e-3, 0.5])
+    metric = cyl.metric(radii)
+    assert np.allclose(metric["jac"], radii[:, None], rtol=1e-6, atol=0.0)
+    assert np.allclose(metric["grr"], 1.0, rtol=1e-6)
+    assert np.allclose(metric["gtt"] * radii[:, None] ** 2, 1.0, rtol=1e-6)
+    assert np.all(np.isfinite(cyl.current(radii)))
+    for bad in (0.0, -0.1):
+        with pytest.raises(ValueError, match="radii must be finite and > 0"):
+            cyl.metric(np.array([bad]))
