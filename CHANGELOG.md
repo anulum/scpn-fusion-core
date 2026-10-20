@@ -4,6 +4,10 @@
 
 ### Added
 
+- Add `benchmarks/bench_linear_mhd.py`, timing the assembly and eigen-search
+  phases of the linear reduced-MHD solvers per backend, with a local report in
+  `validation/reports/linear_mhd_benchmark.local.json`; Rust, Mojo, Julia and Go
+  rows are listed as unavailable.
 - Add `scpn_fusion.core.linear_mhd_2d`, the coupled-harmonic extension of the
   linear reduced-MHD solver to a shaped periodic cylinder (elongation,
   triangularity, radial shift) in straight-field-line coordinates. Its

@@ -228,6 +228,35 @@ Its user-provided open-access PDF checksum is recorded from ignored internal
 sorting storage. It is topology-inference evidence for the FRC workstream, not
 Steinhauer rotating-BVP closure and not Slough Fig. 5 trajectory data.
 
+## Linear reduced-MHD eigenvalue solver benchmark
+
+```bash
+OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 python benchmarks/bench_linear_mhd.py
+```
+
+Tracked report (local workstation):
+[`validation/reports/linear_mhd_benchmark.local.json`](../validation/reports/linear_mhd_benchmark.local.json)
+
+The benchmark times the two phases of `core/linear_mhd_1d.py` and
+`core/linear_mhd_2d.py` separately: finite-element assembly (interpreted
+Python and NumPy) and the eigen-search (compiled LAPACK QZ, or SuperLU with
+ARPACK, reached through SciPy). Rows for Rust, Mojo, Julia and Go are listed
+as unavailable: no implementation of the eigen-search exists in those
+languages.
+
+| Case | Unknowns | Assembly p50 | Search p50 | Search backend |
+|---|---:|---:|---:|---|
+| 1-D cylinder 2/1, 200 elements per side | 1598 | 130.9 ms | 197.2 s | LAPACK QZ (dense) |
+| 1-D cylinder 2/1, 60 elements per side | 478 | 67.7 ms | 6.20 s | LAPACK QZ (dense) |
+| 1-D cylinder 2/1, 60 elements per side | 478 | 67.7 ms | 264.0 s | SuperLU + ARPACK |
+| 2-D circular, m = 2, 60 elements per side | 478 | 1103.7 ms | 5.34 s | LAPACK QZ (dense) |
+
+Assembly is at most 17 % of the time per case (2-D), and 0.07 % at the 1-D
+production size; the rest runs in compiled libraries. These timings are local,
+non-isolated regression evidence on a shared, loaded workstation (load average
+19 to 44, two BLAS threads), not throughput claims. A fixed CI runner row is
+not yet recorded.
+
 ## Type-checking non-regression gate
 
 The Python CI preflight runs a MyPy expansion guard before strict MyPy:

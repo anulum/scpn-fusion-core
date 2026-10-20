@@ -1,0 +1,238 @@
+{
+  "claim_boundary": "Local non-isolated regression evidence on a shared, loaded workstation; not a production performance claim. Its purpose is the measured split between Python assembly and the compiled eigen-search.",
+  "commit": "a81ddefacc30d4e2ad1e1e7aead56943558dbb1d",
+  "generated_at": "2026-10-20T11:34:58.184392+00:00",
+  "isolation": {
+    "cpu_affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "isolated": false,
+    "load_average_after": [
+      43.75537109375,
+      39.7373046875,
+      38.2763671875
+    ],
+    "load_average_before": [
+      19.2841796875,
+      27.419921875,
+      36.1044921875
+    ],
+    "omp_num_threads": "2",
+    "openblas_num_threads": "2"
+  },
+  "parameters": {
+    "assembly_repeats": 20,
+    "assembly_warmup": 3,
+    "eta": 1e-06,
+    "repeats": 3,
+    "warmup": 1
+  },
+  "platform": {
+    "cpu_model": "11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz",
+    "machine": "x86_64",
+    "numpy": "1.26.4",
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "scipy": "1.17.1"
+  },
+  "results": [
+    {
+      "backend": "python+numpy",
+      "name": "1d_tearing_2_1_n_side_200/assembly",
+      "stats": {
+        "max_ms": 194.873518,
+        "mean_ms": 128.33990260000002,
+        "min_ms": 70.08644,
+        "p50_ms": 130.9439565,
+        "p95_ms": 188.37816755,
+        "p99_ms": 193.57444790999998,
+        "throughput_per_s": 7.7918089365917895
+      },
+      "status": "measured",
+      "unknowns": 1598
+    },
+    {
+      "backend": "scipy (LAPACK zggev)",
+      "complete": true,
+      "growth_rate": 0.0003048698958497512,
+      "name": "1d_tearing_2_1_n_side_200/search-dense-qz",
+      "stats": {
+        "max_ms": 208786.00077699998,
+        "mean_ms": 178088.87303333334,
+        "min_ms": 128233.095032,
+        "p50_ms": 197247.523291,
+        "p95_ms": 207632.15302839997,
+        "p99_ms": 208555.23122728,
+        "throughput_per_s": 0.005615173946397131
+      },
+      "status": "measured",
+      "unknowns": 1598
+    },
+    {
+      "backend": "rust",
+      "name": "1d_tearing_2_1_n_side_200/search",
+      "stats": null,
+      "status": "unavailable: no rust implementation of the eigen-search"
+    },
+    {
+      "backend": "mojo",
+      "name": "1d_tearing_2_1_n_side_200/search",
+      "stats": null,
+      "status": "unavailable: no mojo implementation of the eigen-search"
+    },
+    {
+      "backend": "julia",
+      "name": "1d_tearing_2_1_n_side_200/search",
+      "stats": null,
+      "status": "unavailable: no julia implementation of the eigen-search"
+    },
+    {
+      "backend": "go",
+      "name": "1d_tearing_2_1_n_side_200/search",
+      "stats": null,
+      "status": "unavailable: no go implementation of the eigen-search"
+    },
+    {
+      "backend": "python+numpy",
+      "name": "1d_tearing_2_1_n_side_60/assembly",
+      "stats": {
+        "max_ms": 128.69634,
+        "mean_ms": 71.75504505,
+        "min_ms": 43.93139,
+        "p50_ms": 67.66044,
+        "p95_ms": 117.64645015,
+        "p99_ms": 126.48636202999998,
+        "throughput_per_s": 13.936302308822812
+      },
+      "status": "measured",
+      "unknowns": 478
+    },
+    {
+      "backend": "scipy (LAPACK zggev)",
+      "complete": true,
+      "growth_rate": 0.0003048698997636418,
+      "name": "1d_tearing_2_1_n_side_60/search-dense-qz",
+      "stats": {
+        "max_ms": 7673.387032,
+        "mean_ms": 6600.0480616666655,
+        "min_ms": 5929.186486,
+        "p50_ms": 6197.570667,
+        "p95_ms": 7525.8053955,
+        "p99_ms": 7643.8707047,
+        "throughput_per_s": 0.15151404817913958
+      },
+      "status": "measured",
+      "unknowns": 478
+    },
+    {
+      "backend": "scipy (SuperLU + ARPACK)",
+      "complete": false,
+      "growth_rate": 0.0003048699023432966,
+      "name": "1d_tearing_2_1_n_side_60/search-shift-invert",
+      "stats": {
+        "max_ms": 282836.930834,
+        "mean_ms": 267910.9679126667,
+        "min_ms": 256934.450954,
+        "p50_ms": 263961.52194999997,
+        "p95_ms": 280949.3899456,
+        "p99_ms": 282459.42265632,
+        "throughput_per_s": 0.003732583282390958
+      },
+      "status": "measured",
+      "unknowns": 478
+    },
+    {
+      "backend": "rust",
+      "name": "1d_tearing_2_1_n_side_60/search",
+      "stats": null,
+      "status": "unavailable: no rust implementation of the eigen-search"
+    },
+    {
+      "backend": "mojo",
+      "name": "1d_tearing_2_1_n_side_60/search",
+      "stats": null,
+      "status": "unavailable: no mojo implementation of the eigen-search"
+    },
+    {
+      "backend": "julia",
+      "name": "1d_tearing_2_1_n_side_60/search",
+      "stats": null,
+      "status": "unavailable: no julia implementation of the eigen-search"
+    },
+    {
+      "backend": "go",
+      "name": "1d_tearing_2_1_n_side_60/search",
+      "stats": null,
+      "status": "unavailable: no go implementation of the eigen-search"
+    },
+    {
+      "backend": "python+numpy",
+      "name": "2d_circular_m2_n_side_60/assembly",
+      "stats": {
+        "max_ms": 1528.131506,
+        "mean_ms": 1168.28894305,
+        "min_ms": 907.5557689999999,
+        "p50_ms": 1103.727488,
+        "p95_ms": 1523.8900239,
+        "p99_ms": 1527.28320958,
+        "throughput_per_s": 0.8559526356462336
+      },
+      "status": "measured",
+      "unknowns": 478
+    },
+    {
+      "backend": "scipy (LAPACK zggev)",
+      "complete": true,
+      "growth_rate": 0.00017191347876665741,
+      "name": "2d_circular_m2_n_side_60/search-dense-qz",
+      "stats": {
+        "max_ms": 5879.85517,
+        "mean_ms": 5494.022317,
+        "min_ms": 5258.438236999999,
+        "p50_ms": 5343.773544,
+        "p95_ms": 5826.247007399999,
+        "p99_ms": 5869.13353748,
+        "throughput_per_s": 0.1820160061792483
+      },
+      "status": "measured",
+      "unknowns": 478
+    },
+    {
+      "backend": "rust",
+      "name": "2d_circular_m2_n_side_60/search",
+      "stats": null,
+      "status": "unavailable: no rust implementation of the eigen-search"
+    },
+    {
+      "backend": "mojo",
+      "name": "2d_circular_m2_n_side_60/search",
+      "stats": null,
+      "status": "unavailable: no mojo implementation of the eigen-search"
+    },
+    {
+      "backend": "julia",
+      "name": "2d_circular_m2_n_side_60/search",
+      "stats": null,
+      "status": "unavailable: no julia implementation of the eigen-search"
+    },
+    {
+      "backend": "go",
+      "name": "2d_circular_m2_n_side_60/search",
+      "stats": null,
+      "status": "unavailable: no go implementation of the eigen-search"
+    }
+  ],
+  "schema": "scpn_fusion.linear_mhd_benchmark.v1",
+  "status": "complete"
+}

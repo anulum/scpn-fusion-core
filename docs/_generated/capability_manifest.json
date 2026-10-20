@@ -3076,7 +3076,7 @@
     "python_capability_classes": 641,
     "python_capability_source_modules": 370,
     "rust_workspace_crates": 13,
-    "test_files": 676
+    "test_files": 677
   },
   "documentation": {
     "public_pages": [
@@ -3630,6 +3630,7 @@
       "tests/test_lh_transition.py",
       "tests/test_linear_mhd_1d.py",
       "tests/test_linear_mhd_2d.py",
+      "tests/test_linear_mhd_benchmark.py",
       "tests/test_liquid_metal_temhd_divertor_validation.py",
       "tests/test_locked_mode.py",
       "tests/test_logging_config.py",
