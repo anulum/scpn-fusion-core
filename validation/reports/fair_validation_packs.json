@@ -6,7 +6,7 @@
   "minimum_pack_count": 3,
   "pack_count": 3,
   "total_files": 15,
-  "total_bytes": 180199,
+  "total_bytes": 180185,
   "output_dir": "artifacts/fair_validation_packs",
   "publication_blockers": [
     "owner approval for DOI publication and final data-license posture",
@@ -83,12 +83,12 @@
       "description": "Solov'ev exact-suite evidence and psi reconstruction attribution documents for the inverse-equilibrium credibility boundary.",
       "license": "AGPL-3.0-or-later",
       "file_count": 7,
-      "total_bytes": 66846,
+      "total_bytes": 66832,
       "files": [
         {
           "path": "validation/validate_grad_shafranov_solovev.py",
-          "sha256": "789c4302c4dac1e1e3a70a50841babfb8b7d5225f02c61e2f4912f31f89edd64",
-          "size_bytes": 32070
+          "sha256": "6589707de2828f9fa5fc076dae903d27b76ce38f819e504ce6973202ec39d3ac",
+          "size_bytes": 32056
         },
         {
           "path": "validation/reports/grad_shafranov_solovev.json",
