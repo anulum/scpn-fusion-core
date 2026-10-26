@@ -237,10 +237,11 @@ OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=2 python benchmarks/bench_linear_mhd.py
 Tracked report (local workstation):
 [`validation/reports/linear_mhd_benchmark.local.json`](../validation/reports/linear_mhd_benchmark.local.json)
 
-The benchmark times the two phases of `core/linear_mhd_1d.py` and
-`core/linear_mhd_2d.py` separately: finite-element assembly (interpreted
-Python and NumPy) and the eigen-search (compiled LAPACK QZ, or SuperLU with
-ARPACK, reached through SciPy). Rows for Rust, Mojo, Julia and Go are listed
+The benchmark times the two phases of the linear reduced-MHD solvers
+separately: finite-element assembly in `core/linear_mhd_1d.py` and
+`core/linear_mhd_2d.py` (interpreted Python and NumPy) and the eigen-search in
+`core/linear_mhd_spectrum.py` (compiled LAPACK QZ, or SuperLU with ARPACK,
+reached through SciPy). Rows for Rust, Mojo, Julia and Go are listed
 as unavailable: no implementation of the eigen-search exists in those
 languages.
 

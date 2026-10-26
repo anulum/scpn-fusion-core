@@ -27,10 +27,12 @@
   surfaces), so shaped runs are operator/geometry experiments only and must be
   flagged with `allow_unbalanced_base=True`. No toroidal 1/R terms are
   included.
-- Add `scpn_fusion.core.linear_mhd_1d`, a linear resistive reduced-MHD
-  eigenvalue solver in a Harris slab or periodic cylinder (C1 cubic Hermite
-  Galerkin, shift-and-invert Arnoldi without an assumed growth-rate scale) and
-  an independent shooting solution for the cylindrical tearing index. The
+- Add a linear resistive reduced-MHD eigenvalue solver in a Harris slab or
+  periodic cylinder: `scpn_fusion.core.linear_mhd_1d` (geometries and C1 cubic
+  Hermite Galerkin assembly), `scpn_fusion.core.linear_mhd_spectrum` (verified
+  dense-QZ and shift-and-invert search without an assumed growth-rate scale)
+  and `scpn_fusion.core.linear_mhd_delta_prime` (an independent shooting
+  solution for the cylindrical tearing index). The
   fixed acceptance (`validation/linear_mhd_reduced_model_acceptance.py`)
   passed 8 of 9 criteria in its first run, before the eigenvalue-search fix
   below: FKR to 0.2 % at S = 1e8, resistive kink to 3 %,
@@ -162,7 +164,7 @@
 
 ### Fixed
 
-- `linear_mhd_1d.most_unstable` no longer returns the first admissible root
+- `most_unstable` no longer returns the first admissible root
   near a shift: `unstable_search` solves problems of at most 2000 unknowns by
   dense QZ and otherwise collects eigenvector-verified roots over all shifts,
   lowered and raised, reporting the searched domain and whether the search is
@@ -178,10 +180,13 @@
 - `unstable_search` counts roots that fail verification and no longer claims
   completeness when any was rejected, keeps distinct dense roots unmerged,
   merges iterative repeat sightings only within `merge_tol`, and reports the
-  exact shifts used; `cylinder_delta_prime_fit` validates supplied excisions
-  (finite, distinct, inside the plasma) and refuses a failed or divergent
-  shooting; the shaped-section equilibrium gate refuses a non-finite base
-  state even with `allow_unbalanced_base=True`.
+  exact shifts used; Arnoldi starts from a fixed vector and every iterative
+  root is refined by inverse iteration next to itself before verification, so
+  repeat runs agree and the root matches dense QZ to 1.5e-11 on the benchmark
+  smoke case instead of up to 1e-6; `cylinder_delta_prime_fit` validates
+  supplied excisions (finite, distinct, inside the plasma) and refuses a
+  failed or divergent shooting; the shaped-section equilibrium gate refuses a
+  non-finite base state even with `allow_unbalanced_base=True`.
 
 - Make optional DeepONet backend construction a shared dispatch contract,
   validate final optimiser metadata through the same authenticated loader used

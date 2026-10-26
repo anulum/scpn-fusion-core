@@ -33,13 +33,8 @@ from typing import Any
 import numpy as np
 import scipy
 
-from scpn_fusion.core.linear_mhd_1d import (
-    SpectralSearch,
-    WessonCylinder,
-    assemble,
-    clustered_grid,
-    unstable_search,
-)
+from scpn_fusion.core.linear_mhd_1d import WessonCylinder, assemble, clustered_grid
+from scpn_fusion.core.linear_mhd_spectrum import SpectralSearch, unstable_search
 from scpn_fusion.core.linear_mhd_2d import ShapedCylinder, assemble_coupled
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

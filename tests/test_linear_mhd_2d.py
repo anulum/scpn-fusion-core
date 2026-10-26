@@ -20,8 +20,8 @@ from scpn_fusion.core.linear_mhd_1d import (
     WessonCylinder,
     clustered_grid,
     growth_rate,
-    most_unstable,
 )
+from scpn_fusion.core.linear_mhd_spectrum import most_unstable
 from scpn_fusion.core.linear_mhd_2d import (
     ShapedCylinder,
     assemble_coupled,
@@ -164,7 +164,7 @@ def test_near_axis_metric_is_the_circular_one_and_the_axis_is_refused() -> None:
 
 
 def test_non_finite_base_state_is_refused_even_when_flagged() -> None:
-    """A NaN safety factor cannot pass the gate, with or without the override (re-review R3)."""
+    """A NaN safety factor cannot pass the gate, with or without the override."""
     cyl = ShapedCylinder(q=lambda r: np.full_like(r, np.nan), major_radius=10.0)
     nodes = np.linspace(0.0, 1.0, 5)
     for flag in (False, True):

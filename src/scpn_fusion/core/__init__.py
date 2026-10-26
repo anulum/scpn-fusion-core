@@ -430,7 +430,7 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
     # Linear resistive reduced-MHD eigenvalue solver (1-D)
     "WessonCylinder": (".linear_mhd_1d", "WessonCylinder"),
     "linear_mhd_growth_rate": (".linear_mhd_1d", "growth_rate"),
-    "cylinder_delta_prime": (".linear_mhd_1d", "cylinder_delta_prime"),
+    "cylinder_delta_prime": (".linear_mhd_delta_prime", "cylinder_delta_prime"),
     "ShapedCylinder": (".linear_mhd_2d", "ShapedCylinder"),
     "coupled_growth_rate": (".linear_mhd_2d", "coupled_growth_rate"),
     # Phase 6 — VMEC-lite (3D fixed-boundary MHD)

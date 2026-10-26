@@ -92,9 +92,9 @@ def test_smoke_run_writes_a_complete_report_with_every_backend(tmp_path: Path) -
     absent = {row["backend"] for row in report["results"] if row["stats"] is None}
     assert absent == UNAVAILABLE
     growth = [row["growth_rate"] for row in report["results"] if "search-" in row["name"]]
-    # ARPACK converges mu = 1/(lambda - sigma) to tol 1e-10; for sigma >> lambda the relative
-    # error of lambda reaches ~1e-7 (4.3e-8 measured on this coarse grid)
-    assert growth[0] == pytest.approx(growth[1], rel=1e-6)
+    # The iterative root is refined by inverse iteration next to itself before it is
+    # verified; on this grid it matches dense QZ to 1.5e-11 relative (measured).
+    assert growth[0] == pytest.approx(growth[1], rel=1e-9)
 
 
 def test_production_case_set_is_declared() -> None:

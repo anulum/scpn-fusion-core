@@ -908,12 +908,14 @@ resistive reduced-MHD eigenproblem $\lambda\psi=iF\phi+\eta L\psi$,
 $\lambda L\phi=iFL\psi-i\kappa_bJ_0'\psi$ in a Harris slab or a periodic
 cylinder with C1 cubic Hermite elements (the radial treatment of the CASTOR
 family; Strumberger et al., *J. Plasma Phys.* 92, E113, 2026, App. A). The
-unstable roots are searched by dense QZ (complete) for problems of at most
-2000 unknowns and otherwise by shift-and-invert Arnoldi over real shifts
-lowered and raised geometrically, collecting every eigenvector-verified root
-in the searched disks; the iterative result is marked incomplete, and "no
-root" means none in the searched domain, not stability. It reproduces the
-Harris-sheet FKR contract above to 0.2 % at $S=10^8$ (slope 0.598), the
+unstable roots are searched by `core/linear_mhd_spectrum.py`: dense QZ
+(complete) for problems of at most 2000 unknowns, otherwise shift-and-invert
+Arnoldi from a fixed start vector over real shifts lowered and raised
+geometrically, each root refined by inverse iteration next to itself and
+verified by its eigenvector residual; the iterative result is marked
+incomplete, and "no root" means none in the searched domain, not stability.
+The reference $\Delta'$ comes from `core/linear_mhd_delta_prime.py`. It
+reproduces the Harris-sheet FKR contract above to 0.2 % at $S=10^8$ (slope 0.598), the
 resistive internal kink $\gamma=\eta^{1/3}|F'(r_s)|^{2/3}$ (Coppi et al.
 1976) to 3 % at $S=10^8$, and the cylindrical FKR law with an independently
 shot $\Delta'$ to 5 % at $S=10^8$. That comparison used the earlier
@@ -967,11 +969,13 @@ Coupled pedestal stability per Snyder et al., *Phys. Plasmas* 9, 2037 (2002) and
 
 **Key files:** `core/stability_mhd.py`, `core/stability_mhd_extended.py`,
 `core/tearing_mode_theory.py`, `core/tearing_mode_coupling.py`,
-`core/linear_mhd_1d.py`, `core/linear_mhd_2d.py`.
+`core/linear_mhd_1d.py`, `core/linear_mhd_2d.py`, `core/linear_mhd_spectrum.py`,
+`core/linear_mhd_delta_prime.py`.
 
 **Validation:** `tests/test_mhd_stability.py`, `tests/test_phase1_hardening.py`,
 `tests/test_tearing_mode_theory.py`, `tests/test_linear_mhd_1d.py`,
-`tests/test_linear_mhd_2d.py`,
+`tests/test_linear_mhd_2d.py`, `tests/test_linear_mhd_spectrum.py`,
+`tests/test_linear_mhd_delta_prime.py`,
 `validation/linear_mhd_reduced_model_acceptance.py`.
 
 ---

@@ -25,14 +25,13 @@ import numpy as np
 
 from scpn_fusion.core.linear_mhd_1d import (
     WessonCylinder,
-    all_eigenvalues,
     assemble,
     clustered_grid,
-    cylinder_delta_prime,
     growth_rate,
     harris_slab,
-    most_unstable,
 )
+from scpn_fusion.core.linear_mhd_delta_prime import cylinder_delta_prime
+from scpn_fusion.core.linear_mhd_spectrum import all_eigenvalues, most_unstable
 from scpn_fusion.core.tearing_mode_theory import FKR_MATCHING_COEFFICIENT, HarrisSheetTearingModel
 
 ETAS = (1e-6, 1e-7, 1e-8)

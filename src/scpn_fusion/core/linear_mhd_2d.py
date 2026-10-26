@@ -69,8 +69,8 @@ from scpn_fusion.core.linear_mhd_1d import (
     Discretisation,
     _hermite,
     clustered_grid,
-    most_unstable,
 )
+from scpn_fusion.core.linear_mhd_spectrum import most_unstable
 
 FloatArray = NDArray[np.float64]
 ComplexArray = NDArray[np.complex128]

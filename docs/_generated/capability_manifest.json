@@ -493,7 +493,7 @@
       },
       {
         "name": "DeltaPrimeFit",
-        "path": "src/scpn_fusion/core/linear_mhd_1d.py"
+        "path": "src/scpn_fusion/core/linear_mhd_delta_prime.py"
       },
       {
         "name": "DensityController",
@@ -1014,6 +1014,10 @@
       {
         "name": "GainScheduledController",
         "path": "src/scpn_fusion/control/gain_scheduled_controller.py"
+      },
+      {
+        "name": "GeneralisedEigenproblem",
+        "path": "src/scpn_fusion/core/linear_mhd_spectrum.py"
       },
       {
         "name": "Geometry1D",
@@ -2189,7 +2193,7 @@
       },
       {
         "name": "SpectralSearch",
-        "path": "src/scpn_fusion/core/linear_mhd_1d.py"
+        "path": "src/scpn_fusion/core/linear_mhd_spectrum.py"
       },
       {
         "name": "SpectralTurbulenceGenerator",
@@ -2872,6 +2876,8 @@
       "src/scpn_fusion/core/lh_transition.py",
       "src/scpn_fusion/core/linear_mhd_1d.py",
       "src/scpn_fusion/core/linear_mhd_2d.py",
+      "src/scpn_fusion/core/linear_mhd_delta_prime.py",
+      "src/scpn_fusion/core/linear_mhd_spectrum.py",
       "src/scpn_fusion/core/locked_mode.py",
       "src/scpn_fusion/core/marfe.py",
       "src/scpn_fusion/core/mhd_sawtooth.py",
@@ -3073,10 +3079,10 @@
     "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 71,
-    "python_capability_classes": 641,
-    "python_capability_source_modules": 370,
+    "python_capability_classes": 642,
+    "python_capability_source_modules": 372,
     "rust_workspace_crates": 13,
-    "test_files": 677
+    "test_files": 679
   },
   "documentation": {
     "public_pages": [
@@ -3631,6 +3637,8 @@
       "tests/test_linear_mhd_1d.py",
       "tests/test_linear_mhd_2d.py",
       "tests/test_linear_mhd_benchmark.py",
+      "tests/test_linear_mhd_delta_prime.py",
+      "tests/test_linear_mhd_spectrum.py",
       "tests/test_liquid_metal_temhd_divertor_validation.py",
       "tests/test_locked_mode.py",
       "tests/test_logging_config.py",
