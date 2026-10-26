@@ -6,8 +6,8 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 """Real-solver tests for the 1-D linear resistive reduced-MHD eigenvalue solver.
 
-The full Stage 1 acceptance runs (eta down to 1e-8) take minutes and live in
-``validation/linear_mhd_stage1_acceptance.py``; these tests use coarse grids
+The full acceptance runs (eta down to 1e-8) take minutes and live in
+``validation/linear_mhd_reduced_model_acceptance.py``; these tests use coarse grids
 and eta = 1e-4 so they stay fast while exercising every path for real.
 """
 
@@ -157,7 +157,7 @@ def test_cylinder_resistive_kink_and_tearing_are_unstable() -> None:
     assert kink.axis_value_only is True and tearing.axis_value_only is False
     assert growth_rate(tearing, ETA, n_side=40) > 0.0
     # At eta = 1e-4 the kink layer is far from its asymptote (0.31 of eta^(1/3) F'^(2/3)
-    # measured; 0.97 at eta = 1e-8 in the Stage 1 acceptance run), so only the sign and
+    # measured; 0.97 at eta = 1e-8 in the acceptance run), so only the sign and
     # the bound by the asymptotic rate are asserted here.
     gamma_kink = growth_rate(kink, ETA, n_side=40)
     reference_kink = ETA ** (1 / 3) * abs(
@@ -167,7 +167,7 @@ def test_cylinder_resistive_kink_and_tearing_are_unstable() -> None:
 
 
 def test_cylinder_delta_prime_is_stable_across_excision_windows() -> None:
-    """With the eps ln^2 eps term two windows agree to 1e-6 (9.69474, review F4 re-qualified)."""
+    """With the eps ln^2 eps term two windows agree to 1e-6 (9.69474)."""
     cyl = WessonCylinder(1.2, 1.5, 10.0)
     default = cylinder_delta_prime_fit(cyl, 2, 1)
     narrow = cylinder_delta_prime(cyl, 2, 1, excisions=np.geomspace(1e-5, 1e-7, 9))

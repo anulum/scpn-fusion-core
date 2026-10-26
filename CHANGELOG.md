@@ -20,8 +20,9 @@
   eigenvalue solver in a Harris slab or periodic cylinder (C1 cubic Hermite
   Galerkin, shift-and-invert Arnoldi without an assumed growth-rate scale) and
   an independent shooting solution for the cylindrical tearing index. The
-  fixed Stage 1 acceptance (`validation/linear_mhd_stage1_acceptance.py`)
-  passes 8 of 9 criteria: FKR to 0.2 % at S = 1e8, resistive kink to 3 %,
+  fixed acceptance (`validation/linear_mhd_reduced_model_acceptance.py`)
+  passed 8 of 9 criteria in its first run, before the eigenvalue-search fix
+  below: FKR to 0.2 % at S = 1e8, resistive kink to 3 %,
   dense/sparse agreement to 3e-11; the cylindrical tearing slope over
   S = 1e6–1e8 (0.554) misses its 0.60 ± 0.04 band because of the finite
   Delta'·delta correction and is reported as a miss.
@@ -140,15 +141,15 @@
   near a shift: `unstable_search` solves problems of at most 2000 unknowns by
   dense QZ and otherwise collects eigenvector-verified roots over all shifts,
   lowered and raised, reporting the searched domain and whether the search is
-  complete (independent review F2).
+  complete.
 - The cylindrical Delta' extrapolation includes the eps ln^2 eps term of the
   singular outer solution, checks both shootings and the finiteness of the
   jump, and defaults to excisions 1e-4…1e-6; windows now agree to 3e-7
-  (`cylinder_delta_prime_fit` returns the fit details; review F4).
+  (`cylinder_delta_prime_fit` returns the fit details).
 - `linear_mhd_2d` radial differences use the step min(1e-5, r/2), so valid
-  near-axis radii are accepted and r <= 0 is refused explicitly (review F5);
+  near-axis radii are accepted and r <= 0 is refused explicitly;
   `assemble_coupled` refuses a base state that is not force balanced unless
-  `allow_unbalanced_base=True` (review F1).
+  `allow_unbalanced_base=True`.
 - `unstable_search` counts roots that fail verification and no longer claims
   completeness when any was rejected, keeps distinct dense roots unmerged,
   merges iterative repeat sightings only within `merge_tol`, and reports the

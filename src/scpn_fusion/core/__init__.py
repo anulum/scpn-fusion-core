@@ -427,7 +427,7 @@ _LAZY_IMPORTS: dict[str, tuple[str, str]] = {
         ".tearing_mode_theory",
         "fkr_constant_psi_growth_rate_per_s",
     ),
-    # Linear resistive reduced-MHD eigenvalue solver (1-D, Stage 1)
+    # Linear resistive reduced-MHD eigenvalue solver (1-D)
     "WessonCylinder": (".linear_mhd_1d", "WessonCylinder"),
     "linear_mhd_growth_rate": (".linear_mhd_1d", "growth_rate"),
     "cylinder_delta_prime": (".linear_mhd_1d", "cylinder_delta_prime"),

@@ -99,7 +99,7 @@ def _commit(root: Path = REPO_ROOT) -> str:
 
 
 def _cases() -> list[dict[str, Any]]:
-    """Return the cases: Stage 1 production grid (1598 unknowns), a 480-unknown grid, a 2-D case.
+    """Return the cases: 1-D production grid (1598 unknowns), a 480-unknown grid, a 2-D case.
 
     ``paths`` lists the eigen-search paths timed for the case; the iterative path is timed on
     the smaller grid only, because one shift ladder at production size takes tens of minutes on

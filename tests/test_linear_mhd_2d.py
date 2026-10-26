@@ -6,8 +6,8 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 """Real-solver tests for the coupled-harmonic reduced-MHD solver on a shaped cross-section.
 
-The Stage 2a-i acceptance runs (eta down to 1e-9, minutes to hours) are recorded in the
-reactor group plan; these tests use coarse grids and eta = 1e-4 to exercise every path.
+The shaped-section runs (eta down to 1e-9, minutes to hours) are not part of this suite;
+these tests use coarse grids and eta = 1e-4 to exercise every path.
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ def _shaped(profile: WessonCylinder) -> ShapedCylinder:
 
 
 def test_circular_single_harmonic_equals_the_one_dimensional_solver() -> None:
-    """With kappa = 1, delta = 0 and one harmonic the 2-D operator reduces to Stage 1."""
+    """With kappa = 1, delta = 0 and one harmonic the 2-D operator reduces to the 1-D one."""
     profile = WessonCylinder(1.2, 1.5, 10.0)
     rs = profile.resonant_radius(2, 1)
     gamma_2d = coupled_growth_rate(
@@ -84,7 +84,7 @@ def test_straight_field_line_jacobian_is_a_flux_function_and_matches_the_area() 
 
 
 def test_shaped_tearing_is_unstable_and_led_by_its_resonant_harmonic() -> None:
-    """Operator/geometry experiment: the shaped base state is refused unless flagged (review F1).
+    """Operator/geometry experiment: the shaped base state is refused unless flagged.
 
     With the flag the 2/1 tearing grows and m = 2 carries most of the nodal psi.
     """
@@ -150,7 +150,7 @@ def test_equilibrium_gate_separates_balanced_and_unbalanced_base_states() -> Non
 
 
 def test_near_axis_metric_is_the_circular_one_and_the_axis_is_refused() -> None:
-    """The adaptive step keeps r - h > 0 near the axis (review F5); r <= 0 is outside the domain."""
+    """The adaptive step keeps r - h > 0 near the axis; r <= 0 is outside the domain."""
     cyl = ShapedCylinder(q=lambda r: np.ones_like(r), major_radius=10.0)
     radii = np.array([5e-6, 1e-3, 0.5])
     metric = cyl.metric(radii)

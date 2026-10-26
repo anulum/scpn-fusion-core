@@ -916,12 +916,14 @@ root" means none in the searched domain, not stability. It reproduces the
 Harris-sheet FKR contract above to 0.2 % at $S=10^8$ (slope 0.598), the
 resistive internal kink $\gamma=\eta^{1/3}|F'(r_s)|^{2/3}$ (Coppi et al.
 1976) to 3 % at $S=10^8$, and the cylindrical FKR law with an independently
-shot $\Delta'$ to 5 % at $S=10^8$ (the $\Delta'$ extrapolation includes the
-$\epsilon\ln^2\epsilon$ term of the singular solution and is stable to
-$3\times10^{-7}$ between excision windows; $\Delta'=9.6947$). The cylindrical tearing slope over
+shot $\Delta'$ to 5 % at $S=10^8$. That comparison used the earlier
+$\Delta'=9.6846$; the extrapolation now includes the
+$\epsilon\ln^2\epsilon$ term of the singular solution, is stable to
+$3\times10^{-7}$ between excision windows and gives $\Delta'=9.6947$
+(0.1 % higher); the comparison has not been re-run with it. The cylindrical tearing slope over
 $S=10^6$–$10^8$ is 0.554, below the asymptotic 3/5 because of the finite
 $\Delta'\delta$ correction at $\Delta'=9.7$; this run is recorded as a miss
-against its fixed criterion (`validation/linear_mhd_stage1_acceptance.py`).
+against its fixed criterion (`validation/linear_mhd_reduced_model_acceptance.py`).
 
 `core/linear_mhd_2d.py` extends the same model to a shaped periodic cylinder
 (elongation, triangularity, radial shift) in straight-field-line coordinates,
@@ -932,12 +934,13 @@ only undifferentiated. Its circular single-harmonic limit equals the 1-D
 solver to $10^{-8}$. A shaped section with an arbitrarily prescribed $q(r)$ is
 **not a static equilibrium** of this model: force balance with constant $B_z$
 needs $J_0=J_0(\psi_0)$, while the prescribed geometry makes $J_0$ vary along
-the surfaces (independent review, 2026-10-20). Such a base state is refused
+the surfaces. Such a base state is refused
 unless explicitly flagged as an operator/geometry experiment; the shaped runs
 recorded earlier (2/1 slope 0.563, 6.6 % harmonic-truncation change, an
 $\eta$-independent 1/1 root) are of that kind and carry no physical
 stability conclusion. Physical shaped and toroidal cases use a Grad–Shafranov
-equilibrium (Stage 2b). This stage has no toroidal 1/R terms.
+equilibrium, which this solver does not include; it has no toroidal 1/R
+terms.
 
 ### 6.6 Neoclassical tearing mode (NTM)
 
@@ -969,7 +972,7 @@ Coupled pedestal stability per Snyder et al., *Phys. Plasmas* 9, 2037 (2002) and
 **Validation:** `tests/test_mhd_stability.py`, `tests/test_phase1_hardening.py`,
 `tests/test_tearing_mode_theory.py`, `tests/test_linear_mhd_1d.py`,
 `tests/test_linear_mhd_2d.py`,
-`validation/linear_mhd_stage1_acceptance.py`.
+`validation/linear_mhd_reduced_model_acceptance.py`.
 
 ---
 

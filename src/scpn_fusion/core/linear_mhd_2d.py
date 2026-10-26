@@ -7,7 +7,7 @@
 # SCPN Fusion Core — Linear Resistive Reduced MHD with Coupled Poloidal Harmonics
 r"""Linear resistive reduced MHD on a shaped cross-section with coupled harmonics.
 
-Stage 2a-i of the reactor group's linear MHD plan: a periodic cylinder whose
+A periodic cylinder whose
 poloidal cross-section is shaped (elongation :math:`\kappa`, triangularity
 :math:`\delta`, radial shift :math:`\Delta(r)`),
 
@@ -21,7 +21,7 @@ period :math:`2\pi R_0`. In straight-field-line coordinates
 and :math:`B_0\cdot\nabla = (qR_0)^{-1}(\partial_{\theta^*} - inq)` exactly, so
 poloidal harmonics couple only through the metric :math:`g^{ij}(r,\theta^*)`.
 
-The model is the Stage 1 one, :math:`\lambda\psi = B_0\cdot\nabla\phi +
+The model is the one of :mod:`scpn_fusion.core.linear_mhd_1d`, :math:`\lambda\psi = B_0\cdot\nabla\phi +
 \eta\nabla_\perp^2\psi`, :math:`\lambda\nabla_\perp^2\phi = B_0\cdot\nabla J_1
 + b_1\cdot\nabla J_0`, with :math:`b_1 = \hat z\times\nabla\psi` and
 :math:`J_0 = \nabla_\perp^2\psi_0`. The weak forms use only first derivatives
