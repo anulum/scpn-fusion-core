@@ -9,9 +9,9 @@
 //! Compatible with Python weights produced by `src/scpn_fusion/core/fno_training.py`.
 
 use fusion_math::fft::{fft2, ifft2};
+use fusion_math::npz::NpzReader;
 use fusion_types::error::{FusionError, FusionResult};
 use ndarray::{s, Array1, Array2, Array3, Ix1, Ix2, Ix3, OwnedRepr};
-use ndarray_npy::NpzReader;
 use num_complex::Complex64;
 use rand::Rng;
 use rand_distr::StandardNormal;
@@ -543,8 +543,8 @@ impl Default for FnoController {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fusion_math::npz::NpzWriter;
     use ndarray::Array1;
-    use ndarray_npy::NpzWriter;
     use rand::rngs::StdRng;
     use rand::SeedableRng;
     use std::time::{SystemTime, UNIX_EPOCH};

@@ -78,6 +78,13 @@ updates:
       - "dependencies"
       - "rust"
       - "security"
+    ignore:
+      # fusion-polyglot pins toml =0.8.23 (TOML 1.0) so the shared case-contract
+      # corpus parses exactly as Python tomllib does on Python 3.11 and 3.12;
+      # toml 1.x implements TOML 1.1 and would break that cross-language parity.
+      - dependency-name: "toml"
+        update-types:
+          - "version-update:semver-major"
   - package-ecosystem: "cargo"
     directory: "/scpn-fusion-rs/fuzz"
     schedule:

@@ -7,9 +7,9 @@
 // SCPN Fusion Core — Rust MAST SNN Validation
 //! Rust MAST SNN validation lane.
 
+use fusion_math::npz::NpzReader;
 use fusion_types::error::{FusionError, FusionResult};
 use ndarray::ArrayD;
-use ndarray_npy::NpzReader;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use serde::{Deserialize, Serialize};
@@ -1206,8 +1206,8 @@ fn shot_status(shot_id: i32, status: ShotStatus, source: Option<String>) -> Shot
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fusion_math::npz::NpzWriter;
     use ndarray::{Array1, Array2};
-    use ndarray_npy::NpzWriter;
     use std::fs::File;
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicUsize, Ordering};

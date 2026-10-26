@@ -7,9 +7,9 @@
 // SCPN Fusion Core — Neural Transport Surrogate
 //! Neural transport surrogate (10 -> 64 -> 32 -> 3) with analytic fallback.
 
+use fusion_math::npz::NpzReader;
 use fusion_types::error::{FusionError, FusionResult};
 use ndarray::{Array1, Array2};
-use ndarray_npy::NpzReader;
 use std::fs::File;
 
 const INPUT_DIM: usize = 10;
@@ -250,8 +250,8 @@ fn critical_gradient_model(input: &Array1<f64>) -> Array1<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fusion_math::npz::NpzWriter;
     use ndarray::{array, Array2};
-    use ndarray_npy::NpzWriter;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn synthetic_weights() -> NeuralTransportWeights {

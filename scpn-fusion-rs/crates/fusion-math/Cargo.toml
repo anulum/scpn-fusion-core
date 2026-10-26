@@ -19,6 +19,8 @@ rayon = { workspace = true }
 rustfft = { workspace = true }
 num-complex = { workspace = true }
 approx = { workspace = true }
+ndarray-npy = { workspace = true }
+zip = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }

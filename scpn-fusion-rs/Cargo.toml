@@ -44,7 +44,8 @@ rand = "0.8"
 rand_distr = "0.4"
 pyo3 = { version = "0.29.0", features = ["extension-module"] }
 numpy = "0.29"
-ndarray-npy = "0.9.1"
+ndarray-npy = { version = "0.9.1", default-features = false }
+zip = { version = "9.1.2", default-features = false, features = ["deflate"] }
 criterion = { version = "0.8" }
 proptest = "1.4"
 

@@ -9,6 +9,9 @@
   virtualenv 21.14.13, aiohttp 3.14.5 and setuptools 84.2.1; all 18 locks pass
   pip-audit. The GitPython and virtualenv caps in the `.in` files are raised to
   admit the fixed releases.
+- `.npz` archives are read and written through `fusion_math::npz` on zip
+  9.1.2; `ndarray-npy` is used without its zip feature, which removes zip 2.4.2
+  (RUSTSEC-2026-0367, RUSTSEC-2026-0368, RUSTSEC-2026-0369).
 
 ### Added
 
@@ -151,6 +154,7 @@
   refreshed from their pinned sources. ruff 0.17.2 and mypy 1.20.2 are pinned
   alike in the pre-commit hook, the RustBCA and PROCESS tool sets and the CI
   locks; mypy stays below 2.0.
+- Rust lock files move to the newest semver-compatible crates.
 
 ### Fixed
 
