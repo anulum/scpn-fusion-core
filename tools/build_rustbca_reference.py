@@ -30,6 +30,7 @@ from validation.rustbca_build_receipt import (
     verify_rustbca_build_receipt,
 )
 
+WHEEL_WRITER_VERSION = "0.48.0"
 ARCHIVE_SHA256 = "3aded40a7a3282ac41e4a1c90198511f26bf8d418ec2994914b6bf930424f4b7"
 
 
@@ -181,15 +182,15 @@ def build_rustbca_reference(
     retains result.json with a failure status, signals its compiler process group
     and attempts bounded leader reaping. The receipt distinguishes an unreaped
     leader from successful reaping; reaping alone does not prove group absence.
-    wheel 0.47.0 is required to write checked RECORD entries. The generated
+    wheel 0.48.0 is required to write checked RECORD entries. The generated
     wheel uses the local platform tag, never an unaudited manylinux claim.
     """
     if type(timeout_seconds) not in (int, float) or not 0 < timeout_seconds <= 1800:
         raise ValueError("timeout_seconds must be finite and in (0, 1800]")
     if type(fetch_dependencies) is not bool:
         raise ValueError("fetch_dependencies must be a boolean")
-    if importlib.metadata.version("wheel") != "0.47.0":
-        raise ValueError("RustBCA wheel writer requires wheel==0.47.0")
+    if importlib.metadata.version("wheel") != WHEEL_WRITER_VERSION:
+        raise ValueError(f"RustBCA wheel writer requires wheel=={WHEEL_WRITER_VERSION}")
     if _sha(source_archive) != ARCHIVE_SHA256:
         raise ValueError("RustBCA archive digest mismatch")
     data = Path(__file__).resolve().parents[1] / "validation/reference_data"
@@ -309,7 +310,7 @@ def build_rustbca_reference(
             rustc_sha256=_sha(rustc),
             python_sha256=_sha(python.resolve()),
             recipe_sha256=_sha(recipe),
-            wheel_writer_version="0.47.0",
+            wheel_writer_version=WHEEL_WRITER_VERSION,
             runtime=runtime,
             fetch_dependencies=fetch_dependencies,
             independent_attestation_verified=False,
