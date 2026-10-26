@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import importlib
 import re
-import sys
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Protocol, cast
@@ -25,7 +24,7 @@ class _TomlLoader(Protocol):
         """Parse one TOML document."""
 
 
-TOML_MODULE_NAME = "tomllib" if sys.version_info >= (3, 11) else "tomli"
+TOML_MODULE_NAME = "tomllib"
 tomllib = cast(_TomlLoader, importlib.import_module(TOML_MODULE_NAME))
 
 

@@ -9,7 +9,6 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 
 import pytest
@@ -36,10 +35,8 @@ def _candidate(tmp_path: Path) -> tuple[Path, Path]:
 
 
 def test_toml_loader_matches_supported_python_runtime() -> None:
-    """Select the standard or backported TOML loader for the runtime."""
-    expected = "tomllib" if sys.version_info >= (3, 11) else "tomli"
-
-    assert expected == TOML_MODULE_NAME
+    """Use the standard-library TOML loader on every supported runtime."""
+    assert TOML_MODULE_NAME == "tomllib"
 
 
 def test_matching_release_tag_is_accepted(tmp_path: Path) -> None:

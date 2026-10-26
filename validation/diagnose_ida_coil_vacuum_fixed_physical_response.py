@@ -50,19 +50,17 @@ _SOURCE_ONLY_CACHE_PREFIX: Path | None = None
 _SANITIZED_INTERPRETER = False
 
 
-def _sanitized_interpreter_flags_are_valid(
-    flags: Any,
-    *,
-    version: tuple[int, int],
-) -> bool:
-    """Return whether isolated child flags meet the versioned safety contract."""
-    safe_path = getattr(flags, "safe_path", None)
-    safe_path_is_valid = safe_path is True or (version == (3, 10) and safe_path is None)
+def _sanitized_interpreter_flags_are_valid(flags: Any) -> bool:
+    """Return whether isolated child flags meet the safety contract.
+
+    Every supported interpreter (Python 3.11 and later) exposes ``safe_path``,
+    so it must be set together with the isolation flags.
+    """
     return bool(
         flags.isolated == 1
         and flags.no_site == 1
         and flags.ignore_environment == 1
-        and safe_path_is_valid
+        and getattr(flags, "safe_path", None) is True
     )
 
 
@@ -89,10 +87,7 @@ if __name__ == "__main__":
         os.environ.get(name) != value for name, value in _FIXED_CHILD_ENVIRONMENT.items()
     ):
         raise RuntimeError("CVGC2 sanitized child environment is invalid")
-    if not _sanitized_interpreter_flags_are_valid(
-        sys.flags,
-        version=sys.version_info[:2],
-    ):
+    if not _sanitized_interpreter_flags_are_valid(sys.flags):
         raise RuntimeError("CVGC2 sanitized child interpreter flags are invalid")
     sys.argv.remove(_CHILD_FLAG)
     if any(name.startswith(("validation", "scpn_fusion")) for name in sys.modules):

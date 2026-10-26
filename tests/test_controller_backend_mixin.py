@@ -237,7 +237,7 @@ class TestRustKernelConsistencyGuards:
         """A missing Rust dense kernel raises, then falls back to the NumPy path."""
         # This guards the "advertised available, kernel missing" runtime: force the
         # Rust runtime flag on (it is off when the extension is unbuilt, e.g. on the
-        # 3.10/3.11 lanes) so the mixin enters the Rust branch and the missing kernel
+        # 3.11 lane) so the mixin enters the Rust branch and the missing kernel
         # triggers the fall-back — patch the module the mixin resolves at call time.
         mod = _controller_module()
         monkeypatch.setattr(mod, "_HAS_RUST_SCPN_RUNTIME", True, raising=False)

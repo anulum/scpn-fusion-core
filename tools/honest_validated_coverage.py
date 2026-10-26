@@ -31,13 +31,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import dataclass
 
-try:
-    from enum import StrEnum
-except ImportError:  # pragma: no cover - exercised by the Python 3.10 CI lane
-    from enum import Enum
-
-    class StrEnum(str, Enum):  # type: ignore[no-redef]  # Python 3.10 fallback.
-        """Python 3.10-compatible subset of :class:`enum.StrEnum`."""
+from enum import StrEnum
 
 
 import json

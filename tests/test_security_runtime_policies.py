@@ -255,6 +255,6 @@ def test_gpu_deploy_bootstrap_is_hash_locked() -> None:
     assert 'pip install --upgrade "' not in script
     assert lock.count("--hash=sha256:") == 8
     assert "packaging==26.3" in lock
-    assert "pip==26.2.1" in lock
-    assert "setuptools==84.0.0" in lock
-    assert "wheel==0.47.0" in lock
+    assert "pip==26.2.2" in lock
+    assert "setuptools==84.2.1" in lock
+    assert "wheel==0.48.0" in lock

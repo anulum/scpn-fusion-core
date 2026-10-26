@@ -59,7 +59,6 @@ jobs:
         - requirements/ci-benchmark.txt
         - requirements/ci-freegsnke.txt
         - requirements/ci-interop.txt
-        - requirements/ci-py310.txt
         - requirements/ci-py311.txt
         - requirements/ci-py312.txt
         - requirements/ci-stress.txt

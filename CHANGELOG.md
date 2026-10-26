@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Security
+
+- Every committed hash-locked Python closure resolves to patched releases:
+  pillow 13.0.0, certifi 2026.10.23, filelock 4.2.4, GitPython 3.2.1,
+  virtualenv 21.14.13, aiohttp 3.14.5 and setuptools 84.2.1; all 18 locks pass
+  pip-audit. The GitPython and virtualenv caps in the `.in` files are raised to
+  admit the fixed releases.
+
 ### Added
 
 - Add `benchmarks/bench_linear_mhd.py`, timing the assembly and eigen-search
@@ -135,6 +143,15 @@
   candidate-versus-reference plasma-current support, distribution distance,
   and centroid shift without changing solver physics or promotion gates.
 
+### Changed
+
+- Python locks are regenerated with uv 0.12.21 to the newest versions their
+  constraints allow (`REGEN_UPGRADE=1 tools/regenerate-requirements.sh`); the
+  cfspopcon and PROCESS runtime closures and the GPU bootstrap lock are
+  refreshed from their pinned sources. ruff 0.17.2 and mypy 1.20.2 are pinned
+  alike in the pre-commit hook, the RustBCA and PROCESS tool sets and the CI
+  locks; mypy stays below 2.0.
+
 ### Fixed
 
 - `linear_mhd_1d.most_unstable` no longer returns the first admissible root
@@ -257,6 +274,12 @@
   cold-start continuation after JIT compilation. The report now separates cold
   iterations, warm setup/compilation, steady-state warm iterations, and timing
   samples, and rejects relabelled cold-start or unconverged warm evidence.
+
+### Removed
+
+- Python 3.10 support (end of life 2026-10-01; pillow 13 requires Python 3.11):
+  `requires-python` is `>=3.11` for `scpn-fusion` and `scpn-fusion-rs`, and the
+  Python 3.10 test lane, lock and wheel build are removed.
 
 ## [4.0.0] - 2026-07-22
 

@@ -15,7 +15,6 @@ import importlib
 import json
 from pathlib import Path
 import subprocess
-import sys
 from typing import Any, Protocol, cast
 
 
@@ -28,7 +27,7 @@ class _TomlLoader(Protocol):
 
 _tomllib = cast(
     _TomlLoader,
-    importlib.import_module("tomllib" if sys.version_info >= (3, 11) else "tomli"),
+    importlib.import_module("tomllib"),
 )
 
 

@@ -52,7 +52,7 @@ cd scpn-fusion-rs/crates/fusion-python
 maturin develop --release
 ```
 
-Python 3.10–3.12 are supported by the 4.0.0 distribution line.
+Python 3.11–3.12 are supported; Python 3.10 support ended with its upstream end of life.
 
 ## Licensing
 

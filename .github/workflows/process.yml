@@ -36,7 +36,7 @@ jobs:
       - name: Install isolated pinned upstream
         run: |
           python -m venv "$RUNNER_TEMP/process-env"
-          "$RUNNER_TEMP/process-env/bin/python" -m pip install -r requirements/process.txt pytest==9.1.1 ruff==0.16.0 mypy==1.19.1 coverage==7.15.2
+          "$RUNNER_TEMP/process-env/bin/python" -m pip install -r requirements/process.txt pytest==9.1.1 ruff==0.17.2 mypy==1.20.2 coverage==7.17.0
       - name: Generate actual upstream output and verify diagnostic contracts
         env:
           PYTHONPATH: .

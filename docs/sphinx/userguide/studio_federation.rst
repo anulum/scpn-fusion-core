@@ -4,9 +4,8 @@ Studio Federation Surface
 
 The Studio federation surface publishes a machine-readable description of the
 FUSION package for Hub ingestion. It is optional at install time and enabled by
-the ``studio`` extra. This extra requires Python 3.11 or later and
-``scpn-studio-platform>=0.11.3.dev0,<0.12``; the core package retains Python
-3.10 support. Installing the extra on Python 3.10 fails dependency resolution.
+the ``studio`` extra. Like the core package, this extra requires Python 3.11
+or later; it also requires ``scpn-studio-platform>=0.11.3.dev0,<0.12``.
 The published SDK 0.11.2 does not implement the v2 contract; install the exact
 canonical source first:
 

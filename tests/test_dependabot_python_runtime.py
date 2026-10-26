@@ -54,7 +54,16 @@ def test_tornado_security_floor_is_locked_in_every_requirement_profile() -> None
         "docs.in",
         "full.in",
     }
-    assert len(lock_matches) == 9
+    assert {path.name for path, _version in lock_matches} == {
+        "build.txt",
+        "ci-benchmark.txt",
+        "ci-interop.txt",
+        "ci-py311.txt",
+        "ci-py312.txt",
+        "ci-stress.txt",
+        "docs.txt",
+        "full.txt",
+    }
     assert all(
         _version_tuple(version) >= TORNADO_SECURITY_FLOOR for _path, version in source_matches
     )

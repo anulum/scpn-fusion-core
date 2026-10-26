@@ -14,17 +14,13 @@ authorise expensive execution. File input supplies every field, including mu0.
 from __future__ import annotations
 
 import math
-import sys
 from dataclasses import dataclass, fields
 from pathlib import Path
 from typing import TypedDict
 
 import numpy as np
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
+import tomllib
 
 
 class CaseMapping(TypedDict):

@@ -41,7 +41,7 @@ class _TomlLoader(Protocol):
 
 tomllib = cast(
     _TomlLoader,
-    importlib.import_module("tomllib" if sys.version_info >= (3, 11) else "tomli"),
+    importlib.import_module("tomllib"),
 )
 
 

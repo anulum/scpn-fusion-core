@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — GPU deployment bootstrap dependency input
-pip==26.2.1
+pip==26.2.2
 packaging==26.3
-setuptools==84.0.0
-wheel==0.47.0
+setuptools==84.2.1
+wheel==0.48.0

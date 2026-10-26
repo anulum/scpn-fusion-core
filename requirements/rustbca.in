@@ -5,9 +5,10 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — optional RustBCA build and integration tooling
-coverage==7.15.2
-mypy==1.19.1
+# Regenerate: uv pip compile --generate-hashes --python-version 3.12 --python-platform linux requirements/rustbca.in -o requirements/rustbca.txt
+coverage==7.17.0
+mypy==1.20.2
 pytest==9.1.1
-pytest-cov==7.0.0
-ruff==0.16.0
-wheel==0.47.0
+pytest-cov==7.1.0
+ruff==0.17.2
+wheel==0.48.0

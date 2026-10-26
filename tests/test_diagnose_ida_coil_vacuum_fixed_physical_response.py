@@ -367,24 +367,30 @@ def test_sanitized_reexec_discards_sitecustomize_preload_and_finder(tmp_path: Pa
 
 
 @pytest.mark.parametrize(
-    ("version", "safe_path", "expected"),
+    ("safe_path", "expected"),
     [
-        ((3, 10), None, True),
-        ((3, 10), False, False),
-        ((3, 11), None, False),
-        ((3, 11), True, True),
+        (None, False),
+        (False, False),
+        (True, True),
     ],
 )
-def test_sanitized_interpreter_flags_are_version_bound(
-    version: tuple[int, int],
+def test_sanitized_interpreter_flags_require_safe_path(
     safe_path: bool | None,
     expected: bool,
 ) -> None:
-    """Only Python 3.10 may lack the post-3.10 ``safe_path`` flag."""
+    """The isolated child must run with ``safe_path`` set; a missing or false flag is refused."""
     flags = SimpleNamespace(isolated=1, no_site=1, ignore_environment=1)
     if safe_path is not None:
         flags.safe_path = safe_path
-    assert diagnostic._sanitized_interpreter_flags_are_valid(flags, version=version) is expected
+    assert diagnostic._sanitized_interpreter_flags_are_valid(flags) is expected
+
+
+@pytest.mark.parametrize("flag", ["isolated", "no_site", "ignore_environment"])
+def test_sanitized_interpreter_flags_require_every_isolation_flag(flag: str) -> None:
+    """Each isolation flag is required even when ``safe_path`` is set."""
+    flags = SimpleNamespace(isolated=1, no_site=1, ignore_environment=1, safe_path=True)
+    setattr(flags, flag, 0)
+    assert diagnostic._sanitized_interpreter_flags_are_valid(flags) is False
 
 
 @pytest.mark.parametrize(

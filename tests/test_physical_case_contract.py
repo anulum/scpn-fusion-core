@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 import hashlib
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -20,10 +19,7 @@ import pytest
 from scpn_fusion.core.jax_gs_solver import gs_solve_np, jax_gs_solve
 from scpn_fusion.core.physical_case import GradShafranovCase, case_from_toml
 
-if sys.version_info >= (3, 11):
-    import tomllib
-else:
-    import tomli as tomllib
+import tomllib
 
 _CORPUS = Path(__file__).resolve().parents[1] / "validation/polyglot/case_contract"
 with (_CORPUS / "manifest.toml").open("rb") as _stream:

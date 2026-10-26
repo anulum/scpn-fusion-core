@@ -33,7 +33,7 @@ jobs:
           "$RUNNER_TEMP/scpn-reference/bin/python" -m pip install --require-hashes -r requirements/ci-py312.txt
           "$RUNNER_TEMP/scpn-reference/bin/python" -m pip install --no-deps -e .
           python -m venv "$RUNNER_TEMP/cfspopcon"
-          "$RUNNER_TEMP/cfspopcon/bin/python" -m pip install -r requirements/cfspopcon.txt pytest==9.1.1 pytest-cov==7.0.0
+          "$RUNNER_TEMP/cfspopcon/bin/python" -m pip install -r requirements/cfspopcon.txt pytest==9.1.1 pytest-cov==7.1.0
       - name: Execute real integration tests and CLI with branch coverage
         env:
           PYTHONPATH: src:.
