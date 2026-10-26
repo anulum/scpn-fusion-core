@@ -582,7 +582,7 @@ def test_workflow_has_one_push_only_bounded_writer_and_pinned_actions() -> None:
     assert 'git -C "$METRICS_DIR" push origin HEAD:refs/heads/metrics' in workflow
     assert workflow.count("GH_TOKEN:") == 1
     assert workflow.index("GH_TOKEN:") > workflow.index("Push only the reviewed metrics ref")
-    assert "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a" in workflow
+    assert "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9" in workflow
     assert "scpn-fusion-metrics/downloads/scpn-fusion.csv" in workflow
     assert "retention-days: 30" in workflow
     assert "secrets." not in workflow

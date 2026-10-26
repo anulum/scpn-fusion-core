@@ -24,7 +24,7 @@ jobs:
       with:
         lfs: false
     - name: Set up Python 3.12
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
       with:
         python-version: '3.12'
     - name: Install dependencies
@@ -54,7 +54,7 @@ jobs:
     - name: RMSE regression gate
       run: python tools/ci_rmse_gate.py
     - name: Upload RMSE artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       with:
         name: rmse-dashboard-smoke
         path: |
@@ -70,7 +70,7 @@ jobs:
       with:
         lfs: false
     - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
       with:
         python-version: '3.12'
     - name: Install dependencies
@@ -102,7 +102,7 @@ jobs:
           --baseline-json tools/real_data_roadmap_baseline.json \
           --summary-json artifacts/real_data_roadmap_non_regression_summary.json
     - name: Upload validation artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       with:
         name: real-shot-validation
         path: |
@@ -122,7 +122,7 @@ jobs:
       with:
         lfs: false
     - name: Set up Python
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
       with:
         python-version: '3.12'
     - name: Install dependencies
@@ -252,7 +252,7 @@ jobs:
           --thresholds tools/benchmark_regression_thresholds.json \
           --summary-json artifacts/benchmark_regression_guard_summary.json
     - name: Upload benchmark provenance artifacts
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       with:
         name: benchmark-provenance-smoke
         path: |

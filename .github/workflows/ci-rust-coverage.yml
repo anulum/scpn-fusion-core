@@ -28,7 +28,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7
+      uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
     - name: Cache cargo
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
       with:
@@ -39,7 +39,7 @@ jobs:
         key: ${{ runner.os }}-tarpaulin-${{ hashFiles('scpn-fusion-rs/Cargo.lock') }}
         restore-keys: ${{ runner.os }}-tarpaulin-
     - name: Install cargo-binstall
-      uses: taiki-e/install-action@6eb4471beed212309063862e6f5284ca3da3b01d
+      uses: taiki-e/install-action@5488ac5a951645ce95062214902ac4b6bc1a1037
     - name: Install cargo-tarpaulin
       run: |
         set -euo pipefail

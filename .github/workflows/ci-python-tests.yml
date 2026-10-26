@@ -43,7 +43,7 @@ jobs:
         lfs: false
         persist-credentials: false
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install Lean toolchain for polyglot solver contracts
@@ -66,7 +66,7 @@ jobs:
         fi
         pip install --no-deps -e .
     - name: Install Rust toolchain for native public tests
-      uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7
+      uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
     - name: Build and install this checkout's Rust extension
       run: |
         maturin build --release --manifest-path scpn-fusion-rs/crates/fusion-python/Cargo.toml --out artifacts/native-wheels
@@ -179,7 +179,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     - name: Upload Python 3.12 coverage diagnostics
       if: matrix.python-version == '3.12' && always()
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       with:
         name: python312-coverage-diagnostics
         if-no-files-found: warn
@@ -193,7 +193,7 @@ jobs:
           artifacts/claim_range_guard_summary.json
     - name: Upload coverage guard summary
       if: matrix.python-version == '3.12' && always()
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       with:
         name: coverage-guard-summary
         if-no-files-found: warn
@@ -203,7 +203,7 @@ jobs:
           artifacts/coverage_delta_report.md
     - name: Upload CI ownership coverage
       if: always()
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       with:
         name: ci-ownership-${{ matrix.python-version }}
         include-hidden-files: true

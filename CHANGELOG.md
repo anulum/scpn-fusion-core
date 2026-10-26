@@ -155,6 +155,10 @@
   alike in the pre-commit hook, the RustBCA and PROCESS tool sets and the CI
   locks; mypy stays below 2.0.
 - Rust lock files move to the newest semver-compatible crates.
+- Pinned GitHub Actions move to their current releases: setup-python 7.1.0,
+  upload-artifact 7.0.2, download-artifact 8.0.2, CodeQL 4.38.3, Scorecard
+  2.5.0, setup-julia 3.0.3, install-action 2.87.32, pypi-publish 1.14.3 and the
+  current rust-toolchain stable commit.
 
 ### Fixed
 

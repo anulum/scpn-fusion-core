@@ -25,7 +25,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
     - name: Install Rust toolchain
-      uses: dtolnay/rust-toolchain@631a55b12751854ce901bb631d5902ceb48146f7
+      uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec
     - name: Cache cargo
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
       with:
@@ -58,7 +58,7 @@ jobs:
         fi
     - name: Upload benchmark artifacts
       if: always()
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
       with:
         name: rust-benchmarks
         path: scpn-fusion-rs/benchmark-results/
