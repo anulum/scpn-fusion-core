@@ -59,7 +59,7 @@ import sys
 import time
 import warnings
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Protocol, Tuple
 
@@ -1014,7 +1014,7 @@ def generate_markdown_report(all_metrics: List[ScenarioMetrics]) -> str:
             lines.append(f"- **{scenario}**: ALL CONTROLLERS UNSTABLE")
     lines.append("")
 
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
     lines.append(f"*Generated: {ts}*")
     return "\n".join(lines)
 
@@ -1057,7 +1057,7 @@ def generate_json_results(
 
     return {
         "benchmark": "disturbance_rejection",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "simulation_dt_s": DT,
         "fairness_schema_version": "1.0",
         "strict_hinf": bool(strict_hinf),

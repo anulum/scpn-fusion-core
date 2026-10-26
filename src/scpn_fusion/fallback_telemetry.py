@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 import threading
 from collections import deque
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Any
 
 
@@ -97,7 +97,7 @@ def record_fallback_event(
     total_limit = _parse_limit(_TOTAL_BUDGET_ENV)
     domain_limit = _parse_limit(_domain_env_key(normalized_domain))
     event: dict[str, Any] = {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
         "domain": normalized_domain,
         "reason": reason_text,
         "context": dict(context or {}),

@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 import hashlib
 import json
 from pathlib import Path
@@ -50,7 +50,7 @@ def source_checked_bundle(tmp_path: Path) -> EvidenceBundle:
     from scpn_fusion import studio
     from scpn_fusion.studio.manifest import STUDIO_VERSION
 
-    started = datetime.now(timezone.utc).isoformat()
+    started = datetime.now(UTC).isoformat()
     emitted = studio.write_federation_document(tmp_path).read_bytes()
     canonical = (
         Path(__file__).resolve().parents[1] / "docs/_generated/studio_manifest.json"
@@ -65,7 +65,7 @@ def source_checked_bundle(tmp_path: Path) -> EvidenceBundle:
             verb="replay",
             studio=studio.STUDIO_ID,
             started=started,
-            ended=datetime.now(timezone.utc).isoformat(),
+            ended=datetime.now(UTC).isoformat(),
             regenerated_by="scpn-emit-studio-manifest",
         ),
         agent=ProvAgent(STUDIO_VERSION, "fusion-consumer-contract-test"),

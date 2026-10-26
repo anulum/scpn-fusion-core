@@ -13,7 +13,7 @@ import argparse
 import hashlib
 import json
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -431,7 +431,7 @@ def build_manifest(
     return {
         "manifest_version": "reference-data-provenance-v2",
         "dataset_root": "validation/reference_data",
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "policy_file": policy_rel,
         "policy_version": str(policy_payload.get("policy_version", "")).strip(),
         "license_registry": sorted(registry_rows, key=lambda item: item["id"]),

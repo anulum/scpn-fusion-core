@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -170,7 +170,7 @@ def evaluate_progress(*, report: dict[str, Any], targets: dict[str, Any]) -> dic
     )
 
     return {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "roadmap_version": str(targets.get("roadmap_version", "v4.0")),
         "overall_pass": overall_pass,
         "overall_progress_ratio": overall_progress_ratio,

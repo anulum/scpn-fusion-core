@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -97,7 +97,7 @@ def run_parity_check(
     reports = [asdict(v) for _, v in sorted(reports_map.items(), key=lambda kv: kv[0])]
     strict_ok = all(bool(r["single_within_tol"] and r["batch_within_tol"]) for r in reports)
     return {
-        "timestamp_utc": datetime.now(timezone.utc).isoformat(),
+        "timestamp_utc": datetime.now(UTC).isoformat(),
         "steps": int(steps),
         "batch": int(batch),
         "seed": int(seed),

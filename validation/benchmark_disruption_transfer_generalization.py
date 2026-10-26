@@ -15,7 +15,7 @@ import hashlib
 import importlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import Any, cast
@@ -222,7 +222,7 @@ def run_benchmark(
     return {
         "schema": "disruption-transfer-generalization.v1",
         "provenance": _provenance(disruption_dir),
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "source_scenarios": sorted(source_set),
         "thresholds": dict(THRESHOLDS),
         "scenario_counts": dict(sorted(scenario_counts.items())),

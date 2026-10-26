@@ -27,7 +27,7 @@ import hashlib
 import json
 import platform
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import jax
@@ -153,7 +153,7 @@ def main() -> None:
             / (sorted(compiled_rows[0]["warm_ms"])[len(compiled_rows[0]["warm_ms"]) // 2]),
         },
         "settings": {"repeats": REPEATS, "defaults": "validated Anderson defaults, MG on"},
-        "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "jax_version": jax.__version__,
         "provenance": {
             "generator": "validation/measure_compiled_forward_speedup.py",

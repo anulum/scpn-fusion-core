@@ -13,7 +13,7 @@ import argparse
 from importlib import import_module
 import json
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -95,7 +95,7 @@ def build_request_payload(report: dict[str, Any], *, report_found: bool) -> dict
     version = _load_project_version()
     return {
         "schema_version": "1.0",
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "project": {
             "name": "scpn-fusion",
             "version": version,

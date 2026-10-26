@@ -15,7 +15,7 @@ import hashlib
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -136,7 +136,7 @@ def run_campaign() -> dict[str, Any]:
 def generate_report() -> dict[str, Any]:
     """Create a timestamped subsystem fault-hardening report."""
     report = run_campaign()
-    report["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
+    report["generated_at_utc"] = datetime.now(UTC).isoformat()
     return report
 
 

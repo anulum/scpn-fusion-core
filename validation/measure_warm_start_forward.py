@@ -30,7 +30,7 @@ import hashlib
 import json
 import platform
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import jax
@@ -309,7 +309,7 @@ def main() -> None:
             "repeats": REPEATS,
             "n_iter": DEFAULT_N_ITER,
         },
-        "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "jax_version": jax.__version__,
         "provenance": {
             "generator": "validation/measure_warm_start_forward.py",

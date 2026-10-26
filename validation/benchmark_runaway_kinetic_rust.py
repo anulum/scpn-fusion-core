@@ -17,7 +17,7 @@ import os
 import platform
 import statistics
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Literal
@@ -282,7 +282,7 @@ def benchmark(repeats: int) -> dict[str, Any]:
         ),
         "all_pass": all_pass,
         "gates": gates,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "host": {
             "platform": platform.platform(),
             "processor": platform.processor(),

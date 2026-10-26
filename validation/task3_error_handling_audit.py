@@ -14,7 +14,7 @@ import contextlib
 import io
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -471,7 +471,7 @@ def run_campaign(
 def generate_report(**kwargs: Any) -> dict[str, Any]:
     """Build the Task 3 report envelope with UTC generation timestamp."""
     return {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "task3_error_handling_audit": run_campaign(**kwargs),
     }
 

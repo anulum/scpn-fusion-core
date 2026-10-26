@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, cast
 
@@ -273,7 +273,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
         Passed through to :func:`run_campaign`.
     """
     out = run_campaign(**kwargs)
-    out["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
+    out["generated_at_utc"] = datetime.now(UTC).isoformat()
     return out
 
 

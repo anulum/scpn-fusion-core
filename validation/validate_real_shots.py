@@ -41,6 +41,7 @@ from scpn_fusion.control.replay_pipeline import (
     load_replay_pipeline_config,
     preprocess_sensor_trace,
 )
+from datetime import UTC
 
 # ── Thresholds ────────────────────────────────────────────────────────
 
@@ -969,7 +970,7 @@ def main(
     min_disruption_shots: int = 0,
 ) -> int:
     """Run all validation lanes. Returns 0 if pass, 1 if fail."""
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     t0 = time.perf_counter()
     artifacts = ROOT / "artifacts"
@@ -1071,7 +1072,7 @@ def main(
     runtime = time.perf_counter() - t0
 
     report = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "runtime_s": round(runtime, 2),
         "overall_pass": overall,
         "thresholds": THRESHOLDS,

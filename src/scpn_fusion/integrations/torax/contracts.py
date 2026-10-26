@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from types import MappingProxyType
 from typing import Mapping, Sequence, cast
 
@@ -22,7 +22,7 @@ TORAX_VERSION = "1.4.3"
 SIMULATION_CLOCK_DOMAIN = "simulation_monotonic"
 
 
-class ToraxFailureCode(str, Enum):
+class ToraxFailureCode(StrEnum):
     """Stable failure codes exposed independently of TORAX implementation types."""
 
     INVALID_REQUEST = "INVALID_REQUEST"

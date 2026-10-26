@@ -36,7 +36,7 @@ import sys
 import time
 import urllib.request
 import urllib.error
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -189,7 +189,7 @@ def download(output_dir: Path) -> None:
         f"# QLKNN-10D Dataset\n\n"
         f"**DOI**: {DOI}\n"
         f"**Zenodo Record**: {ZENODO_RECORD_ID}\n"
-        f"**Downloaded**: {datetime.now(timezone.utc).isoformat()}\n\n"
+        f"**Downloaded**: {datetime.now(UTC).isoformat()}\n\n"
         f"## Citation\n\n{CITATION}\n\n"
         f"## Files\n\n"
         + "\n".join(f"- `{f['filename']}` ({_human_size(f['size'])})" for f in files)

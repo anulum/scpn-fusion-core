@@ -13,7 +13,7 @@ import argparse
 import json
 import platform
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -402,7 +402,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
         Report dictionary with UTC timestamp and campaign content.
     """
     return {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "task2_surrogates": run_campaign(**kwargs),
     }
 

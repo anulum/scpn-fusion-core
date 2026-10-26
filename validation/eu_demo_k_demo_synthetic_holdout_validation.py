@@ -16,7 +16,7 @@ import math
 import statistics
 import time
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, Protocol, cast
 
@@ -287,7 +287,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
         "report_kind": REPORT_KIND,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         REPORT_PAYLOAD_KEY: run_campaign(**kwargs),
     }
 

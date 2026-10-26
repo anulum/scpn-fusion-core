@@ -32,7 +32,7 @@ import sys
 import tempfile
 import time
 import warnings
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from pathlib import Path
 from typing import Any, NamedTuple
 
@@ -1168,7 +1168,7 @@ def run_benchmark(
         )
 
     report = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "mode": mode_label,
         "freegs_available": bool(HAS_FREEGS),
         "force_solovev": bool(force_solovev),

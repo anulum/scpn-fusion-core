@@ -38,7 +38,7 @@ import platform
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -131,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:
             "paper_doi": "10.1016/j.cpc.2021.108098",
             "dream_git_sha": _dream_git_sha(),
             "settings_sha256": settings_sha256,
-            "generated_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+            "generated_at_utc": datetime.now(UTC).replace(microsecond=0).isoformat(),
             "python": platform.python_version(),
             "platform": platform.platform(),
         },

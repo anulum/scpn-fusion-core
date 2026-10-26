@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -166,7 +166,7 @@ def build_report(
         worst_row = min(observed_rows, key=lambda row: float(row["delta"]))
 
     return {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "overall_pass": len(failing_rows) == 0 and len(missing_rows) == 0,
         "global": rows_global,
         "domain_line": rows_domain_line,

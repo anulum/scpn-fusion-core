@@ -32,7 +32,7 @@ import hashlib
 import json
 import platform
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import jax
@@ -211,7 +211,7 @@ def main() -> None:
             "defaults": "batched defaults (mg_richardson, inner_cycles=2), warm shared "
             "psi_init + ip_ramp=1 (the IDA/MCMC pattern)",
         },
-        "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "jax_version": jax.__version__,
         "provenance": {
             "generator": "validation/measure_batched_forward.py",

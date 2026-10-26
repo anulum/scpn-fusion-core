@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 import json
 from pathlib import Path
 import tempfile
@@ -1849,7 +1849,7 @@ def generate_report() -> dict[str, Any]:
     t0 = time.perf_counter()
     campaign = run_campaign()
     return {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "runtime_seconds": float(time.perf_counter() - t0),
         "free_boundary_tracking_acceptance": campaign,
     }

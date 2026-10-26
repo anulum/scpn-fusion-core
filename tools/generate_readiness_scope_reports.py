@@ -14,7 +14,7 @@ import importlib.util
 import json
 import sys
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -110,7 +110,7 @@ def _build_scope_reports(*, top_limit: int, full_limit: int) -> tuple[str, str, 
     source_snapshot = _collect_snapshot(source_entries, scope="source", module=module)
     docs_snapshot = _collect_snapshot(docs_entries, scope="docs_claims", module=module)
     summary = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "generator": "tools/generate_readiness_scope_reports.py",
         "snapshots": [asdict(source_snapshot), asdict(docs_snapshot)],
     }

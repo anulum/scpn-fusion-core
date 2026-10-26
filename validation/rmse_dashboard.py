@@ -16,7 +16,7 @@ import math
 import os
 import statistics
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -677,7 +677,7 @@ def main() -> int:
     sparc_eq_dir = reference_dir / "sparc"
 
     report: dict[str, Any] = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "confinement_itpa": confinement_rmse_itpa(itpa_csv),
         "confinement_iter_sparc": confinement_rmse_iter_sparc(reference_dir),
         "beta_iter_sparc": beta_rmse_iter_sparc(reference_dir, validation_dir),

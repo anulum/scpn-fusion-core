@@ -28,7 +28,7 @@ import subprocess
 import sysconfig
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any, Callable, TypeAlias
 
@@ -1639,7 +1639,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
         "fpga_timing_ready": False,
         "codac_timing_ready": False,
         "actuator_hardware_timing_ready": False,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "runtime_seconds": float(time.perf_counter() - t0),
         "scpn_end_to_end_latency": campaign,
         "digital_twin_control_latency": digital_twin,

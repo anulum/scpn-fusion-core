@@ -14,7 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -212,7 +212,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
     """Build a report payload including UTC generation timestamp."""
 
     out = run_campaign(**kwargs)
-    out["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
+    out["generated_at_utc"] = datetime.now(UTC).isoformat()
     return out
 
 

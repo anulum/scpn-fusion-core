@@ -31,7 +31,7 @@ from __future__ import annotations
 import json
 import platform
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import jax
@@ -132,7 +132,7 @@ def main() -> None:
         "host": f"{platform.node()} ({platform.machine()})",
         "n_iter_cap": N_ITER,
         "repeats": REPEATS,
-        "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "results": results,
     }
     out = OUT_DIR / f"fp64_benchmark_{platform.node()}.json"

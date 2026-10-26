@@ -14,7 +14,7 @@ import hashlib
 import json
 import tempfile
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -324,7 +324,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
     """Build and timestamp a full HIL campaign report."""
 
     out = run_campaign(**kwargs)
-    out["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
+    out["generated_at_utc"] = datetime.now(UTC).isoformat()
     return out
 
 

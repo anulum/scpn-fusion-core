@@ -16,7 +16,7 @@ coverage. Re-exports the full surrogate surface for backward compatibility.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 import json
 import logging
 from pathlib import Path
@@ -282,7 +282,7 @@ def bundle_pretrained_surrogates(
     )
 
     manifest = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "version": "task2-pretrained-v1",
         "artifacts": {
             "mlp_itpa": _as_known_relative(mlp_path),

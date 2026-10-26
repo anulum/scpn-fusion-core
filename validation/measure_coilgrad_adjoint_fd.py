@@ -30,7 +30,7 @@ from __future__ import annotations
 import hashlib
 import json
 import platform
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import jax
@@ -155,7 +155,7 @@ def main() -> None:
         ),
         "regression_guard": "tests/test_jax_free_boundary_predictive.py::"
         "test_coil_gradient_matches_finite_difference (eps=300 A, rel<1e-3)",
-        "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "host_note": f"{platform.node()} — gradients/counts are load-independent; "
         "no timings recorded",
         "jax_version": jax.__version__,

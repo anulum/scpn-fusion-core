@@ -31,7 +31,7 @@ import re
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -342,7 +342,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "_metadata": REPORT_METADATA,
         "schema": "gpu-backend-alternatives.v1",
         "benchmark_id": "gpu_backend_alternatives",
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "python": sys.version.split()[0],
         "platform": platform.platform(),
         "probe_only": bool(args.probe_only),

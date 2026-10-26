@@ -22,7 +22,7 @@ import io
 import json
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -457,7 +457,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
         Report payload with UTC generation timestamp.
     """
     report = run_campaign(**kwargs)
-    report["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
+    report["generated_at_utc"] = datetime.now(UTC).isoformat()
     return report
 
 

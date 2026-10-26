@@ -28,7 +28,7 @@ from __future__ import annotations
 import hashlib
 import json
 import platform
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 
 import jax
@@ -144,7 +144,7 @@ def main() -> None:
         ),
         "case": "synthetic GS-like RHS (smooth interior source + non-trivial Dirichlet ring)",
         "preconditioner": "build_gs_mg_preconditioner defaults (1 V-cycle, 2+2 RB-GS sweeps)",
-        "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "host_note": f"{platform.node()} ({platform.machine()}) — counts only, no timings",
         "measurements": rows,
         "provenance": {

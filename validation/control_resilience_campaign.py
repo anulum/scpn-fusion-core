@@ -13,7 +13,7 @@ import argparse
 import json
 import math
 import time
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from typing import Any
 
@@ -104,7 +104,7 @@ def generate_campaign_report(
     )
     elapsed = time.perf_counter() - start
     return {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "runtime_seconds": elapsed,
         "campaign": metrics,
     }
