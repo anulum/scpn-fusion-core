@@ -306,6 +306,7 @@ def _plasma_support_mask(
     z_grid = np.linspace(*z_bounds, resolution, dtype=np.float64)
     r_mesh, z_mesh = np.meshgrid(r_grid, z_grid, indexing="ij")
     total_psi = np.asarray(equilibrium.psiRZ(r_mesh, z_mesh), dtype=np.float64)
+    psi_bndry = equilibrium.psi_bndry
     runtime_profiles = profiles
     if getattr(profiles, "eq", None) is equilibrium:
         runtime_profiles = copy.copy(profiles)
@@ -317,13 +318,13 @@ def _plasma_support_mask(
             def _updateBoundaryPsi(self, psi: object) -> None:
                 """Keep the solved boundary flux fixed on a diagnostic grid."""
 
-        runtime_profiles.eq = _FrozenBoundaryEquilibrium(float(equilibrium.psi_bndry))
+        runtime_profiles.eq = _FrozenBoundaryEquilibrium(float(psi_bndry))
     current_density = np.asarray(
         runtime_profiles.Jtor(
             r_mesh,
             z_mesh,
             total_psi,
-            psi_bndry=equilibrium.psi_bndry,
+            psi_bndry=psi_bndry,
         ),
         dtype=np.float64,
     )
