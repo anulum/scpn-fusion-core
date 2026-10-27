@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 from contextlib import redirect_stdout
 from dataclasses import asdict, dataclass
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 import hashlib
 import io
 import json
@@ -314,7 +314,7 @@ def generate_report(
     """Generate a timestamped high-beta negative-triangularity campaign report."""
 
     report = run_campaign(scenario)
-    report["generated_at_utc"] = datetime.now(UTC).isoformat()
+    report["generated_at_utc"] = datetime.now(timezone.utc).isoformat()
     return report
 
 

@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 import platform
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Mapping, cast
 
@@ -256,7 +256,7 @@ def _thaw(value: object) -> object:
 
 
 def _utc_now() -> str:
-    return datetime.now(UTC).isoformat(timespec="microseconds")
+    return datetime.now(timezone.utc).isoformat(timespec="microseconds")
 
 
 __all__ = ["execute_request", "failure_outcome", "invalid_request_outcome"]

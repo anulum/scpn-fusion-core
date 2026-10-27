@@ -34,7 +34,7 @@ import secrets
 import sys
 import time
 import traceback
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Protocol, cast
 
@@ -1366,7 +1366,7 @@ def main(argv: list[str] | None = None) -> dict[str, ControllerMetrics]:
         args.episodes = 10
     if args.enable_hinf_research:
         os.environ[HINF_RESEARCH_ENV] = "1"
-    timestamp_utc = datetime.now(UTC).isoformat()
+    timestamp_utc = datetime.now(timezone.utc).isoformat()
     selected_controllers = (
         [name.strip() for name in args.controllers.split(",") if name.strip()]
         if args.controllers

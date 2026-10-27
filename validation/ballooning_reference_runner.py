@@ -48,7 +48,7 @@ import hashlib
 import json
 import platform
 import sys
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
@@ -287,7 +287,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "licence": "LGPL-3.0-or-later",
         "pyrokinetics_version": _pyrokinetics_version(),
         "runner_sha256": _self_sha256(),
-        "generated_at_utc": datetime.now(UTC).replace(microsecond=0).isoformat(),
+        "generated_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "python": platform.python_version(),
         "platform": platform.platform(),
     }

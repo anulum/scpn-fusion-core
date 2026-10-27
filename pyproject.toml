@@ -1155,6 +1155,9 @@ ignore = [
   "E741",
   "I001",
   "UP006", "UP007", "UP015", "UP031", "UP035", "UP037", "UP045",
+  # datetime.UTC and StrEnum rewrites would change the bytes of sources whose
+  # SHA-256 is bound into tracked evidence and paper manifests; style only.
+  "UP017", "UP042",
   "F841",
   "SIM102", "SIM105", "SIM108",
   "B007", "B017", "B018", "B023", "B028", "B904", "B905",

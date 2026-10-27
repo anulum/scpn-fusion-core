@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 import csv
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -330,7 +330,7 @@ def poll_mdsplus_feed(
     for poll_idx in range(polls_i):
         rec: dict[str, Any] = {
             "poll_index": int(poll_idx),
-            "timestamp_utc": datetime.now(UTC).isoformat(),
+            "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             "live_count": 0,
             "error": None,
         }

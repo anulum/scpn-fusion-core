@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -64,7 +64,7 @@ def generate_report(
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
         "report_kind": REPORT_KIND,
-        "generated_at_utc": datetime.now(UTC).isoformat(),
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "runtime_seconds": elapsed,
         REPORT_PAYLOAD_KEY: payload,
     }

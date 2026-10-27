@@ -269,7 +269,7 @@ def build_report(*, run_rust: bool = True) -> dict[str, Any]:
     )
     return {
         "schema": "frc-rotating-bvp-acceptance.v2",
-        "generated_at_utc": dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat(),
+        "generated_at_utc": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "status": (
             "implemented_rostoker_qerushi_rotating_closure_accepted"
             if accepted

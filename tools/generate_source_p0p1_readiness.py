@@ -14,7 +14,7 @@ import importlib.util
 import json
 import sys
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -247,7 +247,7 @@ def _acceptance_items(markers: tuple[str, ...]) -> list[str]:
 
 def render_markdown(issues: list[SourceIssue]) -> str:
     """Render the source readiness in markdown with summary tables and issue sections."""
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     coverage_cfg = _load_coverage_thresholds()
     p0_count = sum(1 for issue in issues if issue.priority == "P0")
     p1_count = sum(1 for issue in issues if issue.priority == "P1")
@@ -349,7 +349,7 @@ def render_json(issues: list[SourceIssue]) -> str:
     """Render the source readiness payload as machine-readable JSON."""
     coverage_cfg = _load_coverage_thresholds()
     payload = {
-        "generated_at": datetime.now(UTC).isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "generator": "tools/generate_source_p0p1_readiness.py",
         "issue_count": len(issues),
         "issues": [

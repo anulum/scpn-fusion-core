@@ -13,7 +13,7 @@ import argparse
 import json
 import math
 import time
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Mapping, TypeAlias, cast
 
@@ -341,7 +341,7 @@ def generate_report(**kwargs: Any) -> dict[str, Any]:
     return {
         "schema_version": REPORT_SCHEMA_VERSION,
         "report_kind": REPORT_KIND,
-        "generated_at_utc": datetime.now(UTC).isoformat(),
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "runtime_seconds": elapsed,
         REPORT_KIND: bench,
     }

@@ -47,7 +47,7 @@ import json
 import logging
 import sys
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -536,7 +536,7 @@ def calibrate(
         "mape": round(float(mape * 100), 2),
         "mean_measured_tau_s": round(float(mean_tau), 6),
         "n_shots": n_shots,
-        "calibration_date": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "calibration_date": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "method": "scipy.optimize.minimize_scalar (bounded, log-space)",
         "transport_model": (
             "IPB98(y,2) scaling structure with c_gB as effective prefactor "

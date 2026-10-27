@@ -24,7 +24,7 @@ import os
 import subprocess
 import sys
 import time
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Protocol, cast
 
@@ -57,7 +57,7 @@ def _load_s3fs() -> _S3FSModule:
 
 def utc_now() -> str:
     """Return an ISO-8601 UTC timestamp for acquisition reports."""
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def repo_root() -> Path:
@@ -218,7 +218,7 @@ def main() -> int:
                 targets.append(shot_id)
     else:
         targets = select_targets(catalog, args.recent_count)
-    run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     report_path = run_dir / f"level2_summary_panel_{run_id}.json"
 
     report: dict[str, Any] = {

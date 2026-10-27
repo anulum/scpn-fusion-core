@@ -19,7 +19,7 @@ import signal
 import subprocess  # nosec B404
 import sys
 import time
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from types import FrameType
 from typing import Any, Final
@@ -90,7 +90,7 @@ def default_campaign_root(repository: Path) -> Path:
 
 
 def _utc_now() -> str:
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _boot_id() -> str:

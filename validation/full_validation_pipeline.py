@@ -27,7 +27,7 @@ import os
 import shutil
 import time
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -706,7 +706,7 @@ def run_campaign(
 
     elapsed = float(time.perf_counter() - t0)
     return {
-        "generated_at_utc": datetime.now(UTC).isoformat(),
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "runtime_seconds": elapsed,
         "task": "full_validation_pipeline_overhaul",
         "config": {

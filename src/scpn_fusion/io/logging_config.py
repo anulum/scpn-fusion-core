@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Any, Dict
 
 
@@ -36,7 +36,7 @@ class FusionJSONFormatter(logging.Formatter):
             Compact JSON document for the incoming record.
         """
         log_data: Dict[str, Any] = {
-            "timestamp": datetime.fromtimestamp(record.created, tz=UTC).isoformat(),
+            "timestamp": datetime.fromtimestamp(record.created, tz=timezone.utc).isoformat(),
             "level": record.levelname,
             "module": record.module,
             "filename": record.filename,

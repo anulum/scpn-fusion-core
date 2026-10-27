@@ -14,7 +14,7 @@ import json
 import logging
 import sys
 import time
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, TypeAlias, cast
 
@@ -848,7 +848,7 @@ def run_benchmark(
         "schema_version": "sparc-geqdsk-rmse-benchmark.v2",
         "benchmark_id": "sparc-pointwise-rmse",
         "benchmark_scope": "profile_source_fixed_boundary_reconstruction",
-        "generated_at_utc": datetime.now(UTC).isoformat(),
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "mode": "reference_geqdsk" if using_reference_data else "synthetic_fallback",
         "reference_case_count": len(reference_cases),
         "machine_counts": {

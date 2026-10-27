@@ -26,7 +26,7 @@ import hashlib
 import json
 import platform
 import sys
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -63,7 +63,7 @@ def main(argv: list[str] | None = None) -> int:
             "torax_version": torax.__version__,
             "config_name": args.config_name,
             "config_sha256": config_sha256,
-            "generated_at_utc": datetime.now(UTC).replace(microsecond=0).isoformat(),
+            "generated_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
             "python": platform.python_version(),
             "platform": platform.platform(),
             "sim_error": str(sim_error),

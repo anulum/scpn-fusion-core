@@ -22,7 +22,7 @@ import platform
 import sys
 import time
 import traceback
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, ParamSpec, cast
 
@@ -415,7 +415,7 @@ def generate_results_md(
         transfer_generalization = transfer_generalization or results.get("transfer_generalization")
         threshold_sweep = threshold_sweep or results.get("threshold_sweep")
         campaign = campaign or results.get("campaign")
-    now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     version = VERSION_FILE.read_text(encoding="utf-8").strip() if VERSION_FILE.exists() else "0.0.0"
     sections: list[str] = []
 

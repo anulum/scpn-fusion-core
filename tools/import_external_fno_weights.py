@@ -13,7 +13,7 @@ import argparse
 import hashlib
 import json
 import shutil
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -110,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
     summary_path = _resolve(args.summary_json)
 
     summary: dict[str, Any] = {
-        "generated_at_utc": datetime.now(UTC).isoformat(),
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "manifest_path": manifest_path.as_posix(),
         "weights_path": weights_path.as_posix(),
         "output_path": output_path.as_posix(),

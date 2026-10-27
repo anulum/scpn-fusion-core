@@ -13,7 +13,7 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -39,7 +39,7 @@ DEFAULT_DOWNLOAD_REPORT = REPO_ROOT / "validation" / "reports" / "mast_labelled_
 
 def utc_now() -> str:
     """Return the current UTC timestamp."""
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _load_manifest(path: Path) -> tuple[dict[str, Any] | None, list[str]]:

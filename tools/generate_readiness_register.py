@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import re
 from dataclasses import dataclass
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
@@ -815,7 +815,7 @@ def render_markdown(
     Raises:
         ValueError: If entries are inconsistent with expected ranking fields.
     """
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     marker_counts: dict[str, int] = {}
     domain_counts: dict[str, int] = {}
     for entry in entries:

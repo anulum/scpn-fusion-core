@@ -19,7 +19,7 @@ import threading
 import time
 import uuid
 from contextlib import contextmanager
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
@@ -266,7 +266,7 @@ class RecoveryStore:
             {
                 "schema": PROGRESS_SCHEMA,
                 "campaign_identity_digest": self.campaign_identity["digest"],
-                "updated_at_utc": datetime.now(UTC).isoformat(),
+                "updated_at_utc": datetime.now(timezone.utc).isoformat(),
                 "writer_run_id": self.writer_run_id,
                 "writer_pid": os.getpid(),
                 "snapshot_kind": snapshot_kind,
