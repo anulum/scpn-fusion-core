@@ -3,11 +3,11 @@
     "fixed_point_equivalence_span_rel_33sq": 1.9877525380960213e-09,
     "note": "compiled and eager reach the same equilibrium; warm repeats are bit-deterministic (asserted in tests/test_jax_predictive_forward_compiled.py)"
   },
-  "generated_utc": "2026-10-08T21:25:42+00:00",
+  "generated_utc": "2026-10-27T00:40:26+00:00",
   "jax_version": "0.7.1",
   "provenance": {
     "generator": "validation/measure_compiled_forward_speedup.py",
-    "generator_sha256": "8615e1fd0e73ded061a690671f91f0d930f06a954fe10ea63d2ea70b8c3e093d",
+    "generator_sha256": "3d1b2d074b6eb2e2ad9d904af8008cfdf5be205aa5a27a80166d80618e68f85a",
     "logic_sources": [
       "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
       "src/scpn_fusion/core/jax_free_boundary_predictive.py",
@@ -22,7 +22,7 @@
     ],
     "logic_sources_sha256": "f8b1cc6e1dc3f83f07dcde14a4e010fe4060d15dc667a2fae6e40062dbcad7ab",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "53132fd910d9e42fca6ea985f5530ec43946621ab9545c922e34d435c183017c"
+    "pinned_requirements_sha256": "12baf1755ae41d6048d2ecf6b3b8729074cf3d7b01384df9d97f16601881c01b"
   },
   "settings": {
     "defaults": "validated Anderson defaults, MG on",
@@ -32,43 +32,43 @@
   "timings_indicative": {
     "compiled": [
       {
-        "compile_plus_first_solve_ms": 7917.720570000029,
+        "compile_plus_first_solve_ms": 7744.52619600001,
         "grid": "33x33",
-        "warm_median_ms": 171.4699169999676,
+        "warm_median_ms": 169.74100400000225,
         "warm_ms": [
-          171.39620599999716,
-          171.4699169999676,
-          172.17625799997904
+          169.95725799995398,
+          169.74100400000225,
+          168.97520399999166
         ]
       },
       {
-        "compile_plus_first_solve_ms": 10232.354603000033,
+        "compile_plus_first_solve_ms": 9803.634756999998,
         "grid": "65x65",
-        "warm_median_ms": 615.4550840000184,
+        "warm_median_ms": 607.4861960000248,
         "warm_ms": [
-          615.4550840000184,
-          613.7967590000244,
-          616.0589989999607
+          606.7920300000083,
+          607.4861960000248,
+          608.4621669999706
         ]
       },
       {
-        "compile_plus_first_solve_ms": 12679.639133999955,
+        "compile_plus_first_solve_ms": 12298.642150000034,
         "grid": "129x129",
-        "warm_median_ms": 2256.309007000027,
+        "warm_median_ms": 2190.209105000008,
         "warm_ms": [
-          2228.3587420000117,
-          2256.309007000027,
-          2289.261735000025
+          2190.209105000008,
+          2218.439245000013,
+          2180.0087729999973
         ]
       }
     ],
     "device": "cpu (cpu)",
     "eager_33sq_ms": [
-      40812.49773100001,
-      41609.59230599997,
-      41352.40135499998
+      40159.11415400001,
+      41026.959495,
+      41023.02174899998
     ],
-    "host": "runnervmmprz5 (x86_64) - LOADED development host; indicative only, NOT a performance claim; the claimable number is the dedicated-hardware re-benchmark",
-    "speedup_anchor_33sq": 241.16417665850852
+    "host": "runnervmtai0g (x86_64) - LOADED development host; indicative only, NOT a performance claim; the claimable number is the dedicated-hardware re-benchmark",
+    "speedup_anchor_33sq": 241.6800936855507
   }
 }

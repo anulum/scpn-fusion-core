@@ -4,8 +4,8 @@
   "note": "one MG-preconditioned iteration costs more than a plain one (a V-cycle per matvec pair); the wall-clock verdict against the ~20 ms/129^2 contract bar is the dedicated-hardware FP64 benchmark, deliberately not measured here",
   "case": "synthetic GS-like RHS (smooth interior source + non-trivial Dirichlet ring)",
   "preconditioner": "build_gs_mg_preconditioner defaults (1 V-cycle, 2+2 RB-GS sweeps)",
-  "generated_utc": "2026-10-08T21:28:36+00:00",
-  "host_note": "runnervmmprz5 (x86_64) \u2014 counts only, no timings",
+  "generated_utc": "2026-10-27T00:41:32+00:00",
+  "host_note": "runnervmtai0g (x86_64) \u2014 counts only, no timings",
   "measurements": [
     {
       "grid": "33x33",
@@ -52,7 +52,7 @@
   ],
   "provenance": {
     "generator": "validation/measure_mg_preconditioner_iterations.py",
-    "generator_sha256": "e18ec6726d126c7bd1ca1c100ad06ba1101b8a4a26a23cb66a4ccd578660a294",
+    "generator_sha256": "0c597c9bcefbba9bbbdcffeef50b07455ce05646bf714a07e499a732b9094eb7",
     "logic_sources": [
       "src/scpn_fusion/core/jax_free_boundary_predictive.py",
       "src/scpn_fusion/core/jax_free_boundary_gs.py",
@@ -65,6 +65,6 @@
     ],
     "logic_sources_sha256": "73d91c8c48b81ed589f1a71bfc793ab1cc3b918ac436d669183a7db5e23b5117",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "53132fd910d9e42fca6ea985f5530ec43946621ab9545c922e34d435c183017c"
+    "pinned_requirements_sha256": "12baf1755ae41d6048d2ecf6b3b8729074cf3d7b01384df9d97f16601881c01b"
   }
 }

@@ -7,27 +7,27 @@
     "target_recall_ok": true,
     "transfer_efficiency_ok": true
   },
-  "generated_at_utc": "2026-10-08T21:21:59.218027+00:00",
+  "generated_at_utc": "2026-10-27T00:37:19.863835+00:00",
   "passes": true,
   "provenance": {
     "disruption_data_directory": "validation/reference_data/diiid/disruption_shots",
     "disruption_data_file_count": 16,
     "disruption_data_sha256": "630b9a43a488b5f3c1d13d14143e519efdbb0d4c976471c66278a0f47939afc6",
     "generator": "validation/benchmark_disruption_transfer_generalization.py",
-    "generator_sha256": "f10975e8c4261585093670b7352cc1755cc49434a51dfdde01c6d1d08d9e13a3",
+    "generator_sha256": "c112aa852ae6d68c07dfa4bcf222dd58f703eef8b17e9a9460b1b953165944d0",
     "logic_sources": [
       "validation/validate_real_shots.py",
       "src/scpn_fusion/control/disruption_predictor.py"
     ],
-    "logic_sources_sha256": "cce9656a8e69fd6e7a869d5b806f01b5f2032304b5ea37fb974769d2fc94dead",
+    "logic_sources_sha256": "95161b1c9a3f8d043d79efb494ab890051994abfcb03543b59fe1a17c4be89ca",
     "packages": {
-      "matplotlib": "3.10.8",
+      "matplotlib": "3.11.2",
       "numpy": "1.26.4",
       "python": "3.12.15",
       "torch": null
     },
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "53132fd910d9e42fca6ea985f5530ec43946621ab9545c922e34d435c183017c"
+    "pinned_requirements_sha256": "12baf1755ae41d6048d2ecf6b3b8729074cf3d7b01384df9d97f16601881c01b"
   },
   "scenario_counts": {
     "beta_limit": 2,
