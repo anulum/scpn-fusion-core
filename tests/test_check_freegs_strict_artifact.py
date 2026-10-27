@@ -31,10 +31,15 @@ SPEC.loader.exec_module(checker)
 
 
 def test_freegs_strict_workflow_runs_the_public_same_case_lane() -> None:
-    """The scheduled workflow must run fresh evidence and reject a blocked contract."""
+    """The manual workflow must run fresh evidence and reject a blocked contract.
+
+    The weekly schedule stays off while the guard can only refuse v1 evidence;
+    it returns together with the v2 strict-parity evidence schema.
+    """
     workflow = WORKFLOW_PATH.read_text(encoding="utf-8")
 
-    assert 'cron: "23 4 * * 2"' in workflow
+    assert "schedule:" not in workflow
+    assert "cron:" not in workflow
     assert "workflow_dispatch:" in workflow
     assert "validation/benchmark_vs_freegs.py --strict-backend" not in workflow
     assert "tools/check_freegs_strict_artifact.py" in workflow

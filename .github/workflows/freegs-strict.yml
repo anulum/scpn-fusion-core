@@ -6,9 +6,11 @@
 # SCPN Fusion Core — FreeGS Strict Public Example Parity Gate
 name: FreeGS Strict Public Example Parity Gate
 
+# Manual dispatch only. The artifact guard refuses every v1 public-example
+# report until the v2 strict-parity evidence schema (bound field and profile
+# custody) exists, so a weekly schedule could only repeat a known refusal.
+# Restore the weekly schedule in the same change that ships the v2 schema.
 on:
-  schedule:
-    - cron: "23 4 * * 2"
   workflow_dispatch:
 
 concurrency:
