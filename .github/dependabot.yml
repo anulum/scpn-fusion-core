@@ -85,6 +85,22 @@ updates:
       - dependency-name: "toml"
         update-types:
           - "version-update:semver-major"
+      # Breaking Rust upgrades wait for one verified migration of the native
+      # stack: rand 0.9+/rand_distr 0.5+ change the API and the seeded random
+      # streams that recorded Rust results depend on; ndarray 0.17,
+      # ndarray-npy 0.10, numpy 0.30 and pyo3 0.30 must move together.
+      - dependency-name: "rand"
+        versions: [">= 0.9"]
+      - dependency-name: "rand_distr"
+        versions: [">= 0.5"]
+      - dependency-name: "ndarray"
+        versions: [">= 0.17"]
+      - dependency-name: "ndarray-npy"
+        versions: [">= 0.10"]
+      - dependency-name: "numpy"
+        versions: [">= 0.30"]
+      - dependency-name: "pyo3"
+        versions: [">= 0.30"]
   - package-ecosystem: "cargo"
     directory: "/scpn-fusion-rs/fuzz"
     schedule:
@@ -95,3 +111,20 @@ updates:
       - "dependencies"
       - "rust"
       - "security"
+    ignore:
+      # Breaking Rust upgrades wait for one verified migration of the native
+      # stack: rand 0.9+/rand_distr 0.5+ change the API and the seeded random
+      # streams that recorded Rust results depend on; ndarray 0.17,
+      # ndarray-npy 0.10, numpy 0.30 and pyo3 0.30 must move together.
+      - dependency-name: "rand"
+        versions: [">= 0.9"]
+      - dependency-name: "rand_distr"
+        versions: [">= 0.5"]
+      - dependency-name: "ndarray"
+        versions: [">= 0.17"]
+      - dependency-name: "ndarray-npy"
+        versions: [">= 0.10"]
+      - dependency-name: "numpy"
+        versions: [">= 0.30"]
+      - dependency-name: "pyo3"
+        versions: [">= 0.30"]
