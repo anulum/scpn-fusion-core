@@ -9,7 +9,7 @@ sputtered counts, coefficient means, sampling standard errors and file digests.
 ## Build the optional reference
 
 Use Linux CPython, an available Rust toolchain compatible with the pinned
-upstream, and `wheel==0.48.0` in the builder's Python environment. The observed
+upstream, and `wheel==0.47.0` in the builder's Python environment. The observed
 build used CPython 3.12 and Rust 1.98.1. Other compiler/runtime combinations need
 their own integration evidence. No cross-platform or manylinux compatibility
 is inferred from a local wheel.

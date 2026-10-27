@@ -11,4 +11,6 @@ mypy==1.20.2
 pytest==9.1.1
 pytest-cov==7.1.0
 ruff==0.17.2
-wheel==0.48.0
+# Exact: tools/build_rustbca_reference.py and the retained v1 builder (commit
+# c73414f2) both refuse any other wheel; OSV lists no advisory for 0.47.0.
+wheel==0.47.0

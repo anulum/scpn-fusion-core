@@ -30,7 +30,7 @@ from validation.rustbca_build_receipt import (
     verify_rustbca_build_receipt,
 )
 
-WHEEL_WRITER_VERSION = "0.48.0"
+WHEEL_WRITER_VERSION = "0.47.0"
 ARCHIVE_SHA256 = "3aded40a7a3282ac41e4a1c90198511f26bf8d418ec2994914b6bf930424f4b7"
 
 
@@ -182,7 +182,7 @@ def build_rustbca_reference(
     retains result.json with a failure status, signals its compiler process group
     and attempts bounded leader reaping. The receipt distinguishes an unreaped
     leader from successful reaping; reaping alone does not prove group absence.
-    wheel 0.48.0 is required to write checked RECORD entries. The generated
+    wheel 0.47.0 is required to write checked RECORD entries. The generated
     wheel uses the local platform tag, never an unaudited manylinux claim.
     """
     if type(timeout_seconds) not in (int, float) or not 0 < timeout_seconds <= 1800:

@@ -655,7 +655,7 @@ def test_actual_unsupported_wheel_refuses_before_build(
     )
     (tmp_path / "unsupported-wheel-refusal.log").write_text(result.stderr)
     assert result.returncode != 0
-    assert "ValueError: RustBCA wheel writer requires wheel==0.48.0" in result.stderr
+    assert "ValueError: RustBCA wheel writer requires wheel==0.47.0" in result.stderr
     assert not output.exists()
 
 
