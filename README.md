@@ -288,9 +288,9 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | SPARC GEQDSK validation | 8 public EFIT equilibria; operator-source gate passes; row-level debug traces expose profile-source/free-boundary blockers | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py` |
 | Q >= 10 operating point | Q = 15 (0D power balance) | `RESULTS.md` |
 | TBR | 1.14 (0D 3-group blanket) | `RESULTS.md` |
-| Free-boundary equilibrium validation | Public operator-source GEQDSK gate passes; FreeGS public-example vacuum comparison passes; native same-case profile-source metrics, finite signed-q sanity, and machine-readable strict threshold checks are published; free-boundary strict parity is accepted for the public FreeGS same-case lane | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py`, `validation/benchmark_freegs_public_example_reconstruction.py`, `validation/reports/free_boundary_strict_parity_benchmark.md` |
+| Free-boundary equilibrium validation | Public operator-source GEQDSK gate passes; FreeGS public-example vacuum comparison passes; native same-case profile-source metrics, finite signed-q sanity, and machine-readable strict threshold checks are published; free-boundary strict parity stays blocked, because the strict-parity classifier treats this v1 public-example report as legacy, non-admitting evidence | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py`, `validation/benchmark_freegs_public_example_reconstruction.py`, `validation/reports/free_boundary_strict_parity_benchmark.md` |
 | Implicit-IDA same-case and stationarity evidence | `blocked_same_case_evidence`; current-runtime public 129² DIII-D-like FreeGS comparison has ψ_N RMSE `0.2110185203` and non-isolated warm P95 `30.8563 ms`. CVGC1 remains immutable; its fixed-physical follow-on reproduces the exact total forcing/response ladder and resolves the bounded source/vacuum numerics: forcing orders `2.0120`/`2.0026`, response orders `3.3969`/`1.7994`, fine source-free response fractions `9.7648e-5`/`2.4710e-5`, and monotonically decreasing fixed-current error through `3.5502e-5`. Production physics is unchanged and every facility, control, safety, scientific, latency, and held-out claim remains false | `validation/benchmark_ida_same_case.py`, `validation/reports/ida_same_case_evidence.md`, `validation/reports/ida_fixed_point_stability.md`, `validation/reports/ida_operator_response.md`, `validation/reports/ida_coil_vacuum_grid_convergence.md`, `validation/reports/ida_coil_vacuum_fixed_physical_response.md` |
-| Full-fidelity end-to-end campaign | `not_full_fidelity`; local contracts ready, `1` accepted public reference artefact, accepted free-boundary strict parity, and remaining production-parity lanes stay fail-closed until external same-case evidence exists | `validation/reports/full_fidelity_end_to_end_campaign.md` |
+| Full-fidelity end-to-end campaign | `not_full_fidelity`; local contracts ready, `1` accepted public reference artefact; free-boundary strict parity and the remaining production-parity lanes stay fail-closed until external same-case evidence exists | `validation/reports/full_fidelity_end_to_end_campaign.md` |
 
 Latency taxonomy: `control.pid_kernel_step_us` (Rust reduced-order kernel),
 `control.closed_loop_step_us` (controller loop with explicit surrogate/full
@@ -914,9 +914,10 @@ Validation artifacts:
   mismatches.
 - The external TORAX and FreeGS/FreeGSNKE parity score is tracked at
   [`validation/reports/external_parity_score.md`](validation/reports/external_parity_score.md).
-  The rollup keeps the overall status blocked with reproducibility score `1.0`
-  and parity score `0.6`: FreeGS/FreeGSNKE strict parity is accepted, while
-  TORAX remains blocked on same-physics threshold evidence.
+  The rollup keeps the overall status blocked with reproducibility score `0.9`
+  and parity score `0.1`: FreeGS/FreeGSNKE strict parity is blocked on a
+  non-admitting strict-parity report, and TORAX remains blocked on
+  same-physics threshold evidence.
 - FAIR validation-pack readiness is tracked in
   [`validation/reports/fair_validation_packs.md`](validation/reports/fair_validation_packs.md);
   `tools/export_zenodo_dataset.py` exports the local pack directories and keeps

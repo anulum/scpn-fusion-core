@@ -42,8 +42,8 @@ same-case external reference artefacts and quantitative comparisons exist.
 | Production-scale decomposition | Blocked: deterministic radial/toroidal decomposition, reciprocal rank-neighbour graph checks, rank communication contracts, local halo-face integrity, executable local rank-tile reductions, local process-isolated CPU execution, optional real local 2D MPI face-and-corner halo execution, optional CUDA rank-tile reductions, local large-grid CPU evidence over `9,437,184` phase cells, declared distributed halo-volume accounting, explicit distributed scaling gate, and distributed-run acceptance manifest pass; cluster MPI and multi-GPU scaling evidence is missing | `python validation/benchmark_production_decomposition_contract.py` |
 | DREAM-grade runaway electrons | Blocked: public DREAM settings deck evidence plus native source-term budget diagnostics exist; PETSc/compiled `dreami` backend output and same-case source-budget parity are missing | `python tools/run_dream_reference_artifact.py --no-execute-backend` |
 | Aurora/STRAHL-grade impurities | Partially accepted: Aurora/Open-ADAS argon artefact, coefficient sidecars, finite-volume radial-transport budget diagnostics, native same-case effective source/recycling closure, and time-resolved source-sink matrix parity pass density, radiation, inventory, particle-conservation, and source-sink thresholds; independent mechanistic recycling validation remains missing | `python tools/run_aurora_reference_artifact.py` |
-| Free-boundary equilibrium strict parity | Accepted locally: dedicated strict-parity gate consumes the FreeGS public-example reconstruction and machine-metadata reports; same-case nonlinear output, native profile-source comparison, strict thresholds, geometry containment, grid convergence, public coil/vacuum sidecars, and same-case public reference output all pass | `python validation/benchmark_free_boundary_strict_parity.py --strict` |
-| External TORAX/FreeGS parity score | Blocked overall: the score report consumes TORAX real-reference, TORAX same-physics, TORAX IMAS, FreeGS public-example, FreeGS/FreeGSNKE strict-parity, and machine-metadata reports; reproducibility score is `1.0`, parity score is `0.6`, FreeGS/FreeGSNKE is accepted, and TORAX remains blocked on native-transport, source/boundary, and time-integration requirements | `python validation/external_parity_score.py` |
+| Free-boundary equilibrium strict parity | Blocked: the dedicated strict-parity gate consumes the FreeGS public-example reconstruction and machine-metadata reports, but classifies the v1 public-example report as legacy, non-admitting evidence; it checks stored summaries and source bytes, not raw field/q-profile custody, so no positive evidence contract is admitted | `python validation/benchmark_free_boundary_strict_parity.py --strict` |
+| External TORAX/FreeGS parity score | Blocked overall: the score report consumes TORAX real-reference, TORAX same-physics, TORAX IMAS, FreeGS public-example, FreeGS/FreeGSNKE strict-parity, and machine-metadata reports; reproducibility score is `0.9`, parity score is `0.1`, FreeGS/FreeGSNKE is blocked on a non-admitting strict-parity report, and TORAX remains blocked on native-transport, source/boundary, and time-integration requirements | `python validation/external_parity_score.py` |
 | SAS dataset readiness | Blocked: SAS now holds public or locally authorised source snapshots and reference inputs under `DATASETS/SCPN-FUSION-CORE`, but missing same-deck external parity outputs remain explicit blocked rows rather than accepted evidence | `python validation/benchmark_sas_dataset_manifest.py` |
 | FAIR validation packs | Accepted locally: three tracked evidence packs are exported with per-file SHA-256 manifests for safety traceability, surrogate UQ/OOD cards, and inverse-equilibrium attribution; DOI publication and final data-license posture remain owner-gated | `python tools/export_zenodo_dataset.py` |
 
@@ -690,7 +690,7 @@ required before any CUDA throughput claim.
 The raw profile-source and legacy raw-GEQDSK FreeGS failures remain open
 benchmark blockers for that older GEQDSK path. Accepted named-adapter rows are
 no longer counted as unresolved profile-source blockers, and the public FreeGS
-same-case strict-parity gate is accepted separately below. These are not CI or
+same-case strict-parity gate is tracked separately below and stays blocked. These are not CI or
 harness failures and must not be hidden by fallback rows.
 
 ### Full-fidelity public source acquisition
@@ -890,7 +890,7 @@ It indexes cached FreeGSNKE machine configuration metadata for active coils,
 passive structures, limiter/wall contours, and magnetic probes, with checksums
 and guarded geometry summaries, plus FreeGS example-script checksums. This is a
 reconstruction input inventory only. It is not strict parity by itself, but it
-now feeds the accepted strict gate once linked to same-case public equilibria,
+now feeds the strict gate once linked to same-case public equilibria,
 native coil/vacuum reconstruction outputs, and FreeGS/FreeGSNKE solver-output
 comparisons.
 
@@ -923,9 +923,10 @@ It consumes the FreeGS public-example reconstruction report and public machine
 metadata inventory, then accepts full-fidelity free-boundary parity only if
 same-case external output, native profile-source comparison, strict thresholds,
 geometry containment, grid convergence, public coil/vacuum sidecars, and
-same-case public reference output are all ready. Current local result is
-`accepted_full_fidelity_free_boundary_parity` with zero blockers and zero failed
-threshold checks.
+same-case public reference output are all ready. The current tracked result is
+`blocked_free_boundary_strict_parity` with evidence classification
+`legacy_non_admitting`: its summaries report zero failed threshold checks, but
+the classifier admits no positive evidence contract from stored summaries alone.
 
 The separate implicit-IDA solver lane is tracked in
 [`validation/reports/ida_same_case_evidence.md`](../validation/reports/ida_same_case_evidence.md).
@@ -1994,8 +1995,9 @@ profiles initialize the native transport solver, then keeps threshold tightening
 blocked on the native transport-model mismatch, missing same-deck source/boundary
 controls, and missing step-by-step TORAX trace.
 The external parity score rollup records this TORAX lane as
-`blocked_same_physics_thresholds` with a parity score of `0.2` while the
-FreeGS/FreeGSNKE free-boundary lane is accepted.
+`blocked_same_physics_thresholds` with a parity score of `0.2`, and the
+FreeGS/FreeGSNKE free-boundary lane as `blocked_free_boundary_external_parity`
+with a parity score of `0.0`.
 Grid-convergence and production-scale evidence rows are accepted only when they
 reference the converted same-case output row for the corresponding solver
 family.

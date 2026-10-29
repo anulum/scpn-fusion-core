@@ -96,7 +96,7 @@ five-case strict lane or close external full-fidelity validation.
 | `.github/workflows/freegs-strict.yml` | Manual-dispatch strict lane |
 | `artifacts/freegs_benchmark.json` | Latest results (Solov'ev mode) |
 | `validation/reports/freegs_strict_backend_benchmark.json` | Last tracked five-case strict result (fail-closed runtime failures) |
-| `validation/reports/freegs_public_example_reconstruction.json` | Two-case accepted local same-case and grid-convergence evidence |
+| `validation/reports/freegs_public_example_reconstruction.json` | Two-case local same-case and grid-convergence report (v1); the strict-parity classifier treats it as legacy, non-admitting evidence |
 | `validation/validate_grad_shafranov_solovev.py` | Solov'ev exact-equilibrium suite: operator truncation, SOR, and dispatched multigrid all converge at second order to the analytic field (`validation/reports/grad_shafranov_solovev.json`) |
 | [`docs/PSI_GATE_ATTRIBUTION.md`](PSI_GATE_ATTRIBUTION.md) | Per-file attribution of the intentionally failing 18-file ψ_N reconstruction gate (generated, drift-checked) |
 
