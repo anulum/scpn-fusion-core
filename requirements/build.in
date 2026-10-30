@@ -23,5 +23,5 @@ pip>=26.2
 pytest>=9.0.3
 requests>=2.33.0
 soupsieve>=2.9.2
-tornado>=6.5.9,<6.5.10
+tornado>=6.6,<6.7
 urllib3>=2.8.0

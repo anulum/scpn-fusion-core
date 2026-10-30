@@ -9,6 +9,9 @@
   virtualenv 21.14.13, aiohttp 3.14.5 and setuptools 84.2.1; all 18 locks pass
   pip-audit. The GitPython and virtualenv caps in the `.in` files are raised to
   admit the fixed releases.
+- tornado moves from 6.5.9 to 6.6 in the build, CI, docs and full locks
+  (CVE-2026-115927, CVE-2026-116577, CVE-2026-116578); the `.in` floors and
+  the security-floor contract test now require 6.6.
 - `.npz` archives are read and written through `fusion_math::npz` on zip
   9.1.2; `ndarray-npy` is used without its zip feature, which removes zip 2.4.2
   (RUSTSEC-2026-0367, RUSTSEC-2026-0368, RUSTSEC-2026-0369).
