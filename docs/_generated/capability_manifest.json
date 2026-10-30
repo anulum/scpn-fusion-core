@@ -3082,7 +3082,7 @@
     "python_capability_classes": 642,
     "python_capability_source_modules": 372,
     "rust_workspace_crates": 13,
-    "test_files": 679
+    "test_files": 680
   },
   "documentation": {
     "public_pages": [
@@ -3736,6 +3736,7 @@
       "tests/test_psi_gate_attribution.py",
       "tests/test_psi_pointwise_rmse.py",
       "tests/test_psi_pointwise_rmse_cli.py",
+      "tests/test_public_freegs_parity_wording.py",
       "tests/test_pulsed_compression.py",
       "tests/test_pwi_erosion.py",
       "tests/test_pwi_erosion_runtime.py",
