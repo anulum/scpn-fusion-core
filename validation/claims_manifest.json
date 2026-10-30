@@ -488,14 +488,14 @@
     {
       "id": "results_predictive_forward_adjoint",
       "source_file": "RESULTS.md",
-      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.253e-06 relative",
+      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.267e-06 relative",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.253e-06 relative"
+          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.266e-06 relative"
         }
       ]
     },
@@ -572,28 +572,28 @@
     {
       "id": "readme_predictive_forward_adjoint_current",
       "source_file": "README.md",
-      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.253e-06 relative \\|",
+      "source_pattern": "\\| Adjoint coil gradient vs warm finite difference \\| \u2264 2\\.267e-06 relative \\|",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.253e-06 relative"
+          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.266e-06 relative"
         }
       ]
     },
     {
       "id": "validation_real_diiid_adjoint_current",
       "source_file": "docs/VALIDATION_REAL_DIIID_145419.md",
-      "source_pattern": "\\| coil-current gradients \\| \\*\\*\u2264 2\\.253 \u00d7 10\u207b\u2076 relative\\*\\* at 100\u2013300 A steps",
+      "source_pattern": "\\| coil-current gradients \\| \\*\\*\u2264 2\\.267 \u00d7 10\u207b\u2076 relative\\*\\* at 100\u2013300 A steps",
       "evidence_files": [
         "artifacts/coilgrad_adjoint_fd_evidence.json"
       ],
       "evidence_patterns": [
         {
           "file": "artifacts/coilgrad_adjoint_fd_evidence.json",
-          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.253e-06 relative"
+          "pattern": "\"guarded_claim\"\\s*:\\s*\"agreement within 2\\.266e-06 relative"
         }
       ]
     },

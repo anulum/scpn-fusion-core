@@ -21,7 +21,7 @@
     ],
     "logic_sources_sha256": "4bce69425358cdab41df3dc82b48d6c560d72577e87f015ddba491b1e3f44371",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "12baf1755ae41d6048d2ecf6b3b8729074cf3d7b01384df9d97f16601881c01b"
+    "pinned_requirements_sha256": "54d23ccbef7068ee5d8d8f28b5af687c314867c3b8445abe954fce39e30486fd"
   },
   "disclosure": "reproduction lanes are warm-started from the EFIT psi and use reference-derived normalisation anchors (psi_axis, psi_bnd, plasma-region Ip) - they are consistency/reproduction checks, not blind prediction or independent branch selection; the cold-start lane demonstrates that limitation explicitly",
   "operator": {
@@ -32,26 +32,26 @@
   },
   "subdomain_reproduction": {
     "picard_iterations": 204,
-    "deep_rms_rel_span": 0.010631563560362734,
-    "deep_max_rel_span": 0.016038154222767203,
-    "interior_rms_rel_span": 0.008428050804897284,
-    "axis_value_rel_err": 0.007921494969083415
+    "deep_rms_rel_span": 0.01063156355904966,
+    "deep_max_rel_span": 0.01603815422079547,
+    "interior_rms_rel_span": 0.008428050803907385,
+    "axis_value_rel_err": 0.007921494968008735
   },
   "full_domain_reproduction": {
-    "deep_rms_rel_span": 0.019084943380456968,
-    "deep_max_rel_span": 0.0364587561811823,
-    "plasma_rms_rel_span": 0.019717514894471738,
-    "axis_value_rel_err": 0.01202021468922726,
-    "global_max_rel_span": 0.03907731647616266,
+    "deep_rms_rel_span": 0.019084943379926365,
+    "deep_max_rel_span": 0.036458756180223977,
+    "plasma_rms_rel_span": 0.01971751489393464,
+    "axis_value_rel_err": 0.012020214688850929,
+    "global_max_rel_span": 0.03907731647527233,
     "anderson_iterations": 21
   },
   "full_domain_cold_start": {
     "iterations": 1,
-    "deep_rms_rel_span": 1.2678812266173352,
-    "deep_max_rel_span": 1.7313910359865858,
-    "plasma_rms_rel_span": 1.1326619690512643,
-    "axis_value_rel_err": 0.8226717245805104,
-    "global_max_rel_span": 1.7313910359865858
+    "deep_rms_rel_span": 1.2678812266175519,
+    "deep_max_rel_span": 1.7313910359868308,
+    "plasma_rms_rel_span": 1.1326619690514692,
+    "axis_value_rel_err": 0.8226717245804467,
+    "global_max_rel_span": 1.7313910359868308
   },
   "map_structure": {
     "regenerated_each_run": true,
@@ -59,28 +59,28 @@
       "settings": "init='external' (external-source-only start, zero plasma current), Anderson(m=8) default",
       "metrics": {
         "iterations": 1,
-        "deep_rms_rel_span": 1.2678812266173352,
-        "deep_max_rel_span": 1.7313910359865858,
-        "plasma_rms_rel_span": 1.1326619690512643,
-        "axis_value_rel_err": 0.8226717245805104,
-        "global_max_rel_span": 1.7313910359865858
+        "deep_rms_rel_span": 1.2678812266175519,
+        "deep_max_rel_span": 1.7313910359868308,
+        "plasma_rms_rel_span": 1.1326619690514692,
+        "axis_value_rel_err": 0.8226717245804467,
+        "global_max_rel_span": 1.7313910359868308
       },
       "cross_checks_executed_this_run": {
         "anderson_n_iter_400": {
           "iterations": 1,
-          "deep_rms_rel_span": 1.2678812266173352,
-          "deep_max_rel_span": 1.7313910359865858,
-          "plasma_rms_rel_span": 1.1326619690512643,
-          "axis_value_rel_err": 0.8226717245805104,
-          "global_max_rel_span": 1.7313910359865858
+          "deep_rms_rel_span": 1.2678812266175519,
+          "deep_max_rel_span": 1.7313910359868308,
+          "plasma_rms_rel_span": 1.1326619690514692,
+          "axis_value_rel_err": 0.8226717245804467,
+          "global_max_rel_span": 1.7313910359868308
         },
         "picard_omega_0.5": {
           "iterations": 1,
-          "deep_rms_rel_span": 1.2678812266173352,
-          "deep_max_rel_span": 1.7313910359865858,
-          "plasma_rms_rel_span": 1.1326619690512643,
-          "axis_value_rel_err": 0.8226717245805104,
-          "global_max_rel_span": 1.7313910359865858
+          "deep_rms_rel_span": 1.2678812266175519,
+          "deep_max_rel_span": 1.7313910359868308,
+          "plasma_rms_rel_span": 1.1326619690514692,
+          "axis_value_rel_err": 0.8226717245804467,
+          "global_max_rel_span": 1.7313910359868308
         }
       },
       "cause": "the psi_N anchors are FIXED reference values, so a plasma-free start has its tanh LCFS cutoff exactly saturated -> zero model current -> the map is exactly stationary; the reproduction map cannot select the branch from a plasma-free start (that requires the predictive solver's iterate-derived anchors + Ip ramp, which on real data needs PF coil currents - Rung 4)"
@@ -89,19 +89,19 @@
       "settings": "relaxed Picard, warm start, measured external source; no early stop within 200 iterations; BOTH relaxation factors executed this run",
       "metrics_omega_0.5": {
         "iterations": 200,
-        "deep_rms_rel_span": 0.019084767255458508,
-        "deep_max_rel_span": 0.0364584282610146,
-        "plasma_rms_rel_span": 0.01971732770021782,
-        "axis_value_rel_err": 0.012020138813464027,
-        "global_max_rel_span": 0.03907696206557812
+        "deep_rms_rel_span": 0.0190847672550384,
+        "deep_max_rel_span": 0.03645842826026851,
+        "plasma_rms_rel_span": 0.01971732769976336,
+        "axis_value_rel_err": 0.012020138813291613,
+        "global_max_rel_span": 0.03907696206481956
       },
       "metrics_omega_0.3": {
         "iterations": 200,
-        "deep_rms_rel_span": 0.019059457456890444,
-        "deep_max_rel_span": 0.036411301081477526,
-        "plasma_rms_rel_span": 0.01969042563615494,
-        "axis_value_rel_err": 0.012009245026330936,
-        "global_max_rel_span": 0.03902603618540047
+        "deep_rms_rel_span": 0.01905945745643775,
+        "deep_max_rel_span": 0.03641130108066572,
+        "plasma_rms_rel_span": 0.01969042563566812,
+        "axis_value_rel_err": 0.012009245026147893,
+        "global_max_rel_span": 0.03902603618459079
       },
       "note": "Anderson(m=8) contributes ACCELERATION on this map (21 vs >200 iterations), not branch selection"
     }
@@ -111,11 +111,11 @@
     "settings": "model source only in psi_N < 0.95; measured Delta*psi in the remaining pedestal shell (uses MORE measured information \u2014 attribution diagnostic, NOT a claim improvement)",
     "metrics": {
       "iterations": 14,
-      "deep_rms_rel_span": 0.000697190780414296,
-      "deep_max_rel_span": 0.0017412164782353268,
-      "plasma_rms_rel_span": 0.0006167131920893372,
-      "axis_value_rel_err": 0.0002460528102270676,
-      "global_max_rel_span": 0.0017412164782353268
+      "deep_rms_rel_span": 0.0006971907802479342,
+      "deep_max_rel_span": 0.0017412164779034515,
+      "plasma_rms_rel_span": 0.0006167131919247331,
+      "axis_value_rel_err": 0.0002460528103264176,
+      "global_max_rel_span": 0.0017412164779034515
     },
     "finding": "the current full-domain error is attributable essentially ENTIRELY to the psi_N > 0.95 pedestal-shell source representation: pinning the measured shell collapses deep RMS from 1.908% to 0.070% (better than the coil-free sub-domain). The mismatch is placement of the steep pedestal source on the 129^2 discrete grid, not total-current amplitude; the elliptic response is smooth and domain-wide, so the psi error itself is not annulus-localised",
     "profiles_only_fix_direction": "flux-surface-aware (sub-cell averaged) source evaluation in shell cells is measured by the subcell_source_averaging lane below; the residual remains an edge-band representation question (psi_N in [0.98, 1]), not a blind-prediction claim"
@@ -125,27 +125,27 @@
     "settings": "general_gs_source(subcell=4): 4x4 linear sub-cell averaging of the model source over each node's control volume (psi expanded from central-difference gradients, R varied per sub-sample); NO extra measured information - a genuine model improvement lane",
     "metrics": {
       "iterations": 20,
-      "deep_rms_rel_span": 0.01832978976893534,
-      "deep_max_rel_span": 0.0352598595828834,
-      "plasma_rms_rel_span": 0.01879606911955536,
-      "axis_value_rel_err": 0.012202697729855216,
-      "global_max_rel_span": 0.03729116932560444
+      "deep_rms_rel_span": 0.018329789768642853,
+      "deep_max_rel_span": 0.03525985958235978,
+      "plasma_rms_rel_span": 0.018796069119232813,
+      "axis_value_rel_err": 0.012202697729782733,
+      "global_max_rel_span": 0.037291169325133926
     },
     "saturation_check_8x8": {
       "iterations": 20,
-      "deep_rms_rel_span": 0.01831146529458738,
-      "deep_max_rel_span": 0.03523306750597388,
-      "plasma_rms_rel_span": 0.018771598103026782,
-      "axis_value_rel_err": 0.012214575416772953,
-      "global_max_rel_span": 0.03724038949148654
+      "deep_rms_rel_span": 0.01831146529447432,
+      "deep_max_rel_span": 0.03523306750577847,
+      "plasma_rms_rel_span": 0.01877159810290704,
+      "axis_value_rel_err": 0.01221457541677508,
+      "global_max_rel_span": 0.03724038949145633
     },
     "attribution_with_shell_pin_0p95": {
       "iterations": 13,
-      "deep_rms_rel_span": 0.0007466840836691951,
-      "deep_max_rel_span": 0.0018353064015929163,
-      "plasma_rms_rel_span": 0.0006702984981438324,
-      "axis_value_rel_err": 0.00020140470844605288,
-      "global_max_rel_span": 0.0018353064015929163
+      "deep_rms_rel_span": 0.0007466840834978247,
+      "deep_max_rel_span": 0.0018353064012511832,
+      "plasma_rms_rel_span": 0.0006702984979696473,
+      "axis_value_rel_err": 0.000201404708405849,
+      "global_max_rel_span": 0.0018353064012511832
     },
     "finding": "4x4 sub-cell averaging changes full-domain deep RMS from 1.908% to 1.833% and the 8x8 check reaches 1.831%; the modest improvement saturates rather than reproducing the historical pre-topology result. With sub-cell averaging and shell pinning, deep RMS is 0.075%. The remaining difference is recorded as an edge-band representation mismatch against EFIT's own discretised solution, not chased or promoted"
   },
@@ -155,11 +155,11 @@
       "settings": "Anderson(m=8), warm start, external_source='zero'",
       "metrics": {
         "iterations": 17,
-        "deep_rms_rel_span": 0.05455131978349036,
-        "deep_max_rel_span": 0.12487366289883634,
-        "plasma_rms_rel_span": 0.05837089301956825,
-        "axis_value_rel_err": 0.018093265634565384,
-        "global_max_rel_span": 0.9901014519529944
+        "deep_rms_rel_span": 0.05455131978356486,
+        "deep_max_rel_span": 0.12487366289909409,
+        "plasma_rms_rel_span": 0.05837089301965635,
+        "axis_value_rel_err": 0.018093265634562487,
+        "global_max_rel_span": 0.9901014519529249
       },
       "cause": "the 129x129 g-file domain contains PF-coil cross-sections (empirically mapped external-current cells); a zero-source vacuum model is wrong there and the elliptic inverse propagates the mismatch domain-wide"
     },

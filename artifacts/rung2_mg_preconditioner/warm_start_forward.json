@@ -96,7 +96,7 @@
       "65x65_warm_mg_richardson2": null
     }
   },
-  "generated_utc": "2026-10-27T00:38:34+00:00",
+  "generated_utc": "2026-10-30T17:34:01+00:00",
   "jax_version": "0.7.1",
   "method": "base solve at nominal coil currents; perturb all coil currents by +0.5% (the documented in-basin FD-validation scale); warm solve = psi_init=base with the standard current ramp retained for cross-grid nonlinear stability; correctness = warm solve agrees with the COLD solve of the perturbed problem at span-relative tolerance",
   "provenance": {
@@ -116,7 +116,7 @@
     ],
     "logic_sources_sha256": "f8b1cc6e1dc3f83f07dcde14a4e010fe4060d15dc667a2fae6e40062dbcad7ab",
     "pinned_environment": "requirements/full.txt (hash-pinned) for exact reproduction",
-    "pinned_requirements_sha256": "12baf1755ae41d6048d2ecf6b3b8729074cf3d7b01384df9d97f16601881c01b"
+    "pinned_requirements_sha256": "54d23ccbef7068ee5d8d8f28b5af687c314867c3b8445abe954fce39e30486fd"
   },
   "settings": {
     "n_iter": 180,
@@ -126,69 +126,69 @@
   "task": "warm-start behaviour of the compiled predictive forward (IDA pattern)",
   "timings_indicative": {
     "device": "cpu (cpu)",
-    "host": "runnervmtai0g (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
+    "host": "runnervm48cm3 (x86_64) - host-load caveat applies; the claimable number is this generator on a dedicated host",
     "rows": [
       {
-        "cold_median_ms": 189.41877499997872,
+        "cold_median_ms": 293.8872349999997,
         "cold_ms": [
-          189.41877499997872,
-          189.84927200000357,
-          186.05654700002106
+          293.8872349999997,
+          304.38839100000337,
+          286.4297729999947
         ],
         "grid": "33x33",
-        "warm_median_ms": 70.2183970000192,
-        "warm_mg_richardson2_median_ms": 50.673612000025514,
+        "warm_median_ms": 102.68626599999209,
+        "warm_mg_richardson2_median_ms": 78.5554440000027,
         "warm_mg_richardson2_ms": [
-          51.605550999966,
-          50.673612000025514,
-          50.01143699996646
+          78.81934699999249,
+          78.5554440000027,
+          76.58217499999864
         ],
         "warm_ms": [
-          72.52521999998862,
-          70.2183970000192,
-          68.67148399999223
+          102.68626599999209,
+          101.14638400000331,
+          104.27718900000116
         ]
       },
       {
-        "cold_median_ms": 714.2317430000276,
+        "cold_median_ms": 1014.3932070000119,
         "cold_ms": [
-          709.1439139999807,
-          714.2317430000276,
-          714.8714630000086
+          1047.9422429999943,
+          1014.3932070000119,
+          1005.7344049999983
         ],
         "grid": "65x65",
-        "warm_median_ms": 325.7947339999987,
-        "warm_mg_richardson2_median_ms": 751.785391999988,
+        "warm_median_ms": 476.84363999999846,
+        "warm_mg_richardson2_median_ms": 1074.5860199999981,
         "warm_mg_richardson2_ms": [
-          747.8053269999805,
-          751.785391999988,
-          757.2148329999777
+          1074.5860199999981,
+          1069.7490139999957,
+          1093.6602639999933
         ],
         "warm_ms": [
-          325.7947339999987,
-          326.63400399997045,
-          324.9453889999927
+          476.84363999999846,
+          475.42424200000255,
+          489.7715230000017
         ]
       },
       {
-        "cold_median_ms": 1788.338613999997,
+        "cold_median_ms": 2994.144046000002,
         "cold_ms": [
-          1788.338613999997,
-          1783.7076810000099,
-          1828.4320289999982
+          2994.144046000002,
+          3072.5658750000093,
+          2971.2179819999847
         ],
         "grid": "129x129",
-        "warm_median_ms": 917.3228139999878,
-        "warm_mg_richardson2_median_ms": 734.2982559999882,
+        "warm_median_ms": 1516.8694910000227,
+        "warm_mg_richardson2_median_ms": 1256.1945950000108,
         "warm_mg_richardson2_ms": [
-          739.5212380000089,
-          734.2982559999882,
-          731.1050929999965
+          1230.308334,
+          1256.1945950000108,
+          1256.5001119999977
         ],
         "warm_ms": [
-          906.047889999968,
-          917.3228139999878,
-          917.7429359999678
+          1486.1680570000146,
+          1548.4914449999962,
+          1516.8694910000227
         ]
       }
     ]
