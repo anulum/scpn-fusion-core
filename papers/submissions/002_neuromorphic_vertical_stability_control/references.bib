@@ -60,19 +60,18 @@
   doi     = {10.1088/0029-5515/30/6/006}
 }
 
-@inproceedings{Sabbagh2023,
-  author    = {C. S. Chang and S. Ku and R. Hager and S. A. Sabbagh and others},
+@inproceedings{Antepara2023,
+  author    = {O. Antepara and S. Williams and S. Kruger and T. Bechtel and
+               J. McClenaghan and L. Lao},
   title     = {Performance-Portable {GPU} Acceleration of the {EFIT} Tokamak
                Plasma Equilibrium Reconstruction Code},
-  booktitle = {Proceedings of the SC~'23 Workshops of The International
+  booktitle = {Proceedings of the SC~'23 Workshops of the International
                Conference on High Performance Computing, Network, Storage,
-               and Analysis ({SC-W}~2023)},
-  pages     = {1696--1706},
+               and Analysis},
+  pages     = {1939--1948},
   year      = {2023},
-  address   = {Denver, CO},
   publisher = {{ACM}},
-  doi       = {10.1145/3624062.3624607},
-  note      = {P-EFIT variant}
+  doi       = {10.1145/3624062.3624607}
 }
 
 % --- FREEGS ---
@@ -85,14 +84,15 @@
 }
 
 % --- CORSICA ---
-@article{Crotinger1997,
-  author  = {J. A. Crotinger and L. LoDestro and L. D. Pearlstein and
-             A. Tarditi and T. A. Casper and E. B. Hooper},
-  title   = {{CORSICA}: {A} comprehensive simulation of toroidal
-             magnetic-fusion devices},
-  journal = {Lawrence Livermore National Laboratory Report},
-  number  = {UCRL-ID-126284},
-  year    = {1997}
+@techreport{Crotinger1997,
+  author      = {J. A. Crotinger and L. LoDestro and L. D. Pearlstein and
+                 A. Tarditi and T. A. Casper and E. B. Hooper},
+  title       = {{CORSICA}: {A} comprehensive simulation of toroidal
+                 magnetic-fusion devices. {F}inal report to the {LDRD}
+                 {P}rogram},
+  institution = {Lawrence Livermore National Laboratory},
+  year        = {1997},
+  doi         = {10.2172/522508}
 }
 
 % --- CHEASE / HELENA ---
@@ -107,20 +107,23 @@
   doi     = {10.1016/0010-4655(96)00046-X}
 }
 
-@inproceedings{Huysmans1991,
-  author    = {G. T. A. Huysmans and J. P. Goedbloed and W. Kerner},
-  title     = {Isoparametric bicubic {H}ermite elements for solution of the
-               {G}rad-{S}hafranov equation},
-  booktitle = {Proceedings of the CP90 Conference on Computational Physics},
-  pages     = {371--376},
-  year      = {1991}
+@article{Huysmans1991,
+  author  = {G. T. A. Huysmans and J. P. Goedbloed and W. Kerner},
+  title   = {Isoparametric bicubic {H}ermite elements for solution of the
+             {G}rad-{S}hafranov equation},
+  journal = {International Journal of Modern Physics C},
+  volume  = {2},
+  number  = {1},
+  pages   = {371--376},
+  year    = {1991},
+  doi     = {10.1142/S0129183191000512}
 }
 
 % --- Confinement Scaling ---
 @article{ITER1999,
-  author  = {{ITER Physics Basis Editors} and {ITER Physics Expert Group
-             Chairs and Co-Chairs} and {ITER Joint Central Team} and
-             {Physics Integration Unit}},
+  author  = {{ITER Physics Expert Group on Confinement and Transport} and
+             {ITER Physics Expert Group on Confinement Modelling and
+             Database} and {ITER Physics Basis Editors}},
   title   = {Chapter 2: {P}lasma confinement and transport},
   journal = {Nuclear Fusion},
   volume  = {39},
@@ -131,8 +134,10 @@
 }
 
 @article{Verdoolaege2021,
-  author  = {G. Verdoolaege and G. Kaye and F. Scheibl and G. Tartarini and
-             others},
+  author  = {G. Verdoolaege and S. M. Kaye and C. Angioni and
+             O. J. W. F. Kardaun and M. Maslov and M. Romanelli and
+             F. Ryter and K. Thomsen and {the ASDEX Upgrade Team} and
+             {the EUROfusion MST1 Team} and {JET Contributors}},
   title   = {The updated {ITPA} global {H}-mode confinement database:
              description and analysis},
   journal = {Nuclear Fusion},
@@ -175,7 +180,8 @@
   author  = {D. G. Whyte and J. Minervini and B. LaBombard and
              E. Marmar and L. Bromberg and M. Greenwald},
   title   = {Smaller \& Sooner: Exploiting High Magnetic Fields from
-             New Superconducting Technologies},
+             New Superconductors for a More Attractive Fusion Energy
+             Development Path},
   journal = {Journal of Fusion Energy},
   volume  = {35},
   number  = {1},
@@ -244,7 +250,7 @@
 % --- Neural Operators / ML in Fusion ---
 @inproceedings{Li2021,
   author    = {Z. Li and N. Kovachki and K. Azizzadenesheli and B. Liu and
-               K. Bhatt and A. Stuart and A. Anandkumar},
+               K. Bhattacharya and A. Stuart and A. Anandkumar},
   title     = {Fourier Neural Operator for Parametric Partial Differential
                Equations},
   booktitle = {Proceedings of the International Conference on Learning
@@ -292,9 +298,12 @@
 
 % --- TORAX ---
 @article{TORAX2024,
-  author  = {{TORAX Team}},
-  title   = {{TORAX}: {A} differentiable tokamak transport simulator in
-             {JAX}},
+  author  = {J. Citrin and I. Goodfellow and A. Raju and J. Chen and
+             J. Degrave and C. Donner and F. Felici and P. Hamel and
+             A. Huber and D. Nikulin and D. Pfau and B. Tracey and
+             M. Riedmiller and P. Kohli},
+  title   = {{TORAX}: {A} Fast and Differentiable Tokamak Transport
+             Simulator in {JAX}},
   journal = {arXiv preprint},
   note    = {arXiv:2406.06718},
   year    = {2024}
@@ -362,18 +371,18 @@
 }
 
 % --- Disruption Mitigation ---
-@article{Commaux2016,
+@article{Commaux2010,
   author  = {N. Commaux and L. R. Baylor and T. C. Jernigan and
              E. M. Hollmann and P. B. Parks and D. A. Humphreys and
              J. C. Wesley and J. H. Yu},
   title   = {Demonstration of rapid shutdown using large shattered deuterium
              pellet injection in {DIII-D}},
   journal = {Nuclear Fusion},
-  volume  = {56},
-  number  = {4},
-  pages   = {046007},
-  year    = {2016},
-  doi     = {10.1088/0029-5515/56/4/046007}
+  volume  = {50},
+  number  = {11},
+  pages   = {112001},
+  year    = {2010},
+  doi     = {10.1088/0029-5515/50/11/112001}
 }
 
 % --- Vertical Stability ---
@@ -391,7 +400,8 @@
 @article{Humphreys2015,
   author  = {D. A. Humphreys and G. Ambrosino and P. de~Vries and
              F. Felici and S. H. Kim and G. Jackson and A. Kallenbach and
-             E. Kolemen and J. R. Lister and D. Moreau and A. Pironti},
+             E. Kolemen and J. Lister and D. Moreau and A. Pironti and
+             others},
   title   = {Novel aspects of plasma control in {ITER}},
   journal = {Physics of Plasmas},
   volume  = {22},
@@ -456,7 +466,10 @@
 @phdthesis{Petri1962,
   author  = {C. A. Petri},
   title   = {{K}ommunikation mit {A}utomaten},
-  school  = {Universit{\"a}t Hamburg},
+  school  = {Technische Hochschule Darmstadt},
+  note    = {Published as Schriften des Rheinisch-Westf{\"a}lischen
+             Institutes f{\"u}r instrumentelle Mathematik an der
+             Universit{\"a}t Bonn, Nr.~2},
   year    = {1962}
 }
 
@@ -551,18 +564,19 @@
   author  = {E. A. Belli and J. Candy},
   title   = {Kinetic calculation of neoclassical transport including
              self-consistent electron and impurity dynamics},
-  journal = {Physics of Plasmas},
-  volume  = {15},
-  pages   = {092510},
+  journal = {Plasma Physics and Controlled Fusion},
+  volume  = {50},
+  number  = {9},
+  pages   = {095010},
   year    = {2008},
-  doi     = {10.1063/1.2961079}
+  doi     = {10.1088/0741-3335/50/9/095010}
 }
 
 % --- Disruption Prediction ---
 @article{Hoppe2021,
   author  = {M. Hoppe and O. Embreus and T. F{\"u}l{\"o}p},
-  title   = {{DREAM}: {A} 1D--2D code for disruption runaway electron
-             analysis and mitigation},
+  title   = {{DREAM}: {A} fluid-kinetic framework for tokamak disruption
+             runaway electron simulations},
   journal = {Computer Physics Communications},
   volume  = {268},
   pages   = {108098},
@@ -661,19 +675,19 @@
 % --- v3.3.0 additional references ---
 
 @article{Fischer2015,
-  author  = {U. Fischer and C. Bachmann and J. C. Palermo and P. Pereslavtsev
+  author  = {U. Fischer and C. Bachmann and I. Palermo and P. Pereslavtsev
              and R. Villari},
   title   = {Neutronics requirements for a {DEMO} fusion power plant},
   journal = {Fusion Engineering and Design},
   volume  = {98--99},
-  pages   = {2034--2038},
+  pages   = {2134--2137},
   year    = {2015},
   doi     = {10.1016/j.fusengdes.2015.02.029}
 }
 
 @article{Putterich2010,
   author  = {T. P{\"u}tterich and R. Neu and R. Dux and A. D. Whiteford and
-             M. G. O'Mullane and {ASDEX Upgrade Team}},
+             M. G. O'Mullane and H. P. Summers},
   title   = {Calculation and experimental test of the cooling factor of
              tungsten},
   journal = {Nuclear Fusion},
@@ -696,12 +710,13 @@
   doi     = {10.1088/0741-3335/26/1A/319}
 }
 
-@article{Boozer2015,
+@article{Boozer2012,
   author  = {A. H. Boozer},
   title   = {Theory of tokamak disruptions},
   journal = {Physics of Plasmas},
-  volume  = {22},
-  pages   = {032504},
-  year    = {2015},
-  doi     = {10.1063/1.4915293}
+  volume  = {19},
+  number  = {5},
+  pages   = {058101},
+  year    = {2012},
+  doi     = {10.1063/1.3703327}
 }
