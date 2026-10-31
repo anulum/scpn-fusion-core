@@ -8195,16 +8195,18 @@ IPB98(y,2) empirical scaling law predictions.</p>
 <div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-python"><pre><span></span><span class="c1"># SPARC published design parameters (Creely et al., JPP 2020)</span>
+<div class="highlight hl-python"><pre><span></span><span class="c1"># SPARC full-field H-mode case (Creely et al., JPP 2020): Table 1 p. 6,</span>
+<span class="c1"># Table 2 p. 13, 95 % surface shaping p. 14. Ploss is derived, not printed:</span>
+<span class="c1"># Table 2 P_sep B0/R0 = 191 MW T/m gives P_sep = 29 MW.</span>
 <span class="n">sparc</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s2">"R_m"</span><span class="p">:</span> <span class="mf">1.85</span><span class="p">,</span>
     <span class="s2">"a_m"</span><span class="p">:</span> <span class="mf">0.57</span><span class="p">,</span>
     <span class="s2">"B_T"</span><span class="p">:</span> <span class="mf">12.2</span><span class="p">,</span>
     <span class="s2">"Ip_MA"</span><span class="p">:</span> <span class="mf">8.7</span><span class="p">,</span>
     <span class="s2">"kappa"</span><span class="p">:</span> <span class="mf">1.75</span><span class="p">,</span>
-    <span class="s2">"delta"</span><span class="p">:</span> <span class="mf">0.33</span><span class="p">,</span>
-    <span class="s2">"ne19"</span><span class="p">:</span> <span class="mf">15.0</span><span class="p">,</span>
-    <span class="s2">"Ploss_MW"</span><span class="p">:</span> <span class="mf">25.0</span><span class="p">,</span>
+    <span class="s2">"delta"</span><span class="p">:</span> <span class="mf">0.45</span><span class="p">,</span>
+    <span class="s2">"ne19"</span><span class="p">:</span> <span class="mf">31.0</span><span class="p">,</span>
+    <span class="s2">"Ploss_MW"</span><span class="p">:</span> <span class="mf">29.0</span><span class="p">,</span>
     <span class="s2">"M_AMU"</span><span class="p">:</span> <span class="mf">2.5</span><span class="p">,</span>
     <span class="s2">"q95_target"</span><span class="p">:</span> <span class="mf">3.4</span><span class="p">,</span>
     <span class="s2">"Q_target"</span><span class="p">:</span> <span class="mf">2.0</span><span class="p">,</span>
@@ -8376,7 +8378,7 @@ IPB98(y,2) empirical scaling law predictions.</p>
 <tr>
 <td>SPARC design point</td>
 <td>Scaling prediction</td>
-<td>~18% (needs H98 &gt; 1.0)</td>
+<td>0.6% (H98 = 1.0 case; Ploss derived)</td>
 </tr>
 </tbody>
 </table>

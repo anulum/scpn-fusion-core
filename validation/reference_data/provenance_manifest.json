@@ -337,7 +337,7 @@
       "license_redistributable": true,
       "source": "Curated summary from ITER Physics Basis literature.",
       "source_type": "published_reference_summary",
-      "total_bytes": 2267
+      "total_bytes": 2832
     },
     {
       "file_count": 2,
@@ -1842,8 +1842,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "sparc_reference.json",
-      "sha256": "218cd3bfbb0500fde9b6bafe47c38022803b47ad3c6ab7d7274576199a1f1d86",
-      "size_bytes": 426,
+      "sha256": "75f9fe7ab26ace4220b2e91e85d8a58061339b99c5dd9abd8ef5ed7db1c79c34",
+      "size_bytes": 991,
       "source": "Curated summary from SPARC public design publications.",
       "source_type": "published_reference_summary"
     },
@@ -4903,7 +4903,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-10-31T11:48:23.169440+00:00",
+  "generated_at_utc": "2026-10-31T11:55:08.555093+00:00",
   "license_registry": [
     {
       "attribution_required": true,

@@ -260,6 +260,13 @@ def confinement_rmse_iter_sparc(reference_dir: Path) -> dict[str, Any]:
     }
 
 
+# Least-squares scalar mapping the DynamicBurnModel estimate to ITER
+# (beta_N = 1.8) and SPARC (beta_N = 1.0, Creely et al. 2020, Table 2).
+# With two points it is a fit, so the beta_N RMSE below is a fit residual.
+# Recompute it whenever either reference or the burn model changes.
+BETA_N_PROFILE_PEAKING_FACTOR = 3.335051954693928
+
+
 def estimate_beta_n_from_burn(
     reference: dict[str, Any],
     config_path: Path,
@@ -273,13 +280,13 @@ def estimate_beta_n_from_burn(
 
         beta_N = 100 * beta_t * a * B_t / I_p
 
-    A profile/normalization correction factor (``PROFILE_PEAKING_FACTOR``)
+    A profile/normalization correction factor (``BETA_N_PROFILE_PEAKING_FACTOR``)
     is applied to account for the volume-averaged 0-D model underestimating
     peak pressure.  The factor is calibrated as the least-squares scalar
     that maps the current total electron+ion heat-capacity burn model to
     ITER (target 1.8) and SPARC (target 1.0):
 
-        PROFILE_PEAKING_FACTOR ~= 2.961
+        BETA_N_PROFILE_PEAKING_FACTOR ~= 3.335
 
     This is a regression guard calibration for the reduced-order dashboard,
     not a publication-grade beta_N validation claim.
@@ -287,10 +294,6 @@ def estimate_beta_n_from_burn(
     Falls back to the legacy ``FusionBurnPhysics`` path if the dynamic
     model fails.
     """
-    # Least-squares calibration against ITER (beta_N = 1.8) and SPARC
-    # (beta_N = 1.0) after the DynamicBurnModel total heat-capacity correction.
-    PROFILE_PEAKING_FACTOR = 2.9611884960342465
-
     r_m = float(reference["R_m"])
     a_m = float(reference["a_m"])
     kappa = float(reference["kappa"])
@@ -320,7 +323,7 @@ def estimate_beta_n_from_burn(
         mu0 = 4.0 * math.pi * 1e-7
         beta_t = (2.0 * mu0 * p_avg / (b_t * b_t)) if b_t > 0 else 0.0
         beta_n = (100.0 * beta_t) * a_m * b_t / i_p if i_p > 0 else 0.0
-        beta_n *= PROFILE_PEAKING_FACTOR
+        beta_n *= BETA_N_PROFILE_PEAKING_FACTOR
 
         metrics: dict[str, Any] = {
             "P_fusion_MW": result["P_fus_final_MW"],
@@ -562,7 +565,10 @@ def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
     lines.append("## Notes")
     lines.append("")
     lines.append(
-        "- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy with a profile/normalization correction factor (2.961), calibrated against ITER and SPARC targets as a reduced-order regression guard."
+        "- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy "
+        f"with a profile/normalization correction factor ({BETA_N_PROFILE_PEAKING_FACTOR:.3f}), "
+        "fitted to the ITER and SPARC targets as a reduced-order regression guard; the "
+        "two-point beta_N RMSE is a fit residual, not a validation result."
     )
     lines.append(
         "- Use this report for trend tracking; not as a replacement for full transport/MHD validation."

@@ -45,9 +45,10 @@
         "B_T": 12.2,
         "Ip_MA": 8.7,
         "kappa": 1.75,
-        "delta": 0.33,
+        "delta": 0.45,
         "q95": 3.4,
         "Q_target": 2.0,
+        "shaping_note": "kappa and delta are the 95 % flux-surface values (Creely et al. 2020, p. 14); separatrix values are 1.97 and 0.54 (Table 1)",
         "P_fusion_MW": 140,
         "note": "Coil positions approximate; use GEQDSK files for high-fidelity comparison"
     }
