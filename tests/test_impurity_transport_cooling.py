@@ -10,7 +10,12 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from scpn_fusion.core.impurity_transport_cooling import CoolingCurve, total_radiated_power
+from scpn_fusion.core.impurity_transport_cooling import (
+    TUNGSTEN_COOLING_TABLE_PUETTERICH_2010,
+    CoolingCurve,
+    total_radiated_power,
+    tungsten_cooling_factor,
+)
 
 
 def test_cooling_curves() -> None:
@@ -25,15 +30,50 @@ def test_cooling_curves() -> None:
 def test_tungsten_cooling_curve_peak_order_of_magnitude() -> None:
     """Pin the absolute peak of the tungsten cooling curve.
 
-    Putterich et al. 2010: tungsten coronal Lz peaks at ~1e-31 W m^3 near
-    ~1.5 keV. The other ``test_cooling_curves`` checks only an ordering, so a
+    Pütterich et al. 2010, Table 2: the maximum is 4.59e-31 W m^3 at
+    1500 eV. The other ``test_cooling_curves`` checks only an ordering, so a
     wrong peak magnitude would pass it.
     """
     te_eV = np.logspace(1.0, 4.0, 400)  # 10 eV - 10 keV
     cooling = CoolingCurve("W").L_z(te_eV)
     peak = float(np.max(cooling))
-    assert 3e-32 < peak < 3e-31
-    assert 800.0 < te_eV[int(np.argmax(cooling))] < 2500.0
+    assert 4.4e-31 < peak <= 4.59e-31
+    assert 1000.0 < te_eV[int(np.argmax(cooling))] < 2000.0
+
+
+def test_tungsten_cooling_factor_reproduces_every_table_row() -> None:
+    """Every row of Pütterich et al. 2010 Table 2 is returned exactly."""
+    te = np.array([row[0] for row in TUNGSTEN_COOLING_TABLE_PUETTERICH_2010])
+    lz = np.array([row[1] for row in TUNGSTEN_COOLING_TABLE_PUETTERICH_2010])
+    assert len(te) == 31
+    np.testing.assert_allclose(tungsten_cooling_factor(te), lz, rtol=1e-12)
+    np.testing.assert_allclose(CoolingCurve("W").L_z(te), lz, rtol=1e-12)
+
+
+def test_tungsten_cooling_factor_interpolates_log_log_and_holds_the_ends() -> None:
+    """Between rows log L_Z is linear in log T_e; outside the table the ends hold."""
+    mid = float(np.sqrt(1000.0 * 1500.0))
+    expected = float(np.sqrt(4.21e-31 * 4.59e-31))
+    np.testing.assert_allclose(tungsten_cooling_factor(np.array([mid])), [expected], rtol=1e-12)
+    np.testing.assert_allclose(
+        tungsten_cooling_factor(np.array([5.0, 1.0e5])), [2.32e-31, 4.95e-32], rtol=1e-12
+    )
+    out = tungsten_cooling_factor(np.array([np.nan, -1.0, 0.0, np.inf]))
+    np.testing.assert_array_equal(out, [0.0, 0.0, 0.0, 0.0])
+
+
+def test_transport_solver_uses_the_same_tungsten_table() -> None:
+    """The transport solver's rate in keV equals the shared table in eV."""
+    from scpn_fusion.core.integrated_transport_solver_runtime_physics import (
+        TransportSolverRuntimePhysicsMixin,
+    )
+
+    te_kev = np.array([0.05, 1.5, 4.0, 20.0])
+    np.testing.assert_allclose(
+        TransportSolverRuntimePhysicsMixin._tungsten_radiation_rate(te_kev),
+        tungsten_cooling_factor(te_kev * 1.0e3),
+        rtol=1e-12,
+    )
 
 
 def test_light_impurity_cooling_curve_peaks_match_verified_data() -> None:

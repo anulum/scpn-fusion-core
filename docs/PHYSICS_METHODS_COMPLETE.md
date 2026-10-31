@@ -1080,7 +1080,7 @@ Not yet implemented as an explicit Pegourie (2005) drift model. Pellet depositio
 
 ### 10.1 Tungsten radiation — Pütterich cooling curve
 
-When `multi_ion=True`, the transport solver applies coronal-equilibrium tungsten radiation per Pütterich et al., *Nucl. Fusion* 50, 025012 (2010). The cooling-rate function $L_z(T_e)$ is interpolated from tabulated values; contributions from C, Ar, and Ne are also available via ADAS atomic data.
+When `multi_ion=True`, the transport solver applies coronal-equilibrium tungsten radiation per Pütterich et al., *Nucl. Fusion* 50, 025012 (2010). The cooling-rate function $L_z(T_e)$ is interpolated log-log from the 31 rows of the paper's Table 2 (30 eV to 40 keV, end values held outside), as the paper prescribes; contributions from C, Ar, and Ne are also available via ADAS atomic data.
 
 ### 10.2 Bremsstrahlung
 

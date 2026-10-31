@@ -24,8 +24,7 @@
   "free_boundary_machine_metadata_status": "accepted_public_machine_metadata_with_same_case_free_boundary_reference",
   "free_boundary_same_case_public_reference_output_ready": false,
   "free_boundary_strict_parity_blockers": [
-    "legacy_evidence_has_no_verified_field_custody",
-    "source_example_bytes_unverified"
+    "legacy_evidence_has_no_verified_field_custody"
   ],
   "free_boundary_strict_parity_report": "validation/reports/free_boundary_strict_parity_benchmark.json",
   "free_boundary_strict_parity_status": "blocked_free_boundary_strict_parity",
@@ -267,8 +266,7 @@
       "lane": "free_boundary_equilibrium_strict_parity",
       "locally_actionable_contract_ready": true,
       "next_required_evidence": [
-        "legacy_evidence_has_no_verified_field_custody",
-        "source_example_bytes_unverified"
+        "legacy_evidence_has_no_verified_field_custody"
       ],
       "reference_cases_ready": false,
       "sources": [

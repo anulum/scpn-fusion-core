@@ -247,10 +247,9 @@
       "lane": "free_boundary_equilibrium_strict_parity",
       "locally_actionable_contract_ready": true,
       "missing_evidence": [
-        "legacy_evidence_has_no_verified_field_custody",
-        "source_example_bytes_unverified"
+        "legacy_evidence_has_no_verified_field_custody"
       ],
-      "missing_evidence_count": 2,
+      "missing_evidence_count": 1,
       "public_source_count": 2,
       "public_source_licenses_ready": false,
       "public_sources": [
@@ -296,7 +295,7 @@
       "exists": true,
       "path": "validation/reports/full_fidelity_end_to_end_campaign.json",
       "schema": "full-fidelity-end-to-end-campaign.v1",
-      "sha256": "149444f07332d10576fc59a2024908f592fc06f78912dbf82407b70f505a268c",
+      "sha256": "99c01acad39a890ac113c56cd82840de4808d0ba1afdfab06ff2dd7a8e1bbd80",
       "status": "not_full_fidelity"
     },
     {

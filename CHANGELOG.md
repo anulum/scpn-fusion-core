@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Tungsten radiation now follows Pütterich et al., Nucl. Fusion 50 (2010)
+  025012, Table 2 (log-log interpolation of all 31 rows) in both
+  `CoolingCurve("W")` and the transport solver. The cooling curve used two
+  Gaussians with a 1e-31 W m^3 peak and the solver a piecewise curve rising
+  to 8e-31 W m^3 above 20 keV; the published table peaks at 4.59e-31 W m^3
+  at 1.5 keV and falls to 4.95e-32 W m^3 at 40 keV.
+
 ### Security
 
 - Every committed hash-locked Python closure resolves to patched releases:

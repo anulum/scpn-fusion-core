@@ -16,6 +16,7 @@ import numpy as np
 
 from scpn_fusion.core._integrated_transport_solver_base import FloatArray
 from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
+from scpn_fusion.core.impurity_transport_cooling import tungsten_cooling_factor
 from scpn_fusion.core.uncertainty import _dt_reactivity
 
 _logger = logging.getLogger(__name__)
@@ -213,24 +214,16 @@ class TransportSolverRuntimePhysicsMixin(TransportSolverState):
 
     @staticmethod
     def _tungsten_radiation_rate(Te_keV: FloatArray) -> FloatArray:
-        """Coronal-equilibrium tungsten radiation rate coefficient [W*m^3]."""
+        """Coronal-equilibrium tungsten radiation rate coefficient [W*m^3].
+
+        Pütterich et al., Nucl. Fusion 50 (2010) 025012, Table 2, through
+        :func:`tungsten_cooling_factor`. Non-finite or non-positive
+        temperatures are sanitised to 0.01 keV first, as before.
+        """
         te_raw = np.asarray(Te_keV, dtype=np.float64)
         Te = np.nan_to_num(te_raw, nan=0.01, posinf=1e3, neginf=0.01)
         Te = np.clip(Te, 0.01, 1e3)
-        Lz = np.where(
-            Te < 1.0,
-            5.0e-31 * np.sqrt(Te),
-            np.where(
-                Te < 5.0,
-                5.0e-31 * np.ones_like(Te),
-                np.where(
-                    Te < 20.0,
-                    2.0e-31 * Te**0.3,
-                    8.0e-31 * np.ones_like(Te),
-                ),
-            ),
-        )
-        return np.nan_to_num(Lz, nan=5.0e-31, posinf=8.0e-31, neginf=5.0e-31)
+        return np.asarray(tungsten_cooling_factor(Te * 1.0e3), dtype=np.float64)
 
     @staticmethod
     def _bremsstrahlung_power_density(

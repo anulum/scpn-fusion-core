@@ -77,7 +77,7 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 - Free-boundary same-case public reference output ready: `False`
 - Free-boundary failed threshold checks: `0`
 - Free-boundary strict parity status: `blocked_free_boundary_strict_parity`
-- Free-boundary strict parity blockers: `legacy_evidence_has_no_verified_field_custody, source_example_bytes_unverified`
+- Free-boundary strict parity blockers: `legacy_evidence_has_no_verified_field_custody`
 - Free-boundary strict parity report: `validation/reports/free_boundary_strict_parity_benchmark.json`
 - Local contracts ready: `True`
 - Reference parity ready: `False`
@@ -90,4 +90,4 @@ This report keeps all declared full-fidelity blockers in one fail-closed gate.
 | production_scale_decomposition | blocked_local_decomposition_ready_missing_distributed_runtime_scaling | True | False | none | cluster MPI scaling report over the declared rank tiles<br>multi-GPU distributed execution path over the declared rank tiles<br>large-grid cluster/GPU wall-time scaling report<br>same-physics convergence evidence across distributed MPI/multi-GPU decomposition shapes<br>hardware-specific multi-rank throughput and efficiency thresholds<br>accepted distributed scaling gate over required rank counts<br>accepted distributed run manifests with reproducibility fields and checksums |
 | dream_grade_runaway_electrons | blocked_missing_public_dream_artifacts | True | False | DREAM | compiled DREAM iface/dreami same-case output<br>native coupled momentum-pitch-radius Fokker-Planck operator<br>radial transport operator on evolved radius grid<br>full pitch-angle scattering operator on evolved pitch grid<br>DREAM partial-screening operator parity<br>DREAM bremsstrahlung and synchrotron loss parity<br>distribution, current, and growth-rate threshold comparison against DREAM |
 | aurora_strahl_grade_impurities | accepted_native_aurora_effective_transport_closure_thresholds | True | True | Aurora | independent mechanistic Aurora/STRAHL recycling validation beyond effective closure replay |
-| free_boundary_equilibrium_strict_parity | blocked_free_boundary_strict_parity | True | False | FreeGS, FreeGSNKE | legacy_evidence_has_no_verified_field_custody<br>source_example_bytes_unverified |
+| free_boundary_equilibrium_strict_parity | blocked_free_boundary_strict_parity | True | False | FreeGS, FreeGSNKE | legacy_evidence_has_no_verified_field_custody |
