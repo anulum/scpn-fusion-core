@@ -4558,7 +4558,7 @@ Any pull request that introduces test failures, compiler warnings, or formatting
 
 19. Kates-Harbeck, J., et al. (2019). "Predicting disruptive instabilities in controlled fusion plasmas through deep learning." *Nature*, 568(7753), 526-531.
 20. Degrave, J., et al. (2022). "Magnetic control of tokamak plasmas through deep reinforcement learning." *Nature*, 602(7897), 414-419.
-21. Pau, A., et al. (2024). "DisruptionBench: A benchmarking framework for disruption prediction in tokamaks." Preprint.
+21. Spangher, L., et al. (2025). "DisruptionBench and Complimentary New Models: Two Advancements in Machine Learning Driven Disruption Prediction." *Journal of Fusion Energy*, 44, 26.
 22. Li, Z., et al. (2020). "Fourier Neural Operator for Parametric Partial Differential Equations." *arXiv:2010.08895*. [FNO]
 23. Raissi, M., Perdikaris, P., & Karniadakis, G. E. (2019). "Physics-informed neural networks." *Journal of Computational Physics*, 378, 686-707. [PINNs]
 24. Vaswani, A., et al. (2017). "Attention is all you need." *NeurIPS 2017*. [Transformer architecture]
@@ -4567,7 +4567,7 @@ Any pull request that introduces test failures, compiler warnings, or formatting
 
 25. Davies, M., et al. (2021). "Advancing neuromorphic computing with Loihi." *Proceedings of the IEEE*, 109(5), 911-934.
 26. Alaghi, A., & Hayes, J. P. (2013). "Survey of stochastic computing." *ACM Transactions on Embedded Computing Systems*, 12(2s), 1-19.
-27. Li, Z., et al. (2024). "Stochastic computing for deep neural networks: Energy-accuracy tradeoffs on FPGAs." *IEEE TCAD*.
+27. Entry removed on 2026-10-31: no publication record of the cited "Stochastic computing for deep neural networks: Energy-accuracy tradeoffs on FPGAs" (IEEE TCAD 2024) was found.
 28. Gaines, B. R. (1969). "Stochastic computing systems." *Advances in Information Systems Science*, 2, 37-172.
 29. Furber, S. B., et al. (2014). "The SpiNNaker project." *Proceedings of the IEEE*, 102(5), 652-665.
 30. Maass, W. (1997). "Networks of spiking neurons: The third generation of neural network models." *Neural Networks*, 10(9), 1659-1671.
@@ -4584,7 +4584,7 @@ Any pull request that introduces test failures, compiler warnings, or formatting
 
 36. Sawan, M. E., & Abdou, M. A. (2006). "Physics and technology conditions for attaining tritium self-sufficiency for the DT fuel cycle." *Fusion Engineering and Design*, 81(8-14), 1131-1144.
 37. Stork, D., et al. (2014). "Materials R&D for a timely DEMO: Key findings and recommendations of the EU Roadmap Materials Assessment Group." *Fusion Engineering and Design*, 89(7-8), 1586-1594.
-38. Fischer, U., et al. (2020). "Neutronics requirements for a DEMO fusion power plant." *Fusion Engineering and Design*, 155, 111553.
+38. Fischer, U., et al. (2015). "Neutronics requirements for a DEMO fusion power plant." *Fusion Engineering and Design*, 98-99, 2134-2137.
 
 ### Software Engineering
 
@@ -4595,9 +4595,9 @@ Any pull request that introduces test failures, compiler warnings, or formatting
 
 ### Control Systems
 
-43. Felici, F., et al. (2018). "Real-time model-based plasma state estimation, monitoring, and integrated control in TCV, ASDEX-Upgrade, and ITER." *Nuclear Fusion*, 58(9), 096006. [RAPTOR]
+43. Felici, F., et al. (2018). "Real-time-capable prediction of temperature and density profiles in a tokamak using RAPTOR and a first-principle-based transport model." *Nuclear Fusion*, 58(9), 096006. [RAPTOR]
 44. Ariola, M., & Pironti, A. (2016). *Magnetic Control of Tokamak Plasmas*. 2nd edition, Springer.
-45. Albanese, R., et al. (2015). "ITER-like vertical stabilization system for the EAST tokamak." *Nuclear Fusion*, 55(9), 093012. [CREATE]
+45. Albanese, R., et al. (2017). "ITER-like vertical stabilization system for the EAST tokamak." *Nuclear Fusion*, 57(8), 086039. [CREATE]
 
 ### Digital Twins
 

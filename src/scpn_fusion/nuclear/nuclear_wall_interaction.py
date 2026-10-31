@@ -312,7 +312,9 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         if not np.isfinite(angle_deg) or angle_deg < 0.0 or angle_deg >= 89.5:
             raise ValueError("angle_deg must be finite and in [0, 89.5).")
 
-        # Roth-Bohdansky D-on-target parameters (Roth et al., NIMB 257 33, 2007).
+        # Roth-Bohdansky D-on-target parameters. Source not identified: an
+        # earlier "Roth et al., NIMB 257 33, 2007" citation has no publication
+        # record, so the values are unverified.
         props: dict[str, dict[str, float]] = {
             "Tungsten (W)": {"E_th": 200.0, "Q": 0.004},
             "Beryllium (Be)": {"E_th": 10.0, "Q": 0.03},

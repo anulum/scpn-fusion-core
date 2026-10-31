@@ -29,7 +29,7 @@
     },
     {
       "key": "ono_1997_magnetic_mode_based_modeling_frc",
-      "citation": "Y. Ono, M. Inomoto, T. Okazaki, and Y. Ueda, Magnetic-mode-based modeling for field-reversed configurations, Physics of Plasmas 4, 1953 (1997).",
+      "citation": "Y. Ono, M. Inomoto, T. Okazaki, and Y. Ueda, Experimental investigation of three-component magnetic reconnection by use of merging spheromaks and tokamaks, Physics of Plasmas 4, 1953 (1997).",
       "doi": "10.1063/1.872337",
       "publisher_article_url": "https://pubs.aip.org/aip/pop/article/4/6/1953/258964/Magnetic-mode-based-modeling-for-field-reversed",
       "publisher_pdf_url": "https://pubs.aip.org/aip/pop/article-pdf/4/6/1953/19159708/1953_1_online.pdf",
@@ -48,7 +48,7 @@
         }
       ],
       "download_status": "blocked_by_publisher_http_403",
-      "notes": "AIP publisher article and PDF endpoints returned HTTP 403 HTML payloads, not a PDF. FUS-C.2 Ono Fig. 4 digitised/same-case parity remains externally blocked."
+      "notes": "AIP publisher article and PDF endpoints returned HTTP 403 HTML payloads, not a PDF. FUS-C.2 Ono Fig. 4 digitised/same-case parity remains externally blocked. Citation corrected 2026-10-31: the earlier title \"Magnetic-mode-based modeling for field-reversed configurations\" has no publication record; the DOI and locator are the merging-spheromak reconnection paper named above. The probe URLs are kept as recorded."
     },
     {
       "key": "belova_2000_pppl_3456_tilt_stability_prolate_frc",
@@ -67,7 +67,7 @@
     },
     {
       "key": "belova_2001_numerical_tilt_stability_prolate_frc_journal",
-      "citation": "E. V. Belova, S. C. Jardin, H. Ji, M. Yamada, and R. Kulsrud, Numerical study of tilt stability of prolate field-reversed configurations, Physics of Plasmas 8, 1267 (2001).",
+      "citation": "E. V. Belova, S. C. Jardin, H. Ji, M. Yamada, and R. Kulsrud, Numerical study of tilt stability of prolate field-reversed configurations, Physics of Plasmas 7, 4996 (2000), doi 10.1063/1.1318929.",
       "publisher_article_url": "https://pubs.aip.org/aip/pop/article/8/4/1267/103590/Numerical-study-of-tilt-stability-of-prolate",
       "publisher_pdf_url": "https://pubs.aip.org/aip/pop/article-pdf/8/4/1267/19057286/1267_1_online.pdf",
       "local_artifacts": [
@@ -85,7 +85,7 @@
         }
       ],
       "download_status": "blocked_by_publisher_http_403",
-      "notes": "AIP journal article and PDF endpoints returned HTTP 403 HTML payloads. Use the open PPPL report for local reference context until journal access or an allowed public copy is available."
+      "notes": "AIP journal article and PDF endpoints returned HTTP 403 HTML payloads. Use the open PPPL report for local reference context until journal access or an allowed public copy is available. Citation corrected 2026-10-31: Physics of Plasmas 8, 1267 (2001) is the oblate global-stability paper; the prolate tilt-stability paper is Physics of Plasmas 7, 4996 (2000). The key and probe URLs are kept as recorded."
     },
     {
       "key": "slough_2011_merging_compression_frc_plasmoids",

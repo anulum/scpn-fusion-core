@@ -10,7 +10,8 @@ Paper 27 Knm/UPDE engine + Kuramoto-Sakaguchi phase reduction.
 
 Implements the generalized Kuramoto-Sakaguchi mean-field model with an
 exogenous global field driver ζ sin(Ψ − θ), per the reviewer request
-referencing arXiv:2004.06344 and SCPN Paper 27.
+referencing arXiv:2004.06344 (Yue, Smith & Gottwald, Phys. Rev. E 101,
+062213 (2020)) and SCPN Paper 27.
 """
 
 from scpn_fusion.phase.adaptive_knm import (

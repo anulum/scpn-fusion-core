@@ -23,8 +23,10 @@ The toroidal peaking factor (TPF) captures non-uniform wall-contact geometry:
 
     TPF × I_h / I_p  ≤  0.75   (ITER design limit)
 
-Reference: Fitzpatrick, R., "Halo Current and Error Field Interaction",
-           Phys. Plasmas 9, 3459 (2002).
+The L/R circuit form is a declared model. An earlier reference,
+"Halo Current and Error Field Interaction", Phys. Plasmas 9, 3459 (2002),
+does not exist (that locator is a resistive-wall-mode paper) and was
+removed on 2026-10-31.
 
 Runaway Electron Model (Connor-Hastie + Rosenbluth-Putvinski)
 --------------------------------------------------------------

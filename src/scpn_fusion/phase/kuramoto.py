@@ -16,7 +16,8 @@ carrier" injection.  Ψ is a Lagrangian pull parameter with no own
 dynamics (no dotΨ equation) — it is resolved either from an external
 value or from the mean-field phase.
 
-Reference: arXiv:2004.06344 (generalized Kuramoto-Sakaguchi finite-size)
+Reference: arXiv:2004.06344 (Yue, Smith & Gottwald, "Model reduction for the
+Kuramoto-Sakaguchi model", Phys. Rev. E 101, 062213 (2020))
 """
 
 from __future__ import annotations

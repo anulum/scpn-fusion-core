@@ -16,7 +16,8 @@ Machine parameters sourced from:
   R0=2.96m, a=1.25m, B0=3.45T, Ip=1.5-4.8MA, κ=1.7, δ=0.33
 - EAST:  Wan et al., Nucl. Fusion 57 (2017) 102019
   R0=1.85m, a=0.45m, B0=3.5T, Ip=0.4-1.0MA, κ=1.7-1.9, δ=0.4-0.6
-- KSTAR: Lee et al., Nucl. Fusion 60 (2020) 086002
+- KSTAR: parameters declared (an earlier "Lee et al., Nucl. Fusion 60
+  (2020) 086002" credit pointed to an unrelated paper)
   R0=1.8m, a=0.5m, B0=3.5T, Ip=0.5-1.0MA, κ=1.7-2.0, δ=0.3-0.7
 - ASDEX-U: Zohm et al., Nucl. Fusion 55 (2015) 104010
   R0=1.65m, a=0.5m, B0=2.5T, Ip=0.8-1.2MA, κ=1.6-1.8, δ=0.3-0.5

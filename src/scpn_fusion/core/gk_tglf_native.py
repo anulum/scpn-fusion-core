@@ -13,10 +13,11 @@ ITG-ETG coupling, and trapped-particle damping.
 References
 ----------
 - Staebler et al., Phys. Plasmas 14 (2007) 055909 — SAT0/SAT1
-- Staebler et al., Phys. Plasmas 24 (2017) 055906 — SAT2
+- Staebler et al., Nucl. Fusion 57 (2017) 066046 — saturation of coupled
+  electron and ion scale turbulence (an earlier "Phys. Plasmas 24 (2017)
+  055906" locator has no publication record)
 - Maeyama et al., Phys. Rev. Lett. 114 (2015) 255002 — cross-scale
   - Waltz et al., Phys. Plasmas 4 (1997) 2482 — E×B shear quench
-  - Connor et al., Nucl. Fusion 14 (1974) 185 — trapped-particle modes
 """
 
 from __future__ import annotations
@@ -41,7 +42,8 @@ _M_PROTON = 1.67262192369e-27
 
 # Staebler et al. 2007, Table I
 ALPHA_EXB_DEFAULT = 0.67
-# Staebler et al. 2017, Eq. (12); Maeyama et al. 2015, Fig. 3
+# Staebler et al. 2017 (Nucl. Fusion 57 066046); Maeyama et al. 2015, Fig. 3
+# (equation and figure numbers not checked against the papers)
 ALPHA_CS_DEFAULT = 3.0
 # Ion/ETG scale boundary
 KY_ETG_BOUNDARY = 2.0
@@ -108,7 +110,8 @@ def trapped_fraction(epsilon: float) -> float:
 def trapped_particle_damping(params: GKLocalParams) -> float:
     """Growth-rate damping factor from trapped particles.
 
-    Connor et al. 1974: scales with f_t × ν*/ω_bounce.
+    Scales with f_t × ν*/ω_bounce (declared form; an earlier "Connor et
+    al. 1974" credit pointed to an unrelated paper).
     Returns multiplicative factor in (0.1, 1.0].
     """
     f_t = trapped_fraction(params.epsilon)

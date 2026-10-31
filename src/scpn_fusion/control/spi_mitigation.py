@@ -248,7 +248,8 @@ class ShatteredPelletInjection:
         while t < duration:
             if t > t_mix:
                 # NGPS Ablation Rate: dN/dt ~ n_e^(1/3) * T_e^(1.64) * r_p^(4/3)
-                # Ref: Parks et al., Phys. Plasmas 5, 1024 (1998)
+                # Ref: source not identified (an earlier "Parks et al., Phys. Plasmas
+                # 5, 1024 (1998)" citation has no publication record)
                 ablation_rate = (
                     1.2e16 * (ne_local**0.33) * (self.Te**1.64) * (pellet_radius_m**1.33)
                 )

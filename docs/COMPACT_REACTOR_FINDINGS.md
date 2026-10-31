@@ -108,7 +108,7 @@ independent external review.
 
 [2] B. N. Sorbom, J. Ball, T. R. Palmer, F. J. Mangiarotti, J. M. Sierchio *et al.*, "ARC: A compact, high-field, fusion nuclear science facility and demonstration power plant with demountable magnets," *Fusion Engineering and Design*, vol. 100, pp. 378-405, 2015. DOI: [10.1016/j.fusengdes.2015.07.008](https://doi.org/10.1016/j.fusengdes.2015.07.008)
 
-[3] D. G. Whyte, J. Minervini, B. LaBombard, E. Marmar, L. Bromberg, and M. Greenwald, "Smaller & Sooner: Exploiting High Magnetic Fields from New Superconducting Technologies for a More Attractive Fusion Energy Development Path," *Journal of Fusion Energy*, vol. 35, no. 1, pp. 41-53, 2016. DOI: [10.1007/s10894-015-0050-1](https://doi.org/10.1007/s10894-015-0050-1)
+[3] D. G. Whyte, J. Minervini, B. LaBombard, E. Marmar, L. Bromberg, and M. Greenwald, "Smaller & Sooner: Exploiting High Magnetic Fields from New Superconductors for a More Attractive Fusion Energy Development Path," *Journal of Fusion Energy*, vol. 35, no. 1, pp. 41-53, 2016. DOI: [10.1007/s10894-015-0050-1](https://doi.org/10.1007/s10894-015-0050-1)
 
 [4] M. Greenwald, "Density limits in toroidal plasmas," *Plasma Physics and Controlled Fusion*, vol. 44, no. 8, pp. R27-R53, 2002. DOI: [10.1088/0741-3335/44/8/201](https://doi.org/10.1088/0741-3335/44/8/201)
 

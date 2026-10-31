@@ -815,7 +815,7 @@ Consortium and the SULI program.
 
 9. van de Plassche, K. L. et al., "Fast modeling of turbulent transport in fusion plasmas using neural networks," *Physics of Plasmas*, vol. 27, p. 022310, 2020. DOI: 10.1063/1.5134126
 
-10. Commaux, N. et al., "Demonstration of rapid shutdown using large shattered deuterium pellet injection in DIII-D," *Nuclear Fusion*, vol. 56, no. 4, p. 046007, 2016. DOI: 10.1088/0029-5515/56/4/046007
+10. Commaux, N. et al., "Demonstration of rapid shutdown using large shattered deuterium pellet injection in DIII-D," *Nuclear Fusion*, vol. 50, no. 11, p. 112001, 2010. DOI: 10.1088/0029-5515/50/11/112001
 
 11. Eich, T. et al., "Scaling of the tokamak near the scrape-off layer H-mode power width and implications for ITER," *Nuclear Fusion*, vol. 53, no. 9, p. 093031, 2013. DOI: 10.1088/0029-5515/53/9/093031
 
@@ -833,9 +833,9 @@ Consortium and the SULI program.
 
 18. Sauter, O. et al., "Neoclassical conductivity and bootstrap current formulas for general axisymmetric equilibria and arbitrary collisionality regime," *Physics of Plasmas*, vol. 6, no. 7, pp. 2834-2839, 1999. DOI: 10.1063/1.873240
 
-19. Whyte, D. G. et al., "Smaller & Sooner: Exploiting High Magnetic Fields from New Superconducting Technologies," *Journal of Fusion Energy*, vol. 35, no. 1, pp. 41-53, 2016. DOI: 10.1007/s10894-015-0050-1
+19. Whyte, D. G. et al., "Smaller & Sooner: Exploiting High Magnetic Fields from New Superconductors for a More Attractive Fusion Energy Development Path," *Journal of Fusion Energy*, vol. 35, no. 1, pp. 41-53, 2016. DOI: 10.1007/s10894-015-0050-1
 
-20. Sabbagh, S. A. et al., "GPU-accelerated equilibrium reconstruction for real-time tokamak control," 2023.
+20. Antepara, O., Williams, S., Kruger, S., Bechtel, T., McClenaghan, J., and Lao, L., "Performance-Portable GPU Acceleration of the EFIT Tokamak Plasma Equilibrium Reconstruction Code," *Proc. SC '23 Workshops*, pp. 1939-1948, 2023. DOI: 10.1145/3624062.3624607
 
 ### DOE Program Announcements
 

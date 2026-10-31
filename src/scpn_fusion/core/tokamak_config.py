@@ -98,7 +98,7 @@ class TokamakConfig:
 
     @classmethod
     def jet(cls) -> TokamakConfig:
-        """JET with ITER-like wall. Joffrin et al., Nucl. Fusion 59 (2019)."""
+        """JET with ITER-like wall. Joffrin et al., Nucl. Fusion 59 (2019) 112021."""
         return cls(
             name="JET",
             R0=2.96,

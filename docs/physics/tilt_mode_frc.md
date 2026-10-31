@@ -142,7 +142,7 @@ same-case parity.
 References:
 
 - Belova et al., *Numerical study of tilt stability of prolate field-reversed
-  configurations*, Physics of Plasmas 8, 1267 (2001),
+  configurations*, Physics of Plasmas 7, 4996 (2000),
   PPPL-3456: <https://bp-pub.pppl.gov/pub_report/2000/PPPL-3456.pdf>
 - Steinhauer, *Review of field-reversed configurations*, Physics of Plasmas 18,
   070501 (2011).

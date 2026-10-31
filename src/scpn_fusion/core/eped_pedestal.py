@@ -9,7 +9,7 @@
 EPED-like reduced-order pedestal scaling model for H-mode tokamak plasmas.
 
 Based on Snyder et al., Physics of Plasmas 16, 056118 (2009) and
-Snyder et al., Physics of Plasmas 18, 056115 (2011).
+Snyder et al., Nuclear Fusion 51, 103016 (2011).
 
 This is NOT a full EPED code (which requires coupled peeling-ballooning
 stability + kinetic ballooning mode analysis). Instead, it implements

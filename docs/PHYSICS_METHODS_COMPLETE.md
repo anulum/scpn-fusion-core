@@ -814,7 +814,7 @@ A variable-depth feedforward MLP maps 10 local plasma parameters $(ρ, T_e, T_i,
 
 **Architecture:** Auto-detected from `.npz` weight keys: `input(D) → hidden1 → [hidden2 → ...] → output(3)`, with GELU activation on hidden layers and softplus on output (ensures $\chi > 0$). Supports optional log-transform, gyro-Bohm skip-connection, and gated output modes.
 
-**Training data:** QLKNN-10D public dataset (doi:[10.5281/zenodo.3700755](https://doi.org/10.5281/zenodo.3700755)). Training recipe in `docs/NEURAL_TRANSPORT_TRAINING.md`.
+**Training data:** QLKNN-10D public dataset (doi:[10.5281/zenodo.3497066](https://doi.org/10.5281/zenodo.3497066)). Training recipe in `docs/NEURAL_TRANSPORT_TRAINING.md`.
 
 **Accuracy:** Relative $L_2$ error = 0.094 against QLKNN-10D test set (see `weights/neural_transport_qlknn.metrics.json`).
 
@@ -1058,7 +1058,7 @@ The ablation rate for a spherical pellet of radius $r_p$ in a plasma with densit
 
 $$\frac{dm}{dt} = C_P\,n_e^{1/3}\,T_e^{1.64}\,r_p^{4/3}$$
 
-where $C_P$ is the Parks coefficient, calibrated to mixed units (Parks et al., *Phys. Plasmas* 5, 1024, 1998; Parks, *Nucl. Fusion* 57, 2017, Eq. 8).
+where $C_P$ is the Parks coefficient, calibrated to mixed units (source not identified: the earlier citations Parks et al., *Phys. Plasmas* 5, 1024 (1998), and Parks, *Nucl. Fusion* 57 (2017) Eq. 8, have no matching publication record and were removed on 2026-10-31; the coefficient is unverified).
 
 ### 9.2 Multi-fragment SPI ablation
 
@@ -1407,17 +1407,17 @@ Updated Bayesian uncertainty quantification via Verdoolaege et al., *Nucl. Fusio
 
 [11] H.M. Smith et al., "Hot tail runaway electron generation in tokamak disruptions," *Phys. Plasmas* 15, 072502 (2008). doi:[10.1063/1.2949692](https://doi.org/10.1063/1.2949692).
 
-[12] P. Aleynikov and B.N. Breizman, "Generation of Runaway Electrons during the Thermal Quench," *Phys. Rev. Lett.* 114, 155001 (2015). doi:[10.1103/PhysRevLett.114.155001](https://doi.org/10.1103/PhysRevLett.114.155001).
+[12] P. Aleynikov and B.N. Breizman, "Theory of Two Threshold Fields for Relativistic Runaway Electrons," *Phys. Rev. Lett.* 114, 155001 (2015). doi:[10.1103/PhysRevLett.114.155001](https://doi.org/10.1103/PhysRevLett.114.155001).
 
-[13] L. Hesslow et al., "Generalized collision operator for fast electrons interacting with partially ionized impurities," *J. Plasma Phys.* 85, 475850601 (2019). doi:[10.1017/S0022377819000874](https://doi.org/10.1017/S0022377819000874).
+[13] L. Hesslow et al., "Evaluation of the Dreicer runaway generation rate in the presence of high-Z impurities using a neural network," *J. Plasma Phys.* 85, 475850601 (2019). doi:[10.1017/S0022377819000874](https://doi.org/10.1017/S0022377819000874).
 
 [14] O. Sauter et al., "Neoclassical conductivity and bootstrap current formulas for general axisymmetric equilibria and arbitrary collisionality regime," *Phys. Plasmas* 6, 2834 (1999). doi:[10.1063/1.873240](https://doi.org/10.1063/1.873240).
 
 [15] C.S. Chang and F.L. Hinton, "Effect of finite aspect ratio on the neoclassical ion thermal conductivity in the banana regime," *Phys. Fluids* 25, 1493 (1982). doi:[10.1063/1.863934](https://doi.org/10.1063/1.863934).
 
-[16] P.B. Snyder et al., "A first-principles predictive model of the pedestal height and width," *Phys. Plasmas* 16, 056118 (2009). doi:[10.1063/1.3122146](https://doi.org/10.1063/1.3122146).
+[16] P.B. Snyder et al., "Development and validation of a predictive model for the pedestal height," *Phys. Plasmas* 16, 056118 (2009). doi:[10.1063/1.3122146](https://doi.org/10.1063/1.3122146).
 
-[17] P.B. Snyder et al., "Pedestal stability comparison and ITER pedestal prediction," *Nucl. Fusion* 51, 103016 (2011). doi:[10.1088/0029-5515/51/10/103016](https://doi.org/10.1088/0029-5515/51/10/103016).
+[17] P.B. Snyder et al., "A first-principles predictive model of the pedestal height and width: development, testing and ITER optimization with the EPED model," *Nucl. Fusion* 51, 103016 (2011). doi:[10.1088/0029-5515/51/10/103016](https://doi.org/10.1088/0029-5515/51/10/103016).
 
 [18] F. Troyon et al., "MHD-limits to plasma confinement," *Plasma Phys. Control. Fusion* 26, 209 (1984). doi:[10.1088/0741-3335/26/1A/319](https://doi.org/10.1088/0741-3335/26/1A/319).
 
@@ -1429,7 +1429,7 @@ Updated Bayesian uncertainty quantification via Verdoolaege et al., *Nucl. Fusio
 
 [22] H.P. Bosch and G.M. Hale, "Improved formulas for fusion cross-sections and thermal reactivities," *Nucl. Fusion* 32, 611 (1992). doi:[10.1088/0029-5515/32/4/I07](https://doi.org/10.1088/0029-5515/32/4/I07).
 
-[23] R. Fitzpatrick, "Halo current and error field interaction," *Phys. Plasmas* 9, 3459 (2002). doi:[10.1063/1.1491955](https://doi.org/10.1063/1.1491955).
+[23] Entry removed on 2026-10-31. It cited R. Fitzpatrick, "Halo current and error field interaction," *Phys. Plasmas* 9, 3459 (2002), doi 10.1063/1.1491955; no paper with that title exists, *Phys. Plasmas* 9, 3459 is Fitzpatrick, "A simple model of the resistive wall mode in tokamaks", and the DOI belongs to a chemical-physics paper.
 
 [24] K.L. van de Plassche et al., "Fast modeling of turbulent transport using neural networks," *Phys. Plasmas* 27, 022310 (2020). doi:[10.1063/1.5134126](https://doi.org/10.1063/1.5134126).
 
@@ -1439,7 +1439,7 @@ Updated Bayesian uncertainty quantification via Verdoolaege et al., *Nucl. Fusio
 
 [27] J.P. Freidberg, *Ideal MHD*, Cambridge University Press (2014).
 
-[28] E. Frassinetti et al., "The EUROfusion JET-ILW pedestal database," *Nucl. Fusion* 61, 016001 (2021). doi:[10.1088/1741-4326/abb79e](https://doi.org/10.1088/1741-4326/abb79e).
+[28] L. Frassinetti et al., "Pedestal structure, stability and scalings in JET-ILW: the EUROfusion JET-ILW pedestal database," *Nucl. Fusion* 61, 016001 (2021). doi:[10.1088/1741-4326/abb79e](https://doi.org/10.1088/1741-4326/abb79e).
 
 [29] A.M. Dimits et al., "Comparisons and physics basis of tokamak transport models," *Phys. Plasmas* 7, 969 (2000). doi:[10.1063/1.873896](https://doi.org/10.1063/1.873896).
 

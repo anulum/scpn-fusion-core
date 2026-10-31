@@ -34,9 +34,9 @@ same-work speedup pairs.
 | **SCPN v4.0.0 (Rust reduced-order kernel)** | **~2 MHz** | **0.52 us P50 / 0.70 us P99** | Rust | Committed Rust-extension campaign artifact |
 | **SCPN v4.0.0 (controller loop, surrogate plant)** | **>10 kHz** | **PID p95 0.012 ms; SNN p95 0.284 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
 | **SCPN v4.0.0 (controller loop, full-mode plant)** | **>10 kHz** | **PID p95 0.047 ms; SNN p95 0.294 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
-| DIII-D PCS (production) | 4--10 kHz | 100--250 us per physics cycle | C / Fortran | Penaflor 2024; Barr 2024 |
+| DIII-D PCS (production) | 4--10 kHz | 100--250 us per physics cycle | C / Fortran | Rothstein et al. 2025 (arXiv:2511.11964) |
 | ITER CODAC (spec) | ~1 kHz | ~1 ms processing budget | TBD | ITER RTF design docs |
-| P-EFIT (GPU) | N/A (reconstruction) | 300--375 us per iter (129x129) | Fortran + CUDA | Sabbagh 2023 |
+| P-EFIT (GPU) | N/A (reconstruction) | 300--375 us per iter (129x129) | Fortran + CUDA | no traceable source |
 | TORAX | N/A (offline sim) | ~ms per timestep | Python / JAX | Citrin 2024 |
 | FUSE | N/A (design code) | N/A | Julia | Meneghini 2024 |
 
@@ -103,7 +103,7 @@ solver uses the response-matrix formulation with Miller geometry
 | Code | Grid | Method | Runtime | Source |
 |------|------|--------|---------|--------|
 | EFIT (Fortran) | 65x65 | Current-filament Picard | ~2 s full recon | Lao 1985 |
-| P-EFIT (GPU) | 65x65 | GPU-accelerated Picard | <1 ms per iter | Sabbagh 2023 |
+| P-EFIT (GPU) | 65x65 | GPU-accelerated Picard | <1 ms per iter | no traceable source |
 | CHEASE (Fortran) | 257x257 | Fixed-boundary cubic Hermite | ~5 s | Lutjens 1996 |
 | HELENA | 201 flux | Isoparametric | ~10 s | Huysmans 1991 |
 | FreeGS | Variable | Picard + multigrid | ~seconds | FreeGS GitHub |
@@ -314,7 +314,7 @@ scheduler consumer is added with separate acceptance tests.
 ## References
 
 - Lao, L.L. et al. (1985). *Nucl. Fusion* 25, 1611 (EFIT).
-- Sabbagh, S.A. et al. (2023). GPU-accelerated EFIT (P-EFIT). ACM SC23.
+- Antepara, O. et al. (2023). Performance-portable GPU acceleration of EFIT. *Proc. SC '23 Workshops*, 1939 (doi 10.1145/3624062.3624607).
 - Lutjens, H. et al. (1996). *Comput. Phys. Commun.* 97, 219 (CHEASE).
 - Huysmans, G.T.A. et al. (1991). *Proc. CP90* (HELENA).
 - Romanelli, M. et al. (2014). *Plasma Fusion Res.* 9, 3403023 (JINTRAC).
@@ -324,8 +324,7 @@ scheduler consumer is added with separate acceptance tests.
 - Belli, E.A. & Candy, J. (2008). *Phys. Plasmas* 15, 092510 (CGYRO).
 - Hoppe, M. et al. (2021). *Comput. Phys. Commun.* 268, 108098 (DREAM).
 - van de Plassche, K.L. et al. (2020). *Phys. Plasmas* 27, 022310 (QLKNN).
-- Penaflor, B.G. et al. (2024). DIII-D PCS. *Fus. Eng. Des.*
-- Barr, J.L. et al. (2024). *arXiv:2511.11964* (Parallelised RT physics on DIII-D).
+- Rothstein, A., Erickson, K., Conlin, R., Bortolon, A., Kolemen, E. (2025). Parallelized real-time physics codes for plasma control on DIII-D. *arXiv:2511.11964*.
 - Dimits, A.M. et al. (2000). *Phys. Plasmas* 7, 969 (Cyclone Base Case).
 - Kotschenreuther, M. et al. (1995). *Comput. Phys. Commun.* 88, 128 (GS2).
 - Staebler, G.M. et al. (2007). *Phys. Plasmas* 14, 055909 (TGLF).

@@ -99,6 +99,7 @@ checksums, and blocked external rows:
 
 References:
 
-- Ono et al., *Magnetic-mode-based modeling for field-reversed
-  configurations*, Physics of Plasmas 4, 1953 (1997).
+- Ono et al., *Experimental investigation of three-component magnetic
+  reconnection by use of merging spheromaks and tokamaks*, Physics of
+  Plasmas 4, 1953 (1997).
 - NRL Plasma Formulary, Spitzer resistivity scaling.

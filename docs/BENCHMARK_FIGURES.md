@@ -304,7 +304,7 @@ reconstruction. The comparison is shown for completeness, not equivalence.
 |-----------|-------------------|---------------|--------|
 | Equilibrium 65×65 | 100 ms | ~2 ms | Section 28 study |
 | Equilibrium 256×256 | ~10 s | ~50 ms | Extrapolated |
-| P-EFIT reference (65×65) | — | <1 ms | Sabbagh 2023 |
+| P-EFIT reference (65×65) | — | <1 ms | no traceable source |
 | Full inverse reconstruction | ~4 s | ~200 ms | 8× GPU fwd solve |
 | MLP 1000-pt profile | 0.3 ms | ~0.05 ms | Batch matmul |
 
@@ -319,7 +319,7 @@ Component & CPU Rust (release) & GPU projected & Source \\
 \midrule
 Equilibrium $65\times65$ & 100\,ms & $\sim$2\,ms & Section~28 \\
 Equilibrium $256\times256$ & $\sim$10\,s & $\sim$50\,ms & Extrapolated \\
-P-EFIT reference ($65\times65$) & --- & $<$1\,ms & Sabbagh~2023 \\
+P-EFIT reference ($65\times65$) & --- & $<$1\,ms & no traceable source \\
 Full inverse recon. & $\sim$4\,s & $\sim$200\,ms & 8$\times$ GPU fwd \\
 MLP 1000-pt profile & 0.3\,ms & $\sim$0.05\,ms & Batch matmul \\
 \bottomrule

@@ -373,7 +373,7 @@ pub fn l2_norm_delta(a: &Array2<f64>, b: &Array2<f64>) -> FusionResult<f64> {
 //   - Jardin, "Computational Methods in Plasma Physics", Ch. 12
 //   - Lao et al., "Equilibrium analysis of current profiles in tokamaks",
 //     Nucl. Fusion 30 (1990) 1035
-//   - EFIT-AI: Joung et al., Nucl. Fusion 63 (2023) 126058
+//   - Neural Grad-Shafranov solver: Joung et al., Nucl. Fusion 60 (2020) 016034
 
 /// 2D Cartesian tile descriptor — one per rank in a (pz × pr) topology.
 #[derive(Debug, Clone, PartialEq, Eq)]

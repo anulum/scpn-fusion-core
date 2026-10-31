@@ -2040,7 +2040,7 @@ single-shot values on contemporary hardware (2024–2025 publications).
 
 **References:**
 - Lao, L.L. et al. (1985). *Nucl. Fusion* 25, 1611 (EFIT).
-- Sabbagh, S.A. et al. (2023). GPU-accelerated EFIT (P-EFIT).
+- Antepara, O. et al. (2023). Performance-portable GPU acceleration of EFIT. *Proc. SC '23 Workshops*, 1939 (doi 10.1145/3624062.3624607).
 - Lütjens, H. et al. (1996). *Comput. Phys. Commun.* 97, 219 (CHEASE).
 - Huysmans, G.T.A. et al. (1991). *Proc. CP90 Conf. Comput. Physics* (HELENA).
 - Romanelli, M. et al. (2014). *Plasma Fusion Res.* 9, 3403023 (JINTRAC).
@@ -2101,7 +2101,7 @@ See `SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md` Section 28 for full details.
 |-----------|-------------------|---------------|--------|
 | Equilibrium 65×65 | 100 ms | ~2 ms | Section 28 study |
 | Equilibrium 256×256 | ~10 s | ~50 ms | Extrapolated |
-| P-EFIT reference (65×65) | — | <1 ms | Sabbagh 2023 |
+| P-EFIT reference (65×65) | — | <1 ms | no traceable source (an earlier "Sabbagh 2023" credit has no record) |
 | Full inverse reconstruction | ~4 s | ~200 ms | 8× GPU fwd solve |
 | MLP 1000-pt profile | 0.3 ms | ~0.05 ms | Batch matmul |
 
