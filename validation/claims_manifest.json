@@ -90,7 +90,7 @@
     {
       "id": "readme_itpa_hmode_coverage_claim",
       "source_file": "README.md",
-      "source_pattern": "ITPA H-mode confinement",
+      "source_pattern": "Curated H-mode confinement table",
       "evidence_files": [
         "artifacts/real_shot_validation.json"
       ],
