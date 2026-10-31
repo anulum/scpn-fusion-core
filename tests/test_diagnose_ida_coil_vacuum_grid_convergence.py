@@ -88,7 +88,17 @@ def test_repository_artifact_distinguishes_dirty_state_from_probe_failure(
     artifact = diagnostic._repository_artifact()
     assert artifact["git_commit"] == diagnostic._same_case._git_value("rev-parse", "HEAD")
     assert artifact["path"] == "."
-    assert artifact["worktree_clean"] is False
+    # Compare with a live probe: a clean checkout must report True and a
+    # dirty one False, so the test holds in both states.
+    porcelain = subprocess.run(
+        ["git", "status", "--porcelain"],
+        cwd=diagnostic.ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    ).stdout
+    assert artifact["worktree_clean"] is (porcelain.strip() == "")
 
     monkeypatch.setattr(
         subprocess,
