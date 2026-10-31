@@ -879,7 +879,7 @@ Stable against the $m=1/n=1$ external kink. Kruskal & Schwarzschild, *Proc. R. S
 
 $$\beta_N = \frac{100\,\beta_t}{I_p[\text{MA}]/(a[\text{m}]\,B_0[\text{T}])} \;<\; g$$
 
-where $g = 2.8$ (no-wall) or $g = 3.5$ (ideal-wall). Troyon et al., *Plasma Phys. Control. Fusion* 26, 209 (1984).
+where the code uses $g = 2.8$ (no-wall) and $g = 3.5$ (ideal-wall) as declared values. The limit's form follows Troyon et al., *Plasma Phys. Control. Fusion* 26, 209 (1984). The report version of that paper that was read (CRPP LRP 231/83) states the limit in a different normalisation and gives no ideal-wall coefficient (it doubts that even $n=1$ could be wall-stabilised); the typeset PPCF pages were not read, so neither value is verified against the paper.
 
 ### 6.5 Classical resistive tearing — FKR/Rutherford
 
@@ -1018,11 +1018,11 @@ Ref: Fitzpatrick, R. *Phys. Plasmas* 9, 3459 (2002).
 
 ### 8.1 EPED pedestal model
 
-Reduced-order EPED-like scaling per Snyder et al., *Phys. Plasmas* 16, 056118 (2009):
+Reduced-order EPED-like width scaling. Snyder et al., *Phys. Plasmas* 16, 056118 (2009) print $\Delta_{\rm ped} = c_1\,\beta_{p,{\rm ped}}^{0.5}$ with $c_1 = 0.076$; the code adds a declared collisionality factor:
 
 $$\Delta_{\rm ped} = 0.076\,\beta_{p,{\rm ped}}^{0.5}\,\nu_*^{-0.2}$$
 
-with high-density width broadening: $\Delta \times (1 + 0.25\,n_{\rm ped}/10)$ (Frassinetti et al., *Nucl. Fusion* 61, 016001, 2021). The pedestal temperature is iterated to satisfy the ballooning pressure-gradient limit $\alpha_{\rm crit}$.
+The $\nu_*^{-0.2}$ factor is not in Snyder et al., who report no significant dependence of the width on collisionality. The code also applies a declared high-density broadening $\Delta \times (1 + 0.25\,n_{\rm ped}/10)$. Neither factor is a published fit: Frassinetti et al., *Nucl. Fusion* 61, 016001 (2021), earlier credited for the broadening, gives no such factor, its Fig. 12 concerns pedestal pressure, and for width against density it reports at most a weak negative correlation (Fig. 13(f)). The pedestal temperature is iterated to satisfy the ballooning pressure-gradient limit $\alpha_{\rm crit}$.
 
 Domain-validity bounds enforce calibrated ranges for all 10 input parameters (R0, a, B0, Ip, $\kappa$, etc.) with continuous extrapolation penalty.
 

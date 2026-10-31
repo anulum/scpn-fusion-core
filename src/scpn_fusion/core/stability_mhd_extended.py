@@ -92,9 +92,10 @@ def troyon_beta_limit(
     B0 : float
         Toroidal magnetic field on axis [T].
     g_nowall : float
-        Troyon coefficient without wall (default 2.8).
+        Troyon coefficient without wall (default 2.8, declared; see the
+        methods page, section 6.4).
     g_wall : float
-        Troyon coefficient with ideal wall (default 3.5).
+        Troyon coefficient with ideal wall (default 3.5, declared).
 
     Returns
     -------
@@ -253,9 +254,9 @@ def rwm_stability(
     beta_N : float
         Normalised beta [% m T / MA].
     g_nowall : float
-        Troyon no-wall limit (default 2.8).
+        Troyon no-wall limit (default 2.8, declared).
     g_wall : float
-        Troyon ideal-wall limit (default 3.5).
+        Troyon ideal-wall limit (default 3.5, declared).
 
     Returns
     -------

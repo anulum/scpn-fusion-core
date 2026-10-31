@@ -454,7 +454,8 @@ def generate_tearing(rng: np.random.Generator) -> dict[str, Any]:
 def generate_beta_limit(rng: np.random.Generator) -> dict[str, Any]:
     """Shot 166000 -- Beta-limit (Troyon limit) disruption (~t=2.0 s).
 
-    beta_N is ramped above the Troyon limit (g~3.5), driving ideal MHD
+    beta_N is ramped above a declared ideal-wall limit (g ~ 3.5; this value
+    is not printed in the Troyon report version read), driving ideal MHD
     kink/ballooning instabilities and rapid collapse.
 
     Refs: Troyon et al., PPCF 26 (1984) 209;

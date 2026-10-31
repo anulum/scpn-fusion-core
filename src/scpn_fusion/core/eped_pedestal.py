@@ -13,12 +13,14 @@ Snyder et al., Nuclear Fusion 51, 103016 (2011).
 
 This is NOT a full EPED code (which requires coupled peeling-ballooning
 stability + kinetic ballooning mode analysis). Instead, it implements
-the published width-height scaling:
+a reduced width scaling:
 
     Delta_ped ~ 0.076 * beta_p_ped^{0.5} * nu_star_ped^{-0.2}
 
 combined with pressure-balance constraints to predict (p_ped, T_ped,
-n_ped, Delta_ped).
+n_ped, Delta_ped). The 0.076 * beta_p_ped^{0.5} part is printed in
+Snyder et al., Phys. Plasmas 16, 056118 (2009); the nu_star_ped^{-0.2}
+factor is declared here.
 """
 
 from __future__ import annotations
@@ -280,13 +282,17 @@ class EpedPedestalModel:
             eps_ped = max(eps_ped, 0.01)
             nu_star_ped = nu_ei * q_ped * self.R0 / (eps_ped**1.5 * max(v_te, 1.0))
 
-            # Snyder scaling: Delta_ped = 0.076 * beta_p_ped^0.5 * nu_star_ped^{-0.2}
+            # Width: Snyder et al. 2009 print Delta_ped = 0.076 * beta_p_ped^0.5.
+            # The nu_star_ped^{-0.2} factor is declared here, not published;
+            # Snyder et al. find no significant collisionality dependence.
             # Clamp nu_star to avoid blowup at very low collisionality
             nu_star_safe = max(nu_star_ped, 0.001)
             Delta_ped = 0.076 * np.sqrt(max(beta_p_ped, 0.001)) * nu_star_safe ** (-0.2)
 
-            # High-density width broadening: empirical fit to JET-ILW pedestal
-            # database (Frassinetti et al., NF 61 016001, 2021, Fig. 12).
+            # Declared high-density width broadening (not a published fit).
+            # Frassinetti et al., NF 61 016001 (2021), earlier credited here,
+            # gives no such factor; for width against density it reports at
+            # most a weak negative correlation (Fig. 13(f)).
             Delta_ped *= 1.0 + 0.25 * (n_ped_1e19 / 10.0)
 
             Delta_ped *= domain.extrapolation_penalty
