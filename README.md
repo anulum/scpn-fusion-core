@@ -284,7 +284,7 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 | FNO turbulence surrogate | val rel_L2 = **0.055** | `weights/fno_turbulence_jax.metrics.json` |
 | ITER-like synthetic equilibrium baseline v2 | held-out mean / p95 rel_L2 = **3.05% / 6.90%**; synthetic-only, not facility validated | `validation/reports/iter_surrogate_v2_selection.json` |
 | Historical Rust-PID disruption observation | **0%**, exact invocation count unknown; not a current control-quality guarantee | [Historical evidence](papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json) |
-| ITPA H-mode confinement | 53 shots / 24 machines | `validation/reference_data/itpa/` |
+| Curated H-mode confinement table | 53 shots / 24 machines | `validation/reference_data/itpa/` |
 | SPARC GEQDSK validation | 8 public EFIT equilibria; operator-source gate passes; row-level debug traces expose profile-source/free-boundary blockers | `validation/benchmark_sparc_geqdsk_rmse.py`, `validation/psi_pointwise_rmse.py` |
 | Q >= 10 operating point | Q = 15 (0D power balance) | `RESULTS.md` |
 | TBR | 1.14 (0D 3-group blanket) | `RESULTS.md` |
@@ -837,7 +837,7 @@ cargo bench                      # Criterion benchmarks
 | Dataset | Source | Contents |
 |---------|--------|----------|
 | **SPARC GEQDSK** | [SPARCPublic](https://github.com/cfs-energy/SPARCPublic) (MIT) | 8 public EFIT equilibria (B=12.2 T, Ip up to 8.7 MA); operator-source rows pass, while profile-source/free-boundary reconstruction rows remain open with row-level debug traces |
-| **ITPA H-mode** | Verdoolaege et al., NF 61 (2021) | 53 shots from 24 machines |
+| **H-mode confinement table** | Repository-curated; each row cites its own paper (`source` column) | 53 shots from 24 machines, including ITER, ARC and SPARC design points; not the ITPA global H-mode database of Verdoolaege et al., NF 61 (2021), which holds 14 153 records from 19 tokamaks |
 | **DIII-D disruptions** | Reference profiles (16 shots) | Locked mode, VDE, tearing, density, beta |
 | **Multi-machine GEQDSK** | Synthetic Solov'ev | 100 equilibria (DIII-D, JET, EAST, KSTAR, ASDEX-U) |
 | **FAIR-MAST complete magnetics** | UKAEA FAIR-MAST, CC BY-SA 4.0 | complete shot-group object and decoded-array contract; shot 27707 is the tracked full regression witness, with qualification and actuation authority fail-closed |

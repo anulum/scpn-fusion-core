@@ -432,9 +432,9 @@ pass/block status; it is not an EFIT-grade inverse-reconstruction claim.
 | P_fusion | 500 MW | Scaling-consistent | N/A |
 | Q | 10 | Consistent with tau_E | N/A |
 
-### 6.3 ITPA H-Mode Confinement Database
+### 6.3 Curated H-Mode Confinement Table
 
-Validation against the updated ITPA global H-mode confinement database (Verdoolaege et al., Nuclear Fusion 61, 076006, 2021):
+Validation against the repository's curated H-mode table (`validation/reference_data/itpa/hmode_confinement.csv`: 53 rows from 24 machines and design points, each row citing its own source). This is not the updated ITPA global H-mode confinement database of Verdoolaege et al., Nuclear Fusion 61, 076006 (2021), which holds 14 153 records from 19 tokamaks (p. 4):
 
 | Machine | Shots Validated | tau_E Error Range |
 |:----|:---:|:---:|

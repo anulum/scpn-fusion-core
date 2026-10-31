@@ -52,7 +52,10 @@ class PeelingBallooningBoundary:
         """Critical alpha (pressure gradient) at edge."""
         # alpha_crit ~ s_edge
         # With shaping, kappa and delta increase the limit
-        # Sauter et al., Phys. Plasmas 6, 2834 (1999): F_shape uses δ²
+        # Declared shaping factor 1 + kappa^2 (1 + 2 delta^2); no printed source
+        # is identified. The earlier credit to Sauter et al., Phys. Plasmas 6,
+        # 2834 (1999) was removed: that paper's title and abstract concern
+        # neoclassical conductivity and bootstrap current, not this form.
         alpha_crit = 0.5 * max(s_edge, 0.1) * (1.0 + self.kappa**2 * (1.0 + 2.0 * self.delta**2))
         return float(alpha_crit)
 

@@ -1061,7 +1061,10 @@ remain blocked.
 
 ### IPB98(y,2) Confinement Scaling
 
-Validation against the ITPA H-mode confinement database (53 shots, 24 machines):
+Validation against the curated H-mode confinement table (53 shots, 24 machines;
+`validation/reference_data/itpa/hmode_confinement.csv`, each row citing its own
+paper; not the ITPA global H-mode database of Verdoolaege et al., NF 61
+(2021), which holds 14 153 records from 19 tokamaks):
 
 | Machine | Shots | τ_E measured (s) | τ_E predicted (s) | Error (%) |
 |---------|-------|-----------------|-------------------|-----------|
@@ -1074,7 +1077,7 @@ Validation against the ITPA H-mode confinement database (53 shots, 24 machines):
 
 > **Note on confinement accuracy:** The JET/DIII-D/ASDEX-U/C-Mod error
 > percentages above are computed by the IPB98(y,2) scaling law implementation
-> against the ITPA H-mode dataset. These are **scaling law errors**, not
+> against the curated H-mode table. These are **scaling law errors**, not
 > full-profile RMSE comparisons. The SPARC validation checks point-wise ψ NRMSE
 > on the bundled public GEQDSK/EQDSK grids and GEQDSK compatibility invariants:
 > finite non-degenerate ψ, declared-axis consistency, boundary containment, and

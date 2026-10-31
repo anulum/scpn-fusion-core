@@ -73,7 +73,8 @@ and :math:`M` is the effective ion mass in amu.
 
 The uncertainty quantification follows the Bayesian regression framework
 of Verdoolaege et al. (Nuclear Fusion 61, 2021) using the bundled
-53-shot, 24-machine ITPA H-mode confinement database.
+53-shot, 24-machine curated H-mode confinement table (not the ITPA
+global database).
 
 RF Heating Models
 ------------------

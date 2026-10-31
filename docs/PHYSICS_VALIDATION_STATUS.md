@@ -127,7 +127,7 @@ Coefficients (Verdoolaege et al., NF 61 076006, 2021):
 Training domain: Ip 0.4-22 MA, BT 0.3-14 T, ne 0.5-25 x10^19 m^-3,
 P_loss 0.5-220 MW, R 0.45-8.5 m, kappa 1.0-3.0, eps 0.08-0.9, M 1.0-3.0 AMU.
 
-### ITPA Dataset
+### Curated H-mode Dataset
 
 - 53 shots across 24 machines (ITER, JET, DIII-D, ASDEX-U, C-Mod, JT-60U,
   NSTX, MAST, KSTAR, EAST, SPARC, ARC, and 12 others).
@@ -344,7 +344,7 @@ Source: `validation/reference_data/provenance_manifest.json` (v2, 2026-03-05).
 | SPARC equilibria | 8 EQDSK + 3 lmode GEQDSK | CFS/MIT public design data |
 | SPARC POPCON | 1 CSV | Published design tables |
 | SPARC device description | 1 JSON | Public design parameters |
-| ITPA confinement | 53 shots, 1 CSV | Published ITPA H-mode database subset |
+| H-mode confinement | 53 shots, 1 CSV | Curated rows, each citing its own paper; not drawn from the ITPA database |
 | ITPA coefficients | 2 JSON | Derived from published ITPA data |
 | QLKNN-10D benchmarks | 1 JSON (summary) | Published QLKNN paper values |
 | QLKNN-10D training data | 500K samples (Zenodo) | Real gyrokinetic GENE/QuaLiKiz runs |

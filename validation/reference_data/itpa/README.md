@@ -1,18 +1,19 @@
-# ITPA H-Mode Confinement Database (Subset)
+# Curated H-Mode Confinement Table
 
 Reference data for validating energy confinement time predictions against
 the IPB98(y,2) empirical scaling law.
 
-> **Disclaimer:** This directory contains a **53-shot illustrative subset**
-> spanning 24 machines and manually derived from published tables in the
-> cited paper. It is **not** the full ITPA global H-mode confinement database.
+> **Disclaimer:** This directory contains a **53-shot illustrative table**
+> spanning 24 machines and design points. Each row cites its own paper in the
+> `source` column; no row is taken from Verdoolaege et al. (2021). It is
+> **not** the ITPA global H-mode confinement database or a subset of it.
 > The data is used
 > solely for regression testing of the IPB98(y,2) scaling law
 > implementation in SCPN Fusion Core. For the authoritative dataset,
 > contact the ITPA Confinement Database Working Group or download from
 > the Princeton DataSpace link below.
 
-## Source
+## Related database (not the source of these rows)
 
 Verdoolaege et al., "The updated ITPA global H-mode confinement database:
 description and analysis", Nuclear Fusion **61** (2021) 076006.

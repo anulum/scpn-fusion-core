@@ -53,9 +53,9 @@ Validation Datasets
      - `CFS SPARCPublic <https://github.com/cfs-energy/SPARCPublic>`_ (MIT)
      - 8 equilibrium files (:math:`B = 12.2\,\text{T}`,
        :math:`I_p` up to :math:`8.7\,\text{MA}`)
-   * - ITPA H-mode
-     - Verdoolaege et al., NF 61 (2021)
-     - 53-shot confinement dataset from 24 tokamaks
+   * - H-mode confinement table
+     - Repository-curated; per-row papers in the ``source`` column
+     - 53-shot confinement dataset from 24 tokamaks and design points
        (JET, DIII-D, C-Mod, ASDEX-U, ...)
    * - ITER baseline
      - ITER Physics Basis
@@ -82,7 +82,8 @@ the IPB98(y,2) scaling law (ITER Physics Basis, Nuclear Fusion 39, 1999):
             \; P_\text{loss}^{-0.69} \; R^{1.97} \; \kappa^{0.78}
             \; \varepsilon^{0.58} \; M^{0.19}
 
-Validated accuracy against the ITPA H-mode database (53 shots, 24 machines):
+Validated accuracy against the curated H-mode table (53 shots, 24 machines;
+not the ITPA global database):
 
 .. list-table::
    :header-rows: 1

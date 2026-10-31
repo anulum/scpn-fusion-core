@@ -32,17 +32,20 @@ by CFS, designed to achieve Q > 2 in D-T plasmas.
 
 **License:** See https://github.com/cfs-energy/SPARCPublic for terms.
 
-### ITPA H-Mode Confinement Database
+### Curated H-Mode Confinement Table
 
-Curated subset of the International Tokamak Physics Activity (ITPA) global
-H-mode confinement database, covering 53 shots across 24 tokamaks.
+Repository-curated H-mode confinement rows, 53 shots across 24 tokamaks and
+design points. Each row cites its own paper in the `source` column; the rows
+are not drawn from the ITPA global H-mode confinement database.
 
 | File | Description |
 |------|-------------|
 | `hmode_confinement.csv` | Machine parameters and measured τ_E for 53 shots |
 | `ipb98y2_coefficients.json` | IPB98(y,2) scaling law coefficients and uncertainties |
 
-**Source:** Verdoolaege et al., Nuclear Fusion 61 (2021) 076006
+**Source:** per-row papers in the `source` column of `hmode_confinement.csv`.
+For the ITPA global database itself see Verdoolaege et al., Nuclear Fusion 61
+(2021) 076006.
 
 ### ITER Configurations (existing)
 

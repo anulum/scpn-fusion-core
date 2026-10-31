@@ -51,9 +51,9 @@ own licensing terms:
    * - SPARC GEQDSK
      - MIT
      - `CFS SPARCPublic <https://github.com/cfs-energy/SPARCPublic>`_
-   * - ITPA H-mode
-     - Illustrative subset
-     - Verdoolaege et al., NF 61 (2021)
+   * - H-mode confinement table
+     - Illustrative curated rows
+     - Per-row papers in the ``source`` column
    * - ITER/JET/DIII-D configs
      - No restrictions
      - Constructed from published literature

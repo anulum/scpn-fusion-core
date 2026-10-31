@@ -321,9 +321,10 @@ def test_public_docs_match_itpa_hmode_dataset_counts() -> None:
     assert f"{shot_count} shots / {machine_count} machines" in readme
     assert f"{shot_count} shots from {machine_count} machines" in readme
     assert (
-        f"ITPA H-mode confinement database ({shot_count} shots, {machine_count} machines)"
+        f"curated H-mode confinement table ({shot_count} shots, {machine_count} machines"
         in benchmarks
     )
+    assert "ITPA H-mode confinement database (" not in benchmarks
     assert f"{shot_count} shots across {machine_count} machines" in validation_status
     assert f"{shot_count} shots, {machine_count} machines" in sphinx_validation
     assert f"{shot_count} shots, {machine_count} machines" in sphinx_notebooks

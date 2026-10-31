@@ -46,8 +46,8 @@ Core Tutorials (01--10)
      - Divertor heat flux calculation, TBR estimation, and blanket neutronics
        with port-coverage and streaming correction factors.
    * - ``05_validation_against_experiments``
-     - Cross-validation against 8 SPARC GEQDSK equilibria and the ITPA H-mode
-       confinement database (53 shots, 24 machines).
+     - Cross-validation against 8 SPARC GEQDSK equilibria and the curated H-mode
+       confinement table (53 shots, 24 machines).
    * - ``06_inverse_and_transport_benchmarks``
      - Inverse equilibrium reconstruction and QLKNN-10D neural transport
        surrogate benchmarks.
