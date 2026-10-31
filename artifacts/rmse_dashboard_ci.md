@@ -1,14 +1,14 @@
 # SCPN RMSE Dashboard
 
-- Generated: `2026-03-09T01:18:56.599113+00:00`
-- Runtime: `3.02s`
+- Generated: `2026-10-31T11:54:34.529841+00:00`
+- Runtime: `6.04s`
 
 ## Auto-Flag Summary
 
 | Metric | Value | Flag |
 |--------|-------|------|
 | tau_E MAE % | `50.09%` | **[FAIL]** |
-| beta_N RMSE | `0.1731` | **[FAIL]** |
+| beta_N RMSE | `0.0894` | **[WARN]** |
 | SPARC axis RMSE (m) | `1.594950` | **[FAIL]** |
 
 ## Confinement RMSE (ITPA H-mode)
@@ -23,12 +23,12 @@
 ## Confinement RMSE (ITER + SPARC references)
 
 - Samples: `2`
-- `tau_E` RMSE: `0.0299 s`
+- `tau_E` RMSE: `0.0254 s`
 
 ## Beta_N RMSE (ITER + SPARC references)
 
 - Samples: `2`
-- `beta_N` RMSE: `0.1731` **[FAIL]**
+- `beta_N` RMSE: `0.0894` **[WARN]**
 
 ![beta_N scatter](./beta_n_scatter.png)
 
@@ -40,10 +40,10 @@
 ## SPARC Point-wise psi(R,Z) RMSE
 
 - Files: `8`
-- Mean normalised psi RMSE: `0.928002`
-- Mean relative L2: `0.803325`
-- Mean GS residual (rel L2): `11.8310`
-- Worst file: `lmode_vh.geqdsk` (psi_N RMSE = `1.478894`)
+- Mean normalised psi RMSE: `0.928047`
+- Mean relative L2: `0.803365`
+- Mean GS residual (rel L2): `11.8315`
+- Worst file: `lmode_vh.geqdsk` (psi_N RMSE = `1.478971`)
 
 ## Forward Diagnostics RMSE
 
@@ -55,5 +55,5 @@
 
 ## Notes
 
-- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy with a profile-peaking correction factor (1.446), calibrated against ITER and SPARC targets.
+- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy with a profile/normalization correction factor (3.335), fitted to the ITER and SPARC targets as a reduced-order regression guard; the two-point beta_N RMSE is a fit residual, not a validation result.
 - Use this report for trend tracking; not as a replacement for full transport/MHD validation.
