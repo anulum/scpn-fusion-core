@@ -71,10 +71,12 @@ where :math:`I_p` is in MA, :math:`B_T` in T,
 elongation, :math:`\varepsilon = a/R` is the inverse aspect ratio,
 and :math:`M` is the effective ion mass in amu.
 
-The uncertainty quantification follows the Bayesian regression framework
-of Verdoolaege et al. (Nuclear Fusion 61, 2021) using the bundled
-53-shot, 24-machine curated H-mode confinement table (not the ITPA
-global database).
+The uncertainty quantification propagates declared 1-sigma exponent
+uncertainties. No published source for them has been identified:
+Verdoolaege et al. (Nuclear Fusion 61, 2021), Table 7, prints IPB98(y,2)
+without uncertainties. Predictions are compared with the bundled 53-shot,
+24-machine curated H-mode confinement table (not the ITPA global
+database).
 
 RF Heating Models
 ------------------

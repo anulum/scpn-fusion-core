@@ -26,6 +26,7 @@
     "M_AMU": 0.04
   },
   "rmse_log10": 0.145,
+  "uncertainty_provenance": "Declared values. uncertainties_1sigma and rmse_log10 are not printed in Verdoolaege et al. 2021 (Table 7 gives IPB98(y,2) without uncertainties; its +/- values and RMSE 0.17-0.20 in natural log belong to the new DB5.2.3 fits). No source identified.",
   "fit_database": "ITPA DB2.8: 1 310 ELMy H-mode entries from 9 tokamaks (Verdoolaege et al. 2021, Table 1, p. 6)",
   "fit_database_machines": [
     "ASDEX", "ASDEX Upgrade", "Alcator C-Mod", "DIII-D", "JET",

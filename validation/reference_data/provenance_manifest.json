@@ -230,7 +230,7 @@
       "license_redistributable": true,
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration",
-      "total_bytes": 6219
+      "total_bytes": 6499
     },
     {
       "file_count": 1,
@@ -1385,8 +1385,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "itpa/ipb98y2_coefficients.json",
-      "sha256": "12abc54a8b91263dc90647ac93ef2fba86c300b056d252250fdb5231e595047b",
-      "size_bytes": 1165,
+      "sha256": "ed5ca022c48a7d8d8dd2fd4628f611049b9111943a6a625a348b026fbf633615",
+      "size_bytes": 1445,
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration"
     },
@@ -4903,7 +4903,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-10-31T11:55:08.555093+00:00",
+  "generated_at_utc": "2026-10-31T11:58:21.162346+00:00",
   "license_registry": [
     {
       "attribution_required": true,

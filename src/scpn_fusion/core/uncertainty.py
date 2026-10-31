@@ -52,7 +52,9 @@ IPB98_CENTRAL = {
     "alpha_M": _COEFFS["exponents"]["M_AMU"],
 }
 
-# 1-sigma uncertainties (from Verdoolaege 2021 Bayesian regression)
+# Declared 1-sigma uncertainties from the coefficient file.  They are not
+# printed in Verdoolaege et al. (2021), whose Table 7 gives IPB98(y,2)
+# without uncertainties; no source for them has been identified.
 IPB98_SIGMA = {
     "C": float(_UNC.get("C", 0.012)),
     "alpha_I": float(_UNC.get("Ip_MA", 0.03)),

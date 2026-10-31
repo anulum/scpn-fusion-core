@@ -404,9 +404,12 @@ def ipb98y2_with_uncertainty(
 ) -> tuple[float, float]:
     """Evaluate IPB98(y,2) with log-linear error propagation.
 
-    Uses published exponent uncertainties from Verdoolaege et al.,
-    Nuclear Fusion 61, 076006 (2021) for 95% confidence interval
-    estimation via log-linear error propagation.
+    Propagates the 1-sigma exponent uncertainties of the coefficient file
+    (``uncertainties_1sigma``) and ``sigma_lnC`` through the log-linear
+    form.  These values are declared, not published: Verdoolaege et al.,
+    Nucl. Fusion 61 (2021) 076006, Table 7, p. 18 prints the IPB98(y,2)
+    values without uncertainties, and its +/- values belong to the paper's
+    own DB5.2.3 fits.  No source for them has been identified.
 
     Parameters
     ----------
@@ -435,8 +438,8 @@ def ipb98y2_with_uncertainty(
         coefficients=coeff,
     )
 
-    # Published exponent uncertainties (Verdoolaege et al. NF 2021)
-    # These are 1-sigma uncertainties on the log-space exponents.
+    # Declared 1-sigma uncertainties on the log-space exponents (source
+    # not identified; see the docstring).
     exp_unc = coeff.get(
         "uncertainties_1sigma",
         coeff.get(

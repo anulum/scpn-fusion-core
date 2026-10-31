@@ -1345,7 +1345,7 @@ $$\tau_E = C\,I_p^{\alpha_I}\,B_T^{\alpha_B}\,\bar{n}_{e19}^{\alpha_n}\,P_{\rm l
 
 Coefficients loaded from `validation/reference_data/itpa/ipb98y2_coefficients.json`: the original IPB98(y,2) values, obtained with the ITPA DB2.8 database (1 310 ELMy H-mode entries from 9 tokamaks; Verdoolaege et al. 2021, Tables 1 and 7).
 
-Updated Bayesian uncertainty quantification via Verdoolaege et al., *Nucl. Fusion* 61, 076006 (2021).
+Uncertainty propagation uses declared 1-sigma exponent uncertainties from the same file. They are not printed in Verdoolaege et al., *Nucl. Fusion* 61, 076006 (2021), whose Table 7 gives IPB98(y,2) without uncertainties; no source for them has been identified.
 
 **Key file:** `core/scaling_laws.py`.
 
