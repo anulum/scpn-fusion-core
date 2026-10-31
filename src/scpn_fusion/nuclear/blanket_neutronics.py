@@ -286,7 +286,8 @@ class BreedingBlanket:
         incident_neutrons = incident_flux * first_wall_area_m2 * 1e4  # m^2 -> cm^2
         tbr_ideal = total_production / max(incident_neutrons, 1e-9)
 
-        # Apply 3D correction factors (Fischer et al. 2015, DEMO blanket studies):
+        # Apply declared 3D correction factors. An earlier credit, "Fischer
+        # et al. 2015, DEMO blanket studies", names no title, venue or DOI.
         # - port_coverage_factor: fraction of first wall covered by blanket modules
         #   (~80% for ITER/DEMO; rest is heating, diagnostic, maintenance ports)
         # - streaming_factor: neutron streaming losses through inter-module gaps

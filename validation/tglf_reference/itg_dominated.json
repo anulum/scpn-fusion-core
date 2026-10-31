@@ -1,6 +1,7 @@
 {
     "case_name": "ITG-dominated",
-    "description": "Ion Temperature Gradient mode dominated regime. Standard tokamak core conditions with dominant ITG turbulence. Reference from TGLF v2.0 (Staebler et al., Phys. Plasmas 2007).",
+    "description": "Ion Temperature Gradient mode dominated regime. Standard tokamak core conditions with dominant ITG turbulence. Labelled earlier as a TGLF v2.0 reference; provenance unverified: no TGLF run record is in the repository, and the cited papers are closed access and were not checked.",
+    "provenance_status": "unverified",
     "input_parameters": {
         "s_hat": 0.8,
         "q": 1.4,

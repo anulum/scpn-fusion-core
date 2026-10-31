@@ -9,7 +9,8 @@
 Generate synthetic but physically representative GEQDSK files for
 DIII-D and JET tokamaks using Solov'ev equilibrium solutions.
 
-Machine parameters sourced from:
+Machine parameters sourced from (the DIII-D, JET and EAST papers are closed
+access and were not checked against these values):
 - DIII-D: Luxon, Nucl. Fusion 42 (2002) 614
   R0=1.67m, a=0.67m, B0=2.19T, Ip=1.0-2.0MA, κ=1.8, δ=0.7
 - JET:   Romanelli et al., Nucl. Fusion 53 (2013) 104002

@@ -1,6 +1,7 @@
 {
     "case_name": "ETG-dominated",
-    "description": "Electron Temperature Gradient mode dominated regime. High electron temperature gradient with suppressed ITG. Short-wavelength turbulence at ky*rho_e ~ 0.1-0.3. Reference from TGLF v2.0.",
+    "description": "Electron Temperature Gradient mode dominated regime. High electron temperature gradient with suppressed ITG. Short-wavelength turbulence at ky*rho_e ~ 0.1-0.3. Labelled earlier as a TGLF v2.0 reference; provenance unverified: no TGLF run record is in the repository, and the cited papers are closed access and were not checked.",
+    "provenance_status": "unverified",
     "input_parameters": {
         "s_hat": 0.6,
         "q": 1.8,

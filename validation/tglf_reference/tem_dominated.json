@@ -1,6 +1,7 @@
 {
     "case_name": "TEM-dominated",
-    "description": "Trapped Electron Mode dominated regime. High density gradient, moderate temperature gradient. Reference from TGLF v2.0.",
+    "description": "Trapped Electron Mode dominated regime. High density gradient, moderate temperature gradient. Labelled earlier as a TGLF v2.0 reference; provenance unverified: no TGLF run record is in the repository, and the cited papers are closed access and were not checked.",
+    "provenance_status": "unverified",
     "input_parameters": {
         "s_hat": 1.2,
         "q": 2.0,

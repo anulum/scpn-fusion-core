@@ -211,7 +211,7 @@ def _generate_disruption_data(
         X[:, i] = rng.normal(mu, sigma, n_samples)
 
     # Shift disruptive shots toward instability boundaries
-    X[:n_disrupt, 2] -= 0.8  # q95 drops (de Vries et al., NF 51 2011)
+    X[:n_disrupt, 2] -= 0.8  # declared q95 drop; de Vries et al., NF 51 2011 not checked (closed)
     X[:n_disrupt, 3] += 0.25  # n/n_GW rises toward Greenwald limit
     X[:n_disrupt, 5] *= 2.5  # dBp/dt spike
     X[:n_disrupt, 6] += 0.6  # locked mode growth

@@ -40,7 +40,7 @@ from scpn_fusion.core.gk_species import deuterium_ion, electron
 _E_CHARGE = 1.602176634e-19
 _M_PROTON = 1.67262192369e-27
 
-# Staebler et al. 2007, Table I
+# Staebler et al. 2007, Table I (not checked against the paper: closed access)
 ALPHA_EXB_DEFAULT = 0.67
 # Staebler et al. 2017 (Nucl. Fusion 57 066046); Maeyama et al. 2015, Fig. 3
 # (equation and figure numbers not checked against the papers)

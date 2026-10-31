@@ -130,7 +130,9 @@ class DivertorLab:
             raise ValueError("tol must be finite and > 0.")
         T_surf = 500.0
 
-        # Li vapour pressure (Alcock et al. 1984): log10(P) = A − B/T_K
+        # Li vapour pressure, log10(P) = A − B/T_K, credited to Alcock et al.
+        # 1984 (not checked against the paper: closed access; the pressure
+        # unit is not stated here).
         A_li, B_li = 10.0, 8000.0
 
         current_relaxation = float(relaxation)

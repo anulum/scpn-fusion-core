@@ -727,7 +727,7 @@ The transport closure separates three operational lanes with strict provenance t
 
 ### Path A: External gyrokinetic codes (5)
 
-Input-deck generation and output parsing for TGLF, GENE, GS2, GKW, and CGYRO. The `TGLFInputDeck` builder in `core/tglf_interface.py` constructs a complete TGLF input from the `TransportSolver` state. Reference data is stored in `validation/tglf_reference/` for ITG-dominated, TEM-dominated, and ETG-dominated regimes.
+Input-deck generation and output parsing for TGLF, GENE, GS2, GKW, and CGYRO. The `TGLFInputDeck` builder in `core/tglf_interface.py` constructs a complete TGLF input from the `TransportSolver` state. Reference data is stored in `validation/tglf_reference/` for ITG-dominated, TEM-dominated, and ETG-dominated regimes. Their provenance is unverified: the repository holds no TGLF run record for them, and the papers they cite are closed access and were not checked.
 
 Official-GACODE run corpora use the versioned
 `schemas/tglf_gacode_dataset.schema.json` manifest. The public
@@ -1289,7 +1289,7 @@ Energy-dependent transport with down-scatter chain:
 | 2 (epithermal) | 1 eV – 1 MeV | Li-6 resonance capture |
 | 3 (thermal) | $< 1$ eV | Li-6(n,t) at 940 b, dominant T production |
 
-Each group solved independently as 1D cylindrical diffusion with inter-group source terms $\Sigma_{\rm down}\,\Phi_g$. Correction factors for port coverage (0.80), neutron streaming (0.85), and blanket fill (1.0) per Fischer et al., DEMO blanket studies (2015).
+Each group solved independently as 1D cylindrical diffusion with inter-group source terms $\Sigma_{\rm down}\,\Phi_g$. Correction factors for port coverage (0.80), neutron streaming (0.85), and blanket fill (1.0) are declared values. An earlier credit, "Fischer et al., DEMO blanket studies (2015)", names no title, venue or DOI, so no single work can be identified.
 
 ### 15.3 Reduced volumetric 3D surrogate
 

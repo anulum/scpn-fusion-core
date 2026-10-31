@@ -255,7 +255,7 @@ def iss04_scaling(
 ) -> float:
     """ISS04 energy confinement scaling law for stellarators.
 
-    Yamada et al., Nucl. Fusion 45 (2005) 1684, Eq. 4:
+    Yamada et al., Nucl. Fusion 45 (2005) 1684, Eq. 4 (not checked against the paper: closed access):
         tau_E = 0.134 * a^2.28 * R^0.64 * P^-0.61 * n_e19^0.54
                 * B^0.84 * iota_2/3^0.41
 

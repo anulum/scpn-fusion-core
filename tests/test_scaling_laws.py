@@ -29,7 +29,7 @@ from scpn_fusion.core.scaling_laws import (
 )
 
 # ITER inductive scenario design parameters
-# Shimada et al., NF 47 (2007) S1, Table 1
+# Shimada et al., NF 47 (2007) S1, Table 1 (not checked against the paper: closed access)
 ITER_PARAMS = dict(
     Ip=15.0,  # MA
     BT=5.3,  # T
