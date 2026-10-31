@@ -628,7 +628,7 @@ MPI/multi-GPU parity remain fail-closed).
   second-order trapezoidal cumulative growth exponent evaluated from the
   interval-endpoint growth rates, added a `step_interval` driver-varying step
   and a cumulative `most_amplified_k_m_inv` dominant-mode diagnostic, and routed
-  the FUS-C.6 pulsed-compression coupling through the interval integrator across
+  the pulsed-compression coupling through the interval integrator across
   Python, Rust, benchmarks, and documentation. The Velikovich eq. (18)
   dispersion relation and the constant-driver `step` path are unchanged, and the
   benchmark report schema advances to `scpn-fusion-core.mrti_benchmark.v4`.
@@ -639,7 +639,7 @@ MPI/multi-GPU parity remain fail-closed).
   mixing volume is invariant. Removed the unused per-crash energy bookkeeping in
   `SawtoothCycler.step` and added an inner-region energy/particle conservation
   regression test.
-- Hardened the FRC n=1 tilt-mode FUS-C.6 trajectory cumulative growth integral
+- Hardened the FRC n=1 tilt-mode pulsed-compression trajectory cumulative growth integral
   to second-order trapezoidal accumulation from the interval-endpoint growth
   rates (`G += 0.5*(gamma_start+gamma_end)*dt`) across Python, Rust, benchmarks,
   and documentation, replacing the first-order endpoint rectangle. The integral
@@ -724,32 +724,32 @@ MPI/multi-GPU parity remain fail-closed).
 ## [3.9.10] - 2026-06-05
 
 - Bumped package, Rust/PyO3 package metadata, README badge, generated capability snapshot, release readiness, and release notes to 3.9.10.
-- Updated public documentation navigation so the current FUS-C.4, FUS-C.6, and FUS-C.7 local-contract hardening is visible without promoting blocked external full-fidelity parity gates.
-- Clarified release and onboarding surfaces around evidence-bounded FUS-C diagnostics, benchmark reproducibility, and remaining same-case external solver blockers.
+- Updated public documentation navigation so the current MRTI, pulsed-compression and Faraday-recovery local-contract hardening is visible without promoting blocked external full-fidelity parity gates.
+- Clarified release and onboarding surfaces around evidence-bounded MIF/FRC diagnostics, benchmark reproducibility, and remaining same-case external solver blockers.
 
-- Hardened FUS-C.7 Faraday recovery with FUS-C.6 trajectory-quality sidecar
+- Hardened Faraday recovery with pulsed-compression trajectory-quality sidecar
   ingestion and pass/fail diagnostics across Python, Rust, benchmarks, and
   documentation.
-- Hardened FUS-C.6 pulsed compression with validated trajectory-level
+- Hardened pulsed compression with validated trajectory-level
   diagnostics for minimum radius, acceleration envelope, radius-floor contact,
   radial turning points, compression ratio, and flux-budget closure across
   Python, Rust, benchmarks, and documentation.
-- Hardened FUS-C.7 Faraday recovery with term-level flux-rate diagnostics for
+- Hardened Faraday recovery with term-level flux-rate diagnostics for
   field-ramp, radial-motion, and total linked-flux change across Python, Rust,
   benchmarks, and documentation.
-- Hardened FUS-C.4 MRTI/FUS-C.6 coupling so the MRTI adapter consumes explicit
-  FUS-C.6 force-balance acceleration instead of reconstructing it only from
+- Hardened MRTI/pulsed-compression coupling so the MRTI adapter consumes explicit
+  pulsed-compression force-balance acceleration instead of reconstructing it only from
   velocity finite differences.
-- Hardened FUS-C.6 pulsed compression with explicit force-balance radial
+- Hardened pulsed compression with explicit force-balance radial
   acceleration exposure across Python, Rust, benchmark reports, and
   documentation.
-- Hardened FUS-C.7 Faraday recovery with explicit Faraday-law
+- Hardened Faraday recovery with explicit Faraday-law
   flux-derivative closure diagnostics across Python, Rust, benchmarks, and
   documentation.
-- Hardened FUS-C.4 MRTI spectrum tracking with log-amplitude evolution and
+- Hardened MRTI spectrum tracking with log-amplitude evolution and
   overflow-limiting diagnostics across Python, Rust, benchmarks, and
   documentation.
-- Hardened FUS-C.5 tilt trajectory diagnostics with cumulative growth exposure
+- Hardened tilt trajectory diagnostics with cumulative growth exposure
   and finite amplification reporting across Python, Rust, benchmarks, and
   documentation.
 
@@ -759,61 +759,61 @@ MPI/multi-GPU parity remain fail-closed).
 - Bumped package metadata, release readiness, release notes, README badge, and generated capability snapshot references to 3.9.9.
 - Expanded public project overview, onboarding, API, applications, notebook, GitHub Pages, and Sphinx release navigation while keeping full-fidelity parity gates evidence-bounded.
 
-- Hardened FUS-C.7/FUS-C.6 coupling across Python and Rust by adding a
+- Hardened Faraday/pulsed-compression coupling across Python and Rust by adding a
   Faraday-side compression flux-budget sidecar, blocked missing-flux status,
   failed-budget propagation, benchmark rows, and documentation.
-- Hardened FUS-C.6 pulsed compression across Python and Rust with explicit
+- Hardened pulsed compression across Python and Rust with explicit
   Ono carrier flux-budget state: source-increment checksum,
   damping-decrement checksum, maximum update residual, pass/fail budget status,
   Rust native carrier coupling, benchmark gates, and documentation.
-- Added FUS-C.5/FUS-C.6 coupling evidence: the FRC n=1 tilt diagnostic now
+- Added tilt/pulsed-compression coupling evidence: the FRC n=1 tilt diagnostic now
   consumes supplied-current pulsed-compression state histories across Python
   and Rust, projects the Steinhauer `s` parameter through explicit
   self-similar gyroradius scaling, records coupled benchmark rows, and keeps
   external Belova parity blocked.
-- Hardened the FUS-C.3 non-adiabatic MIF/FRC flux carrier across Python and
+- Hardened the non-adiabatic MIF/FRC flux carrier across Python and
   Rust with explicit source-increment, damping-decrement, and update-residual
   diagnostics, plus tracked local benchmark evidence for the discrete budget
   closure.
-- Added FUS-C.6 voltage-driven coil-current coupling across Python and Rust:
+- Added pulsed-compression voltage-driven coil-current coupling across Python and Rust:
   the pulsed-compression path now supports an exact bank-limited lumped R-L
   coil circuit, circuit-energy residuals, voltage-driven benchmark rows, and
   explicit documentation that external Slough parity remains blocked.
-- Added FUS-C.4/FUS-C.6 coupling evidence: MRTI now consumes supplied-current
+- Added MRTI/pulsed-compression coupling evidence: MRTI now consumes supplied-current
   pulsed-compression state histories across Python and Rust, projects signed
   separatrix acceleration through an explicit interface-normal convention,
   records internal coupled benchmark rows, and keeps external nonlinear MRTI
   parity blocked instead of inventing same-case evidence.
-- Added FUS-C.7/FUS-C.6 coupling evidence: Faraday recovery now accepts the
+- Added Faraday/pulsed-compression coupling evidence: Faraday recovery now accepts the
   supplied-current pulsed-compression trajectory sidecar and voltage-driven
   coil-source sidecar across Python and Rust, evaluates compression-work and
   source-work budget rows when available, keeps missing external Slough parity
   blocked, and records the result in the tracked local non-isolated benchmark
   report.
-- Added the FUS-C.2 axisymmetric pulsed Hall-MHD flux carrier across Python
+- Added the axisymmetric pulsed Hall-MHD flux carrier across Python
   and Rust, including Ono Eq. 8 source terms, Faraday external-field drive,
   Spitzer resistivity, implicit damping, field/energy diagnostics, local
   non-isolated benchmark evidence, public physics documentation, and explicit
   blocked Gkeyll/Ono parity rows.
-- Added the FUS-C.5 conservative FRC n=1 tilt-mode diagnostic across Python
+- Added the conservative FRC n=1 tilt-mode diagnostic across Python
   and Rust, including Belova-normalised MHD Alfvén-time growth scaling,
   Steinhauer `s / E` rigid-body diagnostics, local non-isolated benchmark
   evidence, public physics documentation, and explicit blocked Belova Table I
   parity status.
-- Added the FUS-C.6 supplied-current MIF/FRC pulsed-compression contract
+- Added the supplied-current MIF/FRC pulsed-compression contract
   across Python and Rust, including coil-field mapping, pressure-driven radial
   dynamics, adiabatic temperature and density evolution, energy residuals,
   Ono non-adiabatic flux-carrier wiring, local non-isolated benchmark evidence,
   and explicit blocked Slough Fig. 5 parity status.
-- Added the FUS-C.7 classical Faraday recovery contract across Python and Rust,
+- Added the classical Faraday recovery contract across Python and Rust,
   including closed-form back-EMF, resistive-load energy integration, blocked
-  budget status for missing FUS-C.6 compression-work evidence, local
+  budget status for missing compression-work evidence, local
   non-isolated benchmark evidence, and public physics documentation.
-- Added the FUS-C.4 analytical MRTI growth-spectrum contract across Python and
+- Added the analytical MRTI growth-spectrum contract across Python and
   Rust, including magnetic-tension stabilization, exponential spectrum
   tracking, separatrix-acceleration helper, fail-closed validation, local
   non-isolated benchmark evidence, and public physics documentation.
-- Added the FUS-C.3 non-adiabatic MIF/FRC flux carrier
+- Added the non-adiabatic MIF/FRC flux carrier
   `solve_flux_evolution_nonadiabatic`, with Python trajectory diagnostics, Rust
   `fusion-core::current_diffusion` parity math, module-specific tests, local
   non-isolated benchmark evidence, and public physics-method documentation.

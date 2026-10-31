@@ -5,12 +5,12 @@
 
 This document defines the Faraday recovery lane and its coupling assumptions in the current physics stack. It is intended for model owners and reviewers assessing recovery behavior under fast transient conditions.
 
-This page documents the FUS-C.7 classical Faraday recovery surface for MIF/FRC
+This page documents the classical Faraday recovery surface for MIF/FRC
 trajectories. The implementation is a closed-form electromagnetic calculation
 over supplied trajectory samples. It now includes an explicit adapter from the
-implemented FUS-C.6 supplied-current and voltage-driven pulsed-compression
+implemented supplied-current and voltage-driven pulsed-compression
 trajectories into Faraday trajectory samples, plus compression-work and
-coil-source-work sidecars. It also consumes the FUS-C.6 flux-budget and
+coil-source-work sidecars. It also consumes the pulsed-compression flux-budget and
 trajectory-quality sidecars so Faraday rows can fail closed when the upstream
 non-adiabatic flux carrier did not close or the compression trajectory is not
 strictly validated. It is not a substitute for external Slough same-case
@@ -43,7 +43,7 @@ dPhi/dt = pi * R_s^2 * dB_ext/dt + 2 * pi * B_ext * R_s * dR_s/dt
 ```
 
 The report records field-ramp, radial-motion, and total flux-rate maxima. This
-keeps the classical Faraday sidecar auditable when FUS-C.6 compression changes
+keeps the classical Faraday sidecar auditable when pulsed-compression changes
 radius at high speed while the external field is supplied by either a current
 function or a voltage-driven coil circuit.
 
@@ -52,7 +52,7 @@ This closure is evaluated from the flux samples and reported as
 `flux_derivative_closure_passed`. It is intentionally separate from the
 compression-work and source-work budget gates because it checks trajectory and
 derivative-sidecar consistency, not external facility acceptance.
-FUS-C.6 coupled rows therefore publish the residual honestly even when the
+Pulsed-compression coupled rows therefore publish the residual honestly even when the
 upstream compression derivative sidecars do not meet the stricter sampled-flux
 closure tolerance.
 
@@ -101,7 +101,7 @@ report = integrated_recovery_energy(
 )
 ```
 
-When FUS-C.6 compression states are available:
+When pulsed-compression states are available:
 
 ```python
 trajectory = faraday_trajectory_from_pulsed_compression(compression_states)
@@ -121,7 +121,7 @@ report = integrated_recovery_energy(
 )
 ```
 
-When a voltage-driven FUS-C.6 result is available:
+When a voltage-driven pulsed-compression result is available:
 
 ```python
 trajectory = faraday_trajectory_from_voltage_driven_compression(result)
@@ -174,16 +174,16 @@ let report = integrated_recovery_energy(&trajectory, 6, 0.08, None, None, None, 
 
 ## Evidence boundary
 
-The implementation accepts supplied trajectory samples from FUS-C.6
-pulsed-compression states, voltage-driven FUS-C.6 results, or an external
+The implementation accepts supplied trajectory samples from
+pulsed-compression states, voltage-driven pulsed-compression results, or an external
 validated trajectory. If the caller does not provide a self-consistent
 compression-work value, the energy-budget status is
 `blocked_missing_compression_work`. If the caller does not provide a
 coil-source-work sidecar, the source-budget status is
-`blocked_missing_coil_source_work`. If the caller does not provide the FUS-C.6
+`blocked_missing_coil_source_work`. If the caller does not provide the pulsed-compression contract
 flux-budget sidecar, the compression-flux budget status is
 `blocked_missing_compression_flux_budget`. If the caller does not provide the
-FUS-C.6 trajectory-quality sidecar, the compression-trajectory status is
+pulsed-compression trajectory-quality sidecar, the compression-trajectory status is
 `blocked_missing_compression_trajectory_diagnostics`. When sidecars are
 supplied, each budget or diagnostic is evaluated as `passed` or `failed`;
 failure is a real load/trajectory/source/flux mismatch, not a placeholder
@@ -206,10 +206,10 @@ Tracked tests cover:
   contributions.
 - Fail-closed detection of inconsistent supplied derivative sidecars.
 - Explicit blocked budget status when compression work is absent.
-- FUS-C.6 supplied-current trajectory conversion into Faraday samples and
+- Supplied-current pulsed-compression trajectory conversion into Faraday samples and
   evaluated compression-work, compression-flux, and trajectory-quality sidecar
   status.
-- FUS-C.6 voltage-driven trajectory conversion into Faraday samples and
+- Voltage-driven pulsed-compression trajectory conversion into Faraday samples and
   evaluated coil-source-work, compression-flux, and trajectory-quality sidecar
   status.
 - Python and Rust fail-closed invalid-input paths.
@@ -230,9 +230,9 @@ production throughput claim.
 
 ## Not yet accepted
 
-Full external FUS-C.7 acceptance still requires a public Slough-style or
+Full external Faraday-recovery acceptance still requires a public Slough-style or
 facility trajectory with compression-work and source-work sidecars, provenance,
 checksums, and compatible upstream flux-budget and trajectory-quality evidence.
-The internal FUS-C.6 supplied-current and voltage-driven trajectory paths are
+The internal pulsed-compression supplied-current and voltage-driven trajectory paths are
 now evaluated directly and no longer marked missing when those states are
 supplied.

@@ -77,21 +77,25 @@ fn bench_tilt_mode_from_compression(c: &mut Criterion) {
     };
     for n_steps in [64_usize, 256] {
         let states = compression_states(n_steps);
-        group.bench_function(format!("rust_fus_c6_coupled_{n_steps}_intervals"), |b| {
-            b.iter(|| {
-                let trajectory = tilt_mode_trajectory_from_pulsed_compression(&states, reference)
-                    .expect("valid trajectory");
-                let final_point = trajectory.last().expect("trajectory point exists");
-                assert!(final_point.cumulative_growth_integral.is_finite());
-                assert!(final_point.perturbation_amplification.is_finite());
-                assert!(!final_point.amplification_overflow_limited);
-                let checksum: f64 = trajectory
-                    .iter()
-                    .map(|point| point.report.growth_rate_s_inv + point.report.s_parameter)
-                    .sum();
-                black_box(checksum)
-            });
-        });
+        group.bench_function(
+            format!("rust_pulsed_compression_coupled_{n_steps}_intervals"),
+            |b| {
+                b.iter(|| {
+                    let trajectory =
+                        tilt_mode_trajectory_from_pulsed_compression(&states, reference)
+                            .expect("valid trajectory");
+                    let final_point = trajectory.last().expect("trajectory point exists");
+                    assert!(final_point.cumulative_growth_integral.is_finite());
+                    assert!(final_point.perturbation_amplification.is_finite());
+                    assert!(!final_point.amplification_overflow_limited);
+                    let checksum: f64 = trajectory
+                        .iter()
+                        .map(|point| point.report.growth_rate_s_inv + point.report.s_parameter)
+                        .sum();
+                    black_box(checksum)
+                });
+            },
+        );
     }
     group.finish();
 }

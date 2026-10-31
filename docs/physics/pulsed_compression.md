@@ -5,7 +5,7 @@
 
 This note captures the current pulsed-compression modeling contract in the project, including active assumptions, module coverage, and links to the validation commands that keep results reproducible.
 
-This page documents the FUS-C.6 supplied-current and voltage-driven
+This page documents the supplied-current and voltage-driven
 pulsed-compression surface. The implementation evolves a pressure-driven FRC
 separatrix radius, adiabatic temperature and density, an energy-accounting
 residual, an exact lumped R-L coil-current path for declared bank voltage, and
@@ -76,14 +76,14 @@ Faraday, and tilt adapters a finite acceleration diagnostic tied to the
 implemented pressure-balance step instead of forcing each lane to reconstruct
 acceleration from differenced velocities.
 
-The trajectory carries the compression-work sidecar consumed by FUS-C.7
+The trajectory carries the compression-work sidecar consumed by Faraday recovery
 Faraday recovery:
 
 ```text
 W_compression(t_n) = sum_k (E_thermal,adiabatic,k - E_thermal,k-1)
 ```
 
-FUS-C.7 maps each state to `(t, R_s, B_ext, dR_s/dt)` and compares recovered
+Faraday recovery maps each state to `(t, R_s, B_ext, dR_s/dt)` and compares recovered
 load energy against the final `compression_work_J` when that sidecar is
 provided.
 
@@ -192,7 +192,7 @@ Tracked tests cover:
 - external compression heating and shrinkage,
 - voltage-driven coil-current coupling into pulsed compression,
 - flux-history propagation and flux-budget closure diagnostics,
-- FUS-C.7 compression-work sidecar consumption through Faraday recovery,
+- Compression-work sidecar consumption through Faraday recovery,
 - Spitzer resistivity scaling,
 - fail-closed invalid-input paths.
 

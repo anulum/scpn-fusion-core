@@ -38,7 +38,7 @@ FLOAT64_LOG_MAX = float(np.log(np.finfo(np.float64).max))
 
 
 class PulsedCompressionLike(Protocol):
-    """Minimal FUS-C.6 state surface required by the FUS-C.5 adapter."""
+    """Minimal pulsed-compression state surface required by the tilt-diagnostic adapter."""
 
     t_s: float
     R_s_m: float
@@ -75,7 +75,7 @@ class FRCTiltModeReport:
 
 @dataclass(frozen=True)
 class FRCTiltModeTrajectoryPoint:
-    """Tilt diagnostic projected onto one FUS-C.6 compression state."""
+    """Tilt diagnostic projected onto one pulsed-compression state."""
 
     t_s: float
     R_s_m: float
@@ -158,7 +158,7 @@ def tilt_mode_trajectory_from_pulsed_compression(
     mhd_coefficient: float = BELOVA_MHD_GROWTH_COEFFICIENT,
     ion_mass_amu: float = DEUTERIUM_MASS_AMU,
 ) -> tuple[FRCTiltModeTrajectoryPoint, ...]:
-    """Project the accepted FUS-C.5 diagnostic over a FUS-C.6 trajectory.
+    """Project the accepted tilt diagnostic over a pulsed-compression trajectory.
 
     The pulsed-compression state does not carry a full radial equilibrium at
     each time sample, so this adapter does not claim a Belova eigenvalue solve.
@@ -314,7 +314,7 @@ def belova_table1_acceptance_status() -> dict[str, str]:
 
 
 def claim_boundary() -> dict[str, str]:
-    """Return the public claim boundary for this FUS-C.5 surface."""
+    """Return the public claim boundary for this tilt-diagnostic surface."""
     return {
         "accepted": "MHD Alfvén-time tilt-growth diagnostic with conservative fail-closed status",
         "not_accepted": "full Belova hybrid eigenvalue solver or Table I same-case parity",

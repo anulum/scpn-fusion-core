@@ -1,12 +1,12 @@
 <!--
-SCPN Fusion Core — RFC GPHY-06
+SCPN Fusion Core — RFC: Runtime Regime Kernel Specialization (Reduced JIT Lane)
 © 1998–2026 Miroslav Šotek. All rights reserved.
 Contact: www.anulum.li | protoscience@anulum.li
 ORCID: https://orcid.org/0009-0009-3560-0851
 License: GNU AGPL v3 | Commercial licensing available
 -->
 
-# RFC GPHY-06 — Runtime Regime Kernel Specialization (Reduced JIT Lane)
+# RFC — Runtime Regime Kernel Specialization (Reduced JIT Lane)
 
 Status: Draft for review
 
@@ -16,7 +16,6 @@ This RFC is a planning contract for an explicit implementation lane in SCPN-FUSI
 
 ## 1. Task Identity
 
-- Task ID: `GPHY-06`
 - Title: Add reduced runtime regime specialization and hot-swap kernel cache in `fusion-core`
 - Owner: Unassigned
 - Proposed sprint: Phase 2, Sprint S2

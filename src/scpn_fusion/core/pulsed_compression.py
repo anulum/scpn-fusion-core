@@ -7,7 +7,7 @@
 # SCPN Fusion Core — MIF/FRC Pulsed Compression
 """Pulsed MIF/FRC compression dynamics over an accepted FRC equilibrium.
 
-This module implements the explicit work-lane contract for FUS-C.6:
+This module implements the explicit work-lane contract for pulsed compression:
 
 * external coil current maps to a uniform compression field,
 * radial motion follows the pressure-imbalance force,

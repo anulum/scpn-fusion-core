@@ -207,7 +207,7 @@
       "license_redistributable": true,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact",
-      "total_bytes": 507616
+      "total_bytes": 507601
     },
     {
       "file_count": 3,
@@ -1167,8 +1167,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "full_fidelity_public_artifacts/frc_reference_papers_manifest.json",
-      "sha256": "69a97b35871c9a7d219154a3e740107f66653b6e57b1bc7d0ca7d770d8217d61",
-      "size_bytes": 11623,
+      "sha256": "da38870bc09163881f36236731ccbb9316241371c061524284c7f47af46920f2",
+      "size_bytes": 11608,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact"
     },
@@ -4903,7 +4903,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-10-31T11:00:04.046168+00:00",
+  "generated_at_utc": "2026-10-31T11:20:35.522825+00:00",
   "license_registry": [
     {
       "attribution_required": true,

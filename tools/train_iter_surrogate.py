@@ -327,7 +327,7 @@ def generate_iter_data(
             iz, ir, psi_ax = fk._find_magnetic_axis()
             (rx, zx), psi_x = fk.find_x_point(fk.Psi)
 
-            # 12-feature vector (B.1 compatible)
+            # 12-feature vector
             features = [
                 float(ip / 1e6),
                 5.3,  # B_t

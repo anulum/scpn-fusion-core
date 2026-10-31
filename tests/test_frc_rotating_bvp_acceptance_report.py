@@ -6,7 +6,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — FRC Rotating BVP Acceptance Report Tests
-"""Regression tests for the implemented FUS-C.1 rotating rigid-rotor acceptance report."""
+"""Regression tests for the implemented rotating rigid-rotor acceptance report."""
 
 from __future__ import annotations
 

@@ -1,12 +1,12 @@
 <!--
-SCPN Fusion Core — RFC GPHY-02
+SCPN Fusion Core — RFC: Symplectic Integrator Baseline in fusion-math
 © 1998–2026 Miroslav Šotek. All rights reserved.
 Contact: www.anulum.li | protoscience@anulum.li
 ORCID: https://orcid.org/0009-0009-3560-0851
 License: GNU AGPL v3 | Commercial licensing available
 -->
 
-# RFC GPHY-02 — Symplectic Integrator Baseline in fusion-math
+# RFC — Symplectic Integrator Baseline in fusion-math
 
 Status: Draft for review
 
@@ -16,7 +16,6 @@ This RFC is a planning contract for an explicit implementation lane in SCPN-FUSI
 
 ## 1. Task Identity
 
-- Task ID: `GPHY-02`
 - Title: Add velocity-Verlet symplectic trajectory lane for canonical Hamiltonian systems
 - Owner: Unassigned
 - Proposed sprint: Phase 2, Sprint S2

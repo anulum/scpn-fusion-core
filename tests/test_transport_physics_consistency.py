@@ -9,8 +9,8 @@
 """Volume-element parity, scaling, and config-lookup tests for the transport
 runtime physics mixin.
 
-Targets the kappa volume-scaling fix tracked as ``B.5`` in
-``docs/internal/TODO.md``. The reference identity used throughout this file is
+Targets the kappa volume-scaling fix tracked in the
+private backlog. The reference identity used throughout this file is
 the analytic volume of a torus with an elliptical cross-section:
 
 ``V_torus = 2 * pi^2 * R_0 * a_minor^2 * kappa``.

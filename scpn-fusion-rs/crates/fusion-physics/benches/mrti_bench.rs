@@ -88,7 +88,7 @@ fn bench_mrti_tracker(c: &mut Criterion) {
     }
     for n_modes in [64_usize, 256] {
         group.bench_function(
-            format!("rust_fus_c6_coupled_{n_modes}_modes_64_steps"),
+            format!("rust_pulsed_compression_coupled_{n_modes}_modes_64_steps"),
             |b| {
                 b.iter(|| {
                     let states = run_pulsed_compression(
@@ -115,7 +115,7 @@ fn bench_mrti_tracker(c: &mut Criterion) {
                         fusion_physics::mrti::effective_acceleration_from_pulsed_compression(
                             &states, 1, -1.0,
                         )
-                        .expect("valid FUS-C.6 accelerations");
+                        .expect("valid pulsed-compression accelerations");
                     assert!(accelerations.iter().all(|value| value.is_finite()));
                     assert!(final_state.max_amplitude_m.is_finite());
                     assert!(final_state.max_log_amplitude.is_finite());

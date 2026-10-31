@@ -55,7 +55,7 @@ v3.9.11
 v3.9.10
 -------------------
 
-- Documentation, release-readiness, and FUS-C evidence traceability release that makes the current FUS-C.4, FUS-C.6, and FUS-C.7 local-contract hardening easier to find from README, onboarding, API, benchmark, release, and notebook surfaces.
+- Documentation, release-readiness, and MIF/FRC evidence traceability release that makes the current MRTI, pulsed-compression and Faraday-recovery local-contract hardening easier to find from README, onboarding, API, benchmark, release, and notebook surfaces.
 
 v3.9.9
 ------------------

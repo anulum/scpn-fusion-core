@@ -1,12 +1,12 @@
 <!--
-SCPN Fusion Core — RFC GPHY-04
+SCPN Fusion Core — RFC: Reduced IGA/NURBS Boundary Lane
 © 1998–2026 Miroslav Šotek. All rights reserved.
 Contact: www.anulum.li | protoscience@anulum.li
 ORCID: https://orcid.org/0009-0009-3560-0851
 License: GNU AGPL v3 | Commercial licensing available
 -->
 
-# RFC GPHY-04 — Reduced IGA/NURBS Boundary Lane
+# RFC — Reduced IGA/NURBS Boundary Lane
 
 Status: Draft for review
 
@@ -16,7 +16,6 @@ This RFC is a planning contract for an explicit implementation lane in SCPN-FUSI
 
 ## 1. Task Identity
 
-- Task ID: `GPHY-04`
 - Title: Add NURBS-based boundary sampling primitives for smooth reactor-wall geometry
 - Owner: Unassigned
 - Proposed sprint: Phase 2, Sprint S2

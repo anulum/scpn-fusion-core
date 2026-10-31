@@ -13,7 +13,7 @@ MIF work lane:
 ``EMF = -N_turns * pi * (R_s^2 dB_ext/dt + 2 B_ext R_s dR_s/dt)``.
 
 It operates on supplied pulsed-compression trajectories. It does not generate
-the unresolved FUS-C.6 Hall-MHD compression trajectory and does not invent a
+the unresolved Hall-MHD compression trajectory and does not invent a
 Slough-style compression-work comparison when that trajectory/work artefact is
 missing.
 """
@@ -64,7 +64,7 @@ class FaradayRecoverySample:
 
 @dataclass(frozen=True)
 class FaradayCompressionFluxBudget:
-    """FUS-C.6 flux-budget sidecar consumed by the Faraday recovery report."""
+    """Pulsed-compression flux-budget sidecar consumed by the Faraday recovery report."""
 
     source_increment_checksum: float
     damping_decrement_checksum: float
@@ -75,7 +75,7 @@ class FaradayCompressionFluxBudget:
 
 @dataclass(frozen=True)
 class FaradayCompressionTrajectoryDiagnostics:
-    """FUS-C.6 trajectory-quality sidecar consumed by Faraday recovery."""
+    """Pulsed-compression trajectory-quality sidecar consumed by Faraday recovery."""
 
     monotonic_time: bool
     min_radius_m: float
@@ -124,7 +124,7 @@ class FaradayRecoveryReport:
 def faraday_trajectory_from_pulsed_compression(
     states: Sequence[object],
 ) -> tuple[FaradayRecoveryTrajectoryPoint, ...]:
-    """Return Faraday trajectory samples from a FUS-C.6 pulsed-compression run.
+    """Return Faraday trajectory samples from a pulsed-compression run.
 
     The adapter accepts the public Python ``PulsedCompressionState`` attribute
     names and the Rust snake-case field names used by the equivalent native
@@ -154,7 +154,7 @@ def faraday_trajectory_from_pulsed_compression(
 
 
 def compression_work_from_pulsed_compression(states: Sequence[object]) -> float:
-    """Return final compression work from a FUS-C.6 trajectory sidecar."""
+    """Return final compression work from a pulsed-compression trajectory sidecar."""
     if len(states) < 2:
         raise ValueError("pulsed-compression trajectory must contain at least two states")
     return _require_positive(
@@ -166,7 +166,7 @@ def compression_work_from_pulsed_compression(states: Sequence[object]) -> float:
 def compression_flux_budget_from_pulsed_compression(
     states: Sequence[object],
 ) -> FaradayCompressionFluxBudget:
-    """Return aggregate FUS-C.6 flux-budget evidence for Faraday reporting."""
+    """Return aggregate pulsed-compression flux-budget evidence for Faraday reporting."""
     if len(states) < 2:
         raise ValueError("pulsed-compression trajectory must contain at least two states")
     post_initial_states = states[1:]
@@ -227,7 +227,7 @@ def compression_trajectory_diagnostics_from_pulsed_compression(
     *,
     radius_floor_m: float | None = None,
 ) -> FaradayCompressionTrajectoryDiagnostics:
-    """Return aggregate FUS-C.6 trajectory-quality evidence for Faraday reporting."""
+    """Return aggregate pulsed-compression trajectory-quality evidence for Faraday reporting."""
     from .pulsed_compression import pulsed_compression_trajectory_diagnostics
 
     diagnostics = pulsed_compression_trajectory_diagnostics(
@@ -247,19 +247,19 @@ def compression_trajectory_diagnostics_from_pulsed_compression(
 def faraday_trajectory_from_voltage_driven_compression(
     result: object,
 ) -> tuple[FaradayRecoveryTrajectoryPoint, ...]:
-    """Return Faraday trajectory samples from an FUS-C.6 voltage-driven result."""
+    """Return Faraday trajectory samples from a pulsed-compression voltage-driven result."""
     return faraday_trajectory_from_pulsed_compression(_sequence_attr(result, "compression"))
 
 
 def compression_work_from_voltage_driven_compression(result: object) -> float:
-    """Return final plasma compression work from an FUS-C.6 voltage-driven result."""
+    """Return final plasma compression work from a pulsed-compression voltage-driven result."""
     return compression_work_from_pulsed_compression(_sequence_attr(result, "compression"))
 
 
 def compression_flux_budget_from_voltage_driven_compression(
     result: object,
 ) -> FaradayCompressionFluxBudget:
-    """Return aggregate FUS-C.6 flux-budget evidence from a voltage-driven result."""
+    """Return aggregate pulsed-compression flux-budget evidence from a voltage-driven result."""
     return compression_flux_budget_from_pulsed_compression(_sequence_attr(result, "compression"))
 
 
@@ -268,7 +268,7 @@ def compression_trajectory_diagnostics_from_voltage_driven_compression(
     *,
     radius_floor_m: float | None = None,
 ) -> FaradayCompressionTrajectoryDiagnostics:
-    """Return aggregate FUS-C.6 trajectory-quality evidence from a voltage-driven result."""
+    """Return aggregate pulsed-compression trajectory-quality evidence from a voltage-driven result."""
     return compression_trajectory_diagnostics_from_pulsed_compression(
         _sequence_attr(result, "compression"),
         radius_floor_m=radius_floor_m,
@@ -276,7 +276,7 @@ def compression_trajectory_diagnostics_from_voltage_driven_compression(
 
 
 def coil_source_work_from_voltage_driven_compression(result: object) -> float:
-    """Return final positive coil-source work from an FUS-C.6 voltage-driven result."""
+    """Return final positive coil-source work from a pulsed-compression voltage-driven result."""
     coil_circuit = _sequence_attr(result, "coil_circuit")
     if len(coil_circuit) < 2:
         raise ValueError("voltage-driven coil circuit must contain at least two samples")
@@ -375,7 +375,7 @@ def integrated_recovery_energy(
 
     The load model is a resistive recovery coil, so instantaneous power is
     ``EMF^2 / R_load``. When a self-consistent compression-work value is not
-    supplied by FUS-C.6, the energy-budget gate is reported as blocked instead
+    supplied by the pulsed-compression contract, the energy-budget gate is reported as blocked instead
     of being inferred from synthetic data.
     """
     turns = _require_positive_int("N_turns", N_turns)

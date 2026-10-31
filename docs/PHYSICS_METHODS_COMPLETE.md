@@ -67,7 +67,7 @@ not claim a completed 5000+ sample GPU retraining campaign.
 ## 1A. Field-Reversed Configuration Rigid-Rotor Analytical Limit
 
 The FRC workstream now exposes the Steinhauer no-rotation analytical limit as
-the first accepted `FUS-C.1` contract.  It is not yet the full rotating
+the first accepted rotating rigid-rotor FRC contract.  It is not yet the full rotating
 rigid-rotor BVP.  The accepted no-rotation contract is implemented in Python
 and Rust, with optional PyO3 exposure when the native extension is built.
 
@@ -275,7 +275,7 @@ rotating BVP.
 
 ## 1B. MIF/FRC Pulsed Hall-MHD Flux Carrier
 
-The MIF lane exposes FUS-C.2 as an axisymmetric pulsed Hall-MHD flux carrier in
+The MIF lane exposes an axisymmetric pulsed Hall-MHD flux carrier in
 Python and Rust. The accepted public contract is the flattened Ono Eq. 8 form:
 
 $$
@@ -351,7 +351,7 @@ dominant mode is reported alongside the instantaneous `fastest_growing_k_m_inv`.
 The coupling helper `effective_acceleration_from_radius_rate()` remains
 available for external separatrix radial-speed histories that do not carry a
 solver acceleration sidecar. `effective_acceleration_from_pulsed_compression()`
-now consumes the accepted FUS-C.6 supplied-current
+now consumes the accepted supplied-current pulsed-compression
 `PulsedCompressionState.radial_acceleration_m_s2` field directly, validates
 strictly increasing time, positive radii, finite speed, finite acceleration,
 and finite field, and applies an explicit radial projection sign. The default
@@ -360,7 +360,7 @@ effective acceleration.
 `track_mrti_from_pulsed_compression()` advances the tracker over every
 trajectory interval with the trapezoidal cumulative growth exponent, using the
 acceleration and external field at both interval endpoints. This is internal
-FUS-C.6/MRTI coupling evidence; it is not external nonlinear MRTI saturation or
+pulsed-compression/MRTI coupling evidence; it is not external nonlinear MRTI saturation or
 pulsed-power image parity evidence.
 
 **Key files:** `core/mrti.py`, `scpn-fusion-rs/crates/fusion-physics/src/mrti.rs`,
@@ -373,7 +373,7 @@ pulsed-power image parity evidence.
 
 ## 1D. FRC Faraday Recovery
 
-The MIF lane now exposes the FUS-C.7 classical recovery-coil induction contract
+The MIF lane now exposes the classical recovery-coil induction contract
 in Python and Rust. It operates on a supplied separatrix-radius and external
 field trajectory:
 
@@ -387,28 +387,28 @@ For a resistive recovery load, the integrated recovered energy is evaluated as
 
 $$E_{\rm recovered} = \int \frac{\mathrm{EMF}(t)^2}{R_{\rm load}}\,dt.$$
 
-The implementation now includes a FUS-C.6 supplied-current trajectory adapter
+The implementation now includes a pulsed-compression supplied-current trajectory adapter
 that maps pulsed-compression states into Faraday samples
 `(t, R_s, B_ext, dR_s/dt)` and carries the final `compression_work_J` sidecar.
-Voltage-driven FUS-C.6 results use the same Faraday trajectory adapter and add
+Voltage-driven pulsed-compression results use the same Faraday trajectory adapter and add
 the final coil-circuit `source_work_J` sidecar, so recovered load energy is
 checked independently against plasma compression work and coil source work.
-The Faraday report also consumes the FUS-C.6 compression flux-budget sidecar,
+The Faraday report also consumes the pulsed-compression flux-budget sidecar,
 including source-increment checksum, damping-decrement checksum, update
 residual, and pass/fail status, so recovery rows fail closed when the upstream
 non-adiabatic flux carrier did not close.
-It also consumes the FUS-C.6 trajectory-quality sidecar, including minimum
+It also consumes the pulsed-compression trajectory-quality sidecar, including minimum
 radius, compression ratio, maximum absolute acceleration, radius-floor contact
 count, radial turning-point count, and all-flux-budgets-passed status. This
 prevents Faraday rows from accepting a compression-work sidecar when the
-upstream trajectory itself failed the FUS-C.6 aggregate trajectory contract.
+upstream trajectory itself failed the pulsed-compression aggregate trajectory contract.
 It also reports the sampled Faraday-law closure
 `finite_difference(Phi) + EMF/N_turns = 0` as normalized L-infinity/L2
 residuals plus a pass/fail field, catching inconsistent supplied derivative
 sidecars separately from compression-work acceptance.
 The report also exposes field-ramp, radial-motion, and total flux-rate terms
 from
-`dPhi/dt = pi R_s^2 dB_ext/dt + 2 pi B_ext R_s dR_s/dt`, so FUS-C.7 evidence
+`dPhi/dt = pi R_s^2 dB_ext/dt + 2 pi B_ext R_s dR_s/dt`, so Faraday-recovery evidence
 can distinguish whether recovered EMF is driven by external field ramping,
 separatrix motion, or both.
 If a caller does not supply a self-consistent compression-work sidecar,
@@ -448,7 +448,7 @@ offline GS lane; it is not a rotating-BVP or Slough Fig. 5 parity claim.
 
 ## 1E. FRC Pulsed Compression
 
-The MIF lane now exposes the FUS-C.6 pulsed-compression contract in Python and
+The MIF lane now exposes the pulsed-compression contract in Python and
 Rust. The model evolves a separatrix-radius trajectory under internal thermal
 pressure, external coil magnetic pressure, adiabatic compression heating, and a
 one-step non-adiabatic flux-diffusion coupling. It is a full-state trajectory
@@ -459,7 +459,7 @@ The external coil field is computed from the declared solenoid geometry:
 
 $$B_{\rm ext}(t)=\mu_0\,N_{\rm coil}\,I_{\rm coil}(t)/L_{\rm coil}.$$
 
-FUS-C.6 now also exposes a voltage-driven coil path that uses the exact
+Pulsed compression now also exposes a voltage-driven coil path that uses the exact
 piecewise-constant solution of the declared lumped circuit
 
 $$L_{\rm coil}\frac{dI_{\rm coil}}{dt}
@@ -503,11 +503,11 @@ flux target. The trajectory therefore carries both mechanical compression
 state and magnetic-flux state at every step. The compression state now also
 surfaces the exact carrier source-increment checksum, damping-decrement
 checksum, maximum absolute update residual, and `flux_budget_claim_status`.
-Those diagnostics apply the same discrete closure used by FUS-C.3,
+Those diagnostics apply the same discrete closure used by the non-adiabatic flux carrier,
 
 $$\psi_{n+1} = \psi_n - \Delta\psi_{\rm damp} + \Delta\psi_{\rm source},$$
 
-so downstream FUS-C.7 Faraday, FUS-C.4 MRTI, and FUS-C.5 tilt consumers can
+so downstream Faraday, MRTI and tilt consumers can
 fail closed on flux-budget evidence instead of accepting an opaque flux
 checksum.
 
@@ -543,7 +543,7 @@ Romero et al., Nature Communications 9, 691 (2018), is recorded in the FRC
 paper-acquisition manifest as metadata-only topology-inference evidence. The
 ignored internal PDF checksum is preserved for traceability, but the paper does
 not provide the Steinhauer rotating-BVP closure or the Slough 2011 Fig. 5
-time-resolved compression trajectories required to close B.8 or B.11.
+time-resolved compression trajectories required to close the rotating-equilibrium or Slough-trajectory parity gates.
 
 **Key files:** `core/pulsed_compression.py`,
 `core/public_frc_reference.py`,
@@ -561,7 +561,7 @@ time-resolved compression trajectories required to close B.8 or B.11.
 
 ## 1F. FRC n=1 Tilt-Mode Diagnostics
 
-The MIF lane exposes FUS-C.5 as a conservative FRC n=1 tilt diagnostic in
+The MIF lane exposes a conservative FRC n=1 tilt diagnostic in
 Python and Rust. The accepted surface uses the Belova-normalised MHD
 Alfvén-time growth scaling and the Steinhauer `s` parameter already carried by
 the validated FRC equilibrium. It does not claim full Belova hybrid eigenvalue
@@ -584,7 +584,7 @@ the thresholds `1.7`, `2.2`, and `2.8`. These thresholds are labelled as
 diagnostics only; the public stability boolean remains fail-closed while the
 Belova Table I and hybrid-eigenvalue parity row is blocked.
 
-FUS-C.5 is also wired into the accepted FUS-C.6 supplied-current compression
+The tilt diagnostic is also wired into the accepted pulsed-compression supplied-current compression
 trajectory. The adapter consumes strictly ordered `PulsedCompressionState`
 samples, recomputes the MHD Alfvén-time growth from instantaneous radius,
 field, and density, and projects the Steinhauer `s` parameter through

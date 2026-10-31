@@ -5,7 +5,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — FRC Pulsed Compression Quickstart
-"""Run the accepted FUS-C.6 FRC pulsed-compression trajectory contract."""
+"""Run the accepted FRC pulsed-compression trajectory contract."""
 
 from __future__ import annotations
 
@@ -135,7 +135,7 @@ def _write_json(result: dict[str, Any], path: Path) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Run the accepted FUS-C.6 FRC pulsed-compression quickstart.",
+        description="Run the accepted FRC pulsed-compression quickstart.",
     )
     parser.add_argument("--steps", type=int, default=256, help="Number of compression steps.")
     parser.add_argument("--dt-s", type=float, default=2.0e-8, help="Time step [s].")

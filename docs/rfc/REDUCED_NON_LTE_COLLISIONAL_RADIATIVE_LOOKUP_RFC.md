@@ -1,12 +1,12 @@
 <!--
-SCPN Fusion Core — RFC GPHY-03
+SCPN Fusion Core — RFC: Reduced Non-LTE Collisional-Radiative Lookup (ADAS-style)
 © 1998–2026 Miroslav Šotek. All rights reserved.
 Contact: www.anulum.li | protoscience@anulum.li
 ORCID: https://orcid.org/0009-0009-3560-0851
 License: GNU AGPL v3 | Commercial licensing available
 -->
 
-# RFC GPHY-03 — Reduced Non-LTE Collisional-Radiative Lookup (ADAS-style)
+# RFC — Reduced Non-LTE Collisional-Radiative Lookup (ADAS-style)
 
 Status: Draft for review
 
@@ -16,7 +16,6 @@ This RFC is a planning contract for an explicit implementation lane in SCPN-FUSI
 
 ## 1. Task Identity
 
-- Task ID: `GPHY-03`
 - Title: Add charge-state-resolved collisional-radiative emissivity lookup for impurity cooling
 - Owner: Unassigned
 - Proposed sprint: Phase 2, Sprint S2

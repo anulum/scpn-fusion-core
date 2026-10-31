@@ -233,7 +233,7 @@ class FRCValidationReport:
 def rotating_frc_bvp_acceptance_status() -> dict[str, object]:
     """Return the acceptance status for the rotating rigid-rotor equilibrium.
 
-    This is a machine-readable claim boundary for B.8/FUS-C.1. It reports that
+    This is a machine-readable claim boundary for the rotating rigid-rotor FRC contract. It reports that
     the rotating closure is implemented against the source-verified Rostoker &
     Qerushi (2002) one-dimensional one-ion centrifugal force balance, reducing
     bit-exactly to the accepted Steinhauer no-rotation contract at

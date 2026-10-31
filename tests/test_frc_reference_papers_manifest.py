@@ -51,7 +51,7 @@ def test_frc_reference_manifest_preserves_open_blockers() -> None:
     # invariant ("not a PDF") rather than the exact landing-page reason.
     assert str(slough["download_status"]).endswith("not_pdf")
     assert "No machine-readable Figure 5 trajectory" in str(slough["notes"])
-    assert "B.11 remains blocked" in str(slough["notes"])
+    assert "Slough Figure 5 parity remains blocked" in str(slough["notes"])
 
 
 def test_romero_2018_topology_pdf_is_open_access_public_evidence_only() -> None:

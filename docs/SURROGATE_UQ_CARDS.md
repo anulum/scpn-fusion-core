@@ -314,7 +314,7 @@ Declared gaps:
 
 ### `iter_gpu_surrogate`
 
-ITER equilibrium surrogate with validated shipped weights; the B.7 GPU retrain remains blocked.
+ITER equilibrium surrogate with validated shipped weights; the GPU retrain remains blocked.
 
 - Status: `retrain_blocked`
 
@@ -354,7 +354,7 @@ Fallback behaviour anchors:
 
 - `src/scpn_fusion/core/multigrid_solve.py`
 
-Retraining: B.7 GPU retrain is blocked on the compute-budget decision (CEO); the external retrain request export documents the required job.
+Retraining: The GPU retrain is blocked on the compute-budget decision (CEO); the external retrain request export documents the required job.
 
 Retraining anchors:
 
@@ -363,4 +363,4 @@ Retraining anchors:
 
 Declared gaps:
 
-- B.7 retrain blocked on compute budget (CEO decision); no OOD detector; no uncertainty output.
+- GPU retrain blocked on compute budget (CEO decision); no OOD detector; no uncertainty output.

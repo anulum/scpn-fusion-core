@@ -6,7 +6,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — FRC Rotating Rigid-Rotor Acceptance Gate
-"""Generate the FUS-C.1 rotating rigid-rotor acceptance report.
+"""Generate the rotating rigid-rotor acceptance report.
 
 The rotating closure implements the source-verified Rostoker & Qerushi (2002)
 one-dimensional one-ion centrifugal density modulation (reproduced in
@@ -251,7 +251,7 @@ def _rust_parity(run_rust: bool) -> dict[str, Any]:
 
 
 def build_report(*, run_rust: bool = True) -> dict[str, Any]:
-    """Build the FUS-C.1 rotating rigid-rotor acceptance report payload."""
+    """Build the rotating rigid-rotor acceptance report payload."""
     python_status = cast(dict[str, Any], rotating_frc_bvp_acceptance_status())
     no_rotation = _python_no_rotation_contract()
     rotating = _python_rotating_contract()

@@ -6,7 +6,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — FRC Tilt-Mode Benchmark
-"""Benchmark the conservative FUS-C.5 FRC tilt-mode diagnostic."""
+"""Benchmark the conservative FRC tilt-mode diagnostic."""
 
 from __future__ import annotations
 
@@ -147,7 +147,7 @@ def _python_coupled_case(n_steps: int) -> dict[str, Any]:
         raise RuntimeError("coupled benchmark did not run")
     return {
         "language": "python",
-        "case": f"python_fus_c6_coupled_{n_steps}_intervals",
+        "case": f"python_pulsed_compression_coupled_{n_steps}_intervals",
         "intervals": n_steps,
         "states": n_steps + 1,
         "mean_seconds": float(np.mean(np.asarray(samples, dtype=np.float64)) * 1.0e-9),
@@ -169,9 +169,9 @@ def _criterion_rows() -> list[dict[str, Any]]:
         with estimates_path.open("r", encoding="utf-8") as handle:
             estimates = json.load(handle)
         benchmark_name = estimates_path.parents[1].name
-        if benchmark_name.startswith("rust_fus_c6_coupled_") and not benchmark_name.endswith(
-            "_intervals"
-        ):
+        if benchmark_name.startswith(
+            "rust_pulsed_compression_coupled_"
+        ) and not benchmark_name.endswith("_intervals"):
             continue
         parts = benchmark_name.split("_")
         iterations = next((int(part) for part in parts if part.isdigit()), None)
@@ -185,7 +185,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
                 "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
                 "growth_integral_status": (
                     "asserted_in_rust_criterion_harness"
-                    if "fus_c6_coupled" in benchmark_name
+                    if "pulsed_compression_coupled" in benchmark_name
                     else "not_applicable_point_report"
                 ),
             }
@@ -203,7 +203,7 @@ def build_report(cases: Iterable[int] = (1_000, 10_000, 100_000)) -> dict[str, A
         "claim_boundary": (
             "Local non-isolated FRC tilt diagnostic regression evidence. "
             "The accepted surface is an MHD Alfvén-time diagnostic with conservative "
-            "fail-closed status plus self-similar FUS-C.6 trajectory projection, "
+            "fail-closed status plus self-similar pulsed-compression trajectory projection, "
             "not Belova Table I or hybrid eigenvalue parity. The cumulative growth "
             "integral is accumulated with the trapezoidal rule over each trajectory "
             "interval."
@@ -216,7 +216,7 @@ def build_report(cases: Iterable[int] = (1_000, 10_000, 100_000)) -> dict[str, A
                 "growth rates: G += 0.5*(gamma(start)+gamma(end))*dt"
             ),
             "rigid_body_threshold": "s/E thresholds are diagnostic only",
-            "fus_c6_projection": "s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)",
+            "pulsed_compression_projection": "s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)",
             "not_claimed": "full Belova hybrid eigenvalue solver or Table I same-case parity",
         },
         "environment": {

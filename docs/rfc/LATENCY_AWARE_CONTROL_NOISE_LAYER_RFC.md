@@ -1,12 +1,12 @@
 <!--
-SCPN Fusion Core — RFC GPHY-05
+SCPN Fusion Core — RFC: Latency-Aware Control and Stochastic Noise Layer
 © 1998–2026 Miroslav Šotek. All rights reserved.
 Contact: www.anulum.li | protoscience@anulum.li
 ORCID: https://orcid.org/0009-0009-3560-0851
 License: GNU AGPL v3 | Commercial licensing available
 -->
 
-# RFC GPHY-05 — Latency-Aware Control and Stochastic Noise Layer
+# RFC — Latency-Aware Control and Stochastic Noise Layer
 
 Status: Draft for review
 
@@ -16,7 +16,6 @@ This RFC is a planning contract for an explicit implementation lane in SCPN-FUSI
 
 ## 1. Task Identity
 
-- Task ID: `GPHY-05`
 - Title: Extend control lane with vector OU noise, actuator delay-line, and lag-aware MPC rollout
 - Owner: Unassigned
 - Proposed sprint: Phase 2, Sprint S2

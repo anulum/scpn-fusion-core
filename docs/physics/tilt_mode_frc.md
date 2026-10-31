@@ -13,7 +13,7 @@
 
 This document is the operational context for tilt-mode analysis. It defines where this model path is used and how its outputs are constrained within the larger validation and evidence framework.
 
-The FUS-C.5 MIF lane exposes a conservative n=1 FRC tilt diagnostic across
+The MIF lane exposes a conservative n=1 FRC tilt diagnostic across
 Python and Rust. The accepted public contract is intentionally bounded:
 
 - accepted: MHD Alfvén-time growth scaling for a supplied FRC equilibrium;
@@ -60,10 +60,10 @@ boolean remains fail-closed until Belova same-case parity evidence is present.
 
 ## Pulsed-compression trajectory adapter
 
-The FUS-C.5 diagnostic is now wired into the accepted FUS-C.6 supplied-current
+The tilt diagnostic is now wired into the accepted supplied-current pulsed-compression
 compression trajectory. The adapter consumes ordered `PulsedCompressionState`
 samples and recomputes the Alfvén-time growth rate from instantaneous
-`R_s`, `B_ext`, and density. Because FUS-C.6 states do not carry a full radial
+`R_s`, `B_ext`, and density. Because pulsed-compression states do not carry a full radial
 equilibrium profile at every time step, the Steinhauer `s` number is projected
 with the self-similar ion-gyroradius scaling
 
@@ -125,7 +125,7 @@ Validation surfaces:
 - `validation/reports/tilt_mode_frc_benchmark.json`
 
 The benchmark report is local non-isolated regression evidence. It records
-Python rows, Rust Criterion rows, FUS-C.6 coupled trajectory rows, source
+Python rows, Rust Criterion rows, pulsed-compression coupled trajectory rows, source
 checksums, and a blocked external row for
 `belova_2001_table1_tilt_stability`.
 Schema `scpn-fusion-core.tilt_mode_frc_benchmark.v4` records the final

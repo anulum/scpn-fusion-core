@@ -1,7 +1,7 @@
 {
   "artifact_type": "frc_reference_paper_acquisition_manifest",
   "generated_utc": "2026-06-14T10:40:00Z",
-  "claim_boundary": "Publisher and open-source acquisition was attempted for the FRC reference papers needed by the B.8/B.11/FUS-C external-parity workstream. Raw PDFs and publisher probe payloads are cached only under ignored internal documentation paths; this tracked manifest records provenance, checksums, and blocked download status without promoting paper PDFs to validation data.",
+  "claim_boundary": "Publisher and open-source acquisition was attempted for the FRC reference papers needed by the external FRC parity work. Raw PDFs and publisher probe payloads are cached only under ignored internal documentation paths; this tracked manifest records provenance, checksums, and blocked download status without promoting paper PDFs to validation data.",
   "internal_cache_root": "docs/internal/reference_papers/frc",
   "papers": [
     {
@@ -48,7 +48,7 @@
         }
       ],
       "download_status": "blocked_by_publisher_http_403",
-      "notes": "AIP publisher article and PDF endpoints returned HTTP 403 HTML payloads, not a PDF. FUS-C.2 Ono Fig. 4 digitised/same-case parity remains externally blocked. Citation corrected 2026-10-31: the earlier title \"Magnetic-mode-based modeling for field-reversed configurations\" has no publication record; the DOI and locator are the merging-spheromak reconnection paper named above. The probe URLs are kept as recorded."
+      "notes": "AIP publisher article and PDF endpoints returned HTTP 403 HTML payloads, not a PDF. Ono Fig. 4 digitised/same-case parity remains externally blocked. Citation corrected 2026-10-31: the earlier title \"Magnetic-mode-based modeling for field-reversed configurations\" has no publication record; the DOI and locator are the merging-spheromak reconnection paper named above. The probe URLs are kept as recorded."
     },
     {
       "key": "belova_2000_pppl_3456_tilt_stability_prolate_frc",
@@ -63,7 +63,7 @@
         }
       ],
       "download_status": "downloaded_open_pppl_report",
-      "notes": "Open PPPL report acquired for FUS-C.5 tilt-stability hardening context. This is reference-paper evidence only; no Belova Table I digitised parity artifact has been extracted or accepted."
+      "notes": "Open PPPL report acquired for tilt-stability hardening context. This is reference-paper evidence only; no Belova Table I digitised parity artifact has been extracted or accepted."
     },
     {
       "key": "belova_2001_numerical_tilt_stability_prolate_frc_journal",
@@ -120,7 +120,7 @@
         }
       ],
       "download_status": "publisher_served_landing_or_bot_validation_not_pdf",
-      "notes": "No machine-readable Figure 5 trajectory or publisher PDF was acquired. B.11 remains blocked on public digitized Slough data, author-provided data, or a human/manual extraction workflow."
+      "notes": "No machine-readable Figure 5 trajectory or publisher PDF was acquired. Slough Figure 5 parity remains blocked on public digitized Slough data, author-provided data, or a human/manual extraction workflow."
     },
     {
       "key": "romero_2018_frc_topology_alfvenic_transients",

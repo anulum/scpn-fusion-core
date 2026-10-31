@@ -69,7 +69,7 @@ def build_request(
     timeout_s: float = 180.0,
     max_steps: int = 100,
 ) -> ToraxRunRequest:
-    """Build a complete typed request for the frozen FCE-10 model intersection."""
+    """Build a complete typed request for the frozen TORAX model intersection."""
     if not np.isfinite(dt_s) or dt_s <= 0.0:
         raise ValueError("dt_s must be finite and > 0")
     config = cast(dict[str, Any], json.loads(json.dumps(copy.deepcopy(CONFIG))))

@@ -190,7 +190,7 @@ def _python_compression_coupled_case(steps: int) -> dict[str, Any]:
         raise RuntimeError("compression-coupled benchmark did not run")
     return {
         "language": "python",
-        "case": f"python_fus_c6_coupled_{steps}_steps",
+        "case": f"python_pulsed_compression_coupled_{steps}_steps",
         "steps": steps,
         "samples": len(report.samples),
         "mean_seconds": float(np.mean(np.asarray(timings, dtype=np.float64)) * 1.0e-9),
@@ -287,7 +287,7 @@ def _python_voltage_driven_coupled_case(steps: int) -> dict[str, Any]:
         raise RuntimeError("voltage-driven compression-coupled benchmark did not run")
     return {
         "language": "python",
-        "case": f"python_fus_c6_voltage_driven_{steps}_steps",
+        "case": f"python_pulsed_compression_voltage_driven_{steps}_steps",
         "steps": steps,
         "samples": len(report.samples),
         "mean_seconds": float(np.mean(np.asarray(timings, dtype=np.float64)) * 1.0e-9),
@@ -378,7 +378,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
             }
         )
     for estimates_path in sorted(
-        criterion_root.glob("rust_fus_c6_coupled_*_steps/new/estimates.json")
+        criterion_root.glob("rust_pulsed_compression_coupled_*_steps/new/estimates.json")
     ):
         with estimates_path.open("r", encoding="utf-8") as handle:
             estimates = json.load(handle)
@@ -402,7 +402,7 @@ def _criterion_rows() -> list[dict[str, Any]]:
             }
         )
     for estimates_path in sorted(
-        criterion_root.glob("rust_fus_c6_voltage_driven_*_steps/new/estimates.json")
+        criterion_root.glob("rust_pulsed_compression_voltage_driven_*_steps/new/estimates.json")
     ):
         with estimates_path.open("r", encoding="utf-8") as handle:
             estimates = json.load(handle)
@@ -447,8 +447,8 @@ def build_report(cases: Iterable[int] = (64, 256, 1024)) -> dict[str, Any]:
         "schema": "scpn-fusion-core.faraday_recovery_benchmark.v6",
         "claim_boundary": (
             "Local non-isolated regression evidence for the exact classical Faraday recovery "
-            "contract over supplied trajectories, including internal FUS-C.6 supplied-current "
-            "compression-work sidecars, FUS-C.6 flux-budget and trajectory-quality sidecars, "
+            "contract over supplied trajectories, including internal pulsed-compression supplied-current "
+            "compression-work sidecars, pulsed-compression flux-budget and trajectory-quality sidecars, "
             "and voltage-driven coil-source sidecars. This is not Slough compression-work "
             "acceptance evidence."
         ),
@@ -458,18 +458,18 @@ def build_report(cases: Iterable[int] = (64, 256, 1024)) -> dict[str, Any]:
             "faraday_law_closure": "finite_difference(Phi) + EMF/N_turns = 0",
             "flux_rate_terms": "dPhi/dt = pi*R_s^2*dB_ext/dt + 2*pi*B_ext*R_s*dR_s/dt",
             "load_power": "P = EMF^2/R_load",
-            "internal_fus_c6_budget": (
+            "internal_pulsed_compression_budget": (
                 "evaluated when supplied-current or voltage-driven compression states provide "
                 "compression_work_j"
             ),
-            "internal_fus_c6_source_budget": (
+            "internal_pulsed_compression_source_budget": (
                 "evaluated when voltage-driven coil-circuit states provide coil_source_work_j"
             ),
-            "internal_fus_c6_flux_budget": (
+            "internal_pulsed_compression_flux_budget": (
                 "evaluated when compression states provide source/damping/update-residual "
                 "flux-budget sidecars"
             ),
-            "internal_fus_c6_trajectory_diagnostics": (
+            "internal_pulsed_compression_trajectory_diagnostics": (
                 "evaluated when compression states provide validated min-radius, acceleration, "
                 "radius-floor, turning-point, compression-ratio, and all-flux-budget diagnostics"
             ),

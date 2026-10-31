@@ -109,82 +109,90 @@ fn bench_faraday_recovery(c: &mut Criterion) {
         });
     }
     for steps in [64_usize, 256] {
-        group.bench_function(format!("rust_fus_c6_coupled_{steps}_steps"), |b| {
-            b.iter(|| {
-                let states = run_pulsed_compression(
-                    compression_initial(),
-                    &compression_config(),
-                    5.0e5,
-                    1.0e-9,
-                    steps,
-                )
-                .expect("valid compression states");
-                let trajectory =
-                    faraday_trajectory_from_pulsed_compression(&states).expect("valid trajectory");
-                let work = compression_work_from_pulsed_compression(&states)
-                    .expect("positive compression work");
-                let flux_budget = compression_flux_budget_from_pulsed_compression(&states)
-                    .expect("valid flux budget");
-                let trajectory_diagnostics =
-                    compression_trajectory_diagnostics_from_pulsed_compression(
-                        &states,
-                        Some(compression_config().min_radius_m),
+        group.bench_function(
+            format!("rust_pulsed_compression_coupled_{steps}_steps"),
+            |b| {
+                b.iter(|| {
+                    let states = run_pulsed_compression(
+                        compression_initial(),
+                        &compression_config(),
+                        5.0e5,
+                        1.0e-9,
+                        steps,
                     )
-                    .expect("valid trajectory diagnostics");
-                let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
-                    compression_work_j: Some(work),
-                    compression_flux_budget: Some(flux_budget),
-                    compression_trajectory_diagnostics: Some(trajectory_diagnostics),
-                    ..FaradayRecoveryEnergyInput::new(&trajectory, 80, 0.02)
-                })
-                .expect("valid report");
-                assert!(report.flux_derivative_residual_linf.is_finite());
-                assert!(report.max_abs_flux_rate_total_wb_s.is_finite());
-                assert_eq!(report.compression_trajectory_diagnostics_passed, Some(true));
-                std::hint::black_box(report)
-            });
-        });
+                    .expect("valid compression states");
+                    let trajectory = faraday_trajectory_from_pulsed_compression(&states)
+                        .expect("valid trajectory");
+                    let work = compression_work_from_pulsed_compression(&states)
+                        .expect("positive compression work");
+                    let flux_budget = compression_flux_budget_from_pulsed_compression(&states)
+                        .expect("valid flux budget");
+                    let trajectory_diagnostics =
+                        compression_trajectory_diagnostics_from_pulsed_compression(
+                            &states,
+                            Some(compression_config().min_radius_m),
+                        )
+                        .expect("valid trajectory diagnostics");
+                    let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
+                        compression_work_j: Some(work),
+                        compression_flux_budget: Some(flux_budget),
+                        compression_trajectory_diagnostics: Some(trajectory_diagnostics),
+                        ..FaradayRecoveryEnergyInput::new(&trajectory, 80, 0.02)
+                    })
+                    .expect("valid report");
+                    assert!(report.flux_derivative_residual_linf.is_finite());
+                    assert!(report.max_abs_flux_rate_total_wb_s.is_finite());
+                    assert_eq!(report.compression_trajectory_diagnostics_passed, Some(true));
+                    std::hint::black_box(report)
+                });
+            },
+        );
     }
     for steps in [64_usize, 256] {
-        group.bench_function(format!("rust_fus_c6_voltage_driven_{steps}_steps"), |b| {
-            b.iter(|| {
-                let result = run_voltage_driven_pulsed_compression(
-                    compression_initial(),
-                    &compression_config(),
-                    20_000.0,
-                    1.0e-9,
-                    steps,
-                    5.0e5,
-                )
-                .expect("valid voltage-driven compression result");
-                let trajectory = faraday_trajectory_from_voltage_driven_compression(&result)
-                    .expect("valid trajectory");
-                let compression_work = compression_work_from_voltage_driven_compression(&result)
-                    .expect("positive compression work");
-                let source_work = coil_source_work_from_voltage_driven_compression(&result)
-                    .expect("positive source work");
-                let flux_budget = compression_flux_budget_from_voltage_driven_compression(&result)
-                    .expect("valid flux budget");
-                let trajectory_diagnostics =
-                    compression_trajectory_diagnostics_from_voltage_driven_compression(
-                        &result,
-                        Some(compression_config().min_radius_m),
+        group.bench_function(
+            format!("rust_pulsed_compression_voltage_driven_{steps}_steps"),
+            |b| {
+                b.iter(|| {
+                    let result = run_voltage_driven_pulsed_compression(
+                        compression_initial(),
+                        &compression_config(),
+                        20_000.0,
+                        1.0e-9,
+                        steps,
+                        5.0e5,
                     )
-                    .expect("valid trajectory diagnostics");
-                let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
-                    compression_work_j: Some(compression_work),
-                    coil_source_work_j: Some(source_work),
-                    compression_flux_budget: Some(flux_budget),
-                    compression_trajectory_diagnostics: Some(trajectory_diagnostics),
-                    ..FaradayRecoveryEnergyInput::new(&trajectory, 80, 0.02)
-                })
-                .expect("valid report");
-                assert!(report.flux_derivative_residual_linf.is_finite());
-                assert!(report.max_abs_flux_rate_total_wb_s.is_finite());
-                assert_eq!(report.compression_trajectory_diagnostics_passed, Some(true));
-                std::hint::black_box(report)
-            });
-        });
+                    .expect("valid voltage-driven compression result");
+                    let trajectory = faraday_trajectory_from_voltage_driven_compression(&result)
+                        .expect("valid trajectory");
+                    let compression_work =
+                        compression_work_from_voltage_driven_compression(&result)
+                            .expect("positive compression work");
+                    let source_work = coil_source_work_from_voltage_driven_compression(&result)
+                        .expect("positive source work");
+                    let flux_budget =
+                        compression_flux_budget_from_voltage_driven_compression(&result)
+                            .expect("valid flux budget");
+                    let trajectory_diagnostics =
+                        compression_trajectory_diagnostics_from_voltage_driven_compression(
+                            &result,
+                            Some(compression_config().min_radius_m),
+                        )
+                        .expect("valid trajectory diagnostics");
+                    let report = integrated_recovery_energy(FaradayRecoveryEnergyInput {
+                        compression_work_j: Some(compression_work),
+                        coil_source_work_j: Some(source_work),
+                        compression_flux_budget: Some(flux_budget),
+                        compression_trajectory_diagnostics: Some(trajectory_diagnostics),
+                        ..FaradayRecoveryEnergyInput::new(&trajectory, 80, 0.02)
+                    })
+                    .expect("valid report");
+                    assert!(report.flux_derivative_residual_linf.is_finite());
+                    assert!(report.max_abs_flux_rate_total_wb_s.is_finite());
+                    assert_eq!(report.compression_trajectory_diagnostics_passed, Some(true));
+                    std::hint::black_box(report)
+                });
+            },
+        );
     }
     group.finish();
 }

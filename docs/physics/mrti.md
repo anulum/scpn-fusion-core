@@ -2,7 +2,7 @@
 
 This page documents the public MRTI physics surface added for the MIF/FRC work
 lane. The implementation is analytical and deterministic. It is not a learned
-surrogate. It now consumes the accepted FUS-C.6 supplied-current pulsed
+surrogate. It now consumes the accepted supplied-current pulsed
 compression state history, while external nonlinear MRTI image/data parity
 remains blocked until redistributable same-case references exist.
 
@@ -111,7 +111,7 @@ let coupled_states = track_mrti_from_pulsed_compression(
 
 `effective_acceleration_from_radius_rate()` remains available for external
 separatrix radial-speed histories that do not carry a solver acceleration
-sidecar. `effective_acceleration_from_pulsed_compression()` consumes the FUS-C.6
+sidecar. `effective_acceleration_from_pulsed_compression()` consumes the
 `PulsedCompressionState.radial_acceleration_m_s2` field directly, validates
 strictly increasing time, positive radius, finite speed, finite acceleration,
 and finite field, and applies an explicit radial projection sign. The default
@@ -138,11 +138,11 @@ Tracked tests cover:
   and against the first-order endpoint-frozen step (Python and Rust).
 - Cumulative `most_amplified_k_m_inv` diagnostic tracking the integrated dominant
   mode rather than the instantaneous fastest-growing mode (Python and Rust).
-- Trapezoidal interval integration of the FUS-C.6 pulsed-compression coupling.
+- Trapezoidal interval integration of the pulsed-compression coupling.
 - Log-amplitude accounting for long or extreme growth trajectories.
 - First saturation-threshold breach detection.
 - Smoothed acceleration recovery from a synthetic radial-speed ramp.
-- FUS-C.6 supplied-current pulsed-compression force-balance acceleration driving
+- Supplied-current pulsed-compression force-balance acceleration driving
   MRTI spectra.
 - Python and Rust fail-closed validation for invalid inputs.
 
@@ -151,7 +151,7 @@ Tracked benchmark report:
 - `validation/reports/mrti_benchmark.json`
 
 The benchmark report is local, non-isolated regression evidence. It includes
-analytical fixed-acceleration rows and internal FUS-C.6 compression-coupled
+analytical fixed-acceleration rows and internal pulsed-compression-coupled
 rows, including log-amplitude and overflow-limiting diagnostics. Rust rows are
 included after running the Criterion benchmark:
 

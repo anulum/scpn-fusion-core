@@ -11,7 +11,7 @@ This module implements the analytical MIF/FRC MRTI growth-rate contract used by
 the current work lane. It is a deterministic physics surface, not a surrogate:
 the growth rate is evaluated from the supplied acceleration, perpendicular
 field, density, and resolved mode spectrum. Coupling to a supplied-current
-pulsed-compression trajectory consumes the accepted FUS-C.6 state history and
+pulsed-compression trajectory consumes the accepted pulsed-compression state history and
 projects signed radial acceleration onto the MRTI interface-normal convention.
 """
 
@@ -133,7 +133,7 @@ def effective_acceleration_from_pulsed_compression(
     smoothing_window: int = 1,
     radial_projection_sign: float = -1.0,
 ) -> FloatArray:
-    """Project a FUS-C.6 pulsed-compression trajectory into MRTI acceleration.
+    """Project a pulsed-compression trajectory into MRTI acceleration.
 
     The supplied-current pulsed-compression contract stores radius in the
     outward radial coordinate and exposes the force-balance acceleration used
@@ -357,10 +357,10 @@ def track_mrti_from_pulsed_compression(
     radial_projection_sign: float = -1.0,
     b_perp_scale: float = 1.0,
 ) -> tuple[MRTISpectrumState, ...]:
-    """Advance an MRTI tracker over a supplied FUS-C.6 compression trajectory.
+    """Advance an MRTI tracker over a supplied pulsed-compression trajectory.
 
     Each interval is integrated with :meth:`MRTISpectrumTracker.step_interval`
-    using the FUS-C.6 force-balance accelerations and external fields at both
+    using the pulsed-compression force-balance accelerations and external fields at both
     interval endpoints, so the cumulative growth exponent is second-order
     accurate across the varying compression drivers. The function returns one
     MRTI state per trajectory interval and raises on malformed trajectories

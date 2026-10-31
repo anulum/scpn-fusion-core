@@ -13,7 +13,7 @@
 
 This page records pulsed Hall-MHD use assumptions and model coverage so readers can distinguish supported use cases from conceptual extensions before interpreting results as production evidence.
 
-FUS-C.2 now exposes an accepted axisymmetric Hall-MHD flux carrier across
+The MIF lane now exposes an accepted axisymmetric Hall-MHD flux carrier across
 Python and Rust. The implemented contract is the flattened Ono Eq. 8 form:
 
 $$

@@ -171,7 +171,7 @@ this lane.
 
 ## MIF/FRC Faraday recovery benchmark
 
-The FUS-C.7 recovery lane is benchmarked separately from external Slough
+The Faraday-recovery lane is benchmarked separately from external Slough
 acceptance evidence:
 
 ```bash
@@ -183,12 +183,12 @@ Tracked report:
 
 The report records local non-isolated regression rows for the exact classical
 Faraday relation over supplied trajectories. It now also includes internal
-FUS-C.6 supplied-current and voltage-driven pulsed-compression sidecar rows:
+Supplied-current and voltage-driven pulsed-compression sidecar rows:
 each row converts compression states to `(t, R_s, B_ext, dR_s/dt)`, carries the
 final `compression_work_J`, and evaluates the energy-budget gate as `passed` or
 `failed` instead of marking the work sidecar missing. Voltage-driven rows also
 carry final coil-circuit `source_work_J` and evaluate `source_budget_claim_status`
-separately. FUS-C.6 coupled rows now also carry the upstream compression
+separately. Pulsed-compression coupled rows now also carry the upstream compression
 flux-budget sidecar and publish `compression_flux_budget_claim_status`, while
 plain supplied-trajectory rows remain
 `blocked_missing_compression_flux_budget` and
@@ -202,9 +202,9 @@ sampled Faraday-law closure diagnostic
 total flux-rate terms; Rust Criterion rows publish
 `flux_derivative_closure_status` and `flux_rate_term_status`. Analytical
 supplied-trajectory Rust timing rows assert closure before emitting Criterion
-estimates; coupled FUS-C.6 rows compute the diagnostic without upgrading it to
+estimates; coupled pulsed-compression rows compute the diagnostic without upgrading it to
 an external acceptance claim.
-FUS-C.6 coupled rows now also carry the validated compression trajectory
+Pulsed-compression coupled rows now also carry the validated compression trajectory
 diagnostic sidecar: minimum radius, compression ratio, maximum absolute radial
 acceleration, radius-floor contact count, radial turning-point count, and
 all-flux-budgets-passed status. Rust coupled Criterion rows assert the same
@@ -1923,7 +1923,7 @@ case-based TORAX artifact.
 
 ### Real TORAX runtime contract
 
-The tracked runtime contract executes the frozen FCE-10 model intersection
+The tracked runtime contract executes the frozen TORAX model intersection
 through the public process-isolated API in primary, repeat, and refined forms:
 
 ```bash
@@ -2284,7 +2284,7 @@ PYTHONPATH=src python benchmarks/bench_frc_rigid_rotor.py
 
 ### FRC pulsed Hall-MHD flux-carrier benchmark
 
-The tracked FUS-C.2 benchmark report is
+The tracked Hall-MHD flux-carrier benchmark report is
 `validation/reports/hall_mhd_pulsed_benchmark.json`. It covers the accepted
 axisymmetric Ono Eq. 8 flux carrier:
 
@@ -2315,7 +2315,7 @@ PYTHONPATH=src python benchmarks/bench_hall_mhd_pulsed.py
 
 ### FRC non-adiabatic current-diffusion carrier benchmark
 
-The tracked FUS-C.3 benchmark report is
+The tracked non-adiabatic flux-carrier benchmark report is
 `validation/reports/current_diffusion_nonadiabatic_benchmark.json`. It covers
 the accepted one-dimensional Ono-style carrier used by downstream pulsed
 compression:
@@ -2338,21 +2338,21 @@ PYTHONPATH=src python benchmarks/bench_current_diffusion_nonadiabatic.py
 
 ### FRC n=1 tilt-mode diagnostic benchmark
 
-The tracked FUS-C.5 benchmark report is
+The tracked FRC tilt-diagnostic benchmark report is
 `validation/reports/tilt_mode_frc_benchmark.json`. It covers the conservative
-MHD Alfvén-time diagnostic and the FUS-C.6 supplied-current trajectory adapter:
+MHD Alfvén-time diagnostic and the pulsed-compression supplied-current trajectory adapter:
 
 $$\gamma_{\rm tilt}=C V_A/(E R_s).$$
 
 The coupled adapter uses the self-similar projection
 `s(t)=s0*(R/R0)*(B/B0)*sqrt(T_i0/T_i)` and recomputes growth from the
 instantaneous compression state. The report includes Python timing rows, Rust
-Criterion rows, FUS-C.6 coupled trajectory rows, source checksums, and an
+Criterion rows, pulsed-compression coupled trajectory rows, source checksums, and an
 external-reference row for `belova_2001_table1_tilt_stability` with status
 `blocked_missing_public_digitised_reference`. It does not claim full Belova
 hybrid eigenvalue parity or Table I reproduction.
 Schema `scpn-fusion-core.tilt_mode_frc_benchmark.v4` also records the
-FUS-C.6 trajectory growth exposure `G(t)=integral(gamma_tilt dt)`, finite
+pulsed-compression trajectory growth exposure `G(t)=integral(gamma_tilt dt)`, finite
 perturbation amplification, and overflow-limited flag for Python coupled rows.
 Rust coupled Criterion rows publish `growth_integral_status` because the
 timing harness asserts finite cumulative growth and amplification before
@@ -2365,13 +2365,13 @@ Latest local non-isolated regression rows:
 | Python `python_1000_reports` | 1,000 reports | 0.0155345608 |
 | Python `python_10000_reports` | 10,000 reports | 0.1576017428 |
 | Python `python_100000_reports` | 100,000 reports | 1.4554153114 |
-| Python `python_fus_c6_coupled_64_intervals` | 64 intervals / 65 states | 0.0012223596 |
-| Python `python_fus_c6_coupled_256_intervals` | 256 intervals / 257 states | 0.0055735386 |
+| Python `python_pulsed_compression_coupled_64_intervals` | 64 intervals / 65 states | 0.0012223596 |
+| Python `python_pulsed_compression_coupled_256_intervals` | 256 intervals / 257 states | 0.0055735386 |
 | Rust `rust_1000_reports` | 1,000 reports | 0.0000290052 |
 | Rust `rust_10000_reports` | 10,000 reports | 0.0002804347 |
 | Rust `rust_100000_reports` | 100,000 reports | 0.0027860003 |
-| Rust `rust_fus_c6_coupled_64_intervals` | 64 intervals / 65 states | 0.0000030257 |
-| Rust `rust_fus_c6_coupled_256_intervals` | 256 intervals / 257 states | 0.0000126976 |
+| Rust `rust_pulsed_compression_coupled_64_intervals` | 64 intervals / 65 states | 0.0000030257 |
+| Rust `rust_pulsed_compression_coupled_256_intervals` | 256 intervals / 257 states | 0.0000126976 |
 
 The interval count excludes the initial state; each coupled row evaluates
 `intervals + 1` compression states. Use the tracked JSON for exact local values
@@ -2404,7 +2404,7 @@ Python counterpart fixed-point contracts.
 Tracked report:
 [`validation/reports/pulsed_compression_benchmark.json`](../validation/reports/pulsed_compression_benchmark.json)
 
-The report records local non-isolated regression rows for the FUS-C.6
+The report records local non-isolated regression rows for the pulsed-compression contract
 pulsed-compression path. Supplied-current rows exercise the pressure-balance
 trajectory, adiabatic heating, compression-work sidecar, and Ono
 non-adiabatic flux-carrier coupling. The Python rows now publish the carrier
@@ -2441,9 +2441,9 @@ Tracked report:
 [`validation/reports/mrti_benchmark.json`](../validation/reports/mrti_benchmark.json)
 
 The report records local non-isolated regression rows for the analytical
-MRTI growth-rate and spectrum tracker. It also includes internal FUS-C.6
+MRTI growth-rate and spectrum tracker. It also includes internal pulsed-compression
 supplied-current pulsed-compression rows: each row consumes the real
-`PulsedCompressionState` history, projects the explicit FUS-C.6
+`PulsedCompressionState` history, projects the explicit pulsed-compression
 `radial_acceleration_m_s2` sidecar into the MRTI interface-normal convention,
 and advances the MRTI spectrum over the compression intervals with a
 second-order trapezoidal cumulative growth exponent evaluated from the

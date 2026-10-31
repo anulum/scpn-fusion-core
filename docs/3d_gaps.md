@@ -106,8 +106,8 @@ Notes:
   validation, the liquid-metal TEMHD divertor validation, the stellarator SNN
   stability-control validation, the NSTX-U/SPARC digital-twin
   ingestion campaign, the deterministic CPU/GPU-sim runtime benchmark, the
-  EU-DEMO/K-DEMO synthetic holdout validation, `GDEP-04..05`, and
-  `GPHY-01..06`.
+  EU-DEMO/K-DEMO synthetic holdout validation, the control-resilience campaign, the release-readiness gate,
+  and the six reduced-physics RFCs under `docs/rfc/`.
 - Each item requires an RFC with:
   - data source and license confirmation,
   - benchmark protocol,
@@ -117,7 +117,7 @@ Notes:
 ## Reclassified Queue State
 
 - Ready now (execution lane): none.
-- Delivered in current sprint: `GDEP-04` baseline via `validation/control_resilience_campaign.py` and control-path hooks in Python/Rust modules.
+- Delivered in current sprint: control-resilience baseline via `validation/control_resilience_campaign.py` and control-path hooks in Python/Rust modules.
 - Needs RFC before coding: none.
 - Delivered advanced v1 lanes (synthetic scope): the GyroSwin-like turbulence
   surrogate benchmark, the TORAX-hybrid realtime control benchmark, the
@@ -128,7 +128,7 @@ Notes:
   divertor validation, the stellarator SNN stability-control validation, the
   NSTX-U/SPARC digital-twin ingestion campaign, the
   deterministic CPU/GPU-sim runtime benchmark, the EU-DEMO/K-DEMO synthetic
-  holdout validation, `GDEP-04..05`, and `GPHY-01..06`.
+  holdout validation, the control-resilience campaign, the release-readiness gate, and the six reduced-physics RFCs under `docs/rfc/`.
 - Blocked by external dependency readiness: tasks requiring TORAX fork sync, large external gyrokinetic datasets, or ADAS data ingestion.
 
 ## Next Sprint Queue

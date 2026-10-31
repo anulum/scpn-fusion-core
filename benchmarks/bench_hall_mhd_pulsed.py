@@ -6,7 +6,7 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Pulsed Hall-MHD Benchmark
-"""Benchmark the accepted axisymmetric FUS-C.2 Hall-MHD flux carrier."""
+"""Benchmark the accepted axisymmetric Hall-MHD flux carrier."""
 
 from __future__ import annotations
 

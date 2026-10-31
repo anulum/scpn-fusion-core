@@ -253,7 +253,7 @@
     },
     {
       "id": "iter_gpu_surrogate",
-      "description": "ITER equilibrium surrogate with validated shipped weights; the B.7 GPU retrain remains blocked.",
+      "description": "ITER equilibrium surrogate with validated shipped weights; the GPU retrain remains blocked.",
       "status": "retrain_blocked",
       "model_artifacts": [
         "tools/train_iter_surrogate.py"
@@ -290,14 +290,14 @@
         ]
       },
       "retraining": {
-        "summary": "B.7 GPU retrain is blocked on the compute-budget decision (CEO); the external retrain request export documents the required job.",
+        "summary": "The GPU retrain is blocked on the compute-budget decision (CEO); the external retrain request export documents the required job.",
         "anchors": [
           "tools/gpu_fno_retrain.sh",
           "tools/export_fno_external_retrain_request.py"
         ]
       },
       "gaps": [
-        "B.7 retrain blocked on compute budget (CEO decision); no OOD detector; no uncertainty output."
+        "GPU retrain blocked on compute budget (CEO decision); no OOD detector; no uncertainty output."
       ]
     }
   ]

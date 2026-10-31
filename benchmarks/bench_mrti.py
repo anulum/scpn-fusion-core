@@ -158,7 +158,7 @@ def _python_compression_coupled_case(n_modes: int, steps: int) -> dict[str, Any]
     mean_ns = float(np.mean(np.asarray(samples, dtype=np.float64)))
     return {
         "language": "python",
-        "case": f"python_fus_c6_coupled_{n_modes}_modes_{steps}_steps",
+        "case": f"python_pulsed_compression_coupled_{n_modes}_modes_{steps}_steps",
         "n_modes": n_modes,
         "steps": steps,
         "mean_seconds": mean_ns * 1.0e-9,
@@ -166,7 +166,7 @@ def _python_compression_coupled_case(n_modes: int, steps: int) -> dict[str, Any]
         "final_time_s": final_state.t_s,
         "final_radius_m": final_compression.R_s_m,
         "compression_work_j": final_compression.compression_work_J,
-        "acceleration_source": "fus_c6_state_radial_acceleration_m_s2",
+        "acceleration_source": "pulsed_compression_state_radial_acceleration_m_s2",
         "final_effective_acceleration_m_s2": float(final_acceleration[-1]),
         "max_effective_acceleration_m_s2": float(np.max(final_acceleration)),
         "final_max_amplitude_m": final_state.max_amplitude_m,
@@ -175,7 +175,7 @@ def _python_compression_coupled_case(n_modes: int, steps: int) -> dict[str, Any]
         "saturation_warning": final_state.saturation_warning,
         "fastest_growing_k_m_inv": final_state.fastest_growing_k_m_inv,
         "most_amplified_k_m_inv": final_state.most_amplified_k_m_inv,
-        "coupling_status": "internal_fus_c6_pulsed_compression_adapter",
+        "coupling_status": "internal_pulsed_compression_adapter",
         "interval_integration": "trapezoidal_endpoint_growth_exponent",
     }
 
@@ -210,9 +210,9 @@ def _criterion_rows() -> list[dict[str, Any]]:
             "stddev_seconds": float(estimates["std_dev"]["point_estimate"]) * 1.0e-9,
             "criterion_estimates": str(estimates_path.relative_to(REPO_ROOT)),
         }
-        if "fus_c6_coupled" in benchmark_name:
-            row["coupling_status"] = "internal_fus_c6_pulsed_compression_adapter"
-            row["acceleration_source"] = "fus_c6_state_radial_acceleration_m_s2"
+        if "pulsed_compression_coupled" in benchmark_name:
+            row["coupling_status"] = "internal_pulsed_compression_adapter"
+            row["acceleration_source"] = "pulsed_compression_state_radial_acceleration_m_s2"
         row["log_amplitude_status"] = "asserted_finite_in_rust_criterion_harness"
         rows.append(row)
     return rows
@@ -228,7 +228,7 @@ def build_report(
         "schema": "scpn-fusion-core.mrti_benchmark.v4",
         "claim_boundary": (
             "Local non-isolated MRTI analytical growth/spectrum regression evidence. "
-            "Internal FUS-C.6 coupled rows consume the supplied-current "
+            "Internal pulsed-compression coupled rows consume the supplied-current "
             "pulsed-compression trajectory and its force-balance acceleration and "
             "integrate the cumulative growth exponent with the trapezoidal rule "
             "over each compression interval. External nonlinear MRTI parity remains "
