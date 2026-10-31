@@ -21,8 +21,18 @@ import scpn_fusion.repro as repro
 import validation.full_fidelity_end_to_end_campaign as campaign_mod
 
 
-def test_real_reproduction_retains_strict_parity_refusal(tmp_path: Path) -> None:
-    """Exercise the real campaign-to-ledger-to-reproduction artifact chain."""
+def test_real_reproduction_retains_strict_parity_refusal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Exercise the real campaign-to-ledger-to-reproduction artifact chain.
+
+    The campaign's own reports go to ``tmp_path``: the tracked copies under
+    validation/reports must not be rewritten by an environment-dependent run.
+    """
+    reports = tmp_path / "campaign_reports"
+    reports.mkdir()
+    for name in ("JSON_REPORT", "MD_REPORT", "LEDGER_JSON_REPORT", "LEDGER_MD_REPORT"):
+        monkeypatch.setattr(campaign_mod, name, reports / getattr(campaign_mod, name).name)
     json_output = tmp_path / "reproduction.json"
     markdown_output = tmp_path / "reproduction.md"
     report = repro.run_full_reproduction(json_output=json_output, markdown_output=markdown_output)

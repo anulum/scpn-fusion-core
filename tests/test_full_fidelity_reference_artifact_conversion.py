@@ -22,8 +22,25 @@ ROOT = Path(__file__).resolve().parents[1]
 REFERENCE_CASES = ROOT / "validation" / "reference_data" / "full_fidelity_reference_cases.json"
 
 
-def test_converter_exports_real_public_output_payloads_with_checksums() -> None:
+@pytest.fixture
+def isolated_reports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Send the conversion reports to a temporary directory.
+
+    The tracked report records whether the local external cache was used,
+    so a test run on a machine with the cache must not rewrite it.
+    """
+    monkeypatch.setattr(conversion, "REPORT_DIR", tmp_path)
+    monkeypatch.setattr(conversion, "JSON_REPORT", tmp_path / conversion.JSON_REPORT.name)
+    monkeypatch.setattr(conversion, "MD_REPORT", tmp_path / conversion.MD_REPORT.name)
+    return tmp_path
+
+
+def test_converter_exports_real_public_output_payloads_with_checksums(
+    isolated_reports: Path,
+) -> None:
     report = run_conversion(write=True)
+    assert conversion.JSON_REPORT.is_file()
+    assert conversion.MD_REPORT.is_file()
 
     assert report["schema"] == "full-fidelity-reference-artifact-conversion.v1"
     assert report["accepted_full_fidelity_artifacts"] == 1
@@ -76,7 +93,9 @@ def test_converter_exports_real_public_output_payloads_with_checksums() -> None:
                 assert np.all(np.isfinite(currents))
 
 
-def test_converter_keeps_partial_outputs_out_of_acceptance_manifest() -> None:
+def test_converter_keeps_partial_outputs_out_of_acceptance_manifest(
+    isolated_reports: Path,
+) -> None:
     report = run_conversion(write=True)
     manifest = json.loads(REFERENCE_CASES.read_text(encoding="utf-8"))
 
@@ -95,7 +114,7 @@ def test_converter_keeps_partial_outputs_out_of_acceptance_manifest() -> None:
             assert case["sha256"] is None
 
 
-def test_converter_reports_missing_solver_output_mappings() -> None:
+def test_converter_reports_missing_solver_output_mappings(isolated_reports: Path) -> None:
     report = run_conversion(write=True)
 
     blockers = {blocker["surface"]: blocker for blocker in report["blocking_sources"]}

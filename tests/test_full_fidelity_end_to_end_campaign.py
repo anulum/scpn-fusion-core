@@ -17,14 +17,37 @@ import pytest
 
 import validation.full_fidelity_end_to_end_campaign as campaign
 from validation.full_fidelity_end_to_end_campaign import (
-    LEDGER_JSON_REPORT,
-    LEDGER_MD_REPORT,
     ROOT,
     build_public_ledger,
     render_public_ledger_markdown,
     run_campaign,
     write_reports,
 )
+
+
+@pytest.fixture
+def isolated_reports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Send write_reports output to a temporary directory.
+
+    The tracked validation/reports copies are inputs of other producers and
+    must not be rewritten by a test run whose result depends on the local
+    environment (for example an external source cache).
+    """
+    for name in ("JSON_REPORT", "MD_REPORT", "LEDGER_JSON_REPORT", "LEDGER_MD_REPORT"):
+        default = getattr(campaign, name)
+        monkeypatch.setattr(campaign, name, tmp_path / default.name)
+    return tmp_path
+
+
+def test_default_report_paths_are_the_tracked_reports() -> None:
+    assert (
+        campaign._relative_report_path(campaign.JSON_REPORT)
+        == "validation/reports/full_fidelity_end_to_end_campaign.json"
+    )
+    assert (
+        campaign.LEDGER_JSON_REPORT
+        == ROOT / "validation/reports/full_fidelity_validation_ledger.json"
+    )
 
 
 def test_integrated_campaign_reports_all_declared_blockers() -> None:
@@ -202,7 +225,7 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
             assert lane["next_required_evidence"]
 
 
-def test_integrated_campaign_writes_json_and_markdown_reports() -> None:
+def test_integrated_campaign_writes_json_and_markdown_reports(isolated_reports: Path) -> None:
     report = run_campaign()
 
     write_reports(report)
@@ -210,11 +233,14 @@ def test_integrated_campaign_writes_json_and_markdown_reports() -> None:
     assert report["all_locally_actionable_contracts_ready"] is all(
         bool(lane["locally_actionable_contract_ready"]) for lane in report["lanes"]
     )
-    assert LEDGER_JSON_REPORT.is_file()
-    assert LEDGER_MD_REPORT.is_file()
+    assert campaign.JSON_REPORT.is_file()
+    assert campaign.MD_REPORT.is_file()
+    assert campaign.LEDGER_JSON_REPORT.is_file()
+    assert campaign.LEDGER_MD_REPORT.is_file()
+    assert campaign.LEDGER_JSON_REPORT.parent == isolated_reports
 
 
-def test_public_ledger_is_generated_from_campaign_lanes() -> None:
+def test_public_ledger_is_generated_from_campaign_lanes(isolated_reports: Path) -> None:
     report = run_campaign()
     write_reports(report)
     ledger = build_public_ledger(report)
@@ -223,7 +249,7 @@ def test_public_ledger_is_generated_from_campaign_lanes() -> None:
     assert ledger["status"] == "not_full_fidelity"
     assert ledger["acceptance_passed"] is False
     assert ledger["ledger_publication_ready"] is False
-    assert ledger["campaign_report"] == "validation/reports/full_fidelity_end_to_end_campaign.json"
+    assert ledger["campaign_report"] == campaign._relative_report_path(campaign.JSON_REPORT)
     assert ledger["blocked_lane_count"] == 7
     assert ledger["accepted_full_fidelity_lane_count"] == 0
 
@@ -241,22 +267,16 @@ def test_public_ledger_is_generated_from_campaign_lanes() -> None:
     )
 
 
-def test_public_ledger_records_source_report_checksums() -> None:
+def test_public_ledger_records_source_report_checksums(isolated_reports: Path) -> None:
     report = run_campaign()
     write_reports(report)
-    ledger = json.loads(LEDGER_JSON_REPORT.read_text(encoding="utf-8"))
+    ledger = json.loads(campaign.LEDGER_JSON_REPORT.read_text(encoding="utf-8"))
     source_reports = {row["path"]: row for row in ledger["source_reports"]}
-    campaign_path = ROOT / "validation/reports/full_fidelity_end_to_end_campaign.json"
-    digest = hashlib.sha256(campaign_path.read_bytes()).hexdigest()
+    campaign_key = campaign._relative_report_path(campaign.JSON_REPORT)
+    digest = hashlib.sha256(campaign.JSON_REPORT.read_bytes()).hexdigest()
 
-    assert (
-        source_reports["validation/reports/full_fidelity_end_to_end_campaign.json"]["sha256"]
-        == digest
-    )
-    assert (
-        source_reports["validation/reports/full_fidelity_end_to_end_campaign.json"]["schema"]
-        == "full-fidelity-end-to-end-campaign.v1"
-    )
+    assert source_reports[campaign_key]["sha256"] == digest
+    assert source_reports[campaign_key]["schema"] == "full-fidelity-end-to-end-campaign.v1"
     assert (
         source_reports["validation/reports/full_fidelity_acceptance_benchmark.json"]["schema"]
         == "full-fidelity-acceptance.v1"
@@ -264,7 +284,7 @@ def test_public_ledger_records_source_report_checksums() -> None:
     assert all(row["exists"] for row in source_reports.values())
 
 
-def test_public_ledger_markdown_names_fail_closed_boundary() -> None:
+def test_public_ledger_markdown_names_fail_closed_boundary(isolated_reports: Path) -> None:
     report = run_campaign()
     write_reports(report)
     ledger = build_public_ledger(report)
