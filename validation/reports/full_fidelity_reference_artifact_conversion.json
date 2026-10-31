@@ -46,7 +46,7 @@
         "time_s",
         "total_impurity_density_r_t"
       ],
-      "conversion_mode": "tracked_artifact_fallback",
+      "conversion_mode": "external_cache_conversion",
       "finite_numeric_payload": true,
       "metadata_path": "validation/reference_data/full_fidelity_public_artifacts/aurora_argon_transport_public.metadata.json",
       "missing_required_observables": [],
