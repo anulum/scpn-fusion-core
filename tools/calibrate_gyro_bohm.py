@@ -25,8 +25,8 @@ The self-consistent power balance with gyro-Bohm transport gives a
 confinement time with specific multi-variate dependences on Ip, B, n,
 P_loss, R, kappa, epsilon, and M.  These dependences are captured by
 the IPB98(y,2) scaling structure (Nuclear Fusion 39, 1999, 2175;
-Verdoolaege et al., NF 61, 2021, 076006), which was validated against
-5920 H-mode shots from 18 tokamaks.
+Verdoolaege et al., NF 61, 2021, 076006), which was obtained with the
+ITPA DB2.8 database (1 310 ELMy H-mode entries from 9 tokamaks).
 
 The parameter c_gB sets the overall transport level through the scaling
 prefactor.  A neoclassical correction (Chang-Hinton, 1982) accounts for
@@ -256,9 +256,10 @@ def predict_tau_e(shot: ShotRecord, c_gB: float) -> float:
 
         tau_E = C(c_gB) * Ip^alpha_I * B^alpha_B * ... (physics-determined exponents)
 
-    The IPB98(y,2) scaling law (Nuclear Fusion 39, 1999, 2175; updated by
-    Verdoolaege et al., NF 61, 2021, 076006) encapsulates the result of
-    fitting these physics dependences to 5920 H-mode shots from 18 tokamaks.
+    The IPB98(y,2) scaling law (Nuclear Fusion 39, 1999, 2175; reprinted in
+    Verdoolaege et al., NF 61, 2021, 076006, Table 7) encapsulates the result
+    of fitting these dependences to the ITPA DB2.8 ELMy H-mode data (1 310
+    entries from 9 tokamaks).
     Its exponents were shown to be consistent with gyro-Bohm transport
     modified by profile effects and electromagnetic stabilisation
     (Petty, Phys. Plasmas 15, 2008).

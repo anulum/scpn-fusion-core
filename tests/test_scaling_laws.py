@@ -77,11 +77,18 @@ class TestITERReferencePrediction:
         assert 2.5 < tau < 6.0, f"ITER tau_E = {tau:.3f} s outside physical range"
 
     def test_iter_in_training_domain(self):
-        """ITER parameters must lie within IPB98(y,2) training envelope."""
+        """ITER parameters lie within the declared validity envelope."""
         domain = assess_ipb98y2_domain(**ITER_PARAMS)
         assert domain["in_training_domain"], (
             f"ITER flagged as extrapolated: {domain['extrapolated_dimensions']}"
         )
+
+    def test_iter_outside_db28_fit_data_range(self):
+        """ITER current and size exceed the DB2.8 data (Verdoolaege 2021, Table 2)."""
+        domain = assess_ipb98y2_domain(**ITER_PARAMS)
+        assert domain["in_db28_fit_data_range"] is False
+        assert "Ip" in domain["outside_db28_fit_data_range"]
+        assert "R" in domain["outside_db28_fit_data_range"]
 
     def test_iter_h_factor_near_unity(self):
         """By design, ITER targets H98(y,2) = 1.0."""
@@ -224,6 +231,35 @@ def test_assess_domain_flags_low_and_high_extrapolation() -> None:
     assert not meta["in_training_domain"]
     assert "Ip" in meta["extrapolated_dimensions"]
     assert "R" in meta["extrapolated_dimensions"]
+
+
+def test_db28_fit_data_range_matches_printed_table_and_edges() -> None:
+    assert _sl._IPB98Y2_DB28_ELMY_H_RANGE == {
+        "Ip": (0.17, 5.1),
+        "BT": (0.94, 5.8),
+        "ne19": (1.2, 43.0),
+        "Ploss": (0.39, 21.0),
+        "R": (0.67, 3.4),
+        "kappa": (0.93, 2.5),
+        "epsilon": (0.16, 0.41),
+        "M": (1.0, 2.0),
+    }
+    edges = {k: lo for k, (lo, _hi) in _sl._IPB98Y2_DB28_ELMY_H_RANGE.items()}
+    low = assess_ipb98y2_domain(**edges)
+    assert low["in_db28_fit_data_range"] is True
+    assert low["outside_db28_fit_data_range"] == []
+    edges = {k: hi for k, (_lo, hi) in _sl._IPB98Y2_DB28_ELMY_H_RANGE.items()}
+    high = assess_ipb98y2_domain(**edges)
+    assert high["in_db28_fit_data_range"] is True
+    jet_like = assess_ipb98y2_domain(
+        Ip=2.5, BT=2.7, ne19=7.0, Ploss=10.0, R=2.96, kappa=1.68, epsilon=0.32, M=2.0
+    )
+    assert jet_like["in_db28_fit_data_range"] is True
+    sparc_like = assess_ipb98y2_domain(
+        Ip=8.7, BT=12.2, ne19=31.0, Ploss=29.0, R=1.85, kappa=1.75, epsilon=0.31, M=2.5
+    )
+    assert sparc_like["in_db28_fit_data_range"] is False
+    assert sparc_like["outside_db28_fit_data_range"] == ["Ip", "BT", "Ploss", "M"]
 
 
 def test_tau_e_enforce_training_domain_rejects_extrapolation() -> None:

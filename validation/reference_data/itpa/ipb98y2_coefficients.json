@@ -1,7 +1,7 @@
 {
   "name": "IPB98(y,2)",
   "reference": "ITER Physics Basis, Nuclear Fusion 39 (1999) 2175",
-  "updated_reference": "Verdoolaege et al., Nuclear Fusion 61 (2021) 076006",
+  "reprinted_in": "Verdoolaege et al., Nuclear Fusion 61 (2021) 076006, Table 7, p. 18",
   "formula": "tau_E = C * Ip^alpha_Ip * BT^alpha_BT * ne19^alpha_ne * Ploss^alpha_P * R^alpha_R * kappa^alpha_kappa * epsilon^alpha_epsilon * M^alpha_M",
   "C": 0.0562,
   "exponents": {
@@ -26,11 +26,10 @@
     "M_AMU": 0.04
   },
   "rmse_log10": 0.145,
-  "machines_in_database": [
-    "ASDEX", "ASDEX-Upgrade", "Alcator-C-Mod", "COMPASS-D",
-    "DIII-D", "JET", "JFT-2M", "JT-60U", "MAST", "NSTX",
-    "PBX-M", "PDX", "START", "T-10", "TCV", "TdeV", "TFTR", "TUMAN-3M"
+  "fit_database": "ITPA DB2.8: 1 310 ELMy H-mode entries from 9 tokamaks (Verdoolaege et al. 2021, Table 1, p. 6)",
+  "fit_database_machines": [
+    "ASDEX", "ASDEX Upgrade", "Alcator C-Mod", "DIII-D", "JET",
+    "JFT-2M", "JT-60U", "PBX-M", "PDX"
   ],
-  "total_data_points": 5920,
-  "standard_subset_points": 1621
+  "current_database": "ITPA DB5.2.3: 14 153 records from 19 tokamaks; STD5 subset 7 537 points from 18 machines (Verdoolaege et al. 2021, p. 4)"
 }

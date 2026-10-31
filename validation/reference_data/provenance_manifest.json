@@ -230,7 +230,7 @@
       "license_redistributable": true,
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration",
-      "total_bytes": 6093
+      "total_bytes": 6219
     },
     {
       "file_count": 1,
@@ -241,7 +241,7 @@
       "license_redistributable": true,
       "source": "ITPA reference-data notes.",
       "source_type": "documentation",
-      "total_bytes": 1417
+      "total_bytes": 1520
     },
     {
       "file_count": 5,
@@ -348,7 +348,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 29919
+      "total_bytes": 30101
     },
     {
       "file_count": 1,
@@ -583,8 +583,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "README.md",
-      "sha256": "75e89f85047c8508844ab58e23cfd34b09566e07da0479c1ade9ac2ac3ff8b40",
-      "size_bytes": 3985,
+      "sha256": "5a0154c8362e61deb0a303d9dfc35e0a08eaec9c50e10ef89095a61268eaa837",
+      "size_bytes": 4167,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation"
     },
@@ -1346,8 +1346,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "itpa/README.md",
-      "sha256": "ab410dbf27094c17dd05a7adba3325f0b323bcf4c1f6d382a0a1796d69f3e0fb",
-      "size_bytes": 1417,
+      "sha256": "b8240e64ff2173b5ef51475f0f1d7b1ea05833a590839665829651c6264e3492",
+      "size_bytes": 1520,
       "source": "ITPA reference-data notes.",
       "source_type": "documentation"
     },
@@ -1385,8 +1385,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "itpa/ipb98y2_coefficients.json",
-      "sha256": "860aefafde3ae3774fa14bf938f37d041770060e107cded96e185aefc0a76680",
-      "size_bytes": 1039,
+      "sha256": "12abc54a8b91263dc90647ac93ef2fba86c300b056d252250fdb5231e595047b",
+      "size_bytes": 1165,
       "source": "Derived coefficients/calibration artifacts from ITPA subset.",
       "source_type": "derived_calibration"
     },
@@ -4903,7 +4903,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-10-31T11:20:35.522825+00:00",
+  "generated_at_utc": "2026-10-31T11:48:23.169440+00:00",
   "license_registry": [
     {
       "attribution_required": true,

@@ -9,12 +9,11 @@
 Energy confinement time scaling laws for tokamak H-mode plasmas.
 
 Implements the IPB98(y,2) empirical scaling law from the ITER Physics
-Basis (Nuclear Fusion 39, 1999, 2175) with updated coefficients from
-Verdoolaege et al. (Nuclear Fusion 61, 2021, 076006).
-
-The IPB98(y,2) law is a multi-variate power-law regression fitted to
-5920 H-mode data points from 18 tokamaks in the ITPA global confinement
-database.  It predicts the thermal energy confinement time τ_E as:
+Basis (Nuclear Fusion 39, 1999, 2175).  The coefficients are the original
+IPB98(y,2) values, obtained with the ITPA DB2.8 database and reprinted in
+Verdoolaege et al. (Nuclear Fusion 61, 2021, 076006), Table 7, p. 18.
+DB2.8 holds 1 310 ELMy H-mode entries from 9 tokamaks (ibid., Table 1,
+p. 6).  The law predicts the thermal energy confinement time τ_E as:
 
     τ_E = C · Ip^α_I · B_T^α_B · n̄_e19^α_n · P_loss^α_P
               · R^α_R · κ^α_κ · ε^α_ε · M^α_M
@@ -54,6 +53,9 @@ _REQUIRED_EXPONENT_KEYS = (
     "M_AMU",
 )
 
+# Declared validity envelope (a repository choice, not a published range).
+# It is much wider than the data the law was fitted to, so that ITER-class
+# and compact high-field designs pass; see _IPB98Y2_DB28_ELMY_H_RANGE.
 _IPB98Y2_TRAINING_DOMAIN = {
     "Ip": (0.4, 22.0),
     "BT": (0.3, 14.0),
@@ -63,6 +65,21 @@ _IPB98Y2_TRAINING_DOMAIN = {
     "kappa": (1.0, 3.0),
     "epsilon": (0.08, 0.9),
     "M": (1.0, 3.0),
+}
+
+# Min/max of the DB2.8 ELMy H-mode data behind IPB98(y,2), printed in
+# Verdoolaege et al., Nucl. Fusion 61 (2021) 076006, Table 2, p. 7 (values
+# in parentheses).  The paper's elongation column is the area elongation
+# kappa_a.  Inputs outside these ranges are extrapolations of the fit.
+_IPB98Y2_DB28_ELMY_H_RANGE = {
+    "Ip": (0.17, 5.1),
+    "BT": (0.94, 5.8),
+    "ne19": (1.2, 43.0),
+    "Ploss": (0.39, 21.0),
+    "R": (0.67, 3.4),
+    "kappa": (0.93, 2.5),
+    "epsilon": (0.16, 0.41),
+    "M": (1.0, 2.0),
 }
 
 
@@ -190,7 +207,15 @@ def assess_ipb98y2_domain(
     epsilon: float,
     M: float = 2.5,
 ) -> dict[str, Any]:
-    """Assess whether parameters lie within IPB98(y,2) training domain."""
+    """Assess IPB98(y,2) inputs against two ranges.
+
+    ``in_training_domain`` and ``extrapolated_dimensions`` use the declared
+    validity envelope ``_IPB98Y2_TRAINING_DOMAIN`` (a repository choice).
+    ``in_db28_fit_data_range`` and ``outside_db28_fit_data_range`` use the
+    printed min/max of the DB2.8 ELMy H-mode data the law was fitted to
+    (``_IPB98Y2_DB28_ELMY_H_RANGE``).  ITER-class inputs pass the first and
+    fail the second: their prediction is an extrapolation of the fit.
+    """
     values = {
         "Ip": _require_positive_finite("Ip", Ip),
         "BT": _require_positive_finite("BT", BT),
@@ -211,7 +236,14 @@ def assess_ipb98y2_domain(
         elif val > hi:
             extrapolated_dimensions.append(key)
             frac_extrapolation[key] = float((val - hi) / max(hi, 1e-12))
+    outside_fit_data = [
+        key
+        for key, val in values.items()
+        if not (_IPB98Y2_DB28_ELMY_H_RANGE[key][0] <= val <= _IPB98Y2_DB28_ELMY_H_RANGE[key][1])
+    ]
     return {
+        "in_db28_fit_data_range": len(outside_fit_data) == 0,
+        "outside_db28_fit_data_range": outside_fit_data,
         "in_training_domain": len(extrapolated_dimensions) == 0,
         "extrapolated_dimensions": extrapolated_dimensions,
         "fractional_extrapolation": frac_extrapolation,
@@ -256,11 +288,11 @@ def ipb98y2_tau_e(
     coefficients : dict, optional
         Pre-loaded coefficient dict.  If *None*, loaded from disk.
     enforce_training_domain : bool
-        When True, raises if any input is outside the supported training
-        envelope of the empirical fit.
+        When True, raises if any input is outside the declared validity
+        envelope (see :func:`assess_ipb98y2_domain`; wider than the fit data).
     warn_if_extrapolated : bool
-        When True, emits a warning when any input is outside the training
-        envelope.
+        When True, emits a warning when any input is outside the declared
+        validity envelope.
 
     Returns
     -------

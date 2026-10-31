@@ -120,19 +120,30 @@ five-case strict lane or close external full-fidelity validation.
 
 Source: `src/scpn_fusion/core/scaling_laws.py`
 
-Coefficients (Verdoolaege et al., NF 61 076006, 2021):
+Coefficients (ITER Physics Basis, NF 39 2175, 1999; reprinted in Verdoolaege
+et al., NF 61 076006, 2021, Table 7, p. 18):
 - C=0.0562, alpha_Ip=0.93, alpha_BT=0.15, alpha_n=0.41, alpha_P=-0.69,
   alpha_R=1.97, alpha_kappa=0.78, alpha_eps=0.58, alpha_M=0.19
 
-Training domain: Ip 0.4-22 MA, BT 0.3-14 T, ne 0.5-25 x10^19 m^-3,
+Fit data range (DB2.8 ELMy H-mode, 1 310 entries from 9 tokamaks; Verdoolaege
+et al. 2021, Table 2, p. 7 and Table 1, p. 6): Ip 0.17-5.1 MA, BT 0.94-5.8 T,
+ne 1.2-43 x10^19 m^-3, P_loss 0.39-21 MW, R 0.67-3.4 m, kappa_a 0.93-2.5,
+eps 0.16-0.41, M 1.0-2.0 AMU. `assess_ipb98y2_domain` reports this as
+`in_db28_fit_data_range`.
+
+Declared validity envelope (repository choice, not a published range; reported
+as `in_training_domain`): Ip 0.4-22 MA, BT 0.3-14 T, ne 0.5-25 x10^19 m^-3,
 P_loss 0.5-220 MW, R 0.45-8.5 m, kappa 1.0-3.0, eps 0.08-0.9, M 1.0-3.0 AMU.
+ITER lies inside the envelope but outside the fit data range; SPARC-class
+high-field inputs exceed the fit data range in Ip, BT, P_loss and M.
 
 ### Curated H-mode Dataset
 
 - 53 shots across 24 machines (ITER, JET, DIII-D, ASDEX-U, C-Mod, JT-60U,
   NSTX, MAST, KSTAR, EAST, SPARC, ARC, and 12 others).
 - Source: `validation/reference_data/itpa/hmode_confinement.csv`
-- Provenance: mixed (real ITPA published data + synthetic DIII-D disruption profiles).
+- Provenance: each row cites its own paper in the `source` column; ITER, ARC and
+  SPARC rows are design points, not measurements.
 
 ### Gyro-Bohm Calibration
 
@@ -142,8 +153,10 @@ P_loss 0.5-220 MW, R 0.45-8.5 m, kappa 1.0-3.0, eps 0.08-0.9, M 1.0-3.0 AMU.
 
 ### Known Gaps
 
-1. 53-point subset is illustrative (full ITPA DB has 5920 shots across 18 machines).
-2. SPARC BT=12.2 T approaches training domain boundary (max 14 T).
+1. The 53-row table is illustrative. The ITPA DB5.2.3 database holds 14 153
+   records from 19 tokamaks (Verdoolaege et al. 2021, p. 4).
+2. SPARC BT=12.2 T is about twice the DB2.8 fit data maximum (5.8 T); ITER and
+   SPARC predictions are extrapolations of the fit.
 3. IPB98 is purely empirical — no separation of neoclassical/anomalous transport.
 4. No explicit pedestal structure treatment (parabolic profile assumption).
 5. Gyro-Bohm model shows much higher uncertainty than IPB98 scaling.

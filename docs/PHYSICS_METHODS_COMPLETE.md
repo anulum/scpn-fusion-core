@@ -1343,7 +1343,7 @@ The IPB98(y,2) empirical scaling law for H-mode energy confinement time:
 
 $$\tau_E = C\,I_p^{\alpha_I}\,B_T^{\alpha_B}\,\bar{n}_{e19}^{\alpha_n}\,P_{\rm loss}^{\alpha_P}\,R^{\alpha_R}\,\kappa^{\alpha_\kappa}\,\epsilon^{\alpha_\epsilon}\,M^{\alpha_M}$$
 
-Coefficients loaded from `validation/reference_data/itpa/ipb98y2_coefficients.json`, fitted to 5920 H-mode data points from 18 tokamaks.
+Coefficients loaded from `validation/reference_data/itpa/ipb98y2_coefficients.json`: the original IPB98(y,2) values, obtained with the ITPA DB2.8 database (1 310 ELMy H-mode entries from 9 tokamaks; Verdoolaege et al. 2021, Tables 1 and 7).
 
 Updated Bayesian uncertainty quantification via Verdoolaege et al., *Nucl. Fusion* 61, 076006 (2021).
 
