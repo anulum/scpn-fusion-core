@@ -337,7 +337,7 @@
       "license_redistributable": true,
       "source": "Curated summary from ITER Physics Basis literature.",
       "source_type": "published_reference_summary",
-      "total_bytes": 2832
+      "total_bytes": 2990
     },
     {
       "file_count": 2,
@@ -1581,8 +1581,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "qlknn10d_published_benchmarks.json",
-      "sha256": "123f48321c7c161f232b2e6366c2266cfee8c85c110f6bd0d10ad1a3c70c8e76",
-      "size_bytes": 1354,
+      "sha256": "8efc010e05e21c18ab233b1b0d6bbdc71567b7831c7089dfd6ec2fc1a37d6b61",
+      "size_bytes": 1512,
       "source": "Curated summary from public QLKNN benchmark paper.",
       "source_type": "published_reference_summary"
     },
@@ -4903,7 +4903,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-10-31T11:58:21.162346+00:00",
+  "generated_at_utc": "2026-10-31T12:01:53.987392+00:00",
   "license_registry": [
     {
       "attribution_required": true,

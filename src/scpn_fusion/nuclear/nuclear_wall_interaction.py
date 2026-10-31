@@ -359,7 +359,10 @@ class NuclearEngineeringLab(FusionBurnPhysics):
         Gamma_ion = 1e23
 
         for mat_name, props in MATERIALS.items():
-            # ~10 DPA/FPY per MW/m² (Gilbert et al., NF 52 083019, 2012, Table 3)
+            # Declared ~10 dpa per full-power year per MW/m^2 of wall load.
+            # Not printed in Gilbert et al., NF 52 083019 (2012), earlier
+            # credited here: the paper has no Table 3 and gives damage per
+            # year for a 3.0 GW DEMO, not per MW/m^2.
             dpa_per_year = peak_load * 10.0
             life_dpa = props["dpa_limit"] / dpa_per_year if dpa_per_year > 0 else 999.0
 

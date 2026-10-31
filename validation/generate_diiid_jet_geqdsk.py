@@ -19,7 +19,8 @@ Machine parameters sourced from:
 - KSTAR: parameters declared (an earlier "Lee et al., Nucl. Fusion 60
   (2020) 086002" credit pointed to an unrelated paper)
   R0=1.8m, a=0.5m, B0=3.5T, Ip=0.5-1.0MA, κ=1.7-2.0, δ=0.3-0.7
-- ASDEX-U: Zohm et al., Nucl. Fusion 55 (2015) 104010
+- ASDEX-U: R0=1.65 m and a=0.5 m are printed in Zohm et al., Nucl. Fusion
+  55 (2015) 104010, p. 2; B0, Ip, κ and δ ranges are declared
   R0=1.65m, a=0.5m, B0=2.5T, Ip=0.8-1.2MA, κ=1.6-1.8, δ=0.3-0.5
 
 Each file contains a self-consistent Solov'ev ψ(R,Z) with derived

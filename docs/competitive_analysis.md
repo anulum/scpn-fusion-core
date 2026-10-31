@@ -90,8 +90,8 @@ corrections when a caller supplies an accepted correction model.
 | **SCPN v4.0.0 (native GK)** | Linear eigenvalue | **~0.3 s/surface** | Ballooning, Sugama collisions | Measured |
 | QLKNN (TensorFlow) | NN inference | ~100 us (25 outputs) | Surrogate | van de Plassche 2020 |
 
-The MLP surrogate is trained on 500K QLKNN-10D gyrokinetic data points
-(Zenodo DOI 10.5281/zenodo.3497066) with test_rel_L2 = 0.094. The 10--25%
+The MLP surrogate is trained on a 500K-point subset, drawn by this repository,
+of the QLKNN-10D quasilinear gyrokinetic dataset (Zenodo DOI 10.5281/zenodo.3497066) with test_rel_L2 = 0.094. The 10--25%
 relative error range is typical for QLKNN surrogates. The native GK eigenvalue
 solver uses the response-matrix formulation with Miller geometry
 (Kotschenreuther 1995) and Sugama collision operator.

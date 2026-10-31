@@ -271,7 +271,7 @@ standard artifact from the still-open high-fidelity GPU retraining campaign.
 
 | Model | Script | Framework | Data Source | GPU Time | Status |
 |-------|--------|-----------|-------------|----------|--------|
-| Neural Transport (QLKNN) | `tools/train_neural_transport_qlknn.py` | JAX | Zenodo QLKNN-10D (500K samples) | 1-2 h | Production |
+| Neural Transport (QLKNN) | `tools/train_neural_transport_qlknn.py` | JAX | Zenodo QLKNN-10D (500K-sample subset drawn here) | 1-2 h | Production |
 | FNO Spatial | `tools/train_fno_qlknn_spatial.py` | JAX | QLKNN oracle (200 equilibria) | 30-60 min | Production |
 | GS-Transport Surrogate | `src/.../gs_transport_surrogate_training.py` | NumPy | TransportSolver (5K samples) | 10-30 min | Production |
 | Neural Equilibrium | `src/.../neural_equilibrium_training.py` | NumPy | SPARC GEQDSK (78 samples) | 5-15 min | Production |
@@ -358,9 +358,9 @@ Source: `validation/reference_data/provenance_manifest.json` (v2, 2026-03-05).
 | SPARC POPCON | 1 CSV | Published design tables |
 | SPARC device description | 1 JSON | Public design parameters |
 | H-mode confinement | 53 shots, 1 CSV | Curated rows, each citing its own paper; not drawn from the ITPA database |
-| ITPA coefficients | 2 JSON | Derived from published ITPA data |
-| QLKNN-10D benchmarks | 1 JSON (summary) | Published QLKNN paper values |
-| QLKNN-10D training data | 500K samples (Zenodo) | Real gyrokinetic GENE/QuaLiKiz runs |
+| ITPA coefficients | 2 JSON | IPB98(y,2) coefficients (ITER Physics Basis; uncertainties declared) and a repository gyro-Bohm calibration |
+| QLKNN-10D benchmarks | 1 JSON (summary) | Values printed in van de Plassche et al. 2020 |
+| QLKNN-10D training data | 500K-sample subset drawn here (Zenodo) | QuaLiKiz quasilinear gyrokinetic calculations |
 
 ### Synthetic Data (generated in-repo)
 
@@ -375,9 +375,9 @@ Source: `validation/reference_data/provenance_manifest.json` (v2, 2026-03-05).
 
 | Model | Trains On | Real? |
 |-------|-----------|-------|
-| Neural Transport (QLKNN) | Zenodo QLKNN-10D (500K samples) | **Yes** (real gyrokinetic) |
+| Neural Transport (QLKNN) | Zenodo QLKNN-10D (500K-sample subset drawn here) | **Yes** (quasilinear gyrokinetic) |
 | Neural Equilibrium | 3 SPARC lmode GEQDSK | **Yes** (real CFS/MIT) |
-| MLP ITPA | 53-shot ITPA CSV | **Yes** (real multi-machine) |
+| MLP ITPA | 53-row curated H-mode CSV | **Partly** (measured rows plus ITER, ARC and SPARC design points) |
 | FNO turbulence | Synthetic Hasegawa-Wakatani | **No** (retired, non-default) |
 | GS-Transport surrogate | TransportSolver oracle | **No** (synthetic) |
 | Disruption predictor | 16 DIII-D-like NPZ | **No** (synthetic) |
