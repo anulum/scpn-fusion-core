@@ -83,7 +83,7 @@ class TestITERReferencePrediction:
             f"ITER flagged as extrapolated: {domain['extrapolated_dimensions']}"
         )
 
-    def test_iter_outside_db28_fit_data_range(self):
+    def test_iter_outside_db28_fit_data_range(self) -> None:
         """ITER current and size exceed the DB2.8 data (Verdoolaege 2021, Table 2)."""
         domain = assess_ipb98y2_domain(**ITER_PARAMS)
         assert domain["in_db28_fit_data_range"] is False
