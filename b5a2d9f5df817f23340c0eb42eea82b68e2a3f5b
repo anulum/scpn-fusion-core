@@ -1,0 +1,13 @@
+Commit message correction (the message above was left over from 4d471f1e by a
+script that stopped before rewriting it; no amend, per repository rules).
+
+Actual content: test(validation): keep report-writing tests off the tracked
+files. Five test modules (Aurora reference artifact, FreeGS public examples,
+GS operator current closure, production decomposition contract, and the
+campaign's SAS readiness lane) redirect their producers' outputs to tmp_path
+with autouse fixtures that copy the tracked files first, plus guard tests for
+the production default directories. The Aurora and FreeGS _rel() helpers
+return an absolute path for outputs outside the checkout instead of raising.
+Verified by modification times: 192 passed, no tracked file touched.
+
+Seat: 09bd
