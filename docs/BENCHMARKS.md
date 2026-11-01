@@ -2297,16 +2297,18 @@ and blocked external-reference rows for `gkeyll_axisymmetric_small_hall` and
 `ono_1997_fig4_flux_decay`. It does not claim full 2D two-fluid Hall-MHD,
 Gkeyll/BOUT++ same-case parity, WGPU execution, or Ono figure reproduction.
 
-Latest local non-isolated regression rows:
+Latest non-isolated regression rows, measured 2026-11-01 on the project compute server
+(one core, Linux 6.8, Python 3.12.3, Rust 1.98.1); earlier rows came from a
+faster workstation, so the numbers are not comparable across the two hosts:
 
 | Row | Grid | Steps | Mean seconds |
 |---|---:|---:|---:|
-| Python `python_64_grid_256_steps` | 64 | 256 | 0.0528046082 |
-| Python `python_256_grid_256_steps` | 256 | 256 | 0.0620382902 |
-| Python `python_1024_grid_256_steps` | 1,024 | 256 | 0.0689889970 |
-| Rust `rust_64_grid_256_steps` | 64 | 256 | 0.0002328276 |
-| Rust `rust_256_grid_256_steps` | 256 | 256 | 0.0008544832 |
-| Rust `rust_1024_grid_256_steps` | 1,024 | 256 | 0.0031026612 |
+| Python `python_64_grid_256_steps` | 64 | 256 | 0.2539365856 |
+| Python `python_256_grid_256_steps` | 256 | 256 | 0.2532091584 |
+| Python `python_1024_grid_256_steps` | 1,024 | 256 | 0.3264783122 |
+| Rust `rust_64_grid_256_steps` | 64 | 256 | 0.0008554646 |
+| Rust `rust_256_grid_256_steps` | 256 | 256 | 0.0030914026 |
+| Rust `rust_1024_grid_256_steps` | 1,024 | 256 | 0.0108835315 |
 
 Reproduce locally:
 
@@ -2360,20 +2362,22 @@ Rust coupled Criterion rows publish `growth_integral_status` because the
 timing harness asserts finite cumulative growth and amplification before
 emitting estimates.
 
-Latest local non-isolated regression rows:
+Latest non-isolated regression rows, measured 2026-11-01 on the project compute server
+(one core, Linux 6.8, Python 3.12.3, Rust 1.98.1); earlier rows came from a
+faster workstation, so the numbers are not comparable across the two hosts:
 
 | Row | Workload | Mean seconds |
 |---|---:|---:|
-| Python `python_1000_reports` | 1,000 reports | 0.0155345608 |
-| Python `python_10000_reports` | 10,000 reports | 0.1576017428 |
-| Python `python_100000_reports` | 100,000 reports | 1.4554153114 |
-| Python `python_pulsed_compression_coupled_64_intervals` | 64 intervals / 65 states | 0.0012223596 |
-| Python `python_pulsed_compression_coupled_256_intervals` | 256 intervals / 257 states | 0.0055735386 |
-| Rust `rust_1000_reports` | 1,000 reports | 0.0000290052 |
-| Rust `rust_10000_reports` | 10,000 reports | 0.0002804347 |
-| Rust `rust_100000_reports` | 100,000 reports | 0.0027860003 |
-| Rust `rust_pulsed_compression_coupled_64_intervals` | 64 intervals / 65 states | 0.0000030257 |
-| Rust `rust_pulsed_compression_coupled_256_intervals` | 256 intervals / 257 states | 0.0000126976 |
+| Python `python_1000_reports` | 1,000 reports | 0.0527577668 |
+| Python `python_10000_reports` | 10,000 reports | 0.5125333496 |
+| Python `python_100000_reports` | 100,000 reports | 5.1105931626 |
+| Python `python_pulsed_compression_coupled_64_intervals` | 64 intervals / 65 states | 0.0044161946 |
+| Python `python_pulsed_compression_coupled_256_intervals` | 256 intervals / 257 states | 0.0175709448 |
+| Rust `rust_1000_reports` | 1,000 reports | 0.0000673289 |
+| Rust `rust_10000_reports` | 10,000 reports | 0.0006736931 |
+| Rust `rust_100000_reports` | 100,000 reports | 0.0067369120 |
+| Rust `rust_pulsed_compression_coupled_64_intervals` | 64 intervals / 65 states | 0.0000107912 |
+| Rust `rust_pulsed_compression_coupled_256_intervals` | 256 intervals / 257 states | 0.0000425074 |
 
 The interval count excludes the initial state; each coupled row evaluates
 `intervals + 1` compression states. Use the tracked JSON for exact local values

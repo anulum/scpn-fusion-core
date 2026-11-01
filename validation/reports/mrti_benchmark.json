@@ -1,8 +1,8 @@
 {
-  "claim_boundary": "Local non-isolated MRTI analytical growth/spectrum regression evidence. Internal FUS-C.6 coupled rows consume the supplied-current pulsed-compression trajectory and its force-balance acceleration and integrate the cumulative growth exponent with the trapezoidal rule over each compression interval. External nonlinear MRTI parity remains blocked.",
+  "claim_boundary": "Local non-isolated MRTI analytical growth/spectrum regression evidence. Internal pulsed-compression coupled rows consume the supplied-current pulsed-compression trajectory and its force-balance acceleration and integrate the cumulative growth exponent with the trapezoidal rule over each compression interval. External nonlinear MRTI parity remains blocked.",
   "environment": {
     "isolated": false,
-    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "platform": "Linux-6.8.0-134-generic-x86_64-with-glibc2.39",
     "processor": "x86_64",
     "python": "3.12.3"
   },
@@ -23,15 +23,15 @@
       "final_time_s": 0.00010240000000000081,
       "language": "python",
       "max_log_amplitude": -5.976561970972142,
-      "mean_seconds": 0.0258014692,
+      "mean_seconds": 0.112708581,
       "most_amplified_k_m_inv": 6406.25,
       "n_modes": 64,
       "samples_seconds": [
-        0.02423225,
-        0.023874351000000002,
-        0.024459498000000003,
-        0.025553156,
-        0.030888091000000003
+        0.11304727,
+        0.11185739200000001,
+        0.11338073800000001,
+        0.11276948,
+        0.112488025
       ],
       "saturation_warning": true,
       "steps": 512
@@ -44,15 +44,15 @@
       "final_time_s": 0.00010240000000000081,
       "language": "python",
       "max_log_amplitude": -5.976486167135271,
-      "mean_seconds": 0.027891033200000002,
+      "mean_seconds": 0.1255201512,
       "most_amplified_k_m_inv": 6367.1875,
       "n_modes": 256,
       "samples_seconds": [
-        0.028458171,
-        0.027417489000000003,
-        0.028134047000000002,
-        0.027611213000000003,
-        0.027834246000000003
+        0.125225894,
+        0.115309928,
+        0.11433388600000001,
+        0.12751099600000002,
+        0.14522005200000002
       ],
       "saturation_warning": true,
       "steps": 512
@@ -65,25 +65,25 @@
       "final_time_s": 0.00010240000000000081,
       "language": "python",
       "max_log_amplitude": -5.976453313976697,
-      "mean_seconds": 0.0345608028,
+      "mean_seconds": 0.156733213,
       "most_amplified_k_m_inv": 6376.953125,
       "n_modes": 1024,
       "samples_seconds": [
-        0.041525415,
-        0.034208272000000005,
-        0.033734856,
-        0.032537192,
-        0.030798279
+        0.16206704100000002,
+        0.163532171,
+        0.162013665,
+        0.151497446,
+        0.14455574200000001
       ],
       "saturation_warning": true,
       "steps": 512
     },
     {
-      "acceleration_source": "fus_c6_state_radial_acceleration_m_s2",
+      "acceleration_source": "pulsed_compression_state_radial_acceleration_m_s2",
       "amplitude_overflow_limited": false,
-      "case": "python_fus_c6_coupled_64_modes_64_steps",
+      "case": "python_pulsed_compression_coupled_64_modes_64_steps",
       "compression_work_j": 4078426.2900051386,
-      "coupling_status": "internal_fus_c6_pulsed_compression_adapter",
+      "coupling_status": "internal_pulsed_compression_adapter",
       "fastest_growing_k_m_inv": 156.25,
       "final_effective_acceleration_m_s2": 23218359722391.348,
       "final_max_amplitude_m": 1.0000000000000007e-09,
@@ -93,25 +93,25 @@
       "language": "python",
       "max_effective_acceleration_m_s2": 62540468166971.88,
       "max_log_amplitude": -20.72326583694641,
-      "mean_seconds": 0.018741028399999998,
+      "mean_seconds": 0.0662476598,
       "most_amplified_k_m_inv": 156.25,
       "n_modes": 64,
       "samples_seconds": [
-        0.018099191,
-        0.018503792,
-        0.019381565,
-        0.019130826,
-        0.018589768
+        0.066830386,
+        0.06589207200000001,
+        0.065928797,
+        0.06601369800000001,
+        0.066573346
       ],
       "saturation_warning": false,
       "steps": 64
     },
     {
-      "acceleration_source": "fus_c6_state_radial_acceleration_m_s2",
+      "acceleration_source": "pulsed_compression_state_radial_acceleration_m_s2",
       "amplitude_overflow_limited": false,
-      "case": "python_fus_c6_coupled_256_modes_64_steps",
+      "case": "python_pulsed_compression_coupled_256_modes_64_steps",
       "compression_work_j": 4078426.2900051386,
-      "coupling_status": "internal_fus_c6_pulsed_compression_adapter",
+      "coupling_status": "internal_pulsed_compression_adapter",
       "fastest_growing_k_m_inv": 39.0625,
       "final_effective_acceleration_m_s2": 23218359722391.348,
       "final_max_amplitude_m": 1.0000000000000007e-09,
@@ -121,15 +121,15 @@
       "language": "python",
       "max_effective_acceleration_m_s2": 62540468166971.88,
       "max_log_amplitude": -20.72326583694641,
-      "mean_seconds": 0.018412966800000003,
+      "mean_seconds": 0.0674203178,
       "most_amplified_k_m_inv": 39.0625,
       "n_modes": 256,
       "samples_seconds": [
-        0.017976106000000002,
-        0.018478996,
-        0.019095058,
-        0.018366429,
-        0.018148245
+        0.067236828,
+        0.06856569700000001,
+        0.067120569,
+        0.066879039,
+        0.06729945600000001
       ],
       "saturation_warning": false,
       "steps": 64
@@ -139,9 +139,9 @@
       "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_1024_modes_512_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.013086546677500002,
+      "mean_seconds": 0.035105243705,
       "n_modes": 1024,
-      "stddev_seconds": 0.001900675672826129,
+      "stddev_seconds": 0.0017793381915241144,
       "steps": 512
     },
     {
@@ -149,9 +149,9 @@
       "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_256_modes_512_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.003422585838,
+      "mean_seconds": 0.009103815088333333,
       "n_modes": 256,
-      "stddev_seconds": 0.0003837477215554394,
+      "stddev_seconds": 3.778519598484372e-05,
       "steps": 512
     },
     {
@@ -159,42 +159,42 @@
       "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_64_modes_512_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.0008629592980970311,
+      "mean_seconds": 0.002417982485238095,
       "n_modes": 64,
-      "stddev_seconds": 6.894403015360154e-05,
+      "stddev_seconds": 1.4450317047142745e-05,
       "steps": 512
     },
     {
-      "acceleration_source": "fus_c6_state_radial_acceleration_m_s2",
-      "case": "rust_fus_c6_coupled_256_modes_64_steps",
-      "coupling_status": "internal_fus_c6_pulsed_compression_adapter",
-      "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_fus_c6_coupled_256_modes_64_steps/new/estimates.json",
+      "acceleration_source": "pulsed_compression_state_radial_acceleration_m_s2",
+      "case": "rust_pulsed_compression_coupled_256_modes_64_steps",
+      "coupling_status": "internal_pulsed_compression_adapter",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_pulsed_compression_coupled_256_modes_64_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.0004811548971688492,
+      "mean_seconds": 0.0013537926781531603,
       "n_modes": 256,
-      "stddev_seconds": 2.058009570933878e-05,
+      "stddev_seconds": 9.314981046168957e-05,
       "steps": 64
     },
     {
-      "acceleration_source": "fus_c6_state_radial_acceleration_m_s2",
-      "case": "rust_fus_c6_coupled_64_modes_64_steps",
-      "coupling_status": "internal_fus_c6_pulsed_compression_adapter",
-      "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_fus_c6_coupled_64_modes_64_steps/new/estimates.json",
+      "acceleration_source": "pulsed_compression_state_radial_acceleration_m_s2",
+      "case": "rust_pulsed_compression_coupled_64_modes_64_steps",
+      "coupling_status": "internal_pulsed_compression_adapter",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/mrti/rust_pulsed_compression_coupled_64_modes_64_steps/new/estimates.json",
       "language": "rust",
       "log_amplitude_status": "asserted_finite_in_rust_criterion_harness",
-      "mean_seconds": 0.00020091528703529573,
+      "mean_seconds": 0.0005244987864890048,
       "n_modes": 64,
-      "stddev_seconds": 1.3349262163899834e-05,
+      "stddev_seconds": 3.658352365070733e-05,
       "steps": 64
     }
   ],
   "schema": "scpn-fusion-core.mrti_benchmark.v4",
   "source_checksums": {
-    "benchmarks/bench_mrti.py": "04bd1c2bfac3a4f6823fdba0948b6afa059cdfc17fa58628ab3da31f8fd3c0eb",
-    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "40d948c1c247584fd80cebb67ce41765e361839129b5cebf00fa69228e1f780d",
-    "scpn-fusion-rs/crates/fusion-physics/src/mrti.rs": "7299eafb0411e80335e2122e45d588b0cef2ee7c94ad980e7f5d268de58407cb",
-    "src/scpn_fusion/core/mrti.py": "179d120bdc71cde7eb90b3d362c2f545fe6db3dbcff0b9ffe28442e5a85017c0",
-    "src/scpn_fusion/core/pulsed_compression.py": "4ace5b8d4a9794d99d5e0865fbf0e903d4b0ce5f461ac442ac07a818ddc9d9a8"
+    "benchmarks/bench_mrti.py": "062ed5e20b0cbe510f079985311125f32af3889f655bd18b2684d29694a148f0",
+    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "56272a7504fda823e72459ec8d324facc3edd7a7115fad0b9f9b4f6afad27156",
+    "scpn-fusion-rs/crates/fusion-physics/src/mrti.rs": "0753714440ba524c2656aef4ff2e75506a275158e1f546d963cac053b73324e7",
+    "src/scpn_fusion/core/mrti.py": "ebeb401bcbe1b8af91dbfddf90a84175686cb879b7e2a50dc5c4c84dfa80a406",
+    "src/scpn_fusion/core/pulsed_compression.py": "502cdd137fe66b4101d2b3ac824c3ae329b35f6da776923e3452d75635b265f3"
   }
 }

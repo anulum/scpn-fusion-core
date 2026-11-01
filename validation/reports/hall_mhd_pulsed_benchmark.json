@@ -2,7 +2,7 @@
   "claim_boundary": "Local non-isolated axisymmetric Ono Eq. 8 Hall-MHD flux-carrier regression evidence. Full 2D two-fluid Hall-MHD, Gkeyll/BOUT++ parity, and Ono figure reproduction remain blocked.",
   "environment": {
     "isolated": false,
-    "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+    "platform": "Linux-6.8.0-134-generic-x86_64-with-glibc2.39",
     "processor": "x86_64",
     "python": "3.12.3"
   },
@@ -19,14 +19,14 @@
       "final_energy_proxy_J_m": 590.1829613008822,
       "final_time_s": 2.5599999999999857e-06,
       "language": "python",
-      "mean_seconds": 0.0514608994,
+      "mean_seconds": 0.2539365856,
       "n_grid": 64,
       "samples_seconds": [
-        0.051341021,
-        0.051743015,
-        0.050929231000000005,
-        0.050943498000000004,
-        0.052347732
+        0.22866766100000002,
+        0.35488106900000005,
+        0.22807832800000002,
+        0.230036339,
+        0.22801953100000003
       ],
       "source_residual_linf": 4.368526449849507e-14,
       "steps": 256
@@ -37,14 +37,14 @@
       "final_energy_proxy_J_m": 589.1624393369948,
       "final_time_s": 2.5599999999999857e-06,
       "language": "python",
-      "mean_seconds": 0.055774242200000004,
+      "mean_seconds": 0.2532091584,
       "n_grid": 256,
       "samples_seconds": [
-        0.05615821,
-        0.056207508,
-        0.055177394000000005,
-        0.054435152,
-        0.056892947000000006
+        0.252638766,
+        0.254772424,
+        0.25218402500000003,
+        0.25394516,
+        0.252505417
       ],
       "source_residual_linf": 4.019651077545334e-14,
       "steps": 256
@@ -55,14 +55,14 @@
       "final_energy_proxy_J_m": 589.1002151081527,
       "final_time_s": 2.5599999999999857e-06,
       "language": "python",
-      "mean_seconds": 0.07050648040000002,
+      "mean_seconds": 0.3264783122,
       "n_grid": 1024,
       "samples_seconds": [
-        0.071257217,
-        0.06720328,
-        0.064726348,
-        0.079390002,
-        0.069955555
+        0.32905657800000004,
+        0.33174168000000004,
+        0.32521771800000004,
+        0.322117558,
+        0.324258027
       ],
       "source_residual_linf": 5.020771723575372e-14,
       "steps": 256
@@ -71,27 +71,27 @@
       "case": "rust_1024_grid_256_steps",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/hall_mhd_pulsed/rust_1024_grid_256_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 0.0031026611643965515,
+      "mean_seconds": 0.010883531505999999,
       "n_grid": 1024,
-      "stddev_seconds": 0.00011597102151474679,
+      "stddev_seconds": 0.00045542923096978917,
       "steps": 256
     },
     {
       "case": "rust_256_grid_256_steps",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/hall_mhd_pulsed/rust_256_grid_256_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 0.0008544832148182162,
+      "mean_seconds": 0.0030914025564705875,
       "n_grid": 256,
-      "stddev_seconds": 2.2096842476897676e-05,
+      "stddev_seconds": 0.00041834672798910996,
       "steps": 256
     },
     {
       "case": "rust_64_grid_256_steps",
       "criterion_estimates": "scpn-fusion-rs/target/criterion/hall_mhd_pulsed/rust_64_grid_256_steps/new/estimates.json",
       "language": "rust",
-      "mean_seconds": 0.0002328275585722447,
+      "mean_seconds": 0.0008554646217615258,
       "n_grid": 64,
-      "stddev_seconds": 3.561410567962709e-06,
+      "stddev_seconds": 6.86019175514806e-05,
       "steps": 256
     },
     {
@@ -109,8 +109,8 @@
   ],
   "schema": "scpn-fusion-core.hall_mhd_pulsed_benchmark.v1",
   "source_checksums": {
-    "benchmarks/bench_hall_mhd_pulsed.py": "7a9436d9686d2332bf8ecb0bcd401fe0d8f8b935e11420c3cae3f8d24dc202fb",
-    "scpn-fusion-rs/crates/fusion-physics/src/hall_mhd_pulsed.rs": "2345bfb1e24596e58de1fdf1963354af5a12152ef1376024e2d0c2324a9e5a9b",
-    "src/scpn_fusion/core/hall_mhd_pulsed.py": "d3cc58a1c4f329305c393cac985040f6c95422d63a3be1db4d3f3995ac9c4a43"
+    "benchmarks/bench_hall_mhd_pulsed.py": "7c84649ec3f05585a6df1c664bcd7a861ad49d1aae37eb98c560a241b7962d89",
+    "scpn-fusion-rs/crates/fusion-physics/src/hall_mhd_pulsed.rs": "8ee69354aac9d8a0a0369bb1fdc4b14c5977259d075a3f4f52f00db09f1a3b6a",
+    "src/scpn_fusion/core/hall_mhd_pulsed.py": "52142f4bf33a4080274ebb2deb160e289f986023ac07d7127ca092cc5fda0187"
   }
 }

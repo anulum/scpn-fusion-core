@@ -1,8 +1,8 @@
 {
-  "claim_boundary": "Local non-isolated regression evidence for the exact classical Faraday recovery contract over supplied trajectories, including internal FUS-C.6 supplied-current compression-work sidecars, FUS-C.6 flux-budget and trajectory-quality sidecars, and voltage-driven coil-source sidecars. This is not Slough compression-work acceptance evidence.",
+  "claim_boundary": "Local non-isolated regression evidence for the exact classical Faraday recovery contract over supplied trajectories, including internal pulsed-compression supplied-current compression-work sidecars, pulsed-compression flux-budget and trajectory-quality sidecars, and voltage-driven coil-source sidecars. This is not Slough compression-work acceptance evidence.",
   "environment": {
     "isolated": false,
-    "platform": "Linux-6.17.0-29-generic-x86_64-with-glibc2.39",
+    "platform": "Linux-6.8.0-134-generic-x86_64-with-glibc2.39",
     "processor": "x86_64",
     "python": "3.12.3"
   },
@@ -12,10 +12,10 @@
     "faraday_law_closure": "finite_difference(Phi) + EMF/N_turns = 0",
     "flux": "Phi = B_ext*pi*R_s^2",
     "flux_rate_terms": "dPhi/dt = pi*R_s^2*dB_ext/dt + 2*pi*B_ext*R_s*dR_s/dt",
-    "internal_fus_c6_budget": "evaluated when supplied-current or voltage-driven compression states provide compression_work_j",
-    "internal_fus_c6_flux_budget": "evaluated when compression states provide source/damping/update-residual flux-budget sidecars",
-    "internal_fus_c6_source_budget": "evaluated when voltage-driven coil-circuit states provide coil_source_work_j",
-    "internal_fus_c6_trajectory_diagnostics": "evaluated when compression states provide validated min-radius, acceleration, radius-floor, turning-point, compression-ratio, and all-flux-budget diagnostics",
+    "internal_pulsed_compression_budget": "evaluated when supplied-current or voltage-driven compression states provide compression_work_j",
+    "internal_pulsed_compression_flux_budget": "evaluated when compression states provide source/damping/update-residual flux-budget sidecars",
+    "internal_pulsed_compression_source_budget": "evaluated when voltage-driven coil-circuit states provide coil_source_work_j",
+    "internal_pulsed_compression_trajectory_diagnostics": "evaluated when compression states provide validated min-radius, acceleration, radius-floor, turning-point, compression-ratio, and all-flux-budget diagnostics",
     "load_power": "P = EMF^2/R_load"
   },
   "results": [
@@ -33,17 +33,17 @@
       "max_abs_flux_rate_radial_term_wb_s": 77408.84298446173,
       "max_abs_flux_rate_total_wb_s": 77408.84298446173,
       "max_abs_load_current_a": 5805663.223834629,
-      "mean_seconds": 0.0007126091428571429,
+      "mean_seconds": 0.0019486844285714288,
       "recovered_energy_j": 2627026.631267688,
       "samples": 64,
       "samples_seconds": [
-        0.0007370990000000001,
-        0.000613107,
-        0.0005694630000000001,
-        0.000883746,
-        0.001035841,
-        0.0005629610000000001,
-        0.000586047
+        0.002304417,
+        0.001923131,
+        0.001890079,
+        0.001891733,
+        0.0018715230000000002,
+        0.0018821100000000002,
+        0.0018777980000000002
       ],
       "source_budget_claim_status": "blocked_missing_coil_source_work"
     },
@@ -61,17 +61,17 @@
       "max_abs_flux_rate_radial_term_wb_s": 77408.84298452717,
       "max_abs_flux_rate_total_wb_s": 77408.84298452717,
       "max_abs_load_current_a": 5805663.223839539,
-      "mean_seconds": 0.003691295428571429,
+      "mean_seconds": 0.006583648142857143,
       "recovered_energy_j": 2627026.559539832,
       "samples": 256,
       "samples_seconds": [
-        0.0022388250000000003,
-        0.003678025,
-        0.005640916,
-        0.0037956210000000003,
-        0.0037404730000000002,
-        0.003921826000000001,
-        0.002823382
+        0.006590095000000001,
+        0.006408985000000001,
+        0.006510476,
+        0.006797119000000001,
+        0.006620284000000001,
+        0.006603068,
+        0.0065555100000000005
       ],
       "source_budget_claim_status": "blocked_missing_coil_source_work"
     },
@@ -89,23 +89,23 @@
       "max_abs_flux_rate_radial_term_wb_s": 77408.84298459243,
       "max_abs_flux_rate_total_wb_s": 77408.84298459243,
       "max_abs_load_current_a": 5805663.223844431,
-      "mean_seconds": 0.011322115285714286,
+      "mean_seconds": 0.02477232828571429,
       "recovered_energy_j": 2627026.555166813,
       "samples": 1024,
       "samples_seconds": [
-        0.01188201,
-        0.009913269,
-        0.009203105000000001,
-        0.012927997,
-        0.015998739,
-        0.009536491000000001,
-        0.009793196
+        0.024487767,
+        0.025551307000000002,
+        0.024547700000000002,
+        0.024571171000000003,
+        0.025124636000000002,
+        0.024564589,
+        0.024559128000000003
       ],
       "source_budget_claim_status": "blocked_missing_coil_source_work"
     },
     {
       "budget_claim_status": "failed",
-      "case": "python_fus_c6_coupled_64_steps",
+      "case": "python_pulsed_compression_coupled_64_steps",
       "compression_flux_budget_claim_status": "passed",
       "compression_flux_damping_decrement_checksum": 0.0,
       "compression_flux_source_increment_checksum": 0.0,
@@ -127,21 +127,21 @@
       "max_abs_flux_rate_radial_term_wb_s": 110309899.6831574,
       "max_abs_flux_rate_total_wb_s": 110309899.6831574,
       "max_abs_load_current_a": 441239598732.6296,
-      "mean_seconds": 0.016933245399999998,
+      "mean_seconds": 0.0555342798,
       "recovered_energy_j": 151753748924416.44,
       "samples": 65,
       "samples_seconds": [
-        0.015510991000000002,
-        0.019533494000000002,
-        0.016347707,
-        0.017256132,
-        0.016017903
+        0.056290035,
+        0.054918893,
+        0.055477511,
+        0.056079736000000005,
+        0.054905224
       ],
       "steps": 64
     },
     {
       "budget_claim_status": "failed",
-      "case": "python_fus_c6_coupled_256_steps",
+      "case": "python_pulsed_compression_coupled_256_steps",
       "compression_flux_budget_claim_status": "passed",
       "compression_flux_damping_decrement_checksum": 0.0,
       "compression_flux_source_increment_checksum": 0.0,
@@ -163,21 +163,21 @@
       "max_abs_flux_rate_radial_term_wb_s": 112256633.8459297,
       "max_abs_flux_rate_total_wb_s": 112256633.8459297,
       "max_abs_load_current_a": 449026535383.71875,
-      "mean_seconds": 0.0610767048,
+      "mean_seconds": 0.21986169480000003,
       "recovered_energy_j": 520584111642637.8,
       "samples": 257,
       "samples_seconds": [
-        0.059284794,
-        0.062101041,
-        0.057594063,
-        0.063829653,
-        0.062573973
+        0.218747415,
+        0.21881038700000002,
+        0.22336856800000002,
+        0.21945699800000001,
+        0.218925106
       ],
       "steps": 256
     },
     {
       "budget_claim_status": "failed",
-      "case": "python_fus_c6_voltage_driven_64_steps",
+      "case": "python_pulsed_compression_voltage_driven_64_steps",
       "coil_source_work_j": 640.2047563159566,
       "compression_flux_budget_claim_status": "passed",
       "compression_flux_damping_decrement_checksum": 0.0,
@@ -200,15 +200,15 @@
       "max_abs_flux_rate_radial_term_wb_s": 110387972.01445642,
       "max_abs_flux_rate_total_wb_s": 110356449.77076821,
       "max_abs_load_current_a": 441425799083.0728,
-      "mean_seconds": 0.016952288,
+      "mean_seconds": 0.058364179200000005,
       "recovered_energy_j": 151820052995551.7,
       "samples": 65,
       "samples_seconds": [
-        0.017318318000000003,
-        0.019260195,
-        0.014775557000000002,
-        0.015512809,
-        0.017894561
+        0.058807037000000006,
+        0.058153787000000005,
+        0.058145305,
+        0.057987345,
+        0.058727422
       ],
       "source_budget_claim_status": "failed",
       "source_energy_budget_passed": false,
@@ -217,7 +217,7 @@
     },
     {
       "budget_claim_status": "failed",
-      "case": "python_fus_c6_voltage_driven_256_steps",
+      "case": "python_pulsed_compression_voltage_driven_256_steps",
       "coil_source_work_j": 2563.274005584527,
       "compression_flux_budget_claim_status": "passed",
       "compression_flux_damping_decrement_checksum": 0.0,
@@ -228,7 +228,7 @@
       "compression_trajectory_diagnostics_passed": true,
       "compression_trajectory_max_abs_radial_acceleration_m_s2": 1012275958583696.5,
       "compression_trajectory_min_radius_m": 0.008415420525134682,
-      "compression_work_j": 11612076.370995164,
+      "compression_work_j": 11612076.370995155,
       "energy_budget_passed": false,
       "energy_budget_relative_error": 0.9999999777318832,
       "flux_derivative_closure_passed": false,
@@ -240,15 +240,15 @@
       "max_abs_flux_rate_radial_term_wb_s": 112371799.15082067,
       "max_abs_flux_rate_total_wb_s": 112403925.39785853,
       "max_abs_load_current_a": 449615701591.4341,
-      "mean_seconds": 0.07333825340000001,
+      "mean_seconds": 0.2351324006,
       "recovered_energy_j": 521466475559104.1,
       "samples": 257,
       "samples_seconds": [
-        0.0666091,
-        0.066428785,
-        0.075264526,
-        0.064944325,
-        0.09344453100000001
+        0.23159468900000002,
+        0.231772419,
+        0.23637681300000002,
+        0.237075116,
+        0.23884296600000002
       ],
       "source_budget_claim_status": "failed",
       "source_energy_budget_passed": false,
@@ -263,9 +263,9 @@
       "flux_derivative_closure_status": "asserted_in_rust_criterion_harness",
       "flux_rate_term_status": "asserted_in_rust_criterion_harness",
       "language": "rust",
-      "mean_seconds": 3.918784039457219e-05,
+      "mean_seconds": 8.33619262472407e-05,
       "samples": 1024,
-      "stddev_seconds": 3.033569136250215e-06
+      "stddev_seconds": 3.2941693928001447e-06
     },
     {
       "case": "rust_256_samples",
@@ -275,9 +275,9 @@
       "flux_derivative_closure_status": "asserted_in_rust_criterion_harness",
       "flux_rate_term_status": "asserted_in_rust_criterion_harness",
       "language": "rust",
-      "mean_seconds": 7.41351522144191e-06,
+      "mean_seconds": 2.068249042569212e-05,
       "samples": 256,
-      "stddev_seconds": 7.090451756261321e-07
+      "stddev_seconds": 3.220764452733042e-07
     },
     {
       "case": "rust_64_samples",
@@ -287,65 +287,65 @@
       "flux_derivative_closure_status": "asserted_in_rust_criterion_harness",
       "flux_rate_term_status": "asserted_in_rust_criterion_harness",
       "language": "rust",
-      "mean_seconds": 2.1121713582574632e-06,
+      "mean_seconds": 5.408142181969538e-06,
       "samples": 64,
-      "stddev_seconds": 2.2787868752128856e-07
+      "stddev_seconds": 3.405919381101494e-08
     },
     {
-      "case": "rust_fus_c6_coupled_256_steps",
+      "case": "rust_pulsed_compression_coupled_256_steps",
       "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
       "compression_trajectory_diagnostics_claim_status": "asserted_in_rust_criterion_harness",
-      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_fus_c6_coupled_256_steps/new/estimates.json",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_pulsed_compression_coupled_256_steps/new/estimates.json",
       "flux_derivative_closure_status": "computed_in_rust_criterion_harness",
       "flux_rate_term_status": "computed_in_rust_criterion_harness",
       "language": "rust",
-      "mean_seconds": 0.0003502825468145461,
-      "stddev_seconds": 8.002144577843117e-06,
+      "mean_seconds": 0.0007897768700687855,
+      "stddev_seconds": 3.461444349010228e-05,
       "steps": 256
     },
     {
-      "case": "rust_fus_c6_coupled_64_steps",
+      "case": "rust_pulsed_compression_coupled_64_steps",
       "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
       "compression_trajectory_diagnostics_claim_status": "asserted_in_rust_criterion_harness",
-      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_fus_c6_coupled_64_steps/new/estimates.json",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_pulsed_compression_coupled_64_steps/new/estimates.json",
       "flux_derivative_closure_status": "computed_in_rust_criterion_harness",
       "flux_rate_term_status": "computed_in_rust_criterion_harness",
       "language": "rust",
-      "mean_seconds": 9.971338466733302e-05,
-      "stddev_seconds": 6.421626005188941e-06,
+      "mean_seconds": 0.00020426012842993745,
+      "stddev_seconds": 4.901147013312091e-06,
       "steps": 64
     },
     {
-      "case": "rust_fus_c6_voltage_driven_256_steps",
+      "case": "rust_pulsed_compression_voltage_driven_256_steps",
       "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
       "compression_trajectory_diagnostics_claim_status": "asserted_in_rust_criterion_harness",
-      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_fus_c6_voltage_driven_256_steps/new/estimates.json",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_pulsed_compression_voltage_driven_256_steps/new/estimates.json",
       "flux_derivative_closure_status": "computed_in_rust_criterion_harness",
       "flux_rate_term_status": "computed_in_rust_criterion_harness",
       "language": "rust",
-      "mean_seconds": 0.0003809468950901125,
-      "stddev_seconds": 1.7856664157714112e-05,
+      "mean_seconds": 0.0007993077340308798,
+      "stddev_seconds": 1.581889064856501e-05,
       "steps": 256
     },
     {
-      "case": "rust_fus_c6_voltage_driven_64_steps",
+      "case": "rust_pulsed_compression_voltage_driven_64_steps",
       "compression_flux_budget_claim_status": "asserted_in_rust_criterion_harness",
       "compression_trajectory_diagnostics_claim_status": "asserted_in_rust_criterion_harness",
-      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_fus_c6_voltage_driven_64_steps/new/estimates.json",
+      "criterion_estimates": "scpn-fusion-rs/target/criterion/faraday_recovery/rust_pulsed_compression_voltage_driven_64_steps/new/estimates.json",
       "flux_derivative_closure_status": "computed_in_rust_criterion_harness",
       "flux_rate_term_status": "computed_in_rust_criterion_harness",
       "language": "rust",
-      "mean_seconds": 9.793841013749226e-05,
-      "stddev_seconds": 5.883326209526651e-06,
+      "mean_seconds": 0.00020699493804214253,
+      "stddev_seconds": 1.4613508648479818e-06,
       "steps": 64
     }
   ],
   "schema": "scpn-fusion-core.faraday_recovery_benchmark.v6",
   "source_checksums": {
-    "benchmarks/bench_faraday_recovery.py": "3fe4fe5b631c98b6169ca911d41b239acd7123d9e2061bbb21343e163437ebdf",
-    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "40d948c1c247584fd80cebb67ce41765e361839129b5cebf00fa69228e1f780d",
-    "scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs": "7865100434327e243f3be0a98c4c5eacfb79be34500cf8ecbcfd092901de2a36",
-    "src/scpn_fusion/core/faraday_recovery.py": "548f4745139e1903e31b4d9fabb83194921543d32f1c2eb2d531c397d0eb3728",
-    "src/scpn_fusion/core/pulsed_compression.py": "dca548983835f629ac61edbbccee6f0f7becb9caaccb7c77bb7fae0c6c6b4dcf"
+    "benchmarks/bench_faraday_recovery.py": "af07f41f6062177f252f1576a9b4592a8c7777640d8d99fd4511edd25cde5ac3",
+    "scpn-fusion-rs/crates/fusion-physics/src/compression/pulsed.rs": "56272a7504fda823e72459ec8d324facc3edd7a7115fad0b9f9b4f6afad27156",
+    "scpn-fusion-rs/crates/fusion-physics/src/faraday_recovery.rs": "483f156c35cd165844fff36b5733cb1022b1dc064c41c7e02159d50777aa33bd",
+    "src/scpn_fusion/core/faraday_recovery.py": "068b4c13b5ce47b9aad391b3b3caf42f9a20a59692790af5006f86b8dd0ab354",
+    "src/scpn_fusion/core/pulsed_compression.py": "502cdd137fe66b4101d2b3ac824c3ae329b35f6da776923e3452d75635b265f3"
   }
 }
