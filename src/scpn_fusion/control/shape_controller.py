@@ -20,6 +20,8 @@ from typing import Any, TypeAlias
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.spd_linalg import require_psd, spd_solve
+
 FloatArray: TypeAlias = NDArray[np.float64]
 
 
@@ -220,9 +222,9 @@ class PlasmaShapeController:
     def _compute_gain(self) -> FloatArray:
         """K = (J^T W J + lambda I)^-1 J^T W (Tikhonov pseudoinverse)."""
         J = self.jacobian.compute()
-        J_T_W = J.T @ self.W
+        J_T_W = J.T @ require_psd(self.W, name="W")
         H = J_T_W @ J + self.lambda_reg * np.eye(self.coil_set.n_coils)
-        return np.asarray(np.linalg.inv(H) @ J_T_W)
+        return spd_solve(H, J_T_W, name="Tikhonov normal matrix")
 
     def _compute_shape_error(self, psi: FloatArray) -> FloatArray:
         """Evaluate [isoflux; gap; X-point; strike-point] error vector from psi."""

@@ -21,6 +21,8 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.special import ellipe, ellipk
 
+from scpn_fusion.core.spd_linalg import NonSPDMatrixError, factor_spd
+
 logger = logging.getLogger(__name__)
 FloatArray = NDArray[np.float64]
 
@@ -79,12 +81,24 @@ class VesselModel:
         # Precompute resistance diagonal matrix
         self.R_mat = np.diag([el.resistance for el in elements])
 
-        # LU decompose M for fast stepping
-        # (Using direct inverse for simplicity in this module)
+        # The inductance matrix is SPD. ``M_inv`` is kept for callers and
+        # built from a diagonally scaled Cholesky factor whose reciprocal
+        # condition estimate is recorded. A matrix that is not SPD leaves
+        # ``M_inv`` at zero, logged at ERROR level and flagged in
+        # ``inductance_status``; ``step`` solves its own system directly.
+        self.inductance_rcond: float | None = None
+        if self.n_elements == 0:
+            self.inductance_status = "ok"
+            self.M_inv = np.zeros_like(self.M)
+            return
         try:
-            self.M_inv = np.linalg.inv(self.M)
-        except np.linalg.LinAlgError:
-            logger.error("Vessel inductance matrix is singular.")
+            factor = factor_spd(self.M, name="vessel inductance matrix")
+            self.M_inv = factor.inverse()
+            self.inductance_rcond = factor.rcond
+            self.inductance_status = "ok"
+        except NonSPDMatrixError as exc:
+            logger.error("Vessel inductance inverse set to zero: %s", exc)
+            self.inductance_status = "zero_inverse_inductance_not_spd"
             self.M_inv = np.zeros_like(self.M)
 
     def _calculate_mutual_inductance(self, R1: float, Z1: float, R2: float, Z2: float) -> float:

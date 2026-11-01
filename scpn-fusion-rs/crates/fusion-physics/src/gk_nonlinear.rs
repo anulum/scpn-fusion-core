@@ -1164,15 +1164,13 @@ impl NonlinearGKSolver {
                 }
             }
         }
-        let gram_inv = gram
-            .try_inverse()
-            .or_else(|| (gram + Matrix3::identity() * 1e-14).try_inverse())
-            .ok_or_else(|| {
-                FusionError::LinAlg(
-                    "Sugama conservation-moment matrix is singular after regularization"
-                        .to_string(),
-                )
-            })?;
+        // The Gram matrix of (1, v_par, E) under F_M is SPD: factor it once
+        // with Cholesky and fail visibly otherwise (no silent regularisation).
+        let gram_chol = gram.cholesky().ok_or_else(|| {
+            FusionError::LinAlg(
+                "Sugama conservation-moment Gram matrix is not positive definite".to_string(),
+            )
+        })?;
 
         let mut out = cf.clone();
         for i in 0..c.n_kx {
@@ -1191,7 +1189,9 @@ impl NonlinearGKSolver {
                         }
                     }
 
-                    let coeffs = gram_inv.map(Complex64::from) * moments;
+                    let real = gram_chol.solve(&moments.map(|z| z.re));
+                    let imag = gram_chol.solve(&moments.map(|z| z.im));
+                    let coeffs = real.zip_map(&imag, Complex64::new);
                     for v in 0..c.n_vpar {
                         let vpar = self.vpar[v];
                         for m in 0..c.n_mu {

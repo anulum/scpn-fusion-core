@@ -44,6 +44,8 @@ class FreeBoundaryStateEstimator:
         if not np.isfinite(self.actuator_bias_decay) or not (0.0 < self.actuator_bias_decay <= 1.0):
             raise ValueError("actuator_bias_decay must be finite and in (0, 1].")
         self.max_actuator_bias = _require_positive_finite("max_actuator_bias", max_actuator_bias)
+        # Least-squares allocation operator; singular values below
+        # 1e-6 * sigma_max of B are treated as zero (rcond is relative).
         self.allocation = np.linalg.pinv(
             np.asarray(self.surrogate.B, dtype=np.float64),
             rcond=1e-6,

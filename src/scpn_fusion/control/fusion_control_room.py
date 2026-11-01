@@ -19,6 +19,7 @@ from matplotlib.patches import Rectangle
 from numpy.typing import NDArray
 
 from scpn_fusion._data_paths import default_iter_config_path
+from scpn_fusion.core.spd_linalg import NonSPDMatrixError, joseph_update
 
 logger = logging.getLogger(__name__)
 
@@ -173,10 +174,15 @@ class KalmanObserver:
         if not dropout and np.isfinite(measured_z):
             y = measured_z - (self.H @ self.x)  # innovation
             S = self.H @ self.P @ self.H.T + self.R
-            K = self.P @ self.H.T @ np.linalg.inv(S)
+            s_scalar = float(S[0, 0])
+            if not np.isfinite(s_scalar) or s_scalar <= 0.0:
+                raise NonSPDMatrixError(
+                    f"innovation variance must be finite and positive, got {s_scalar!r}."
+                )
+            K = (self.P @ self.H.T) / s_scalar
 
             self.x = self.x + K @ y
-            self.P = (np.eye(2) - K @ self.H) @ self.P
+            self.P = joseph_update(self.P, K, self.H, self.R)
         else:
             self.P *= 1.2  # covariance inflation on dropout
 

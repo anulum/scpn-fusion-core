@@ -47,6 +47,8 @@ class FreeBoundarySupervisoryController:
             "actuator_compensation_gain",
             actuator_compensation_gain,
         )
+        # Least-squares allocation operator; singular values below
+        # 1e-6 * sigma_max of B are treated as zero (rcond is relative).
         self.allocation = np.linalg.pinv(
             np.asarray(self.surrogate.B, dtype=np.float64),
             rcond=1e-6,

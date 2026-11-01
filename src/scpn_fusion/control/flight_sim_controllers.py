@@ -19,6 +19,8 @@ import numpy as np
 import numpy.typing as npt
 from scipy.linalg import solve_discrete_are
 
+from scpn_fusion.core.spd_linalg import spd_solve, symmetrize
+
 from .h_infinity_controller import HInfinityController, _zoh_discretize
 
 
@@ -72,7 +74,9 @@ class LQRController:
         R_obs = np.eye(self.l)
         Pk = solve_discrete_are(Ad.T, self.C2.T, Q_obs, R_obs)
         S = self.C2 @ Pk @ self.C2.T + R_obs
-        self._L = Ad @ Pk @ self.C2.T @ np.linalg.inv(S)
+        Pk = symmetrize(Pk, name="observer DARE solution")
+        # L = Ad Pk C2^T S^-1 with (Pk C2^T S^-1)^T = S^-1 C2 Pk for symmetric Pk.
+        self._L = Ad @ spd_solve(S, self.C2 @ Pk, name="observer innovation covariance").T
 
         self._Ad = Ad
         self._Bd = Bd

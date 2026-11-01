@@ -37,8 +37,8 @@ _logger = logging.getLogger(__name__)
 
 try:
     import jax
-
     import jax.numpy as jnp
+    import jax.scipy.linalg as jsl
 
     _HAS_JAX = True
 except ImportError:
@@ -169,7 +169,14 @@ class JaxNonlinearGKSolver:
         basis = (jnp.ones_like(energy), vpar, energy)
         moments = jnp.stack([jnp.sum(cf * b * dv, axis=(-2, -1)) for b in basis], axis=0)
         gram = jnp.asarray([[jnp.sum(a * b * fm * dv) for b in basis] for a in basis])
-        coeffs = jnp.tensordot(jnp.linalg.inv(gram), moments, axes=(1, 0))
+        # SPD Gram matrix: Cholesky solve, real and imaginary parts apart;
+        # differentiable under jit and x64.
+        gram_factor = jsl.cho_factor(gram, lower=True)
+        flat = moments.reshape(3, -1)
+        coeffs = (
+            jsl.cho_solve(gram_factor, jnp.real(flat))
+            + 1j * jsl.cho_solve(gram_factor, jnp.imag(flat))
+        ).reshape(moments.shape)
         correction = (
             coeffs[0, ..., None, None]
             + coeffs[1, ..., None, None] * vpar

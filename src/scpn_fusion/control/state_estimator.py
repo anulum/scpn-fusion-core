@@ -17,6 +17,8 @@ from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.spd_linalg import joseph_update, require_psd, spd_solve, symmetrize
+
 FloatArray = NDArray[np.float64]
 
 
@@ -35,7 +37,15 @@ class ExtendedKalmanFilter:
     Q : np.ndarray
         Process noise covariance (6x6).
     R_cov : np.ndarray
-        Measurement noise covariance (4x4).
+        Measurement noise covariance (4x4); must be symmetric positive
+        semi-definite. ``R_cov = 0`` (noise-free measurements) is allowed: the
+        innovation covariance ``H P H^T + R`` is checked for positive
+        definiteness at every update instead.
+
+    Raises
+    ------
+    NonSPDMatrixError
+        If ``P0`` is not symmetric or ``R_cov`` is not positive semi-definite.
     """
 
     def __init__(
@@ -46,9 +56,9 @@ class ExtendedKalmanFilter:
         R_cov: FloatArray,
     ) -> None:
         self.x = x0.astype(float)
-        self.P = P0.astype(float)
+        self.P = symmetrize(P0, name="P0")
         self.Q = Q.astype(float)
-        self.R = R_cov.astype(float)
+        self.R = require_psd(R_cov, name="R_cov")
 
         # Linear measurement matrix H (4x6)
         self.H = np.zeros((4, 6))
@@ -104,13 +114,13 @@ class ExtendedKalmanFilter:
         # 2. Innovation covariance
         S = self.H @ self.P @ self.H.T + self.R
 
-        # 3. Optimal Kalman gain
-        K = self.P @ self.H.T @ np.linalg.inv(S)
+        # 3. Optimal Kalman gain K = P H^T S^-1, solved as K^T = S^-1 (H P)
+        #    with a Cholesky factor of the SPD innovation covariance.
+        K = spd_solve(S, self.H @ self.P, name="innovation covariance").T
 
-        # 4. Update state and covariance
+        # 4. Update state; Joseph-form covariance stays symmetric PSD.
         self.x = self.x + K @ y
-        I = np.eye(6)
-        self.P = (I - K @ self.H) @ self.P
+        self.P = joseph_update(self.P, K, self.H, self.R)
 
         return self.x
 

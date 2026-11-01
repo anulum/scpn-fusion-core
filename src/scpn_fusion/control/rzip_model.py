@@ -13,11 +13,16 @@ that exercise state-space build, stability metrics, and controller gain flows.
 
 from __future__ import annotations
 
+import logging
 
 import numpy as np
 from numpy.typing import NDArray
+from scipy.linalg import LinAlgError
 
+from scpn_fusion.core.spd_linalg import NonSPDMatrixError, factor_spd, spd_solve
 from scpn_fusion.core.vessel_model import VesselElement, VesselModel
+
+logger = logging.getLogger(__name__)
 
 MU_0 = 4.0 * np.pi * 1e-7
 FloatArray = NDArray[np.float64]
@@ -59,6 +64,8 @@ class RZIPModel:
         # in the voltage-controlled state space. We use an effective mass of 1.0 kg
         # which is common in rigid models to represent inductive inertia.
         self.M_eff = 1.0
+        self.inductance_status = "not_built"
+        self.inductance_rcond: float | None = None
 
     def _calc_dM_dz(self, R1: float, Z1: float, R2: float, Z2: float) -> float:
         # Finite difference for mutual inductance derivative w.r.t Z1
@@ -115,10 +122,29 @@ class RZIPModel:
                         el_i.R, el_i.Z, el_j.R, el_j.Z
                     )
 
+        # Inductance matrices are SPD; solve with one cached Cholesky factor.
+        # A matrix that is not SPD leaves the circuit response at zero (no
+        # current response), logged at ERROR level and flagged in
+        # ``inductance_status``.
+        if self.n_circuits == 0:
+            raise ValueError("RZIP model needs at least one vessel or coil circuit.")
         try:
-            M_inv = np.linalg.inv(M_mat)
-        except np.linalg.LinAlgError:
-            M_inv = np.zeros_like(M_mat)
+            factor = factor_spd(M_mat, name="circuit inductance matrix")
+            self.inductance_status = "ok"
+            self.inductance_rcond = factor.rcond
+            M_inv_R = factor.solve(R_mat)
+            M_inv_C = factor.solve(C_vec)
+            coil_columns = np.zeros((self.n_circuits, self.n_coils))
+            for j in range(self.n_coils):
+                coil_columns[self.n_wall + j, j] = 1.0
+            M_inv_coils = factor.solve(coil_columns)
+        except NonSPDMatrixError as exc:
+            logger.error("RZIP circuit response set to zero: %s", exc)
+            self.inductance_status = "zero_response_inductance_not_spd"
+            self.inductance_rcond = None
+            M_inv_R = np.zeros_like(M_mat)
+            M_inv_C = np.zeros(self.n_circuits)
+            M_inv_coils = np.zeros((self.n_circuits, self.n_coils))
 
         # Z dot
         A[0, 1] = 1.0
@@ -130,19 +156,13 @@ class RZIPModel:
 
         # I dot = M_inv * (V - R*I - C * dZ/dt)
         # dI/dt = -M_inv * C * dZ/dt - M_inv * R * I + M_inv * V
-        M_inv_R = M_inv @ R_mat
-        M_inv_C = M_inv @ C_vec
-
         for i in range(self.n_circuits):
             A[2 + i, 1] = -M_inv_C[i]
             for j in range(self.n_circuits):
                 A[2 + i, 2 + j] = -M_inv_R[i, j]
 
         # B matrix (inputs to active coils)
-        for i in range(self.n_circuits):
-            for j in range(self.n_coils):
-                coil_idx = self.n_wall + j
-                B[2 + i, j] = M_inv[i, coil_idx]
+        B[2 : 2 + self.n_circuits, : self.n_coils] = M_inv_coils
 
         return A, B, C, D
 
@@ -307,19 +327,29 @@ class RZIPController:
         # Precompute LQR optimal gain matrix
         A, B, C, D = self.rzip.build_state_space()
 
+        # A missing SciPy and a failed Riccati solve are reported separately;
+        # both leave a zero gain (open loop), logged at ERROR level and
+        # flagged in ``gain_status``.
+        self.gain_status = "ok"
+        self.K_gain = np.zeros((B.shape[1], A.shape[1]))
         try:
-            import scipy.linalg
+            from scipy.linalg import solve_continuous_are
+        except ImportError:
+            logger.error("RZIP LQR gain set to zero: SciPy is not available.")
+            self.gain_status = "zero_gain_scipy_missing"
+            return
 
-            Q = np.zeros_like(A)
-            Q[0, 0] = self.Kp
-            Q[1, 1] = self.Kd
-            R = np.eye(B.shape[1]) * 1.0
-
-            P = scipy.linalg.solve_continuous_are(A, B, Q, R)
-            self.K_gain = np.linalg.inv(R) @ B.T @ P
-        except (ImportError, np.linalg.LinAlgError):
-            # Fallback if scipy not available or LQR fails
-            self.K_gain = np.zeros((B.shape[1], A.shape[1]))
+        Q = np.zeros_like(A)
+        Q[0, 0] = self.Kp
+        Q[1, 1] = self.Kd
+        R = np.eye(B.shape[1]) * 1.0
+        try:
+            P = solve_continuous_are(A, B, Q, R)
+        except (LinAlgError, ValueError) as exc:
+            logger.error("RZIP LQR gain set to zero: Riccati solve failed: %s", exc)
+            self.gain_status = "zero_gain_care_failed"
+            return
+        self.K_gain = spd_solve(R, B.T @ P, name="LQR input weight")
 
     def step(self, dZ_measured: float, dt: float) -> FloatArray:
         """Compute active-coil voltage commands from a vertical displacement sample.
@@ -359,4 +389,4 @@ class RZIPController:
         """
         A, B, C, D = self.rzip.build_state_space()
         A_cl = A - B @ self.K_gain
-        return np.linalg.eigvals(A_cl)
+        return np.asarray(np.linalg.eigvals(A_cl), dtype=np.complex128)

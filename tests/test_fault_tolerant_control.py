@@ -7,9 +7,12 @@
 # SCPN Fusion Core — Fault-Tolerant Control Tests
 from __future__ import annotations
 
+import logging
+
 import numpy as np
 import pytest
 
+from scpn_fusion.core.spd_linalg import NonSPDMatrixError
 from scpn_fusion.control.fault_tolerant_control import (
     FDIMonitor,
     FaultInjector,
@@ -18,7 +21,7 @@ from scpn_fusion.control.fault_tolerant_control import (
 )
 
 
-def test_fdi_no_fault():
+def test_fdi_no_fault() -> None:
     fdi = FDIMonitor(n_sensors=3, n_actuators=2, threshold_sigma=3.0, n_alert=5)
 
     y_meas = np.array([1.0, 2.0, 3.0])
@@ -29,7 +32,7 @@ def test_fdi_no_fault():
         assert len(faults) == 0
 
 
-def test_fdi_sensor_dropout():
+def test_fdi_sensor_dropout() -> None:
     fdi = FDIMonitor(n_sensors=3, n_actuators=2, threshold_sigma=3.0, n_alert=3)
 
     y_pred = np.array([1.0, 2.0, 3.0])
@@ -49,7 +52,7 @@ def test_fdi_sensor_dropout():
     assert all_faults[0].fault_type == FaultType.SENSOR_DROPOUT
 
 
-def test_fdi_sensor_drift():
+def test_fdi_sensor_drift() -> None:
     fdi = FDIMonitor(n_sensors=3, n_actuators=2, threshold_sigma=3.0, n_alert=3)
 
     y_pred = np.array([1.0, 2.0, 3.0])
@@ -70,7 +73,7 @@ def test_fdi_sensor_drift():
     assert len(fdi.detected_faults) > 0
 
 
-def test_reconfigurable_controller_actuator_loss():
+def test_reconfigurable_controller_actuator_loss() -> None:
     J = np.eye(3)
     ctrl = ReconfigurableController(None, J, 3, 3)
 
@@ -88,7 +91,7 @@ def test_reconfigurable_controller_actuator_loss():
     assert np.isclose(u_fault[2], 1.0, atol=1e-3)
 
 
-def test_controllability_check():
+def test_controllability_check() -> None:
     J = np.eye(5)
     ctrl = ReconfigurableController(None, J, 5, 5)
 
@@ -104,7 +107,7 @@ def test_controllability_check():
     assert np.all(sd == 0.0)
 
 
-def test_sensor_fault_dropout_zeroes_faulted_measurement_weight():
+def test_sensor_fault_dropout_zeroes_faulted_measurement_weight() -> None:
     J = np.eye(3)
     ctrl = ReconfigurableController(None, J, 3, 3)
     ctrl.handle_sensor_fault(1, FaultType.SENSOR_DROPOUT)
@@ -113,7 +116,7 @@ def test_sensor_fault_dropout_zeroes_faulted_measurement_weight():
     assert 1 in ctrl.faulted_sensors
 
 
-def test_sensor_fault_noise_and_drift_apply_distinct_weights():
+def test_sensor_fault_noise_and_drift_apply_distinct_weights() -> None:
     J = np.eye(4)
     ctrl = ReconfigurableController(None, J, 4, 4)
 
@@ -124,7 +127,7 @@ def test_sensor_fault_noise_and_drift_apply_distinct_weights():
     assert np.isclose(ctrl.W[3, 3], 0.5)
 
 
-def test_sensor_fault_out_of_range_rejected():
+def test_sensor_fault_out_of_range_rejected() -> None:
     J = np.eye(2)
     ctrl = ReconfigurableController(None, J, 2, 2)
 
@@ -149,15 +152,24 @@ def test_handle_actuator_fault_records_stuck_value() -> None:
     assert ctrl.stuck_values[0] == 5.0
 
 
-def test_compute_gain_falls_back_to_zero_on_singular_inverse(monkeypatch) -> None:
+def test_compute_gain_reports_zero_gain_when_normal_matrix_is_not_spd(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
     ctrl = _ctrl()
-
-    def _raise(_: object) -> object:
-        raise np.linalg.LinAlgError("singular")
-
-    monkeypatch.setattr(np.linalg, "inv", _raise)
-    ctrl.handle_actuator_fault(0, FaultType.OPEN_CIRCUIT_ACTUATOR)
+    assert ctrl.gain_status == "ok"
+    ctrl.current_jacobian[1, 1] = np.inf
+    with caplog.at_level(logging.ERROR, logger="scpn_fusion.control.fault_tolerant_control"):
+        ctrl.handle_actuator_fault(0, FaultType.OPEN_CIRCUIT_ACTUATOR)
     assert np.allclose(ctrl.K, 0.0)
+    assert ctrl.gain_status == "zero_gain_normal_matrix_not_spd"
+    assert "gain set to zero" in caplog.text
+
+
+def test_compute_gain_rejects_indefinite_weights() -> None:
+    ctrl = _ctrl()
+    ctrl.W = -np.eye(ctrl.W.shape[0])
+    with pytest.raises(NonSPDMatrixError, match="positive semi-definite"):
+        ctrl._compute_gain()
 
 
 def test_handle_sensor_fault_rejects_out_of_range_index() -> None:

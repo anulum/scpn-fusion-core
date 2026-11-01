@@ -13,6 +13,7 @@ from numpy.typing import NDArray
 
 from scpn_fusion.core._gk_nonlinear_base import NonlinearGKSolverState
 from scpn_fusion.core._gk_nonlinear_types import NonlinearGKState
+from scpn_fusion.core.spd_linalg import factor_spd
 
 
 class NonlinearGKOperatorsMixin(NonlinearGKSolverState):
@@ -201,7 +202,11 @@ class NonlinearGKOperatorsMixin(NonlinearGKSolverState):
             [[np.sum(a * b * FM * dv) for b in basis] for a in basis],
             dtype=np.float64,
         )
-        coeffs = np.tensordot(np.linalg.inv(gram), moments, axes=(1, 0))
+        # The Gram matrix of (1, v_par, E) under F_M is SPD; solve the complex
+        # moments with one Cholesky factor, real and imaginary parts apart.
+        factor = factor_spd(gram, name="conservation-moment Gram matrix")
+        flat = moments.reshape(3, -1)
+        coeffs = (factor.solve(flat.real) + 1j * factor.solve(flat.imag)).reshape(moments.shape)
         correction = (
             coeffs[0, ..., None, None]
             + coeffs[1, ..., None, None] * vpar_5d

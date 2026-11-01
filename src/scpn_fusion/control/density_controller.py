@@ -15,6 +15,8 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.core.spd_linalg import joseph_update, spd_solve
+
 FloatArray = NDArray[np.float64]
 
 
@@ -325,15 +327,13 @@ class KalmanDensityEstimator:
 
         # K = P C^T (C P C^T + R)^-1
         S = C @ self.P @ C.T + self.R
-        K = self.P @ C.T @ np.linalg.inv(S)
+        K = spd_solve(S, C @ self.P, name="innovation covariance").T
 
         y_pred = C @ ne_pred
         inn = measurements - y_pred
 
         self.x = np.asarray(ne_pred + K @ inn, dtype=np.float64)
-        self.P = np.asarray(
-            (np.eye(self.n_rho, dtype=np.float64) - K @ C) @ self.P, dtype=np.float64
-        )
+        self.P = joseph_update(self.P, K, C, self.R)
 
         return self.x
 

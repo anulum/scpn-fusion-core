@@ -34,6 +34,8 @@ import numpy as np
 import numpy.typing as npt
 from scipy.linalg import solve_continuous_are, solve_discrete_are, expm
 
+from scpn_fusion.core.spd_linalg import spd_solve, symmetrize
+
 logger = logging.getLogger(__name__)
 FloatArray = npt.NDArray[np.float64]
 
@@ -302,7 +304,8 @@ class HInfinityController:
         Yd = solve_discrete_are(Ad.T, self.C2.T, Q_obs, R_obs)
         # Prediction-form Kalman gain: K = Ad P C2^T (C2 P C2^T + R)^{-1}
         S = self.C2 @ Yd @ self.C2.T + R_obs
-        Ld = Ad @ Yd @ self.C2.T @ np.linalg.inv(S)
+        Yd = symmetrize(Yd, name="observer DARE solution")
+        Ld = Ad @ spd_solve(S, self.C2 @ Yd, name="observer innovation covariance").T
 
         # Cache
         self._Ad = Ad

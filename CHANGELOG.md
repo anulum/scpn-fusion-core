@@ -4,6 +4,19 @@
 
 ### Fixed
 
+- Explicit matrix inverses of symmetric positive-definite matrices are
+  replaced by Cholesky solves through `scpn_fusion.core.spd_linalg`
+  (diagonal scaling, LAPACK `pocon` condition estimate, one refinement step,
+  typed `NonSPDMatrixError`): Kalman gains in the EKF, density estimator,
+  control-room observer, flight-sim and H-infinity observers; Tikhonov gains
+  in the shape and fault-tolerant controllers; RZIP and vessel inductance
+  matrices; the LQR input weight; and the Sugama conservation Gram matrix in
+  NumPy, JAX and Rust (Rust no longer retries with a silent `1e-14 I`).
+  Kalman covariance updates use the Joseph form. Mu-synthesis D-scaling
+  checks that every factor is finite and positive before taking reciprocals.
+  The output-feedback pseudo-inverse sets `rcond` explicitly. Paths that
+  still fall back to a zero gain or zero inductance response now log at
+  ERROR level and set `gain_status` / `inductance_status`.
 - Limiter containment uses one closed-contour contract in Python
   (`scpn_fusion.core.contour_geometry`) and Rust (`fusion_core::contour`).
   The Python ray test divided by `abs(dZ)` and lost the edge slope, so the

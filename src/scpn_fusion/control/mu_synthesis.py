@@ -15,6 +15,8 @@ from typing import Any
 import numpy as np
 from numpy.typing import NDArray
 
+from scpn_fusion.exceptions import FusionCoreError
+
 FloatArray = NDArray[np.float64]
 ComplexArray = NDArray[np.complex128]
 
@@ -52,6 +54,21 @@ class StructuredUncertainty:
         return sum(b.size for b in self.blocks)
 
 
+class DScalingError(FusionCoreError, FloatingPointError):
+    """A D-scaling factor left the finite positive range during the mu search."""
+
+
+def _reciprocal_scaling(d_vec: FloatArray) -> FloatArray:
+    """Return ``1 / d`` after checking every scaling factor is finite and positive.
+
+    ``D^-1`` of a positive diagonal scaling is exactly the diagonal of
+    reciprocals; a zero, negative or non-finite factor has no valid inverse.
+    """
+    if not np.all(np.isfinite(d_vec)) or np.any(d_vec <= 0.0):
+        raise DScalingError(f"D-scaling factors must be finite and positive, got {d_vec!r}.")
+    return np.asarray(1.0 / d_vec, dtype=np.float64)
+
+
 def compute_mu_upper_bound(M: NDArray[Any], delta_structure: list[tuple[int, str]]) -> float:
     """Compute an upper bound on the structured singular value mu via D-scaling.
 
@@ -86,7 +103,7 @@ def compute_mu_upper_bound(M: NDArray[Any], delta_structure: list[tuple[int, str
     alpha = 0.1
     for _ in range(50):
         D = apply_D(d_vec)
-        D_inv = np.linalg.inv(D)
+        D_inv = apply_D(_reciprocal_scaling(d_vec))
 
         M_scaled = D @ matrix @ D_inv
         U, S, Vh = np.linalg.svd(M_scaled)
@@ -102,7 +119,7 @@ def compute_mu_upper_bound(M: NDArray[Any], delta_structure: list[tuple[int, str
             d_pert = d_vec.copy()
             d_pert[i] *= 1.01
             D_p = apply_D(d_pert)
-            M_p = D_p @ matrix @ np.linalg.inv(D_p)
+            M_p = D_p @ matrix @ apply_D(_reciprocal_scaling(d_pert))
             mu_p = np.max(np.linalg.svd(M_p)[1])
             grad[i] = (mu_p - mu) / 0.01
 
@@ -140,7 +157,10 @@ def _regularised_output_feedback_gain(
 ) -> FloatArray:
     n_inputs = B.shape[1]
     gram = B.T @ B + regularisation * np.eye(n_inputs)
-    desired_output_map = A @ np.linalg.pinv(C)
+    # Explicit cutoff relative to the largest singular value, max(m, n) * eps,
+    # so the rank decision does not depend on the NumPy version's default.
+    pinv_rcond = max(C.shape) * float(np.finfo(np.float64).eps)
+    desired_output_map = A @ np.linalg.pinv(C, rcond=pinv_rcond)
     return np.asarray(np.linalg.solve(gram, B.T @ desired_output_map), dtype=np.float64)
 
 

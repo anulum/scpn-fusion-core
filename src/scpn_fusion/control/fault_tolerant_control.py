@@ -9,12 +9,17 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
+
+from scpn_fusion.core.spd_linalg import NonSPDMatrixError, require_psd, spd_solve
+
+logger = logging.getLogger(__name__)
 
 FloatArray = NDArray[np.float64]
 
@@ -113,19 +118,30 @@ class ReconfigurableController:
 
         self.W = np.eye(jacobian.shape[0])
         self.lambda_reg = 1e-6
+        self.gain_status = "ok"
 
         self.K = self._compute_gain()
 
     def _compute_gain(self) -> FloatArray:
-        """Tikhonov pseudoinverse with faulted-coil rows zeroed."""
+        """Tikhonov pseudoinverse with faulted-coil rows zeroed.
+
+        ``K = (J^T W J + lambda I)^-1 J^T W`` is solved with a Cholesky factor;
+        ``W`` must be positive semi-definite. If the normal matrix cannot be
+        factored (for example a non-finite Jacobian), the gain is zero,
+        ``gain_status`` becomes ``"zero_gain_normal_matrix_not_spd"`` and the
+        event is logged at ERROR level.
+        """
         J = self.current_jacobian
-        J_T_W = J.T @ self.W
+        weights = require_psd(self.W, name="W")
+        J_T_W = J.T @ weights
         H = J_T_W @ J + self.lambda_reg * np.eye(self.n_coils)
 
         try:
-            H_inv = np.linalg.inv(H)
-            K = H_inv @ J_T_W
-        except np.linalg.LinAlgError:
+            K = spd_solve(H, J_T_W, name="Tikhonov normal matrix")
+            self.gain_status = "ok"
+        except NonSPDMatrixError as exc:
+            logger.error("Fault-tolerant gain set to zero: %s", exc)
+            self.gain_status = "zero_gain_normal_matrix_not_spd"
             K = np.zeros_like(J.T)
 
         for i in self.faulted_coils:

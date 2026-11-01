@@ -48,18 +48,18 @@
       },
       "jax": {
         "backend": "jax",
-        "chi_e": 3.385913883788604e-11,
-        "chi_i": 6.771827767577208e-11,
+        "chi_e": 3.385913883788609e-11,
+        "chi_i": 6.771827767577217e-11,
         "converged": true,
-        "elapsed_s": 10.502119667013176,
-        "phi_rms_final": 0.0017320379735007382
+        "elapsed_s": 5.763337936718017,
+        "phi_rms_final": 0.001732037973500738
       },
       "numpy": {
         "backend": "numpy",
         "chi_e": 3.3859138816625626e-11,
         "chi_i": 6.771827763325125e-11,
         "converged": true,
-        "elapsed_s": 0.05532793598831631,
+        "elapsed_s": 0.05114702694118023,
         "phi_rms_final": 0.0017090879429649377
       }
     },
@@ -110,23 +110,23 @@
       },
       "jax": {
         "backend": "jax",
-        "chi_e": 3.3859137558332954e-11,
-        "chi_i": 6.771827511666591e-11,
+        "chi_e": 3.385913755833297e-11,
+        "chi_i": 6.771827511666593e-11,
         "converged": true,
-        "elapsed_s": 2.9065063270099927,
-        "phi_rms_final": 0.0017320437668675512
+        "elapsed_s": 2.3341608829796314,
+        "phi_rms_final": 0.001732043766867551
       },
       "moment_residuals": {
-        "density_max_abs": 1.6740958540805346e-22,
+        "density_max_abs": 1.6100938354645392e-22,
         "energy_max_abs": 3.2201876709290783e-22,
-        "parallel_momentum_max_abs": 6.277859452802004e-23
+        "parallel_momentum_max_abs": 5.955700410381799e-23
       },
       "numpy": {
         "backend": "numpy",
         "chi_e": 3.385913753707139e-11,
         "chi_i": 6.771827507414278e-11,
         "converged": true,
-        "elapsed_s": 0.18346982801449485,
+        "elapsed_s": 0.08380365278571844,
         "phi_rms_final": 0.0017090936596847984
       }
     },
@@ -177,11 +177,11 @@
       },
       "jax": {
         "backend": "jax",
-        "chi_e": -6.507130425745715e-07,
+        "chi_e": -6.507130425745713e-07,
         "chi_i": 6.13856908241856e-07,
         "converged": true,
-        "elapsed_s": 3.0718725110054947,
-        "phi_rms_final": 0.0031706435332602366
+        "elapsed_s": 2.08977752039209,
+        "phi_rms_final": 0.003170643533260236
       },
       "maxwell_closure": {
         "ampere_parallel_linf_residual": 0.0,
@@ -192,21 +192,21 @@
         "pressure_balance_linf_residual": 0.0
       },
       "moment_residuals": {
-        "density_max_abs": 1.6740958540805346e-22,
+        "density_max_abs": 1.6100938354645392e-22,
         "energy_max_abs": 3.2201876709290783e-22,
-        "parallel_momentum_max_abs": 6.277859452802004e-23
+        "parallel_momentum_max_abs": 5.955700410381799e-23
       },
       "numpy": {
         "backend": "numpy",
         "chi_e": -6.506028914055627e-07,
         "chi_i": 6.137781281071752e-07,
         "converged": true,
-        "elapsed_s": 0.11349076998885721,
+        "elapsed_s": 0.1589754456654191,
         "phi_rms_final": 0.0031464402521369787
       }
     }
   },
   "jax_available": true,
-  "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+  "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
   "python": "3.12.3"
 }
