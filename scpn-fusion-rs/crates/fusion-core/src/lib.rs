@@ -15,6 +15,7 @@
 pub mod amr_kernel;
 pub mod bfield;
 pub mod bout_interface;
+pub mod contour;
 pub mod current_diffusion;
 pub mod ignition;
 pub mod inverse;

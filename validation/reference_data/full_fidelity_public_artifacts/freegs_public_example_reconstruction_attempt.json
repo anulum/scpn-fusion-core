@@ -24,7 +24,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 3.033688895025989,
+        "elapsed_s": 3.6492565679363906,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -36,7 +36,6 @@
         "native_same_case_profile_source_comparison": {
           "accepted_full_fidelity": false,
           "axis_error_m": 0.0,
-          "boundary_containment_fraction": 1.0,
           "boundary_max_abs_error_wb": 1.464800503114816e-13,
           "current_closure_relative_error": 4.7578550031175836e-06,
           "external_axis_r_m": 1.2875,
@@ -66,6 +65,7 @@
             "psi_n_rmse": 0.05,
             "xpoint_psi_n_error": 0.05
           },
+          "wall_flux_agreement_fraction": 1.0,
           "xpoint_constraint_count": 2,
           "xpoint_psi_n_error_max": 0.0004890721048200763
         },
@@ -75,7 +75,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 0.5479636380041484,
+          "elapsed_s": 0.7671339749358594,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -85,7 +85,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 3.033688895025989,
+          "elapsed_s": 3.6492565679363906,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -97,7 +97,6 @@
           "native_same_case_profile_source_comparison": {
             "accepted_full_fidelity": false,
             "axis_error_m": 0.0,
-            "boundary_containment_fraction": 1.0,
             "boundary_max_abs_error_wb": 1.464800503114816e-13,
             "current_closure_relative_error": 4.7578550031175836e-06,
             "external_axis_r_m": 1.2875,
@@ -127,6 +126,7 @@
               "psi_n_rmse": 0.05,
               "xpoint_psi_n_error": 0.05
             },
+            "wall_flux_agreement_fraction": 1.0,
             "xpoint_constraint_count": 2,
             "xpoint_psi_n_error_max": 0.0004890721048200763
           },
@@ -250,7 +250,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 5.649167095019948,
+        "elapsed_s": 6.806488704402,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -262,7 +262,6 @@
         "native_same_case_profile_source_comparison": {
           "accepted_full_fidelity": false,
           "axis_error_m": 0.0,
-          "boundary_containment_fraction": 1.0,
           "boundary_max_abs_error_wb": 6.568079413682426e-13,
           "current_closure_relative_error": 1.0581304436254637e-05,
           "external_axis_r_m": 2.6312499999999996,
@@ -292,6 +291,7 @@
             "psi_n_rmse": 0.05,
             "xpoint_psi_n_error": 0.05
           },
+          "wall_flux_agreement_fraction": 1.0,
           "xpoint_constraint_count": 2,
           "xpoint_psi_n_error_max": 0.0006449156820178548
         },
@@ -301,7 +301,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.1572518380125985,
+          "elapsed_s": 1.9874257780611515,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -311,7 +311,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 5.649167095019948,
+          "elapsed_s": 6.806488704402,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -323,7 +323,6 @@
           "native_same_case_profile_source_comparison": {
             "accepted_full_fidelity": false,
             "axis_error_m": 0.0,
-            "boundary_containment_fraction": 1.0,
             "boundary_max_abs_error_wb": 6.568079413682426e-13,
             "current_closure_relative_error": 1.0581304436254637e-05,
             "external_axis_r_m": 2.6312499999999996,
@@ -353,6 +352,7 @@
               "psi_n_rmse": 0.05,
               "xpoint_psi_n_error": 0.05
             },
+            "wall_flux_agreement_fraction": 1.0,
             "xpoint_constraint_count": 2,
             "xpoint_psi_n_error_max": 0.0006449156820178548
           },

@@ -345,9 +345,14 @@ def _boundary_max_abs_error(
     return float(np.max(np.abs(edges))) if edges.size else 0.0
 
 
-def _boundary_containment_fraction(
+def _wall_flux_agreement_fraction(
     native_psi: NDArray[np.float64], external_psi: NDArray[np.float64], threshold: float
 ) -> float:
+    """Return the fraction of computational-wall cells where both fluxes agree.
+
+    This compares flux on the edge of the grid. It is not a geometric test of
+    whether the plasma boundary lies inside a limiter.
+    """
     residual = np.abs(native_psi - external_psi)
     edges = np.concatenate(
         [
@@ -470,7 +475,7 @@ def _native_same_case_profile_source_comparison(
     return {
         "accepted_full_fidelity": False,
         "axis_error_m": axis_error,
-        "boundary_containment_fraction": _boundary_containment_fraction(
+        "wall_flux_agreement_fraction": _wall_flux_agreement_fraction(
             native_psi, external_psi, boundary_threshold
         ),
         "boundary_max_abs_error_wb": _boundary_max_abs_error(native_psi, external_psi),
@@ -701,13 +706,13 @@ def _strict_threshold_checks(case: dict[str, Any]) -> list[dict[str, Any]]:
                 "value": float(value) if isinstance(value, int | float) else None,
             }
         )
-    boundary_fraction = comparison.get("boundary_containment_fraction")
+    boundary_fraction = comparison.get("wall_flux_agreement_fraction")
     boundary_fraction_valid = isinstance(boundary_fraction, int | float)
     checks.append(
         {
             "comparator": ">=",
             "limit": 1.0,
-            "metric": "boundary_containment_fraction",
+            "metric": "wall_flux_agreement_fraction",
             "passed": bool(boundary_fraction_valid and float(boundary_fraction) >= 1.0),
             "valid": bool(boundary_fraction_valid),
             "value": float(boundary_fraction) if boundary_fraction_valid else None,
@@ -765,17 +770,17 @@ def _geometry_containment_evidence(cases: list[dict[str, Any]]) -> dict[str, Any
             and all(np.all(np.isfinite(point)) for point in axis_points)
             and all(_point_inside_domain(point, domain) for point in axis_points)
         )
-        boundary_fraction = comparison.get("boundary_containment_fraction")
+        boundary_fraction = comparison.get("wall_flux_agreement_fraction")
         boundary_ready = isinstance(boundary_fraction, int | float) and np.isfinite(
             float(boundary_fraction)
         )
         case_rows.append(
             {
                 "axis_points_inside_grid": axis_inside,
-                "boundary_containment_fraction": float(boundary_fraction)
+                "wall_flux_agreement_fraction": float(boundary_fraction)
                 if boundary_ready
                 else None,
-                "boundary_containment_metric_ready": bool(boundary_ready),
+                "wall_flux_agreement_metric_ready": bool(boundary_ready),
                 "case_id": case["case_id"],
                 "external_axis": [external_axis[0], external_axis[1]],
                 "isoflux_endpoint_count": len(isoflux_points),
@@ -790,17 +795,22 @@ def _geometry_containment_evidence(cases: list[dict[str, Any]]) -> dict[str, Any
     )
     axis_ready = bool(case_rows) and all(bool(row["axis_points_inside_grid"]) for row in case_rows)
     boundary_ready = bool(case_rows) and all(
-        bool(row["boundary_containment_metric_ready"]) for row in case_rows
+        bool(row["wall_flux_agreement_metric_ready"]) for row in case_rows
     )
     ready = bool(all_source_inside and axis_ready and boundary_ready)
     return {
         "accepted_full_fidelity": False,
         "all_source_points_inside_grid": all_source_inside,
         "axis_containment_metric_ready": axis_ready,
-        "boundary_containment_metric_ready": boundary_ready,
+        "wall_flux_agreement_metric_ready": boundary_ready,
+        "lcfs_limiter_containment_measured": False,
+        "lcfs_limiter_containment_note": (
+            "No case derives its own LCFS and tests it against a limiter contour; "
+            "wall flux agreement is not a containment measure."
+        ),
         "case_count": len(case_rows),
         "cases": case_rows,
-        "schema": "strict-free-boundary-geometry-containment.v1",
+        "schema": "strict-free-boundary-geometry-containment.v2",
         "status": "accepted_local_geometry_containment_evidence"
         if ready
         else "blocked_geometry_containment_evidence_incomplete",
@@ -978,9 +988,15 @@ def _case_has_ready_vacuum_sidecar(case: dict[str, Any]) -> bool:
     nrmse_limit = thresholds.get("nrmse") if isinstance(thresholds, dict) else None
     max_error = vacuum.get("max_abs_error_wb")
     max_error_limit = thresholds.get("max_abs_error_wb") if isinstance(thresholds, dict) else None
+    if not (
+        isinstance(nrmse, int | float)
+        and isinstance(nrmse_limit, int | float)
+        and isinstance(max_error, int | float)
+        and isinstance(max_error_limit, int | float)
+    ):
+        return False
     numeric_ready = all(
-        isinstance(value, int | float) and np.isfinite(float(value))
-        for value in (nrmse, nrmse_limit, max_error, max_error_limit)
+        np.isfinite(float(value)) for value in (nrmse, nrmse_limit, max_error, max_error_limit)
     )
     coil_rows_ready = all(
         isinstance(coil, dict)
@@ -1149,8 +1165,8 @@ def _write_markdown(report: dict[str, Any]) -> None:
             f"`{geometry.get('strict_geometry_containment_ready', False)}`"
         ),
         (
-            "- Boundary-containment metric ready: "
-            f"`{geometry.get('boundary_containment_metric_ready', False)}`"
+            "- Wall flux agreement metric ready: "
+            f"`{geometry.get('wall_flux_agreement_metric_ready', False)}`"
         ),
         (f"- Failed strict threshold checks: `{strict.get('failed_threshold_check_count', 0)}`"),
         f"- Accepted full fidelity: `{report['accepted_full_fidelity_ready']}`",
@@ -1186,8 +1202,8 @@ def _write_markdown(report: dict[str, Any]) -> None:
                 f"- Axis containment metric ready: `{geometry['axis_containment_metric_ready']}`"
             )
             lines.append(
-                "- Boundary-containment metric ready: "
-                f"`{geometry['boundary_containment_metric_ready']}`"
+                "- Wall flux agreement metric ready: "
+                f"`{geometry['wall_flux_agreement_metric_ready']}`"
             )
             lines.append("")
             lines.append(
@@ -1198,7 +1214,7 @@ def _write_markdown(report: dict[str, Any]) -> None:
                 lines.append(
                     "| {case_id} | {source_points} | {xpoints} | {isoflux} | {source_inside} | {axis_inside} | {boundary_ready} |".format(
                         axis_inside=case["axis_points_inside_grid"],
-                        boundary_ready=case["boundary_containment_metric_ready"],
+                        boundary_ready=case["wall_flux_agreement_metric_ready"],
                         case_id=case["case_id"],
                         isoflux=case["isoflux_endpoint_count"],
                         source_inside=case["source_points_inside_grid"],
@@ -1305,7 +1321,7 @@ def run_benchmark(*, write: bool = True) -> dict[str, Any]:
     )
     grid_convergence = (
         _grid_convergence_ladder_evidence(freegs)
-        if backend_available
+        if freegs is not None
         else _grid_convergence_evidence(cases)
     )
     strict_evidence = _strict_free_boundary_parity_evidence(

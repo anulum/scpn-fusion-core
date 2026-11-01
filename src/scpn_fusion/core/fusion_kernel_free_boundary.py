@@ -10,12 +10,18 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
-from numpy.typing import NDArray
 from scipy.special import ellipe, ellipk
 
+from scpn_fusion.core.contour_geometry import (
+    DEFAULT_CONTOUR_TOLERANCE_M,
+    ON_BOUNDARY,
+    OUTSIDE,
+    classify_points,
+    validate_closed_contour,
+)
 from scpn_fusion.core.fusion_kernel_coilset_config import (
     build_coilset_from_config as build_coilset_from_config,
 )
@@ -25,6 +31,9 @@ if TYPE_CHECKING:
     from scpn_fusion.core.fusion_kernel import CoilSet
 
 logger = logging.getLogger(__name__)
+
+BoundaryKind = Literal["lcfs", "separatrix", "computational_box_wall"]
+BOUNDARY_KINDS: tuple[BoundaryKind, ...] = ("lcfs", "separatrix", "computational_box_wall")
 
 _MU0 = 4e-7 * np.pi
 
@@ -112,29 +121,6 @@ def _as_finite_points(value: Any, *, name: str) -> FloatArray:
     return arr
 
 
-def _points_inside_polygon(points: FloatArray, polygon: FloatArray) -> NDArray[np.bool_]:
-    """Return point-in-polygon containment mask for finite ``(R, Z)`` contours."""
-    pts = _as_finite_points(points, name="points")
-    poly = _as_finite_points(polygon, name="polygon")
-    if poly.shape[0] < 3:
-        raise ValueError("polygon must contain at least three points.")
-
-    x = pts[:, 0]
-    y = pts[:, 1]
-    x0 = poly[:, 0]
-    y0 = poly[:, 1]
-    x1 = np.roll(x0, -1)
-    y1 = np.roll(y0, -1)
-
-    inside = np.zeros(pts.shape[0], dtype=bool)
-    for xa, ya, xb, yb in zip(x0, y0, x1, y1):
-        intersects = ((ya > y) != (yb > y)) & (
-            x < (xb - xa) * (y - ya) / max(abs(yb - ya), 1.0e-300) + xa
-        )
-        inside ^= intersects
-    return inside
-
-
 def build_mutual_inductance_matrix(
     kernel: Any,
     coils: "CoilSet",
@@ -169,6 +155,8 @@ def reconstruct_boundary_flux_from_coils(
     axis_point: FloatArray | None = None,
     x_points: FloatArray | None = None,
     target_flux: FloatArray | None = None,
+    boundary_kind: BoundaryKind = "lcfs",
+    contour_tolerance_m: float = DEFAULT_CONTOUR_TOLERANCE_M,
 ) -> dict[str, Any]:
     """Reconstruct free-boundary contour flux directly from coil Green functions.
 
@@ -179,7 +167,17 @@ def reconstruct_boundary_flux_from_coils(
     replaying Dirichlet boundary values. Optional limiter, magnetic-axis, and
     X-point metadata are sampled with the same response matrix convention so
     diagnostics cover topology surfaces instead of only the LCFS contour.
+
+    ``boundary_kind`` names what ``boundary_points`` are: a plasma ``"lcfs"``
+    or ``"separatrix"``, or the ``"computational_box_wall"`` of the grid.
+    Limiter containment is a geometric test of a plasma contour against the
+    validated limiter contour (see :mod:`scpn_fusion.core.contour_geometry`);
+    points within ``contour_tolerance_m`` of the limiter count as contained,
+    since a limited plasma touches it. For the computational box wall the
+    test does not apply and the containment fields are ``None``.
     """
+    if boundary_kind not in BOUNDARY_KINDS:
+        raise ValueError(f"boundary_kind must be one of {BOUNDARY_KINDS}.")
     obs = _as_finite_points(boundary_points, name="boundary_points")
     if len(coils.positions) < 1:
         raise ValueError("CoilSet.positions must contain at least one coil.")
@@ -194,6 +192,7 @@ def reconstruct_boundary_flux_from_coils(
         "reconstructed_flux": reconstructed,
         "response_matrix": response,
         "response_rank": int(np.linalg.matrix_rank(response)),
+        "boundary_kind": boundary_kind,
         "point_count": int(obs.shape[0]),
         "coil_count": int(len(coils.positions)),
         "limiter_point_count": 0,
@@ -211,18 +210,37 @@ def reconstruct_boundary_flux_from_coils(
         limiter_response = build_mutual_inductance_matrix(kernel, coils, limiter_obs)
         limiter_flux = limiter_response.T @ currents
         distances = np.linalg.norm(limiter_obs[:, None, :] - obs[None, :, :], axis=2)
-        containment_mask = _points_inside_polygon(obs, limiter_obs)
-        containment_fraction = float(np.mean(containment_mask)) if containment_mask.size else 0.0
+        limiter_contour = validate_closed_contour(
+            limiter_obs, name="limiter_points", tolerance_m=contour_tolerance_m
+        )
+        applicable = boundary_kind != "computational_box_wall"
         diagnostics.update(
             {
                 "limiter_points": limiter_obs,
                 "limiter_flux": limiter_flux,
                 "limiter_point_count": int(limiter_obs.shape[0]),
                 "min_limiter_distance_m": float(np.min(distances)),
-                "boundary_containment_fraction": containment_fraction,
-                "boundary_containment_pass": bool(containment_fraction >= 1.0),
+                "limiter_orientation": limiter_contour.orientation,
+                "contour_tolerance_m": limiter_contour.tolerance_m,
+                "limiter_containment_applicable": applicable,
+                "boundary_containment_fraction": None,
+                "boundary_containment_pass": None,
+                "boundary_points_on_limiter": None,
+                "boundary_points_outside_limiter": None,
             }
         )
+        if applicable:
+            codes = classify_points(obs, limiter_contour)
+            contained = codes >= ON_BOUNDARY
+            fraction = float(np.mean(contained))
+            diagnostics.update(
+                {
+                    "boundary_containment_fraction": fraction,
+                    "boundary_containment_pass": bool(np.all(contained)),
+                    "boundary_points_on_limiter": int(np.sum(codes == ON_BOUNDARY)),
+                    "boundary_points_outside_limiter": int(np.sum(codes == OUTSIDE)),
+                }
+            )
     if axis_point is not None:
         axis_obs = _as_finite_points(
             np.asarray(axis_point, dtype=np.float64).reshape(1, 2), name="axis_point"
@@ -676,6 +694,8 @@ def solve_free_boundary(
 
 
 __all__ = [
+    "BOUNDARY_KINDS",
+    "BoundaryKind",
     "build_mutual_inductance_matrix",
     "compute_external_flux",
     "green_function",

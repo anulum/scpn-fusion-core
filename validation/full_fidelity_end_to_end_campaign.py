@@ -202,7 +202,7 @@ def _load_freegs_public_reconstruction() -> dict[str, Any]:
                 "coil_vacuum_sidecar_ready": False,
                 "failed_threshold_check_count": 0,
                 "geometry_containment_evidence": {
-                    "boundary_containment_metric_ready": False,
+                    "wall_flux_agreement_metric_ready": False,
                     "strict_geometry_containment_ready": False,
                 },
                 "grid_convergence_ready": False,
@@ -224,7 +224,7 @@ def _load_freegs_public_reconstruction() -> dict[str, Any]:
             "coil_vacuum_sidecar_ready": False,
             "failed_threshold_check_count": 0,
             "geometry_containment_evidence": {
-                "boundary_containment_metric_ready": False,
+                "wall_flux_agreement_metric_ready": False,
                 "strict_geometry_containment_ready": False,
             },
             "grid_convergence_ready": False,
@@ -826,9 +826,9 @@ def run_campaign() -> dict[str, Any]:
                 False,
             )
         ),
-        "free_boundary_boundary_containment_metric_ready": bool(
+        "free_boundary_wall_flux_agreement_metric_ready": bool(
             free_boundary_strict_gate.get("checks", {}).get(
-                "boundary_containment_metric_ready",
+                "wall_flux_agreement_metric_ready",
                 False,
             )
         ),
@@ -1062,8 +1062,8 @@ def write_reports(report: dict[str, Any]) -> None:
             f"`{report['free_boundary_geometry_containment_ready']}`"
         ),
         (
-            "- Free-boundary boundary-containment metric ready: "
-            f"`{report['free_boundary_boundary_containment_metric_ready']}`"
+            "- Free-boundary wall flux agreement metric ready: "
+            f"`{report['free_boundary_wall_flux_agreement_metric_ready']}`"
         ),
         (
             "- Free-boundary grid convergence ready: "

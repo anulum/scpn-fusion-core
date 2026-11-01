@@ -251,7 +251,7 @@ def test_geometry_and_ladder_require_the_same_case_cohort(section: str) -> None:
     [
         ("external_axis", [1.0, 0.0]),
         ("native_axis", [1.0, 0.0]),
-        ("boundary_containment_fraction", 0.5),
+        ("wall_flux_agreement_fraction", 0.5),
     ],
 )
 def test_geometry_observables_match_reconstruction(field: str, value: object) -> None:
@@ -441,8 +441,8 @@ def test_strict_parity_keeps_q_label_separate_from_verified_profile() -> None:
         ("current_closure_relative_error", 0.05000001),
         ("boundary_max_abs_error_wb", 1.000001e-10),
         ("xpoint_psi_n_error_max", 0.05000001),
-        ("boundary_containment_fraction", 0.99999999),
-        ("boundary_containment_fraction", 1.00000001),
+        ("wall_flux_agreement_fraction", 0.99999999),
+        ("wall_flux_agreement_fraction", 1.00000001),
         ("q_profile_sanity_status", "failed"),
     ],
 )

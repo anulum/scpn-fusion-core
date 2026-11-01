@@ -20,7 +20,7 @@ NUMERIC_THRESHOLDS = {
     "current_closure_relative_error": ("<=", 0.05),
     "boundary_max_abs_error_wb": ("<=", 1e-10),
     "xpoint_psi_n_error_max": ("<=", 0.05),
-    "boundary_containment_fraction": (">=", 1.0),
+    "wall_flux_agreement_fraction": (">=", 1.0),
 }
 GRID_RESOLUTIONS = (33, 65, 129)
 GRID_METRICS = (

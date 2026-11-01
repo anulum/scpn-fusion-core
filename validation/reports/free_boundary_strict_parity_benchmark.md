@@ -19,7 +19,8 @@ establish raw field/q-profile custody or independent predictive validation.
 | `native_same_case_profile_source_ready` | `False` |
 | `strict_threshold_acceptance_ready` | `False` |
 | `geometry_containment_ready` | `False` |
-| `boundary_containment_metric_ready` | `False` |
+| `wall_flux_agreement_metric_ready` | `False` |
+| `lcfs_limiter_containment_measured` | `False` |
 | `grid_convergence_ready` | `False` |
 | `coil_vacuum_sidecar_ready` | `False` |
 | `machine_metadata_ready` | `False` |
@@ -39,7 +40,7 @@ establish raw field/q-profile custody or independent predictive validation.
 ## Blockers
 
 - `legacy_evidence_has_no_verified_field_custody`
-- `source_example_bytes_unverified`
+- `lcfs_limiter_containment_unmeasured`
 
 ## Threshold cases
 
@@ -65,19 +66,19 @@ establish raw field/q-profile custody or independent predictive validation.
 ## Provenance and checksums
 
 - Generator: `validation/benchmark_free_boundary_strict_parity.py`
-- Source commit: `a84317b5315c4d2c4d8412b4fbfe16cf7ac6f650`
+- Source commit: `8685ac0a5013c4658ebe22a5b2493a002574dcb5`
 - Python version: `3.12.3`
 
 | Input report | Payload SHA-256 | File SHA-256 |
 | --- | --- | --- |
-| validation/reports/freegs_public_example_reconstruction.json | `39b624fba02e92e0e9d5a569d7ceb425405582ea18e2527dbb5defb3690f6928` | `73edc6c0ebc1d0acc249dd8d13dc14a668e3ecd3419e336e49397b322af663ed` |
+| validation/reports/freegs_public_example_reconstruction.json | `94b1ab85c1171dd35cdd2a9cec93212a8e5e99eb3bdcc83b8aaace77357e2da6` | `9ef13c3eaf7b92d80fa6c915fd5ade208950ad43894063ddaf590801ec5743b5` |
 | validation/reports/free_boundary_public_machine_metadata_inventory.json | `89dc932da5b2d2a2e48cc6179d19a1fb3ef2c320abbdae09a89ffac7c07acb48` | `e0da36d9f1016abb0dbce77d313032d2710e325d3eb922d1908a9fb582c7e7e1` |
 
 | Evidence section | SHA-256 |
 | --- | --- |
-| `acceptance_contract_sha256` | `7970bb92a78a3fe9cda1f0a7f057216f7081c7c10c5949dded7e1343601b484c` |
+| `acceptance_contract_sha256` | `c26e39ae02eb475fccba0faf050bd7a1ff36d85d376df7dfb486065403846c0b` |
 | `acceptance_matrix_sha256` | `a72958b95ddc47a7f8dfa7ad474b1fb860789e7f5998e77388b5c357a7385526` |
-| `checks_sha256` | `ea15999ab61a8517f3e60d62e6629449deb01b926c9774be7789891b6e55904a` |
+| `checks_sha256` | `1cd2bb491252b84b1a023d6760b01040e48890565c690fdc7c13406cada4782b` |
 | `threshold_cases_sha256` | `64d0f6534eb753bc87b8a4946f8c7f5fd2a167deb4030a9bab3446b05461d61f` |
 | `grid_convergence_cases_sha256` | `469eb0605bfa8ce8968d7af2a4cd2ffd04ac3b47aac3c8e58e3b7ba8825d779a` |
 | `machine_metadata_sha256` | `d4fb919289c0c1e4ca885c597b34d488838a1f21967cf26bed561df4021b2d6d` |
@@ -89,8 +90,8 @@ establish raw field/q-profile custody or independent predictive validation.
 
 ## Source example files
 
-- `freegs_01_test_tokamak_freeboundary`: `data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py`; SHA-256 `None`; declared hash matches `False`
-- `freegs_16_diiid_public_example`: `data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py`; SHA-256 `None`; declared hash matches `False`
+- `freegs_01_test_tokamak_freeboundary`: `data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py`; SHA-256 `1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b`; declared hash matches `True`
+- `freegs_16_diiid_public_example`: `data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py`; SHA-256 `445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af`; declared hash matches `True`
 
 ## Case identity errors
 

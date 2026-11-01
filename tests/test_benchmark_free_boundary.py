@@ -66,6 +66,8 @@ def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
     )
     assert report["boundary_flux_reconstruction"]["boundary_containment_fraction"] == 1.0
     assert report["boundary_flux_reconstruction"]["boundary_containment_contract_role"] == "gate"
+    assert report["boundary_flux_reconstruction"]["boundary_kind"] == "lcfs"
+    assert report["boundary_flux_reconstruction"]["boundary_points_on_limiter"] == 0
     assert report["boundary_flux_reconstruction"]["limiter_containment_required"] is True
     assert report["boundary_flux_reconstruction"]["x_point_pair_symmetry_abs_error"] < 1.0e-12
     shape = report["shape_control_current_reconstruction"]
@@ -101,11 +103,15 @@ def test_free_boundary_benchmark_reports_explicit_solver_modes() -> None:
         == "free_boundary_solver_with_coil_vacuum_boundary"
     )
     assert (
-        report["solve_free_boundary_vacuum_reconstruction"]["boundary_containment_fraction"] == 0.0
+        report["solve_free_boundary_vacuum_reconstruction"]["boundary_kind"]
+        == "computational_box_wall"
     )
     assert (
-        report["solve_free_boundary_vacuum_reconstruction"]["boundary_containment_contract_role"]
-        == "diagnostic_computational_wall_outside_limiter"
+        report["solve_free_boundary_vacuum_reconstruction"]["limiter_containment_applicable"]
+        is False
+    )
+    assert (
+        "boundary_containment_fraction" not in report["solve_free_boundary_vacuum_reconstruction"]
     )
     assert (
         report["solve_free_boundary_vacuum_reconstruction"]["limiter_containment_required"] is False

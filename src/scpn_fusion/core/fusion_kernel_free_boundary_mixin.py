@@ -10,6 +10,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from scpn_fusion.core.contour_geometry import DEFAULT_CONTOUR_TOLERANCE_M
+from scpn_fusion.core.fusion_kernel_free_boundary import (
+    BoundaryKind,
+)
 from scpn_fusion.core.fusion_kernel_free_boundary import (
     build_coilset_from_config as _build_coilset_from_config_runtime,
     build_magnetic_probe_response_matrix as _build_magnetic_probe_response_matrix_runtime,
@@ -111,8 +115,14 @@ class FusionKernelFreeBoundaryMixin:
         axis_point: FloatArray | None = None,
         x_points: FloatArray | None = None,
         target_flux: FloatArray | None = None,
+        boundary_kind: BoundaryKind = "lcfs",
+        contour_tolerance_m: float = DEFAULT_CONTOUR_TOLERANCE_M,
     ) -> dict[str, Any]:
-        """Reconstruct boundary-contour vacuum flux from coil Green functions."""
+        """Reconstruct boundary-contour vacuum flux from coil Green functions.
+
+        ``boundary_kind`` and ``contour_tolerance_m`` follow
+        :func:`scpn_fusion.core.fusion_kernel_free_boundary.reconstruct_boundary_flux_from_coils`.
+        """
         return _reconstruct_boundary_flux_from_coils_runtime(
             self,
             coils,
@@ -121,6 +131,8 @@ class FusionKernelFreeBoundaryMixin:
             axis_point=axis_point,
             x_points=x_points,
             target_flux=target_flux,
+            boundary_kind=boundary_kind,
+            contour_tolerance_m=contour_tolerance_m,
         )
 
     def optimize_coil_currents(

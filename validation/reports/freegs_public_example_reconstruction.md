@@ -17,7 +17,7 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 - Grid convergence ready: `True`
 - Coil/vacuum sidecar ready: `True`
 - Geometry containment ready: `True`
-- Boundary-containment metric ready: `True`
+- Wall flux agreement metric ready: `True`
 - Failed strict threshold checks: `0`
 - Accepted full fidelity: `True`
 - Artifact: `validation/reference_data/full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json`
@@ -29,11 +29,11 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 
 ## Geometry containment evidence
 
-- Schema: `strict-free-boundary-geometry-containment.v1`
+- Schema: `strict-free-boundary-geometry-containment.v2`
 - Status: `accepted_local_geometry_containment_evidence`
 - Source points inside grid: `True`
 - Axis containment metric ready: `True`
-- Boundary-containment metric ready: `True`
+- Wall flux agreement metric ready: `True`
 
 | Case | Source points | X-points | Isoflux endpoints | Source inside | Axis inside | Boundary metric |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -63,7 +63,7 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 | current_closure_relative_error | 4.7578550031175836e-06 | <= | 0.05 | True |
 | boundary_max_abs_error_wb | 1.464800503114816e-13 | <= | 1e-10 | True |
 | xpoint_psi_n_error_max | 0.0004890721048200763 | <= | 0.05 | True |
-| boundary_containment_fraction | 1.0 | >= | 1.0 | True |
+| wall_flux_agreement_fraction | 1.0 | >= | 1.0 | True |
 | q_profile_sanity_status | pass_finite_signed_q_profile | == | pass_finite_signed_q_profile | True |
 
 ### `freegs_16_diiid_public_example`
@@ -75,7 +75,7 @@ strict free-boundary parity blocked until nonlinear same-case native-vs-FreeGS
 | current_closure_relative_error | 1.0581304436254637e-05 | <= | 0.05 | True |
 | boundary_max_abs_error_wb | 6.568079413682426e-13 | <= | 1e-10 | True |
 | xpoint_psi_n_error_max | 0.0006449156820178548 | <= | 0.05 | True |
-| boundary_containment_fraction | 1.0 | >= | 1.0 | True |
+| wall_flux_agreement_fraction | 1.0 | >= | 1.0 | True |
 | q_profile_sanity_status | pass_finite_signed_q_profile | == | pass_finite_signed_q_profile | True |
 
 

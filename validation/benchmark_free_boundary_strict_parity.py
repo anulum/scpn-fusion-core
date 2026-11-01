@@ -231,9 +231,7 @@ def _case_identity_errors(freegs: dict[str, Any], metadata: dict[str, Any]) -> l
                         comparison.get("native_axis_r_m"),
                         comparison.get("native_axis_z_m"),
                     ],
-                    "boundary_containment_fraction": comparison.get(
-                        "boundary_containment_fraction"
-                    ),
+                    "wall_flux_agreement_fraction": comparison.get("wall_flux_agreement_fraction"),
                 }
                 for field, value in expected.items():
                     values = value if isinstance(value, list) else [value]
@@ -320,7 +318,8 @@ def evaluate_strict_parity(
     native_ready = _require_bool(strict, "native_same_case_profile_source_ready")
     external_ready = _require_bool(freegs_report, "external_nonlinear_output_ready")
     geometry_ready = _require_bool(geometry, "strict_geometry_containment_ready")
-    boundary_metric_ready = _require_bool(geometry, "boundary_containment_metric_ready")
+    boundary_metric_ready = _require_bool(geometry, "wall_flux_agreement_metric_ready")
+    lcfs_containment_measured = geometry.get("lcfs_limiter_containment_measured") is True
     machine_metadata_ready = _require_bool(machine_metadata_report, "machine_metadata_ready")
     machine_reference_ready = _require_bool(machine_metadata_report, "reference_output_ready")
     legacy = strict.get("schema") == "strict-free-boundary-parity-evidence.v1"
@@ -344,7 +343,9 @@ def evaluate_strict_parity(
     if not geometry_ready:
         blockers.append("geometry_containment_evidence_missing")
     if not boundary_metric_ready:
-        blockers.append("boundary_containment_metric_missing")
+        blockers.append("wall_flux_agreement_metric_missing")
+    if not lcfs_containment_measured:
+        blockers.append("lcfs_limiter_containment_unmeasured")
     if not machine_metadata_ready:
         blockers.append("public_machine_metadata_inventory_missing")
     if not machine_reference_ready:
@@ -357,7 +358,8 @@ def evaluate_strict_parity(
             "current_closure",
             "magnetic_axis_error",
             "x_point_error",
-            "boundary_containment",
+            "wall_flux_agreement",
+            "lcfs_limiter_containment",
             "q_profile_sanity",
         ],
         "requires_native_same_case_profile_source": True,
@@ -368,7 +370,10 @@ def evaluate_strict_parity(
     acceptance_matrix = {
         "same_case_reference_output": external_ready and machine_reference_ready,
         "native_same_case_profile_source": native_ready,
-        "strict_threshold_metrics": threshold_ready and geometry_ready and boundary_metric_ready,
+        "strict_threshold_metrics": threshold_ready
+        and geometry_ready
+        and boundary_metric_ready
+        and lcfs_containment_measured,
         "grid_convergence_ladder": grid_ready,
         "coil_vacuum_sidecars": sidecar_ready,
         "machine_metadata": machine_metadata_ready,
@@ -378,7 +383,8 @@ def evaluate_strict_parity(
         "native_same_case_profile_source_ready": native_ready,
         "strict_threshold_acceptance_ready": threshold_ready,
         "geometry_containment_ready": geometry_ready,
-        "boundary_containment_metric_ready": boundary_metric_ready,
+        "wall_flux_agreement_metric_ready": boundary_metric_ready,
+        "lcfs_limiter_containment_measured": lcfs_containment_measured,
         "grid_convergence_ready": grid_ready,
         "coil_vacuum_sidecar_ready": sidecar_ready,
         "machine_metadata_ready": machine_metadata_ready,

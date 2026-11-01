@@ -906,7 +906,7 @@ axis error, boundary error, sampled X-point constraint error, and current
 closure, plus finite signed-q profile sanity from the solved public FreeGS
 equilibrium. It also publishes machine-readable geometry-containment evidence
 for source X-points, isoflux endpoints, native/external magnetic axes, and
-boundary-containment metric readiness, plus per-case threshold checks,
+wall flux agreement readiness, plus per-case threshold checks,
 failed-check counts, and readiness booleans for strict threshold acceptance,
 grid convergence, public coil/vacuum sidecars, and same-case public reference
 output. Grid-convergence evidence is explicit and fail-closed: the
@@ -2196,17 +2196,16 @@ non-zero when any named gate is missing or failed.
 Latest local result: boundary Green reconstruction RMSE `0.00e+00`, max
 absolute error `0.00e+00`, response rank `1/1` coils over `5` contour points,
 `4` limiter points, `2` X-points, axis flux `2.589381e-01`, minimum limiter
-clearance `0.380789 m`, limiter containment fraction `1.000`, symmetric
+clearance `0.380789 m`, limiter containment fraction `1.000` (points on the
+limiter within `1e-9 m` count as contained), symmetric
 X-point pair flux residual `0.00e+00`, status `PASS`. The shape-control current-inversion gate recovers three bounded external coil currents from five boundary-flux target points with response rank `3/3`, condition number `26.035`, current relative L2 error `2.96e-15`, and flux relative RMSE `8.44e-17`, status `PASS`.
 The actual `solve_free_boundary` path now returns the same coil/vacuum
 reconstruction diagnostic on its computational boundary; latest local solver
 contract result: vacuum-boundary absolute error `0.00e+00` over `256` boundary
 points in `1` outer iteration, with `4` limiter points, `2` X-points, and
-axis flux `2.589381e-01`, computational-boundary containment fraction `0.000`
-(diagnostic-only because the computational wall is outside the limiter; the
-machine-readable `boundary_containment_contract_role` is
-`diagnostic_computational_wall_outside_limiter` and
-`limiter_containment_required=false`),
+axis flux `2.589381e-01`; limiter containment is not evaluated there
+(`boundary_kind=computational_box_wall`, `limiter_containment_applicable=false`),
+because the edge of the grid is not a plasma contour,
 symmetric X-point pair flux residual `0.00e+00`, status `PASS`.
 Rust `fusion-core::vacuum` now exposes the same native boundary-flux
 reconstruction contract through `reconstruct_boundary_flux_from_coils` and

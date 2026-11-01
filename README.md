@@ -462,7 +462,8 @@ axis error, boundary error, sampled X-point constraint error, and current
 closure on the finite FreeGS grid, plus finite signed-q profile sanity from
 the solved public FreeGS equilibrium. The benchmark also emits per-case
 geometry-containment evidence for source X-points, isoflux endpoints,
-native/external magnetic axes, and boundary-containment metric readiness,
+native/external magnetic axes, and wall flux agreement readiness (flux equality
+on the grid edge; no case yet tests its own LCFS against a limiter contour),
 alongside strict threshold checks and failed-check counts, so the blocker is
 explicit rather than inferred from summary prose. Clean CI checkouts preserve the
 tracked metadata and reconstruction evidence when gitignored public-source

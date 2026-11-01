@@ -4,6 +4,19 @@
 
 ### Fixed
 
+- Limiter containment uses one closed-contour contract in Python
+  (`scpn_fusion.core.contour_geometry`) and Rust (`fusion_core::contour`).
+  The Python ray test divided by `abs(dZ)` and lost the edge slope, so the
+  point (5, 0) fell outside the triangle (4, -1), (6, -1), (5, 1) in both
+  vertex orders. Points within a physical tolerance (default `1e-9` m) of the
+  limiter now count as contained, either vertex order is accepted, a repeated
+  closing vertex is dropped, and repeated vertices, zero-area, folded or
+  self-intersecting limiters are rejected. The edge of the computational grid
+  is no longer tested against the limiter (`boundary_kind`).
+- The FreeGS public-example metric `boundary_containment_fraction` measured
+  flux equality on the grid edge, not containment; it is renamed
+  `wall_flux_agreement_fraction`, and strict free-boundary parity now lists
+  `lcfs_limiter_containment_unmeasured` as a blocker.
 - Tungsten radiation now follows Pütterich et al., Nucl. Fusion 50 (2010)
   025012, Table 2 (log-log interpolation of all 31 rows) in both
   `CoolingCurve("W")` and the transport solver. The cooling curve used two

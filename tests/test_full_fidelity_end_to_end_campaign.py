@@ -176,7 +176,7 @@ def test_integrated_campaign_reports_all_declared_blockers() -> None:
     assert report["freegs_public_example_external_output_ready"] in {True, False}
     assert report["free_boundary_strict_threshold_acceptance_ready"] is False
     assert report["free_boundary_geometry_containment_ready"] is False
-    assert report["free_boundary_boundary_containment_metric_ready"] is False
+    assert report["free_boundary_wall_flux_agreement_metric_ready"] is False
     assert report["free_boundary_grid_convergence_ready"] is False
     assert report["free_boundary_coil_vacuum_sidecar_ready"] is False
     assert report["free_boundary_same_case_public_reference_output_ready"] is False
@@ -456,7 +456,7 @@ def test_campaign_missing_strict_report_cannot_fall_back_to_producer_readiness(
     assert report["free_boundary_strict_parity_blockers"] == ["strict_parity_report_missing"]
     assert report["free_boundary_strict_threshold_acceptance_ready"] is False
     assert report["free_boundary_geometry_containment_ready"] is False
-    assert report["free_boundary_boundary_containment_metric_ready"] is False
+    assert report["free_boundary_wall_flux_agreement_metric_ready"] is False
     assert report["free_boundary_grid_convergence_ready"] is False
     assert report["free_boundary_coil_vacuum_sidecar_ready"] is False
     assert report["free_boundary_same_case_public_reference_output_ready"] is False

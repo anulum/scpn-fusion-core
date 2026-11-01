@@ -256,6 +256,10 @@ def run_free_boundary_benchmark() -> dict[str, Any]:
                 boundary_reconstruction["boundary_containment_fraction"]
             ),
             "boundary_containment_contract_role": "gate",
+            "boundary_kind": str(boundary_reconstruction["boundary_kind"]),
+            "boundary_points_on_limiter": int(
+                boundary_reconstruction["boundary_points_on_limiter"]
+            ),
             "limiter_containment_required": True,
             "axis_flux": float(boundary_reconstruction["axis_flux"]),
             "max_abs_limiter_flux": float(np.max(np.abs(boundary_reconstruction["limiter_flux"]))),
@@ -353,10 +357,10 @@ def run_free_boundary_benchmark() -> dict[str, Any]:
                 solve_contract["boundary_reconstruction"]["x_point_pair_symmetry_abs_error"]
             ),
             "vacuum_boundary_abs_error": float(solve_contract["vacuum_boundary_abs_error"]),
-            "boundary_containment_fraction": float(
-                solve_contract["boundary_reconstruction"]["boundary_containment_fraction"]
+            "boundary_kind": str(solve_contract["boundary_reconstruction"]["boundary_kind"]),
+            "limiter_containment_applicable": bool(
+                solve_contract["boundary_reconstruction"]["limiter_containment_applicable"]
             ),
-            "boundary_containment_contract_role": ("diagnostic_computational_wall_outside_limiter"),
             "limiter_containment_required": False,
             "pass": bool(
                 solve_contract["vacuum_boundary_abs_error"] < 1.0e-12
@@ -610,8 +614,8 @@ def main() -> int:
         )
         f.write(
             "| Solver free-boundary contract | Limiter containment | "
-            f"{solver_fb['boundary_containment_fraction']:.3f} "
-            f"({solver_fb['boundary_containment_contract_role']}) | N/A |\n"
+            f"not applicable ({solver_fb['boundary_kind']} points are not a plasma "
+            "contour) | N/A |\n"
         )
         f.write(
             "| Solver free-boundary contract | X-point pair flux residual | "

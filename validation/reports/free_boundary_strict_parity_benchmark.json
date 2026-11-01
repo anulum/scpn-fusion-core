@@ -6,7 +6,8 @@
       "current_closure",
       "magnetic_axis_error",
       "x_point_error",
-      "boundary_containment",
+      "wall_flux_agreement",
+      "lcfs_limiter_containment",
       "q_profile_sanity"
     ],
     "requires_grid_convergence_ladder": true,
@@ -27,25 +28,26 @@
   "benchmark_scope": "free_boundary_full_fidelity_acceptance",
   "blockers": [
     "legacy_evidence_has_no_verified_field_custody",
-    "source_example_bytes_unverified"
+    "lcfs_limiter_containment_unmeasured"
   ],
   "case_count": 2,
   "case_identity_errors": [],
   "checks": {
-    "boundary_containment_metric_ready": false,
     "coil_vacuum_sidecar_ready": false,
     "external_nonlinear_output_ready": false,
     "geometry_containment_ready": false,
     "grid_convergence_ready": false,
+    "lcfs_limiter_containment_measured": false,
     "machine_metadata_ready": false,
     "native_same_case_profile_source_ready": false,
     "same_case_public_reference_output_ready": false,
-    "strict_threshold_acceptance_ready": false
+    "strict_threshold_acceptance_ready": false,
+    "wall_flux_agreement_metric_ready": false
   },
   "evidence_checksums": {
-    "acceptance_contract_sha256": "7970bb92a78a3fe9cda1f0a7f057216f7081c7c10c5949dded7e1343601b484c",
+    "acceptance_contract_sha256": "c26e39ae02eb475fccba0faf050bd7a1ff36d85d376df7dfb486065403846c0b",
     "acceptance_matrix_sha256": "a72958b95ddc47a7f8dfa7ad474b1fb860789e7f5998e77388b5c357a7385526",
-    "checks_sha256": "ea15999ab61a8517f3e60d62e6629449deb01b926c9774be7789891b6e55904a",
+    "checks_sha256": "1cd2bb491252b84b1a023d6760b01040e48890565c690fdc7c13406cada4782b",
     "grid_convergence_cases_sha256": "469eb0605bfa8ce8968d7af2a4cd2ffd04ac3b47aac3c8e58e3b7ba8825d779a",
     "machine_metadata_sha256": "d4fb919289c0c1e4ca885c597b34d488838a1f21967cf26bed561df4021b2d6d",
     "threshold_cases_sha256": "64d0f6534eb753bc87b8a4946f8c7f5fd2a167deb4030a9bab3446b05461d61f"
@@ -195,10 +197,10 @@
     "input_reports": [
       {
         "artifact_id": "freegs_public_example_reconstruction",
-        "file_sha256": "73edc6c0ebc1d0acc249dd8d13dc14a668e3ecd3419e336e49397b322af663ed",
+        "file_sha256": "9ef13c3eaf7b92d80fa6c915fd5ade208950ad43894063ddaf590801ec5743b5",
         "path": "validation/reports/freegs_public_example_reconstruction.json",
         "payload_matches_file": true,
-        "payload_sha256": "39b624fba02e92e0e9d5a569d7ceb425405582ea18e2527dbb5defb3690f6928",
+        "payload_sha256": "94b1ab85c1171dd35cdd2a9cec93212a8e5e99eb3bdcc83b8aaace77357e2da6",
         "schema": "freegs-public-example-reconstruction-report.v1",
         "status": "accepted_public_freegs_same_case_free_boundary_parity"
       },
@@ -213,39 +215,40 @@
       }
     ],
     "python_version": "3.12.3",
-    "source_commit": "a84317b5315c4d2c4d8412b4fbfe16cf7ac6f650"
+    "source_commit": "8685ac0a5013c4658ebe22a5b2493a002574dcb5"
   },
   "reported_readiness": {
-    "boundary_containment_metric_ready": true,
     "coil_vacuum_sidecar_ready": true,
     "external_nonlinear_output_ready": true,
     "geometry_containment_ready": true,
     "grid_convergence_ready": true,
+    "lcfs_limiter_containment_measured": false,
     "machine_metadata_ready": true,
     "native_same_case_profile_source_ready": true,
     "same_case_public_reference_output_ready": true,
-    "strict_threshold_acceptance_ready": true
+    "strict_threshold_acceptance_ready": true,
+    "wall_flux_agreement_metric_ready": true
   },
   "schema": "free-boundary-strict-parity-benchmark.v2",
   "source_checksums": {
     "free_boundary_public_machine_metadata_inventory_file_sha256": "e0da36d9f1016abb0dbce77d313032d2710e325d3eb922d1908a9fb582c7e7e1",
     "free_boundary_public_machine_metadata_inventory_payload_sha256": "89dc932da5b2d2a2e48cc6179d19a1fb3ef2c320abbdae09a89ffac7c07acb48",
-    "freegs_public_example_reconstruction_file_sha256": "73edc6c0ebc1d0acc249dd8d13dc14a668e3ecd3419e336e49397b322af663ed",
-    "freegs_public_example_reconstruction_payload_sha256": "39b624fba02e92e0e9d5a569d7ceb425405582ea18e2527dbb5defb3690f6928"
+    "freegs_public_example_reconstruction_file_sha256": "9ef13c3eaf7b92d80fa6c915fd5ade208950ad43894063ddaf590801ec5743b5",
+    "freegs_public_example_reconstruction_payload_sha256": "94b1ab85c1171dd35cdd2a9cec93212a8e5e99eb3bdcc83b8aaace77357e2da6"
   },
   "source_example_files": [
     {
       "case_id": "freegs_01_test_tokamak_freeboundary",
-      "declared_hash_matches_file": false,
+      "declared_hash_matches_file": true,
       "declared_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
-      "file_sha256": null,
+      "file_sha256": "1d4805d9e0e757c6244e482ad8ec782a2e266aca1d280815103ab5c41e38f06b",
       "path": "data/external/full_fidelity_public_sources/repos/freegs/01-freeboundary.py"
     },
     {
       "case_id": "freegs_16_diiid_public_example",
-      "declared_hash_matches_file": false,
+      "declared_hash_matches_file": true,
       "declared_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
-      "file_sha256": null,
+      "file_sha256": "445a7415c0e24d5de2a6ed4563230070215ab49e88c061a990b4243987f463af",
       "path": "data/external/full_fidelity_public_sources/repos/freegs/16-DIIID.py"
     }
   ],

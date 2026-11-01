@@ -11,6 +11,9 @@
 //! Uses complete elliptic integrals K(m), E(m) for the exact toroidal
 //! single-coil flux function (Smythe/Jackson form).
 
+use crate::contour::{
+    ClosedContour, ContourOrientation, PointLocation, DEFAULT_CONTOUR_TOLERANCE_M,
+};
 use fusion_math::elliptic::{ellipe, ellipk};
 use fusion_types::config::CoilConfig;
 use fusion_types::error::{FusionError, FusionResult};
@@ -269,10 +272,20 @@ pub struct BoundaryFluxReconstruction {
     pub limiter_point_count: usize,
     /// Minimum diagnostic-to-limiter distance in metres.
     pub min_limiter_distance_m: Option<f64>,
-    /// Fraction of boundary samples geometrically contained.
+    /// What the boundary points are.
+    pub boundary_kind: BoundaryKind,
+    /// Vertex order of the validated limiter contour.
+    pub limiter_orientation: Option<ContourOrientation>,
+    /// Whether limiter containment applies to these boundary points.
+    pub limiter_containment_applicable: bool,
+    /// Fraction of boundary samples inside or on the limiter.
     pub boundary_containment_fraction: Option<f64>,
-    /// Optional boundary-containment gate result.
+    /// Whether every boundary sample is inside or on the limiter.
     pub boundary_containment_pass: Option<bool>,
+    /// Boundary samples within the tolerance of the limiter.
+    pub boundary_points_on_limiter: Option<usize>,
+    /// Boundary samples outside the limiter.
+    pub boundary_points_outside_limiter: Option<usize>,
     /// Reconstructed magnetic-axis flux.
     pub axis_flux: Option<f64>,
     /// Reconstructed flux at X-points.
@@ -310,8 +323,20 @@ pub struct ShapeCurrentReconstruction {
     pub coil_count: usize,
 }
 
+/// What a set of free-boundary diagnostic points represents.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum BoundaryKind {
+    /// Last closed flux surface of the plasma.
+    #[default]
+    Lcfs,
+    /// Magnetic separatrix of a diverted plasma.
+    Separatrix,
+    /// Edge of the computational grid; not a plasma contour.
+    ComputationalBoxWall,
+}
+
 /// Optional topology metadata for free-boundary contour reconstruction.
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct BoundaryFluxMetadata<'a> {
     /// Optional limiter contour used for containment diagnostics.
     pub limiter_points: Option<&'a [(f64, f64)]>,
@@ -319,38 +344,22 @@ pub struct BoundaryFluxMetadata<'a> {
     pub axis_point: Option<(f64, f64)>,
     /// Optional X-point coordinates.
     pub x_points: Option<&'a [(f64, f64)]>,
+    /// What the boundary points represent.
+    pub boundary_kind: BoundaryKind,
+    /// Contour tolerance in metres.
+    pub contour_tolerance_m: f64,
 }
 
-fn point_inside_polygon(point: (f64, f64), polygon: &[(f64, f64)]) -> bool {
-    let (r, z) = point;
-    let mut inside = false;
-    let mut previous = polygon.len() - 1;
-    for current in 0..polygon.len() {
-        let (ri, zi) = polygon[current];
-        let (rj, zj) = polygon[previous];
-        if (zi > z) != (zj > z) {
-            let edge_r = (rj - ri) * (z - zi) / (zj - zi) + ri;
-            if r < edge_r {
-                inside = !inside;
-            }
+impl Default for BoundaryFluxMetadata<'_> {
+    fn default() -> Self {
+        Self {
+            limiter_points: None,
+            axis_point: None,
+            x_points: None,
+            boundary_kind: BoundaryKind::Lcfs,
+            contour_tolerance_m: DEFAULT_CONTOUR_TOLERANCE_M,
         }
-        previous = current;
     }
-    inside
-}
-
-fn boundary_containment_fraction(
-    boundary_points: &[(f64, f64)],
-    limiter_points: &[(f64, f64)],
-) -> Option<f64> {
-    if limiter_points.len() < 3 {
-        return None;
-    }
-    let contained = boundary_points
-        .iter()
-        .filter(|point| point_inside_polygon(**point, limiter_points))
-        .count();
-    Some(contained as f64 / boundary_points.len() as f64)
 }
 
 fn validate_current_limits(current_limits: Option<&[f64]>, coil_count: usize) -> FusionResult<()> {
@@ -618,10 +627,36 @@ pub fn reconstruct_boundary_flux_from_coils_with_metadata(
             })
             .fold(f64::INFINITY, f64::min)
     });
-    let boundary_containment_fraction = metadata
+    let limiter_contour = metadata
         .limiter_points
-        .and_then(|points| boundary_containment_fraction(boundary_points, points));
-    let boundary_containment_pass = boundary_containment_fraction.map(|fraction| fraction >= 1.0);
+        .map(|points| ClosedContour::new(points, metadata.contour_tolerance_m, "limiter_points"))
+        .transpose()?;
+    let limiter_containment_applicable =
+        metadata.boundary_kind != BoundaryKind::ComputationalBoxWall;
+    let locations: Option<Vec<PointLocation>> = limiter_contour
+        .as_ref()
+        .filter(|_| limiter_containment_applicable)
+        .map(|contour| {
+            boundary_points
+                .iter()
+                .map(|p| contour.classify(*p))
+                .collect()
+        });
+    let boundary_points_on_limiter = locations.as_ref().map(|codes| {
+        codes
+            .iter()
+            .filter(|c| **c == PointLocation::OnBoundary)
+            .count()
+    });
+    let boundary_points_outside_limiter = locations.as_ref().map(|codes| {
+        codes
+            .iter()
+            .filter(|c| **c == PointLocation::Outside)
+            .count()
+    });
+    let boundary_containment_fraction = boundary_points_outside_limiter
+        .map(|outside| (point_count - outside) as f64 / point_count as f64);
+    let boundary_containment_pass = boundary_points_outside_limiter.map(|outside| outside == 0);
     let axis_flux = if let Some(axis) = metadata.axis_point {
         Some(calculate_vacuum_flux_at_points(&[axis], coils, mu0)?[0])
     } else {
@@ -666,8 +701,13 @@ pub fn reconstruct_boundary_flux_from_coils_with_metadata(
         limiter_point_count: limiter_flux.len(),
         limiter_flux,
         min_limiter_distance_m,
+        boundary_kind: metadata.boundary_kind,
+        limiter_orientation: limiter_contour.as_ref().map(ClosedContour::orientation),
+        limiter_containment_applicable,
         boundary_containment_fraction,
         boundary_containment_pass,
+        boundary_points_on_limiter,
+        boundary_points_outside_limiter,
         axis_flux,
         x_point_count: x_point_flux.len(),
         x_point_flux,
@@ -917,6 +957,7 @@ mod tests {
                 limiter_points: Some(&limiter_points),
                 axis_point: Some((5.5, 0.0)),
                 x_points: Some(&x_points),
+                ..BoundaryFluxMetadata::default()
             },
         )
         .expect("valid topology reconstruction");
@@ -954,6 +995,7 @@ mod tests {
                 limiter_points: Some(&limiter_points),
                 axis_point: None,
                 x_points: None,
+                ..BoundaryFluxMetadata::default()
             },
         )
         .expect("valid limiter containment reconstruction");
@@ -967,6 +1009,116 @@ mod tests {
         assert!(!reconstruction
             .boundary_containment_pass
             .expect("containment pass"));
+    }
+
+    #[test]
+    fn test_boundary_flux_reconstruction_contains_audit_point_in_triangle_limiter() {
+        let coils = vec![CoilConfig {
+            name: "pf".to_string(),
+            r: 5.0,
+            z: 3.0,
+            current: 1.0e3,
+        }];
+        let triangle = vec![(4.0, -1.0), (6.0, -1.0), (5.0, 1.0)];
+        let mut reversed = triangle.clone();
+        reversed.reverse();
+        for limiter in [triangle, reversed] {
+            let reconstruction = reconstruct_boundary_flux_from_coils_with_metadata(
+                &[(5.0, 0.0)],
+                &coils,
+                None,
+                1.0,
+                BoundaryFluxMetadata {
+                    limiter_points: Some(&limiter),
+                    ..BoundaryFluxMetadata::default()
+                },
+            )
+            .expect("valid triangle limiter");
+            assert_eq!(reconstruction.boundary_containment_fraction, Some(1.0));
+            assert_eq!(reconstruction.boundary_containment_pass, Some(true));
+            assert_eq!(reconstruction.boundary_points_outside_limiter, Some(0));
+        }
+    }
+
+    #[test]
+    fn test_boundary_flux_reconstruction_counts_touching_lcfs_as_contained() {
+        let coils = vec![CoilConfig {
+            name: "pf".to_string(),
+            r: 5.0,
+            z: 3.0,
+            current: 1.0e3,
+        }];
+        let limiter = vec![(4.0, -1.0), (6.0, -1.0), (6.0, 1.0), (4.0, 1.0)];
+        let lcfs = vec![(4.0, 0.0), (5.0, 0.5), (5.5, 0.0), (5.0, -0.5)];
+        let reconstruction = reconstruct_boundary_flux_from_coils_with_metadata(
+            &lcfs,
+            &coils,
+            None,
+            1.0,
+            BoundaryFluxMetadata {
+                limiter_points: Some(&limiter),
+                boundary_kind: BoundaryKind::Lcfs,
+                ..BoundaryFluxMetadata::default()
+            },
+        )
+        .expect("valid limited plasma");
+        assert_eq!(reconstruction.boundary_containment_pass, Some(true));
+        assert_eq!(reconstruction.boundary_points_on_limiter, Some(1));
+        assert_eq!(
+            reconstruction.limiter_orientation,
+            Some(ContourOrientation::CounterClockwise)
+        );
+    }
+
+    #[test]
+    fn test_boundary_flux_reconstruction_skips_containment_for_box_wall() {
+        let coils = vec![CoilConfig {
+            name: "pf".to_string(),
+            r: 5.0,
+            z: 3.0,
+            current: 1.0e3,
+        }];
+        let limiter = vec![(4.0, -1.0), (6.0, -1.0), (6.0, 1.0), (4.0, 1.0)];
+        let wall = vec![(3.0, -2.0), (7.0, -2.0), (7.0, 2.0), (3.0, 2.0)];
+        let reconstruction = reconstruct_boundary_flux_from_coils_with_metadata(
+            &wall,
+            &coils,
+            None,
+            1.0,
+            BoundaryFluxMetadata {
+                limiter_points: Some(&limiter),
+                boundary_kind: BoundaryKind::ComputationalBoxWall,
+                ..BoundaryFluxMetadata::default()
+            },
+        )
+        .expect("valid box wall");
+        assert!(!reconstruction.limiter_containment_applicable);
+        assert_eq!(reconstruction.boundary_containment_fraction, None);
+        assert_eq!(reconstruction.boundary_containment_pass, None);
+        assert_eq!(reconstruction.limiter_point_count, 4);
+    }
+
+    #[test]
+    fn test_boundary_flux_reconstruction_rejects_self_intersecting_limiter() {
+        let coils = vec![CoilConfig {
+            name: "pf".to_string(),
+            r: 5.0,
+            z: 3.0,
+            current: 1.0e3,
+        }];
+        let limiter = vec![(4.0, -1.0), (7.0, 1.0), (4.0, 1.5), (6.0, -1.0)];
+        let err = reconstruct_boundary_flux_from_coils_with_metadata(
+            &[(5.0, 0.0)],
+            &coils,
+            None,
+            1.0,
+            BoundaryFluxMetadata {
+                limiter_points: Some(&limiter),
+                ..BoundaryFluxMetadata::default()
+            },
+        )
+        .expect_err("self-intersecting limiter must be rejected");
+        assert!(err.to_string().contains("self-intersecting"));
     }
 
     #[test]
@@ -989,6 +1141,7 @@ mod tests {
                 limiter_points: None,
                 axis_point: Some((5.0, 0.0)),
                 x_points: Some(&x_points),
+                ..BoundaryFluxMetadata::default()
             },
         )
         .expect("valid topology reconstruction");

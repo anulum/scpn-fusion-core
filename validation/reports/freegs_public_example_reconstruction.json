@@ -26,7 +26,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 3.033688895025989,
+        "elapsed_s": 3.6492565679363906,
         "external_psi_finite": true,
         "external_psi_max": 0.09060208530754858,
         "external_psi_min": -0.10514200122920463,
@@ -38,7 +38,6 @@
         "native_same_case_profile_source_comparison": {
           "accepted_full_fidelity": false,
           "axis_error_m": 0.0,
-          "boundary_containment_fraction": 1.0,
           "boundary_max_abs_error_wb": 1.464800503114816e-13,
           "current_closure_relative_error": 4.7578550031175836e-06,
           "external_axis_r_m": 1.2875,
@@ -68,6 +67,7 @@
             "psi_n_rmse": 0.05,
             "xpoint_psi_n_error": 0.05
           },
+          "wall_flux_agreement_fraction": 1.0,
           "xpoint_constraint_count": 2,
           "xpoint_psi_n_error_max": 0.0004890721048200763
         },
@@ -77,7 +77,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 0.5479636380041484,
+          "elapsed_s": 0.7671339749358594,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -87,7 +87,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 3.033688895025989,
+          "elapsed_s": 3.6492565679363906,
           "external_psi_finite": true,
           "external_psi_max": 0.09060208530754858,
           "external_psi_min": -0.10514200122920463,
@@ -99,7 +99,6 @@
           "native_same_case_profile_source_comparison": {
             "accepted_full_fidelity": false,
             "axis_error_m": 0.0,
-            "boundary_containment_fraction": 1.0,
             "boundary_max_abs_error_wb": 1.464800503114816e-13,
             "current_closure_relative_error": 4.7578550031175836e-06,
             "external_axis_r_m": 1.2875,
@@ -129,6 +128,7 @@
               "psi_n_rmse": 0.05,
               "xpoint_psi_n_error": 0.05
             },
+            "wall_flux_agreement_fraction": 1.0,
             "xpoint_constraint_count": 2,
             "xpoint_psi_n_error_max": 0.0004890721048200763
           },
@@ -252,7 +252,7 @@
       ],
       "nonlinear_solve_attempt": {
         "blend": 0.0,
-        "elapsed_s": 5.649167095019948,
+        "elapsed_s": 6.806488704402,
         "external_psi_finite": true,
         "external_psi_max": 0.425434420767573,
         "external_psi_min": -0.6609953436689098,
@@ -264,7 +264,6 @@
         "native_same_case_profile_source_comparison": {
           "accepted_full_fidelity": false,
           "axis_error_m": 0.0,
-          "boundary_containment_fraction": 1.0,
           "boundary_max_abs_error_wb": 6.568079413682426e-13,
           "current_closure_relative_error": 1.0581304436254637e-05,
           "external_axis_r_m": 2.6312499999999996,
@@ -294,6 +293,7 @@
             "psi_n_rmse": 0.05,
             "xpoint_psi_n_error": 0.05
           },
+          "wall_flux_agreement_fraction": 1.0,
           "xpoint_constraint_count": 2,
           "xpoint_psi_n_error_max": 0.0006449156820178548
         },
@@ -303,7 +303,7 @@
       "nonlinear_solve_attempts": [
         {
           "blend": 0.0,
-          "elapsed_s": 1.1572518380125985,
+          "elapsed_s": 1.9874257780611515,
           "error": "Picard iteration failed to converge (too many iterations)",
           "error_type": "RuntimeError",
           "external_psi_finite": false,
@@ -313,7 +313,7 @@
         },
         {
           "blend": 0.0,
-          "elapsed_s": 5.649167095019948,
+          "elapsed_s": 6.806488704402,
           "external_psi_finite": true,
           "external_psi_max": 0.425434420767573,
           "external_psi_min": -0.6609953436689098,
@@ -325,7 +325,6 @@
           "native_same_case_profile_source_comparison": {
             "accepted_full_fidelity": false,
             "axis_error_m": 0.0,
-            "boundary_containment_fraction": 1.0,
             "boundary_max_abs_error_wb": 6.568079413682426e-13,
             "current_closure_relative_error": 1.0581304436254637e-05,
             "external_axis_r_m": 2.6312499999999996,
@@ -355,6 +354,7 @@
               "psi_n_rmse": 0.05,
               "xpoint_psi_n_error": 0.05
             },
+            "wall_flux_agreement_fraction": 1.0,
             "xpoint_constraint_count": 2,
             "xpoint_psi_n_error_max": 0.0006449156820178548
           },
@@ -578,7 +578,7 @@
   "reference_output_ready": true,
   "report_generation_mode": "tracked_report_fallback",
   "schema": "freegs-public-example-reconstruction-report.v1",
-  "sha256": "351261e594f7be343a49377e2ba17c8f13fc354cdc994f8b0b33c649ab08e7d4",
+  "sha256": "8dde373726d4cdbd7818b60c0bdcabb898fd7b57667895a98bd0be413a0a8796",
   "source_cache_available": true,
   "status": "accepted_public_freegs_same_case_free_boundary_parity",
   "strict_free_boundary_parity_evidence": {
@@ -668,7 +668,7 @@
           {
             "comparator": ">=",
             "limit": 1.0,
-            "metric": "boundary_containment_fraction",
+            "metric": "wall_flux_agreement_fraction",
             "passed": true,
             "valid": true,
             "value": 1.0
@@ -834,7 +834,7 @@
           {
             "comparator": ">=",
             "limit": 1.0,
-            "metric": "boundary_containment_fraction",
+            "metric": "wall_flux_agreement_fraction",
             "passed": true,
             "valid": true,
             "value": 1.0
@@ -1037,13 +1037,10 @@
       "accepted_full_fidelity": false,
       "all_source_points_inside_grid": true,
       "axis_containment_metric_ready": true,
-      "boundary_containment_metric_ready": true,
       "case_count": 2,
       "cases": [
         {
           "axis_points_inside_grid": true,
-          "boundary_containment_fraction": 1.0,
-          "boundary_containment_metric_ready": true,
           "case_id": "freegs_01_test_tokamak_freeboundary",
           "external_axis": [
             1.2875,
@@ -1056,12 +1053,12 @@
           ],
           "source_point_count": 4,
           "source_points_inside_grid": true,
+          "wall_flux_agreement_fraction": 1.0,
+          "wall_flux_agreement_metric_ready": true,
           "xpoint_count": 2
         },
         {
           "axis_points_inside_grid": true,
-          "boundary_containment_fraction": 1.0,
-          "boundary_containment_metric_ready": true,
           "case_id": "freegs_16_diiid_public_example",
           "external_axis": [
             2.6312499999999996,
@@ -1074,12 +1071,17 @@
           ],
           "source_point_count": 4,
           "source_points_inside_grid": true,
+          "wall_flux_agreement_fraction": 1.0,
+          "wall_flux_agreement_metric_ready": true,
           "xpoint_count": 2
         }
       ],
-      "schema": "strict-free-boundary-geometry-containment.v1",
+      "lcfs_limiter_containment_measured": false,
+      "lcfs_limiter_containment_note": "No case derives its own LCFS and tests it against a limiter contour; wall flux agreement is not a containment measure.",
+      "schema": "strict-free-boundary-geometry-containment.v2",
       "status": "accepted_local_geometry_containment_evidence",
-      "strict_geometry_containment_ready": true
+      "strict_geometry_containment_ready": true,
+      "wall_flux_agreement_metric_ready": true
     },
     "grid_convergence_evidence": {
       "accepted_full_fidelity": false,
@@ -1173,7 +1175,7 @@
                 {
                   "comparator": ">=",
                   "limit": 1.0,
-                  "metric": "boundary_containment_fraction",
+                  "metric": "wall_flux_agreement_fraction",
                   "passed": true,
                   "valid": true,
                   "value": 1.0
@@ -1247,7 +1249,7 @@
                 {
                   "comparator": ">=",
                   "limit": 1.0,
-                  "metric": "boundary_containment_fraction",
+                  "metric": "wall_flux_agreement_fraction",
                   "passed": true,
                   "valid": true,
                   "value": 1.0
@@ -1321,7 +1323,7 @@
                 {
                   "comparator": ">=",
                   "limit": 1.0,
-                  "metric": "boundary_containment_fraction",
+                  "metric": "wall_flux_agreement_fraction",
                   "passed": true,
                   "valid": true,
                   "value": 1.0
@@ -1427,7 +1429,7 @@
                 {
                   "comparator": ">=",
                   "limit": 1.0,
-                  "metric": "boundary_containment_fraction",
+                  "metric": "wall_flux_agreement_fraction",
                   "passed": true,
                   "valid": true,
                   "value": 1.0
@@ -1501,7 +1503,7 @@
                 {
                   "comparator": ">=",
                   "limit": 1.0,
-                  "metric": "boundary_containment_fraction",
+                  "metric": "wall_flux_agreement_fraction",
                   "passed": true,
                   "valid": true,
                   "value": 1.0
@@ -1575,7 +1577,7 @@
                 {
                   "comparator": ">=",
                   "limit": 1.0,
-                  "metric": "boundary_containment_fraction",
+                  "metric": "wall_flux_agreement_fraction",
                   "passed": true,
                   "valid": true,
                   "value": 1.0

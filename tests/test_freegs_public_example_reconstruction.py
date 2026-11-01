@@ -90,12 +90,13 @@ def test_freegs_public_example_reconstruction_is_fail_closed() -> None:
         assert report["missing_full_fidelity_requirements"] == expected_blockers
         assert strict["blocking_requirements"] == expected_blockers
     containment = strict["geometry_containment_evidence"]
-    assert containment["schema"] == "strict-free-boundary-geometry-containment.v1"
+    assert containment["schema"] == "strict-free-boundary-geometry-containment.v2"
     assert containment["case_count"] == report["case_count"]
     assert containment["status"] == "accepted_local_geometry_containment_evidence"
     assert containment["all_source_points_inside_grid"] is True
     assert containment["axis_containment_metric_ready"] is True
-    assert containment["boundary_containment_metric_ready"] is True
+    assert containment["wall_flux_agreement_metric_ready"] is True
+    assert containment["lcfs_limiter_containment_measured"] is False
     assert containment["strict_geometry_containment_ready"] is True
     assert containment["accepted_full_fidelity"] is False
     assert all(row["source_points_inside_grid"] for row in containment["cases"])

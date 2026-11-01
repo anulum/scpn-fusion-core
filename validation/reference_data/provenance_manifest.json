@@ -207,7 +207,7 @@
       "license_redistributable": true,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact",
-      "total_bytes": 507601
+      "total_bytes": 507598
     },
     {
       "file_count": 3,
@@ -1206,8 +1206,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.json",
-      "sha256": "351261e594f7be343a49377e2ba17c8f13fc354cdc994f8b0b33c649ab08e7d4",
-      "size_bytes": 18990,
+      "sha256": "bf76034456e9915858737d98ed8db8e38cd63678d05d1d459c744e2dd125d487",
+      "size_bytes": 18987,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact"
     },
@@ -1219,7 +1219,7 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "full_fidelity_public_artifacts/freegs_public_example_reconstruction_attempt.metadata.json",
-      "sha256": "02b3a3d63167f4f3e33677b45d525c55c3b6c597fd42cbadd5d24386c3eca02d",
+      "sha256": "bed57f1fd8f7f5801ac457efb9a459e74d7950a1a1829116897ee3a5650da6c6",
       "size_bytes": 1166,
       "source": "Repository-curated full-fidelity public-source artifacts with per-file provenance metadata sidecars.",
       "source_type": "derived_reference_artifact"
@@ -4903,7 +4903,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-10-31T12:01:53.987392+00:00",
+  "generated_at_utc": "2026-11-01T15:17:03.130021+00:00",
   "license_registry": [
     {
       "attribution_required": true,
