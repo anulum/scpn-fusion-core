@@ -24,6 +24,7 @@ import logging
 import numpy as np
 
 from scpn_fusion.core.jax_precision import _require_float64
+from scpn_fusion.core.spd_linalg import factor_spd
 
 from scpn_fusion.core.gk_nonlinear import (
     NonlinearGKConfig,
@@ -82,6 +83,25 @@ class JaxNonlinearGKSolver:
         self._theta_j = jnp.array(self._np_solver.theta)
         self._ball_phase_fwd_j = jnp.array(self._np_solver._ball_phase_fwd)
         self._ball_phase_bwd_j = jnp.array(self._np_solver._ball_phase_bwd)
+        if c.collisions and c.collision_model == "sugama":
+            self._validate_sugama_gram()
+
+    def _validate_sugama_gram(self) -> None:
+        """Check outside ``jit`` that the Sugama moment Gram matrix is SPD.
+
+        The jitted projection factors the same grid-only matrix with
+        ``cho_factor``, which cannot raise inside a trace; a grid that makes it
+        singular is refused here with :class:`NonSPDMatrixError` instead of
+        surfacing later as NaN.
+        """
+        vpar = np.asarray(self._np_solver.vpar)[:, None]
+        mu = np.asarray(self._np_solver.mu)[None, :]
+        energy = 0.5 * vpar**2 + mu
+        fm = np.exp(-energy) / np.pi**1.5
+        dv = self._np_solver.dvpar * self._np_solver.dmu
+        basis = (np.ones_like(energy), np.broadcast_to(vpar, energy.shape), energy)
+        gram = np.array([[np.sum(a * b * fm * dv) for b in basis] for a in basis])
+        factor_spd(gram, name="Sugama conservation-moment Gram matrix")
 
     # ------------------------------------------------------------------
     # JAX field solve

@@ -296,3 +296,24 @@ def test_rzip_without_circuits_is_rejected() -> None:
     )
     with pytest.raises(ValueError, match="at least one vessel or coil circuit"):
         rzip.build_state_space()
+
+
+def test_jax_solver_refuses_degenerate_sugama_grid_outside_jit() -> None:
+    from scpn_fusion.core.gk_nonlinear import NonlinearGKConfig
+    from scpn_fusion.core.jax_gk_nonlinear import JaxNonlinearGKSolver, jax_available
+
+    if not jax_available():
+        pytest.skip("JAX runtime not installed; the check lives in the JAX kernel setup")
+    cfg = NonlinearGKConfig(
+        n_kx=4,
+        n_ky=4,
+        n_theta=8,
+        n_vpar=1,
+        n_mu=1,
+        n_species=1,
+        collisions=True,
+        collision_model="sugama",
+        cfl_adapt=False,
+    )
+    with pytest.raises(NonSPDMatrixError, match="Gram"):
+        JaxNonlinearGKSolver(cfg)
