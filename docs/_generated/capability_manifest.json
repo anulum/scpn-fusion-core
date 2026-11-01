@@ -300,6 +300,10 @@
         "path": "src/scpn_fusion/core/tearing_mode_coupling.py"
       },
       {
+        "name": "ClosedContour",
+        "path": "src/scpn_fusion/core/contour_geometry.py"
+      },
+      {
         "name": "Coil",
         "path": "src/scpn_fusion/core/config_schema.py"
       },
@@ -470,6 +474,10 @@
       {
         "name": "DACConfig",
         "path": "src/scpn_fusion/control/hil_sensors.py"
+      },
+      {
+        "name": "DScalingError",
+        "path": "src/scpn_fusion/control/mu_synthesis.py"
       },
       {
         "name": "DashboardGenerator",
@@ -1468,6 +1476,10 @@
         "path": "src/scpn_fusion/core/fusion_kernel_newton_runtime.py"
       },
       {
+        "name": "NonSPDMatrixError",
+        "path": "src/scpn_fusion/core/spd_linalg.py"
+      },
+      {
         "name": "NonlinearGKConfig",
         "path": "src/scpn_fusion/core/_gk_nonlinear_types.py"
       },
@@ -2050,6 +2062,10 @@
       {
         "name": "SOLSolution",
         "path": "src/scpn_fusion/core/sol_model.py"
+      },
+      {
+        "name": "SPDFactor",
+        "path": "src/scpn_fusion/core/spd_linalg.py"
       },
       {
         "name": "SafetyConstraint",
@@ -2756,6 +2772,7 @@
       "src/scpn_fusion/core/checkpoint.py",
       "src/scpn_fusion/core/compact_reactor_optimizer.py",
       "src/scpn_fusion/core/config_schema.py",
+      "src/scpn_fusion/core/contour_geometry.py",
       "src/scpn_fusion/core/current_diffusion.py",
       "src/scpn_fusion/core/current_drive.py",
       "src/scpn_fusion/core/deeponet_equilibrium.py",
@@ -2916,6 +2933,7 @@
       "src/scpn_fusion/core/sawtooth.py",
       "src/scpn_fusion/core/scaling_laws.py",
       "src/scpn_fusion/core/sol_model.py",
+      "src/scpn_fusion/core/spd_linalg.py",
       "src/scpn_fusion/core/stability_analyzer.py",
       "src/scpn_fusion/core/stability_mhd.py",
       "src/scpn_fusion/core/stability_mhd_extended.py",
@@ -3079,10 +3097,10 @@
     "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 71,
-    "python_capability_classes": 642,
-    "python_capability_source_modules": 372,
+    "python_capability_classes": 646,
+    "python_capability_source_modules": 374,
     "rust_workspace_crates": 13,
-    "test_files": 680
+    "test_files": 682
   },
   "documentation": {
     "public_pages": [
@@ -3320,6 +3338,7 @@
       "tests/test_compiler_kernels.py",
       "tests/test_config_schema.py",
       "tests/test_constrained_policy.py",
+      "tests/test_contour_geometry.py",
       "tests/test_control_exception_specificity.py",
       "tests/test_control_resilience_campaign.py",
       "tests/test_controller.py",
@@ -3814,6 +3833,7 @@
       "tests/test_snn_rl_tearing_mode_fault_benchmark.py",
       "tests/test_sol_model.py",
       "tests/test_solver_comparison.py",
+      "tests/test_spd_linalg.py",
       "tests/test_spdx_header_guard.py",
       "tests/test_spi_ablation.py",
       "tests/test_spi_mitigation.py",
