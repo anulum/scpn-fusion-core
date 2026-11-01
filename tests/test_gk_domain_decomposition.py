@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -31,6 +32,30 @@ from validation.benchmark_production_decomposition_contract import (
     run_benchmark,
     write_reports,
 )
+import validation.benchmark_production_decomposition_contract as decomposition_contract
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(autouse=True)
+def isolated_outputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Write the decomposition-contract reports to tmp_path, never the tracked copies.
+
+    Existing tracked files are copied first so read-back and fallback paths
+    see the same inputs as before.
+    """
+    for name in ("JSON_REPORT", "MD_REPORT"):
+        default = getattr(decomposition_contract, name)
+        target = tmp_path / default.name
+        if default.exists():
+            shutil.copy2(default, target)
+        monkeypatch.setattr(decomposition_contract, name, target)
+    return tmp_path
+
+
+def test_default_output_paths_are_the_tracked_files() -> None:
+    """The redirect is test-only; production writes the tracked directory."""
+    assert decomposition_contract.REPORT_DIR == ROOT / "validation" / "reports"
 
 
 def test_radial_toroidal_decomposition_covers_domain_once() -> None:

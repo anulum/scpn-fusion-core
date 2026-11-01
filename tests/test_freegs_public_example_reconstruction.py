@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +20,27 @@ from validation import benchmark_freegs_public_example_reconstruction as freegs_
 from validation.benchmark_freegs_public_example_reconstruction import run_benchmark
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(autouse=True)
+def isolated_outputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Write the attempt artifact, its metadata and the reports to tmp_path, never the tracked copies.
+
+    Existing tracked files are copied first so read-back and fallback paths
+    see the same inputs as before.
+    """
+    for name in ("ARTIFACT_PATH", "METADATA_PATH", "JSON_REPORT", "MD_REPORT"):
+        default = getattr(freegs_reconstruction, name)
+        target = tmp_path / default.name
+        if default.exists():
+            shutil.copy2(default, target)
+        monkeypatch.setattr(freegs_reconstruction, name, target)
+    return tmp_path
+
+
+def test_default_output_paths_are_the_tracked_files() -> None:
+    """The redirect is test-only; production writes the tracked directory."""
+    assert freegs_reconstruction.REPORT_DIR == ROOT / "validation" / "reports"
 
 
 def test_freegs_public_example_reconstruction_is_fail_closed() -> None:

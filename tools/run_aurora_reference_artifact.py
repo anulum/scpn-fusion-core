@@ -60,7 +60,15 @@ AURORA_STRAHL_OUTPUT_CONTRACT = {
 
 
 def _rel(path: Path) -> str:
-    return str(path.relative_to(ROOT))
+    """Return ``path`` relative to the repository, or absolute when outside it.
+
+    Outputs redirected outside the checkout (for example by tests) keep a
+    usable path instead of raising.
+    """
+    try:
+        return str(path.relative_to(ROOT))
+    except ValueError:
+        return path.as_posix()
 
 
 def _sha256(path: Path) -> str:

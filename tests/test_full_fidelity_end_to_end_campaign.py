@@ -11,10 +11,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from pathlib import Path
 
 import pytest
 
+import validation.benchmark_sas_dataset_manifest as sas_readiness
 import validation.full_fidelity_end_to_end_campaign as campaign
 from validation.full_fidelity_end_to_end_campaign import (
     ROOT,
@@ -23,6 +25,17 @@ from validation.full_fidelity_end_to_end_campaign import (
     run_campaign,
     write_reports,
 )
+
+
+@pytest.fixture(autouse=True)
+def isolated_sas_readiness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The campaign reruns the SAS readiness lane, which writes its own reports."""
+    for name in ("JSON_REPORT", "MD_REPORT"):
+        default = getattr(sas_readiness, name)
+        target = tmp_path / default.name
+        if default.exists():
+            shutil.copy2(default, target)
+        monkeypatch.setattr(sas_readiness, name, target)
 
 
 @pytest.fixture

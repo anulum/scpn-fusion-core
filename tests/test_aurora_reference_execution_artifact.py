@@ -11,11 +11,38 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import numpy as np
+import shutil
 
+import numpy as np
+import pytest
+
+import tools.run_aurora_reference_artifact as aurora
 from tools.run_aurora_reference_artifact import build_aurora_reference_execution_report
 
 ROOT = Path(__file__).resolve().parents[1]
+_OUTPUTS = ("ARTIFACT_PATH", "METADATA_PATH", "JSON_REPORT", "MD_REPORT")
+
+
+@pytest.fixture(autouse=True)
+def isolated_outputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Write the artifact, metadata and reports to tmp_path, never the tracked copies."""
+    for name in _OUTPUTS:
+        default = getattr(aurora, name)
+        target = tmp_path / default.name
+        if default.exists():
+            shutil.copy2(default, target)
+        monkeypatch.setattr(aurora, name, target)
+    return tmp_path
+
+
+def test_default_output_paths_are_the_tracked_files() -> None:
+    """The redirect is test-only; production writes the tracked directories."""
+    assert aurora.REPORT_DIR == ROOT / "validation" / "reports"
+    assert (
+        aurora.ARTIFACT_DIR
+        == ROOT / "validation" / "reference_data" / "full_fidelity_public_artifacts"
+    )
+    assert aurora._rel(ROOT / "validation" / "reports" / "x.json") == "validation/reports/x.json"
 
 
 def test_aurora_reference_execution_artifact_is_fail_closed() -> None:

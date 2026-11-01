@@ -10,13 +10,38 @@
 from __future__ import annotations
 
 import json
+import shutil
+from pathlib import Path
 
 import pytest
 
 from validation.benchmark_gs_operator_current_closure import _radial_convergence_order
 from validation.benchmark_gs_operator_current_closure import build_gate_summary
-from validation.benchmark_gs_operator_current_closure import REPORT_JSON
+import validation.benchmark_gs_operator_current_closure as closure
 from validation.benchmark_gs_operator_current_closure import main as run_benchmark
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(autouse=True)
+def isolated_outputs(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Write the closure reports to tmp_path, never the tracked copies.
+
+    Existing tracked files are copied first so read-back and fallback paths
+    see the same inputs as before.
+    """
+    for name in ("REPORT_JSON", "REPORT_MD"):
+        default = getattr(closure, name)
+        target = tmp_path / default.name
+        if default.exists():
+            shutil.copy2(default, target)
+        monkeypatch.setattr(closure, name, target)
+    return tmp_path
+
+
+def test_default_output_paths_are_the_tracked_files() -> None:
+    """The redirect is test-only; production writes the tracked directory."""
+    assert closure.REPORT_DIR == ROOT / "validation" / "reports"
 
 
 def test_radial_quartic_convergence_order_reports_second_order_decay() -> None:
@@ -73,7 +98,7 @@ def test_radial_quartic_convergence_order_rejects_invalid_radial_rows() -> None:
 def test_benchmark_report_includes_mixed_solovev_operator_case() -> None:
     """Benchmark report must include an R^2 Z^2 mixed Solov'ev-style operator case."""
     assert run_benchmark() == 0
-    report = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+    report = json.loads(closure.REPORT_JSON.read_text(encoding="utf-8"))
 
     assert "mixed_solovev" in {case["case"] for case in report["cases"]}
 
@@ -81,7 +106,7 @@ def test_benchmark_report_includes_mixed_solovev_operator_case() -> None:
 def test_benchmark_report_gates_radial_current_closure_stability() -> None:
     """Radial grid refinement should expose a total-current closure stability gate."""
     assert run_benchmark() == 0
-    report = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+    report = json.loads(closure.REPORT_JSON.read_text(encoding="utf-8"))
 
     assert (
         report["radial_total_current_relative_error_max"]
@@ -93,7 +118,7 @@ def test_benchmark_report_gates_radial_current_closure_stability() -> None:
 def test_benchmark_report_exposes_fail_closed_gate_summary() -> None:
     """Machine-readable benchmark gates must distinguish schema, scope, and failures."""
     assert run_benchmark() == 0
-    report = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+    report = json.loads(closure.REPORT_JSON.read_text(encoding="utf-8"))
 
     assert report["schema_version"] == "gs-operator-current-closure.v2"
     assert report["benchmark_scope"] == "native_grad_shafranov_operator_current_closure"
