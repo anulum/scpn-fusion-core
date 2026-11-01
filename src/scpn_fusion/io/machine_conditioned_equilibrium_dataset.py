@@ -332,13 +332,14 @@ def _validate_diagnostics(
         failures.append("accepted diagnostics include a solve that reached the iteration cap")
 
     tolerance = _as_dict(manifest.get("tolerances"), name="tolerances", failures=failures)
-    threshold_columns = {
-        "relative_gs_residual_rms": ("relative_gs_residual_rms_max", np.less_equal),
-        "plasma_current_relative_error": ("plasma_current_relative_error_max", np.less_equal),
-        "psi_span_abs_wb": ("psi_span_abs_wb_min", np.greater_equal),
-        "plasma_delta_max_abs_wb": ("plasma_delta_max_abs_wb_min", np.greater_equal),
+    # (threshold name, True for an upper bound, False for a lower bound)
+    threshold_columns: dict[str, tuple[str, bool]] = {
+        "relative_gs_residual_rms": ("relative_gs_residual_rms_max", True),
+        "plasma_current_relative_error": ("plasma_current_relative_error_max", True),
+        "psi_span_abs_wb": ("psi_span_abs_wb_min", False),
+        "plasma_delta_max_abs_wb": ("plasma_delta_max_abs_wb_min", False),
     }
-    for column, (threshold_name, comparison) in threshold_columns.items():
+    for column, (threshold_name, is_upper_bound) in threshold_columns.items():
         threshold = tolerance.get(threshold_name)
         if (
             not isinstance(threshold, (int, float))
@@ -348,7 +349,9 @@ def _validate_diagnostics(
         ):
             failures.append(f"tolerances.{threshold_name} must be finite and non-negative")
             continue
-        if not np.all(comparison(diagnostics[:, index[column]], float(threshold))):
+        values = diagnostics[:, index[column]]
+        within = values <= float(threshold) if is_upper_bound else values >= float(threshold)
+        if not np.all(within):
             failures.append(f"accepted diagnostics violate {threshold_name}")
     feature_names = [str(feature.get("name")) for feature in features]
     if "plasma_current_target_a" not in feature_names:

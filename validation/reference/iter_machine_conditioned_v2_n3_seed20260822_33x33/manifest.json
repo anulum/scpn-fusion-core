@@ -5,7 +5,7 @@
       "file": "coil_green_psi_per_current.npy",
       "logical_bytes": 52272,
       "role": "coil_green_psi_per_current",
-      "sha256": "728fa02656ffdb0247087665ca47f9cf1ba42166fbb8f8c7836e04129dd10d7c",
+      "sha256": "f9004fd1ebc035ed81adffae9d9a1aad90b1c8aadacac1a6dd457cc5696f8072",
       "shape": [
         6,
         33,
@@ -18,7 +18,7 @@
       "file": "diagnostics.npy",
       "logical_bytes": 240,
       "role": "diagnostics",
-      "sha256": "7d5708565c3592f0e524821c26f833f4ecc3af1242f33e82b9c5d221bb045ccb",
+      "sha256": "53ac8a5afdc6022046c282fd2a6385c1fc23df0c4018c3d646a32b9e5bcd482d",
       "shape": [
         3,
         10
@@ -88,7 +88,7 @@
       "file": "psi_total.npy",
       "logical_bytes": 26136,
       "role": "psi_total",
-      "sha256": "cf920ca636a134d6bd52a02d79dc72080f77d6c87116bd86f25522a34e5a7bf0",
+      "sha256": "137b3a40b85d622cec6dafec4139a2fcf76805db245d91accf53a65dab95ae1b",
       "shape": [
         3,
         33,
@@ -101,7 +101,7 @@
       "file": "psi_vacuum.npy",
       "logical_bytes": 26136,
       "role": "psi_vacuum",
-      "sha256": "07fac5e37f9535d0b56bb220b56026ac76e94d849000491f52109c2adc86f21d",
+      "sha256": "0d08bec7d115e124fcf81b3376f66c1eb1f90f37408ff2552f920013d54cb4f3",
       "shape": [
         3,
         33,
@@ -475,7 +475,7 @@
       },
       "dataset_contract": {
         "path": "src/scpn_fusion/io/machine_conditioned_equilibrium_dataset.py",
-        "sha256": "5668d917e2d45bf3e31b3dc57aabcebe6907f642b68567b367c78c6c977bafc6"
+        "sha256": "da7d8208ea23455fb90329ff7f2b9d91a646e68d72ddb3bee0e20a72aa90056c"
       },
       "generation_spec": {
         "path": "validation/iter_machine_conditioned_v2_spec.json",
@@ -495,7 +495,7 @@
       }
     },
     "repository": "https://github.com/anulum/scpn-fusion-core",
-    "repository_head_context": "4f57bf13b25c76ce26ebf4a3d8f9e3f95fc6d9d6"
+    "repository_head_context": "e55649d2e8fabc048e156876e60ed4bee0da654f"
   },
   "tolerances": {
     "diagnostic_replay_max_abs": 1e-12,
