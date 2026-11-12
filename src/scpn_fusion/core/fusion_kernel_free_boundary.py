@@ -37,6 +37,14 @@ BOUNDARY_KINDS: tuple[BoundaryKind, ...] = ("lcfs", "separatrix", "computational
 
 _MU0 = 4e-7 * np.pi
 
+# Limiter-containment results; they stay None until measured for an applicable boundary.
+_CONTAINMENT_RESULT_KEYS = (
+    "boundary_containment_fraction",
+    "boundary_containment_pass",
+    "boundary_points_on_limiter",
+    "boundary_points_outside_limiter",
+)
+
 
 def green_function(R_src: float, Z_src: float, R_obs: float, Z_obs: float) -> float:
     """Evaluate the axisymmetric circular-filament poloidal-flux Green's function.
@@ -223,12 +231,9 @@ def reconstruct_boundary_flux_from_coils(
                 "limiter_orientation": limiter_contour.orientation,
                 "contour_tolerance_m": limiter_contour.tolerance_m,
                 "limiter_containment_applicable": applicable,
-                "boundary_containment_fraction": None,
-                "boundary_containment_pass": None,  # nosec B105  # pass/fail flag, not a credential
-                "boundary_points_on_limiter": None,
-                "boundary_points_outside_limiter": None,
             }
         )
+        diagnostics.update(dict.fromkeys(_CONTAINMENT_RESULT_KEYS))
         if applicable:
             codes = classify_points(obs, limiter_contour)
             contained = codes >= ON_BOUNDARY
