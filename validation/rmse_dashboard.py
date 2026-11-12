@@ -715,6 +715,7 @@ def main() -> int:
 
     with json_path.open("w", encoding="utf-8") as handle:
         json.dump(report, handle, indent=2)
+        handle.write("\n")
     with md_path.open("w", encoding="utf-8") as handle:
         handle.write(render_markdown(report, plot_dir=plot_rel))
 

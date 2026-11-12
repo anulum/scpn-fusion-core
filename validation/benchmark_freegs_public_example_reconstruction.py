@@ -1283,7 +1283,7 @@ def _write_markdown(report: dict[str, Any]) -> None:
             lines.append(f"- {item}")
     else:
         lines.append("- None")
-    MD_REPORT.write_text("\n".join(lines), encoding="utf-8")
+    MD_REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _tracked_report_fallback() -> dict[str, Any] | None:

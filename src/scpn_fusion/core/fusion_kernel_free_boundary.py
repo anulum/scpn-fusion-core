@@ -224,7 +224,7 @@ def reconstruct_boundary_flux_from_coils(
                 "contour_tolerance_m": limiter_contour.tolerance_m,
                 "limiter_containment_applicable": applicable,
                 "boundary_containment_fraction": None,
-                "boundary_containment_pass": None,
+                "boundary_containment_pass": None,  # nosec B105  # pass/fail flag, not a credential
                 "boundary_points_on_limiter": None,
                 "boundary_points_outside_limiter": None,
             }
