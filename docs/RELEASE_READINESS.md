@@ -1,4 +1,4 @@
-# v4.0.0 Release Acceptance
+# v4.1.0 Release Acceptance
 
 
 ## Evidence and governance meaning
@@ -13,7 +13,7 @@ evidence requirement was silently dropped.
 
 This checklist is the operational gate for release publication. It tracks required checks and references for traceable, repeatable release decisions.
 
-Release Version: `v4.0.0`
+Release Version: `v4.1.0`
 Readiness State: `ready`
 
 This file is a tracked, non-sensitive release gate artifact. It records the
@@ -41,8 +41,8 @@ preflight checks so claim state changes are evidence-backed.
 
 ## Release evidence links
 
-- `CHANGELOG.md` (`4.0.0` section)
-- `https://github.com/anulum/scpn-fusion-core/releases/tag/v4.0.0`
+- `CHANGELOG.md` (`4.1.0` section)
+- `https://github.com/anulum/scpn-fusion-core/releases/tag/v4.1.0`
 - `README.md`
 - `docs/PROJECT_OVERVIEW.md`
 - `docs/ONBOARDING.md`

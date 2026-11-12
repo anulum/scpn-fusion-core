@@ -13,7 +13,7 @@
 
 This file is the consolidated index of implemented physics methods. It is for contributors aligning method selection, supported fidelity levels, and expected next validation steps.
 
-**Version**: 4.0.0 &nbsp;|&nbsp; **Scope**: All implemented physics closures with equations, numerical methods, references, and validation scripts.
+**Version**: 4.1.0 &nbsp;|&nbsp; **Scope**: All implemented physics closures with equations, numerical methods, references, and validation scripts.
 
 ---
 

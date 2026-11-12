@@ -9,7 +9,7 @@
 
 from typing import Any
 
-__version__ = "4.0.0"
+__version__ = "4.1.0"
 
 __all__ = ["setup_fusion_logging", "__version__"]
 

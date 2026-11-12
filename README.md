@@ -18,7 +18,7 @@
 [![License](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
 [![REUSE status](https://api.reuse.software/badge/github.com/anulum/scpn-fusion-core)](https://api.reuse.software/info/github.com/anulum/scpn-fusion-core)
 [![Commercial License](https://img.shields.io/badge/Commercial_license-available-success.svg)](mailto:protoscience@anulum.li?subject=SCPN%20Fusion%20Core%20Commercial%20License)
-![Version](https://img.shields.io/badge/Version-4.0.0-brightgreen.svg)
+![Version](https://img.shields.io/badge/Version-4.1.0-brightgreen.svg)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![Rust](https://img.shields.io/badge/Rust-1.94%2B-orange.svg)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/anulum/scpn-fusion-core/badge)](https://scorecard.dev/viewer/?uri=github.com/anulum/scpn-fusion-core)
@@ -132,22 +132,26 @@ facades and evidence-bounded validation reports.
 
 ## Current Release Snapshot
 
-Version `4.0.0` is the current public release. Its major line is a
-differentiable predictive free-boundary Grad-Shafranov solver: SI inputs,
-general profile bases, smooth axis/X-point extraction, Anderson acceleration,
-a fully JIT-compiled forward path, cached batched solves, and an
-implicit-function-theorem adjoint for coil-current gradients. The release also
-adds an OMAS/IMAS equilibrium bridge with an explicit COCOS audit and a
-real-data DIII-D 145419 validation lane.
+Version `4.1.0` is the current public release. It moves the package to
+NumPy 2 (`numpy>=2.4,<3`) and Python 3.11 or newer, and adds a linear resistive
+reduced-MHD eigenvalue solver (Harris slab and periodic cylinder), a full
+runaway-electron kinetic solver with an equivalent Rust kernel, a
+process-isolated contract for pinned TORAX 1.4.3 runs, a complete FAIR-MAST
+magnetic archive contract with the shot 27707 qualification, a recovery-safe
+equilibrium DeepONet with Rust inference, and split-conformal certificates for
+the QLKNN transport surrogate. Explicit inverses of symmetric positive-definite
+matrices are replaced by Cholesky solves, limiter containment follows one
+closed-contour contract in Python and Rust, and every hash-locked dependency
+closure resolves to patched releases.
 
-The major version records behavioural hardening rather than API removal:
-fail-closed input validation, the multigrid preconditioner becoming the default
-for the compiled forward path, corrected fine-grid adjoint convergence, and a
-re-measured disruption operating point. Exact release notes and artifact
-checksums are published in the [v4.0.0 GitHub release](https://github.com/anulum/scpn-fusion-core/releases/tag/v4.0.0)
+The 4.x line is the differentiable predictive free-boundary Grad-Shafranov
+solver introduced in 4.0.0, with exact coil-current gradients, a compiled and
+batched forward path, an OMAS/IMAS equilibrium bridge and a real-data DIII-D
+145419 validation lane. Exact release notes and artifact checksums are
+published in the [v4.1.0 GitHub release](https://github.com/anulum/scpn-fusion-core/releases/tag/v4.1.0)
 and [`CHANGELOG.md`](CHANGELOG.md).
 
-Version 4.0.0 does **not** promote the repository to completed end-to-end
+Version 4.1.0 does **not** promote the repository to completed end-to-end
 full-fidelity parity. GENE/CGYRO/GS2 nonlinear turbulence parity, full
 electromagnetic parity, DREAM kinetic parity, independent mechanistic
 Aurora/STRAHL recycling validation, and production MPI/multi-GPU scaling stay
@@ -162,7 +166,7 @@ checksums, thresholds, grid or scaling evidence, and native comparisons.
 
 | Surface | Current inventory |
 |---|---:|
-| Package version | 4.0.0 |
+| Package version | 4.1.0 |
 | Public API exports | 2 |
 | Python capability source modules | 374 |
 | Python capability classes | 646 |
@@ -219,7 +223,7 @@ before plant deployment.
 | Find public APIs and extension points | [`docs/API_OVERVIEW.md`](docs/API_OVERVIEW.md) |
 | Emit the Studio federation manifest | [`docs/sphinx/userguide/studio_federation.rst`](docs/sphinx/userguide/studio_federation.rst) |
 | Understand applications and market value | [`docs/APPLICATIONS_AND_MARKET.md`](docs/APPLICATIONS_AND_MARKET.md) |
-| Read the current release and checksums | [`CHANGELOG.md`](CHANGELOG.md), [v4.0.0 release](https://github.com/anulum/scpn-fusion-core/releases/tag/v4.0.0) |
+| Read the current release and checksums | [`CHANGELOG.md`](CHANGELOG.md), [v4.1.0 release](https://github.com/anulum/scpn-fusion-core/releases/tag/v4.1.0) |
 | Reproduce benchmark claims | [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md), [`RESULTS.md`](RESULTS.md) |
 | Download and reproduce the ITER-like synthetic baseline | [`docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md`](docs/ITER_SYNTHETIC_DATASET_AND_SURROGATE.md) |
 | Reproduce the complete FAIR-MAST magnetic archive proof | [`docs/MAST_COMPLETE_MAGNETIC_ARCHIVE.md`](docs/MAST_COMPLETE_MAGNETIC_ARCHIVE.md) |
@@ -941,7 +945,7 @@ Validation artifacts:
   author  = {Sotek, Miroslav},
   year    = {2026},
   url     = {https://github.com/anulum/scpn-fusion-core},
-  version = {4.0.0}
+  version = {4.1.0}
 }
 ```
 

@@ -173,16 +173,6 @@ def sync(*, check_only: bool = False) -> int:
         )
     )
 
-    # 3e. docs/competitive_analysis.md table rows
-    changed_count += int(
-        update_file(
-            REPO_ROOT / "docs" / "competitive_analysis.md",
-            r"SCPN v\d+\.\d+\.\d+",
-            f"SCPN v{version}",
-            check_only=check_only,
-        )
-    )
-
     # 5. README.md badges and release text
     changed_count += int(
         update_file(

@@ -11,7 +11,7 @@ build-backend = "maturin"
 
 [project]
 name = "scpn-fusion-rs"
-version = "4.0.0"
+version = "4.1.0"
 description = "Native Rust acceleration for SCPN Fusion Core"
 readme = "README.md"
 license = "AGPL-3.0-or-later"

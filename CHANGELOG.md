@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-11-12
+
+Minor release on top of 4.0.0. scpn-fusion now requires Python 3.11 or newer
+and NumPy 2 (`numpy>=2.4,<3`). New public capabilities: a linear resistive
+reduced-MHD eigenvalue solver (Harris slab and periodic cylinder, with a
+shaped-section extension limited to operator experiments), a full
+runaway-electron kinetic solver with an equivalent Rust kernel, a
+process-isolated contract for pinned TORAX 1.4.3 runs, a complete FAIR-MAST
+magnetic archive contract with the shot 27707 qualification, a recovery-safe
+equilibrium DeepONet with Rust inference and a solver-seeding API, and
+split-conformal certificates for the QLKNN transport surrogate. Numerical
+fixes replace explicit inverses of SPD matrices with Cholesky solves, give
+limiter containment one closed-contour contract in Python and Rust, and take
+tungsten radiation from the Pütterich et al. (2010) table. Every hash-locked
+dependency closure resolves to patched releases.
+
+Compatibility: Python 3.10 support is removed; the FreeGS public-example
+metric `boundary_containment_fraction` is renamed `wall_flux_agreement_fraction`;
+the Rust 1D-to-3D projected DREAM-style artifact export is retired. The
+full-fidelity evidence boundary is unchanged: the acceptance contract still
+fails closed, the predictive IDA same-case evidence still misses its gates,
+and no DeepONet solver-speed claim is promoted.
+
+### Removed
+
+- Python 3.10 support (end of life 2026-10-01; pillow 13 requires Python 3.11):
+  `requires-python` is `>=3.11` for `scpn-fusion` and `scpn-fusion-rs`, and the
+  Python 3.10 test lane, lock and wheel build are removed.
+
 ### Changed
 
 - scpn-fusion now requires NumPy 2 (`numpy>=2.4,<3`, was `numpy>=1.24,<2.0`).
@@ -17,55 +46,17 @@
   0.13.1 declares `numpy<2`. The coupled TORAX reference was regenerated
   with TORAX 1.4.3 under NumPy 2.5.4; its profiles agree with the previous
   reference to 1.5e-14 relative.
-
-### Fixed
-
-- Explicit matrix inverses of symmetric positive-definite matrices are
-  replaced by Cholesky solves through `scpn_fusion.core.spd_linalg`
-  (diagonal scaling, LAPACK `pocon` condition estimate, one refinement step,
-  typed `NonSPDMatrixError`): Kalman gains in the EKF, density estimator,
-  control-room observer, flight-sim and H-infinity observers; Tikhonov gains
-  in the shape and fault-tolerant controllers; RZIP and vessel inductance
-  matrices; the LQR input weight; and the Sugama conservation Gram matrix in
-  NumPy, JAX and Rust (Rust no longer retries with a silent `1e-14 I`).
-  Kalman covariance updates use the Joseph form. Mu-synthesis D-scaling
-  checks that every factor is finite and positive before taking reciprocals.
-  The output-feedback pseudo-inverse sets `rcond` explicitly. Paths that
-  still fall back to a zero gain or zero inductance response now log at
-  ERROR level and set `gain_status` / `inductance_status`.
-- Limiter containment uses one closed-contour contract in Python
-  (`scpn_fusion.core.contour_geometry`) and Rust (`fusion_core::contour`).
-  The Python ray test divided by `abs(dZ)` and lost the edge slope, so the
-  point (5, 0) fell outside the triangle (4, -1), (6, -1), (5, 1) in both
-  vertex orders. Points within a physical tolerance (default `1e-9` m) of the
-  limiter now count as contained, either vertex order is accepted, a repeated
-  closing vertex is dropped, and repeated vertices, zero-area, folded or
-  self-intersecting limiters are rejected. The edge of the computational grid
-  is no longer tested against the limiter (`boundary_kind`).
-- The FreeGS public-example metric `boundary_containment_fraction` measured
-  flux equality on the grid edge, not containment; it is renamed
-  `wall_flux_agreement_fraction`, and strict free-boundary parity now lists
-  `lcfs_limiter_containment_unmeasured` as a blocker.
-- Tungsten radiation now follows Pütterich et al., Nucl. Fusion 50 (2010)
-  025012, Table 2 (log-log interpolation of all 31 rows) in both
-  `CoolingCurve("W")` and the transport solver. The cooling curve used two
-  Gaussians with a 1e-31 W m^3 peak and the solver a piecewise curve rising
-  to 8e-31 W m^3 above 20 keV; the published table peaks at 4.59e-31 W m^3
-  at 1.5 keV and falls to 4.95e-32 W m^3 at 40 keV.
-
-### Security
-
-- Every committed hash-locked Python closure resolves to patched releases:
-  pillow 13.0.0, certifi 2026.10.23, filelock 4.2.4, GitPython 3.2.1,
-  virtualenv 21.14.13, aiohttp 3.14.5 and setuptools 84.2.1; all 18 locks pass
-  pip-audit. The GitPython and virtualenv caps in the `.in` files are raised to
-  admit the fixed releases.
-- tornado moves from 6.5.9 to 6.6 in the build, CI, docs and full locks
-  (CVE-2026-115927, CVE-2026-116577, CVE-2026-116578); the `.in` floors and
-  the security-floor contract test now require 6.6.
-- `.npz` archives are read and written through `fusion_math::npz` on zip
-  9.1.2; `ndarray-npy` is used without its zip feature, which removes zip 2.4.2
-  (RUSTSEC-2026-0367, RUSTSEC-2026-0368, RUSTSEC-2026-0369).
+- Python locks are regenerated with uv 0.12.21 to the newest versions their
+  constraints allow (`REGEN_UPGRADE=1 tools/regenerate-requirements.sh`); the
+  cfspopcon and PROCESS runtime closures and the GPU bootstrap lock are
+  refreshed from their pinned sources. ruff 0.17.2 and mypy 1.20.2 are pinned
+  alike in the pre-commit hook, the RustBCA and PROCESS tool sets and the CI
+  locks; mypy stays below 2.0.
+- Rust lock files move to the newest semver-compatible crates.
+- Pinned GitHub Actions move to their current releases: setup-python 7.1.0,
+  upload-artifact 7.0.2, download-artifact 8.0.2, CodeQL 4.39.3, Scorecard
+  2.5.0, setup-julia 3.0.3, install-action 2.87.32, pypi-publish 1.14.3 and the
+  current rust-toolchain stable commit.
 
 ### Added
 
@@ -202,22 +193,45 @@
   candidate-versus-reference plasma-current support, distribution distance,
   and centroid shift without changing solver physics or promotion gates.
 
-### Changed
-
-- Python locks are regenerated with uv 0.12.21 to the newest versions their
-  constraints allow (`REGEN_UPGRADE=1 tools/regenerate-requirements.sh`); the
-  cfspopcon and PROCESS runtime closures and the GPU bootstrap lock are
-  refreshed from their pinned sources. ruff 0.17.2 and mypy 1.20.2 are pinned
-  alike in the pre-commit hook, the RustBCA and PROCESS tool sets and the CI
-  locks; mypy stays below 2.0.
-- Rust lock files move to the newest semver-compatible crates.
-- Pinned GitHub Actions move to their current releases: setup-python 7.1.0,
-  upload-artifact 7.0.2, download-artifact 8.0.2, CodeQL 4.38.3, Scorecard
-  2.5.0, setup-julia 3.0.3, install-action 2.87.32, pypi-publish 1.14.3 and the
-  current rust-toolchain stable commit.
-
 ### Fixed
 
+- The nightly Atheris campaign sets `vm.mmap_rnd_bits=28` before it runs. The
+  AddressSanitizer runtime bundled with Atheris supports at most 28 bits of
+  mmap randomisation and could stall on the current hosted-runner kernels. The
+  nightly runs from 2 to 12 November were cancelled or failed on the same commit
+  that had passed on 31 October and 1 November.
+- Explicit matrix inverses of symmetric positive-definite matrices are
+  replaced by Cholesky solves through `scpn_fusion.core.spd_linalg`
+  (diagonal scaling, LAPACK `pocon` condition estimate, one refinement step,
+  typed `NonSPDMatrixError`): Kalman gains in the EKF, density estimator,
+  control-room observer, flight-sim and H-infinity observers; Tikhonov gains
+  in the shape and fault-tolerant controllers; RZIP and vessel inductance
+  matrices; the LQR input weight; and the Sugama conservation Gram matrix in
+  NumPy, JAX and Rust (Rust no longer retries with a silent `1e-14 I`).
+  Kalman covariance updates use the Joseph form. Mu-synthesis D-scaling
+  checks that every factor is finite and positive before taking reciprocals.
+  The output-feedback pseudo-inverse sets `rcond` explicitly. Paths that
+  still fall back to a zero gain or zero inductance response now log at
+  ERROR level and set `gain_status` / `inductance_status`.
+- Limiter containment uses one closed-contour contract in Python
+  (`scpn_fusion.core.contour_geometry`) and Rust (`fusion_core::contour`).
+  The Python ray test divided by `abs(dZ)` and lost the edge slope, so the
+  point (5, 0) fell outside the triangle (4, -1), (6, -1), (5, 1) in both
+  vertex orders. Points within a physical tolerance (default `1e-9` m) of the
+  limiter now count as contained, either vertex order is accepted, a repeated
+  closing vertex is dropped, and repeated vertices, zero-area, folded or
+  self-intersecting limiters are rejected. The edge of the computational grid
+  is no longer tested against the limiter (`boundary_kind`).
+- The FreeGS public-example metric `boundary_containment_fraction` measured
+  flux equality on the grid edge, not containment; it is renamed
+  `wall_flux_agreement_fraction`, and strict free-boundary parity now lists
+  `lcfs_limiter_containment_unmeasured` as a blocker.
+- Tungsten radiation now follows Pütterich et al., Nucl. Fusion 50 (2010)
+  025012, Table 2 (log-log interpolation of all 31 rows) in both
+  `CoolingCurve("W")` and the transport solver. The cooling curve used two
+  Gaussians with a 1e-31 W m^3 peak and the solver a piecewise curve rising
+  to 8e-31 W m^3 above 20 keV; the published table peaks at 4.59e-31 W m^3
+  at 1.5 keV and falls to 4.95e-32 W m^3 at 40 keV.
 - `most_unstable` no longer returns the first admissible root
   near a shift: `unstable_search` solves problems of at most 2000 unknowns by
   dense QZ and otherwise collects eigenvector-verified roots over all shifts,
@@ -247,6 +261,39 @@
   for recovery, and close every reachable line and branch in the eight-module
   training/runtime surface with real NumPy, Rust, malformed-file, overflow,
   and end-to-end numerical failure paths.
+- Return typed shape/data errors from `fusion-ml` PCA, neural-equilibrium, and
+  PCE convenience APIs, and enforce non-test panic-API denial across the crate.
+- Propagate typed gyrokinetic geometry and collision-matrix failures through
+  the Rust RK4 and PyO3 boundaries, and enforce non-test panic-API denial for
+  the now production-clean `fusion-physics` crate.
+- Return typed configuration errors from the `fusion-physics` ESN prediction
+  API when prediction is requested before training or with the wrong input
+  dimension, instead of panicking on an absent output matrix.
+- Enforce non-test `unwrap()`/`expect()` denial in the production-clean
+  `fusion-core` and `fusion-control` crates while retaining invariant
+  assertions in their inline test modules.
+- Replace the production `expect()` in the `fusion-nuclear` first-wall NURBS
+  builder with a typed `FusionResult`, propagate curve-validation failures, and
+  enforce non-test panic-API denial for the crate.
+- Correct the IDA same-case latency loop so `warm_ms` measures a synchronised
+  same-input solve from a converged equilibrium instead of repeating the full
+  cold-start continuation after JIT compilation. The report now separates cold
+  iterations, warm setup/compilation, steady-state warm iterations, and timing
+  samples, and rejects relabelled cold-start or unconverged warm evidence.
+
+### Security
+
+- Every committed hash-locked Python closure resolves to patched releases:
+  pillow 13.0.0, certifi 2026.10.23, filelock 4.2.4, GitPython 3.2.1,
+  virtualenv 21.14.13, aiohttp 3.14.5 and setuptools 84.2.1; all 18 locks pass
+  pip-audit. The GitPython and virtualenv caps in the `.in` files are raised to
+  admit the fixed releases.
+- tornado moves from 6.5.9 to 6.6 in the build, CI, docs and full locks
+  (CVE-2026-115927, CVE-2026-116577, CVE-2026-116578); the `.in` floors and
+  the security-floor contract test now require 6.6.
+- `.npz` archives are read and written through `fusion_math::npz` on zip
+  9.5.0; `ndarray-npy` is used without its zip feature, which removes zip 2.4.2
+  (RUSTSEC-2026-0367, RUSTSEC-2026-0368, RUSTSEC-2026-0369).
 
 ### Validation
 
@@ -319,34 +366,6 @@
   `0.028930007443069596`, and warm P95 `2175.6446484243497 ms`. Statistical
   holdout, isolated timing, collaborator, facility, PCS, and safety evidence
   are explicitly absent; no scientific or deployment promotion is made.
-
-### Fixed
-
-- Return typed shape/data errors from `fusion-ml` PCA, neural-equilibrium, and
-  PCE convenience APIs, and enforce non-test panic-API denial across the crate.
-- Propagate typed gyrokinetic geometry and collision-matrix failures through
-  the Rust RK4 and PyO3 boundaries, and enforce non-test panic-API denial for
-  the now production-clean `fusion-physics` crate.
-- Return typed configuration errors from the `fusion-physics` ESN prediction
-  API when prediction is requested before training or with the wrong input
-  dimension, instead of panicking on an absent output matrix.
-- Enforce non-test `unwrap()`/`expect()` denial in the production-clean
-  `fusion-core` and `fusion-control` crates while retaining invariant
-  assertions in their inline test modules.
-- Replace the production `expect()` in the `fusion-nuclear` first-wall NURBS
-  builder with a typed `FusionResult`, propagate curve-validation failures, and
-  enforce non-test panic-API denial for the crate.
-- Correct the IDA same-case latency loop so `warm_ms` measures a synchronised
-  same-input solve from a converged equilibrium instead of repeating the full
-  cold-start continuation after JIT compilation. The report now separates cold
-  iterations, warm setup/compilation, steady-state warm iterations, and timing
-  samples, and rejects relabelled cold-start or unconverged warm evidence.
-
-### Removed
-
-- Python 3.10 support (end of life 2026-10-01; pillow 13 requires Python 3.11):
-  `requires-python` is `>=3.11` for `scpn-fusion` and `scpn-fusion-rs`, and the
-  Python 3.10 test lane, lock and wheel build are removed.
 
 ## [4.0.0] - 2026-07-22
 
