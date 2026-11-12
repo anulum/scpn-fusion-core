@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The PyPI publish workflow publishes only from a pushed `v*` tag, or from a
+  manual run that sets `publish_pypi` and names a `v*` tag as `ref` (so the
+  release-readiness check ran against that version). Any other manual run
+  builds and verifies the distribution without publishing; before, every
+  manual run published.
+
 ## [4.1.0] - 2026-11-12
 
 Minor release on top of 4.0.0. scpn-fusion now requires Python 3.11 or newer
