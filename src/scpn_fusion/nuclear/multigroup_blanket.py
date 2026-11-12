@@ -202,14 +202,7 @@ class MultiGroupBlanket:
         prod_g3 = self.sigma_capture_g3 * phi_g3
         total_prod = prod_g1 + prod_g2 + prod_g3
 
-        if hasattr(np, "trapezoid"):
-            total_tritium = float(
-                np.trapezoid(total_prod * 2.0 * np.pi * self.r, self.r)
-            )  # pragma: no cover - numpy>=2.0 trapezoid path
-        else:
-            edge = np.diff(self.r)
-            total_integrand = total_prod * 2.0 * np.pi * self.r
-            total_tritium = float(np.sum(0.5 * (total_integrand[1:] + total_integrand[:-1]) * edge))
+        total_tritium = float(np.trapezoid(total_prod * 2.0 * np.pi * self.r, self.r))
 
         # Incident current (per unit length): J+ * Area_inner
         incident_current_total = (phi_g1[0] / 4.0) * (2.0 * np.pi * self.r_inner)
@@ -218,24 +211,9 @@ class MultiGroupBlanket:
 
         # Per-group TBR breakdown (with same correction factors as total)
         corr = port_coverage_factor * streaming_factor
-        if hasattr(np, "trapezoid"):
-            tbr_g1_raw = float(
-                np.trapezoid(prod_g1 * 2.0 * np.pi * self.r, self.r)
-            )  # pragma: no cover - numpy>=2.0 trapezoid path
-            tbr_g2_raw = float(
-                np.trapezoid(prod_g2 * 2.0 * np.pi * self.r, self.r)
-            )  # pragma: no cover - numpy>=2.0 trapezoid path
-            tbr_g3_raw = float(
-                np.trapezoid(prod_g3 * 2.0 * np.pi * self.r, self.r)
-            )  # pragma: no cover - numpy>=2.0 trapezoid path
-        else:
-            edge = np.diff(self.r)
-            g1 = prod_g1 * 2.0 * np.pi * self.r
-            g2 = prod_g2 * 2.0 * np.pi * self.r
-            g3 = prod_g3 * 2.0 * np.pi * self.r
-            tbr_g1_raw = float(np.sum(0.5 * (g1[1:] + g1[:-1]) * edge))
-            tbr_g2_raw = float(np.sum(0.5 * (g2[1:] + g2[:-1]) * edge))
-            tbr_g3_raw = float(np.sum(0.5 * (g3[1:] + g3[:-1]) * edge))
+        tbr_g1_raw = float(np.trapezoid(prod_g1 * 2.0 * np.pi * self.r, self.r))
+        tbr_g2_raw = float(np.trapezoid(prod_g2 * 2.0 * np.pi * self.r, self.r))
+        tbr_g3_raw = float(np.trapezoid(prod_g3 * 2.0 * np.pi * self.r, self.r))
 
         tbr_g1 = tbr_g1_raw / max(incident_current_total, 1e-12) * corr
         tbr_g2 = tbr_g2_raw / max(incident_current_total, 1e-12) * corr
