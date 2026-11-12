@@ -10,8 +10,8 @@
 
 ## Outcome
 
-On the disclosed local machine, the NumPy/JAX median wall-time ratio was 4.5990 for this case. The final profiles differ by 1.443290e-15 keV.
-For this workload, the observed JAX median was 0.2174 times the NumPy median, so automatic dispatch retains NumPy.
+On the disclosed local machine, the NumPy/JAX median wall-time ratio was 4.2787 for this case. The final profiles differ by 1.443290e-15 keV.
+For this workload, the observed JAX median was 0.2337 times the NumPy median, so automatic dispatch retains NumPy.
 
 The ratio is the observed result on the disclosed local machine. It is not a portable performance guarantee.
 
@@ -19,8 +19,8 @@ The ratio is the observed result on the disclosed local machine. It is not a por
 
 | Backend | Language | Build profile | Cold (s) | Warm P05 (s) | Warm median (s) | Warm P95 (s) | Samples |
 |---|---|---|---:|---:|---:|---:|---:|
-| NumPy | Python | CPython/NumPy | 0.005586122 | 0.005578871 | 0.005651208 | 0.006487462 | 31 |
-| JAX | JAX/XLA via Python | JAX float64/cpu | 0.452520326 | 0.001078656 | 0.001228788 | 0.001561921 | 31 |
+| NumPy | Python | CPython/NumPy | 0.005765598 | 0.005479599 | 0.005549389 | 0.005670351 | 31 |
+| JAX | JAX/XLA via Python | JAX float64/cpu | 0.459442412 | 0.001211681 | 0.001296980 | 0.001385822 | 31 |
 
 ## Numerical checks
 
@@ -43,15 +43,15 @@ The ratio is the observed result on the disclosed local machine. It is not a por
 
 ## Environment
 
-- CPU: Intel(R) Xeon(R) Platinum 8370C CPU @ 2.80GHz
+- CPU: AMD EPYC 7763 64-Core Processor
 - Logical CPUs: 4
 - Affinity: 4 CPUs (`[0, 1, 2, 3]`)
-- Governors: `{'performance': 4}`
-- Process count: 163
-- Load average before: `[0.853515625, 0.30322265625, 0.11083984375]`
-- Load average after: `[0.853515625, 0.30322265625, 0.11083984375]`
-- Platform: Linux-6.17.0-1022-azure-x86_64-with-glibc2.39
-- Python / NumPy / SciPy: 3.12.15 / 1.26.4 / 1.17.1
+- Governors: `{}`
+- Process count: 175
+- Load average before: `[1.0, 0.5205078125, 0.2158203125]`
+- Load average after: `[1.0, 0.5205078125, 0.2158203125]`
+- Platform: Linux-7.0.0-1019-azure-x86_64-with-glibc2.43
+- Python / NumPy / SciPy: 3.12.16 / 2.5.4 / 1.17.1
 - JAX / jaxlib: 0.7.1 / 0.7.1
 - JAX backend and devices: cpu / `[{'platform': 'cpu', 'device_kind': 'cpu', 'id': 0}]`
 - Thread environment: `{}`
