@@ -68,9 +68,6 @@ def _interpolate_profiles(
 
 def _integral(values: FloatArray, measure: FloatArray, rho: FloatArray) -> float:
     integrand = np.asarray(values, dtype=np.float64) * measure
-    trapezoid = getattr(np, "trapezoid", None)
-    if callable(trapezoid):
-        return float(trapezoid(integrand, rho))
     return float(np.trapezoid(integrand, rho))
 
 

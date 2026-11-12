@@ -3,7 +3,7 @@
 click>=8.1,<9
 # Documentation CI runs on Python 3.12 with the NumPy 2 line that scpn-fusion
 # itself requires.
-numpy>=2.2,<3
+numpy>=2.4,<3
 matplotlib>=3.5,<4
 scipy>=1.10,<2
 pydantic>=2.0,<3

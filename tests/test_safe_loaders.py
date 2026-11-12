@@ -251,6 +251,23 @@ def test_checked_np_load_accepts_supported_header_versions(
     assert loaded.dtype == np.dtype("<f8")
 
 
+@pytest.mark.parametrize("version", [(1, 0), (2, 0), (3, 0)])
+def test_checked_np_load_applies_header_limit_for_every_version(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    version: tuple[int, int],
+) -> None:
+    """Pass the caller's header-size limit to the reader of every version."""
+    path = tmp_path / "long_header.npy"
+    path.write_bytes(_npy_header(shape=(0, 4), descr="<f8", version=version))
+    calls = _forbid_numpy_load(monkeypatch)
+
+    with pytest.raises(ValueError, match="Header"):
+        checked_np_load(path, max_header_bytes=32)
+
+    assert calls == []
+
+
 def test_checked_np_load_rejects_unsupported_header_version(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

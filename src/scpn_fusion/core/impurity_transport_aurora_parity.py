@@ -16,7 +16,6 @@ builder. It depends on the data contracts
 
 from __future__ import annotations
 
-from typing import Any
 
 import numpy as np
 
@@ -36,9 +35,8 @@ from scpn_fusion.core.impurity_transport_contracts import (
 
 
 def _volume_integral(profile: FloatArray, radius_m: FloatArray, R0: float) -> float:
-    trapz: Any = getattr(np, "trapezoid", None) or getattr(np, "trapz", None)
     vol_element = 4.0 * np.pi**2 * R0 * radius_m
-    return float(trapz(profile * vol_element, radius_m))
+    return float(np.trapezoid(profile * vol_element, radius_m))
 
 
 class AuroraParityImpuritySolver:

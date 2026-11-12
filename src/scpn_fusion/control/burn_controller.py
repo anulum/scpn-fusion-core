@@ -10,7 +10,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, cast
+from typing import Callable, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -56,8 +56,7 @@ class AlphaHeating:
         # dV = 4 pi^2 R0 a^2 kappa rho drho
         dV = 4.0 * np.pi**2 * self.R0 * self.a**2 * self.kappa * rho
 
-        _trapz: Any = getattr(np, "trapezoid", None) or getattr(np, "trapz", None)
-        P_tot = _trapz(p_dens * dV, rho)
+        P_tot = np.trapezoid(p_dens * dV, rho)
         return float(P_tot)
 
     def Q(self, P_alpha_MW: float, P_aux_MW: float) -> float:

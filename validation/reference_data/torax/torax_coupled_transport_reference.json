@@ -660,7 +660,7 @@
     "precision": "float64",
     "python": "3.12.3",
     "runner_path": "validation/torax_coupled_reference_runner.py",
-    "runner_sha256": "6df233f598868fe607d0ff7fd10662dbb7b6411a1f0ad26c4575c9339cbb7a55",
+    "runner_sha256": "8c22d025d139bc97c8702dbcb710593534608e0adcce7b64a09546d677dc58d2",
     "runtime_backend": "cpu",
     "torax_version": "1.4.3"
   },
@@ -1579,9 +1579,9 @@
     ]
   },
   "runtime_seconds": {
-    "cold_primary": 9.048439426002005,
-    "refined": 0.36835477400018135,
-    "warm_primary": 0.06960826300201006
+    "cold_primary": 7.503132958001515,
+    "refined": 0.3132565500018245,
+    "warm_primary": 0.06660591100080637
   },
   "schema": "scpn-fusion-core.torax-coupled-transport-reference.v1",
   "warm_repeat": {

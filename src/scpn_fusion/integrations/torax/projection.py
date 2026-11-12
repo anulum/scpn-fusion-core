@@ -287,9 +287,6 @@ def _state_budgets(
 
 
 def _trapezoid(values: FloatArray, coordinate: FloatArray) -> float:
-    implementation = getattr(np, "trapezoid", None)
-    if callable(implementation):
-        return float(implementation(values, coordinate))
     return float(np.trapezoid(values, coordinate))
 
 

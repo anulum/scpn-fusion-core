@@ -6,7 +6,7 @@
   "minimum_pack_count": 3,
   "pack_count": 3,
   "total_files": 15,
-  "total_bytes": 180185,
+  "total_bytes": 180177,
   "output_dir": "artifacts/fair_validation_packs",
   "publication_blockers": [
     "owner approval for DOI publication and final data-license posture",
@@ -52,17 +52,17 @@
       "description": "Per-surrogate uncertainty, out-of-distribution, fallback, and retraining-boundary evidence for promoted and scoped surrogate lanes.",
       "license": "AGPL-3.0-or-later",
       "file_count": 4,
-      "total_bytes": 61470,
+      "total_bytes": 61462,
       "files": [
         {
           "path": "validation/surrogate_uq_cards.json",
-          "sha256": "5c700194fd4d8fb0ed4f92161cac076ce17f61eba1a51c179fa70d88e3ad357f",
-          "size_bytes": 15353
+          "sha256": "779e59e01671eace65b403ba0ad03b50bf3fcf3c5dad5c28ca3202de1fdf9c26",
+          "size_bytes": 15349
         },
         {
           "path": "docs/SURROGATE_UQ_CARDS.md",
-          "sha256": "3fbc63dfd7b1e2f3ee1a40e85d742638b12357cd7ce02527ad9e23c055e1a0c5",
-          "size_bytes": 13793
+          "sha256": "c69bfe0466e3053b50d3e42663d21f6feee69119f28e0fafc8c4baa97b900f70",
+          "size_bytes": 13789
         },
         {
           "path": "tools/generate_surrogate_uq_cards.py",

@@ -268,6 +268,25 @@ def test_production_decomposition_distributed_sidecar_is_schema_checked(
     assert "artifact_sha256" in manifest["candidate_rows"][0]["missing_fields"]
 
 
+@pytest.mark.parametrize(
+    ("version", "supported"),
+    [
+        ("2.4.0", True),
+        ("2.4.0rc1", True),
+        ("2.5.4", True),
+        ("2.10.1", True),
+        ("2.3.5", False),
+        ("1.26.4", False),
+        ("3.0.0", False),
+        ("", False),
+        ("unknown", False),
+    ],
+)
+def test_numpy_contract_matches_declared_range(version: str, supported: bool) -> None:
+    """The runtime NumPy check accepts exactly the declared numpy>=2.4,<3 range."""
+    assert decomposition_contract._numpy_version_supported(version) is supported
+
+
 def test_production_decomposition_contract_is_fail_closed() -> None:
     report = run_benchmark()
     write_reports(report)
@@ -390,7 +409,7 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert dependency_evidence["schema"] == "production-decomposition-runtime-dependencies.v1"
     assert dependency_evidence["numpy_contract_pass"] is True
     rows_by_module = {row["module"]: row for row in dependency_evidence["rows"]}
-    assert rows_by_module["numpy"]["required_specifier"] == "numpy>=2.2,<3"
+    assert rows_by_module["numpy"]["required_specifier"] == "numpy>=2.4,<3"
     assert str(rows_by_module["numpy"]["version"]).split(".", 1)[0] == "2"
     assert rows_by_module["mpi4py"]["required_specifier"] == "mpi4py>=4.1"
     assert rows_by_module["cupy"]["required_specifier"] == "cupy-cuda12x>=13.6,<14.0"

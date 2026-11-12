@@ -14,6 +14,7 @@ import ctypes
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -67,7 +68,7 @@ OPTIONAL_RUNTIME_DEPENDENCIES = {
     "cupy": "cupy-cuda12x>=13.6,<14.0",
     "mpi4py": "mpi4py>=4.1",
     "nvidia.cuda_nvrtc": "nvidia-cuda-nvrtc-cu12>=12.0,<13.0",
-    "numpy": "numpy>=2.2,<3",
+    "numpy": "numpy>=2.4,<3",
 }
 FACE_OPPOSITES = {
     "radial_lower": "radial_upper",
@@ -322,6 +323,27 @@ def _python_for_optional_runtime() -> str:
     return str(venv_python) if venv_python.exists() else sys.executable
 
 
+def _numpy_version_supported(version: str) -> bool:
+    """Return whether ``version`` lies in the declared ``numpy>=2.4,<3`` range.
+
+    Parameters
+    ----------
+    version : str
+        Installed NumPy version string, e.g. ``"2.5.4"`` or ``"2.4.0rc1"``.
+
+    Returns
+    -------
+    bool
+        ``True`` for major 2 with minor at least 4; ``False`` otherwise,
+        including an empty or unparsable string.
+    """
+    match = re.match(r"(\d+)\.(\d+)", version)
+    if match is None:
+        return False
+    major, minor = int(match.group(1)), int(match.group(2))
+    return major == 2 and minor >= 4
+
+
 def _runtime_dependency_evidence() -> dict[str, Any]:
     """Return import and version evidence for optional decomposition runtimes."""
     module_to_distribution = {
@@ -354,8 +376,7 @@ def _runtime_dependency_evidence() -> dict[str, Any]:
         )
     numpy_row = next(row for row in rows if row["module"] == "numpy")
     numpy_version = str(numpy_row["version"] or "")
-    # The contract is the NumPy 2 major line declared in pyproject.toml.
-    numpy_contract_pass = bool(numpy_row["importable"] and numpy_version.split(".", 1)[0] == "2")
+    numpy_contract_pass = bool(numpy_row["importable"]) and _numpy_version_supported(numpy_version)
     optional_runtime_dependency_ready = bool(
         numpy_contract_pass
         and all(row["importable"] for row in rows if row["module"] in {"cupy", "mpi4py"})

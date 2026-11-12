@@ -14,7 +14,6 @@ This cluster holds the general multi-species implicit radial transport solver
 
 from __future__ import annotations
 
-from typing import Any
 
 import numpy as np
 
@@ -141,8 +140,7 @@ class ImpurityTransportSolver:
         profile[self.rho < max(0.0, 1.0 - 8.0 * width)] = 0.0
 
         vol_element = 4.0 * np.pi**2 * self.R0 * self.a**2 * self.rho
-        _trapz: Any = getattr(np, "trapezoid", None) or getattr(np, "trapz", None)
-        profile_volume = float(_trapz(profile * vol_element, self.rho))
+        profile_volume = float(np.trapezoid(profile * vol_element, self.rho))
         if (  # pragma: no cover - unreachable: the constructor pins rho[-1]==1, so
             # profile[edge]==exp(0)==1 and vol_element[edge]>0 keep the trapezoidal
             # normalisation strictly positive for every admissible grid.

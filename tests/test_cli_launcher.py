@@ -420,6 +420,7 @@ def test_system_health_check_logs_low_resources(
     assert "Low CPU core count" in messages
     assert "System RAM < 8GB" in messages
     assert "Low available RAM" in messages
+    assert "NumPy version too old (requires >=2.4): 0.9.0" in messages
 
 
 def test_main_returns_click_exception_exit_code(monkeypatch: pytest.MonkeyPatch) -> None:

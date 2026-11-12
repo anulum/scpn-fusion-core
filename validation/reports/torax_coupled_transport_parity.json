@@ -401,15 +401,15 @@
     }
   },
   "runtime_seconds": {
-    "native_cold": 0.0063392970005224925,
-    "native_refined": 0.006605959999433253,
-    "native_warm": 0.0028763810005330015,
-    "torax_cold": 9.048439426002005,
-    "torax_warm": 0.06960826300201006,
-    "warm_max_over_min_ratio": 24.199945344205602
+    "native_cold": 0.0016326840013789479,
+    "native_refined": 0.0024453170008200686,
+    "native_warm": 0.0012368400020932313,
+    "torax_cold": 7.503132958001515,
+    "torax_warm": 0.06660591100080637,
+    "warm_max_over_min_ratio": 53.85167918896733
   },
   "schema": "scpn-fusion-core.torax-coupled-transport-parity.v1",
-  "scientific_projection_sha256": "db5be57bbd3a4b498d441c6c0cb1bf15df3a080df848ba7a05187ccb4dc5ffd4",
+  "scientific_projection_sha256": "18ece198f3918ab4810fe3104c13d4b245422de27459387450d91d28a7dd9e17",
   "source_budget_metrics": {
     "native_max_relative_error": 1.4551915228366853e-16,
     "torax_max_relative_error": 4.3655745685100557e-16
@@ -421,8 +421,8 @@
     "coupled_runtime_sha256": "8563f89a62a00a7bdce1b312aadfda8189f9ab7c6da32f54c86d7772f7d524b4",
     "current_diffusion_sha256": "7d4251347a961397b549cfcd46cdaffe607a6332f86f22ed9e9dc5351da1c82a",
     "deck_sha256": "c10662a201afbeb996746d6a71360e5b6c32a83eea71cb9a05732cbdb3894340",
-    "reference_artifact_sha256": "6d8fa675555edc8baf9e4dc24de32e829eab073b1dd53b376066a76bdc4327e4",
-    "reference_runner_sha256": "6df233f598868fe607d0ff7fd10662dbb7b6411a1f0ad26c4575c9339cbb7a55"
+    "reference_artifact_sha256": "b5ce81890ef18311ac6454f6a114272baa85ca809a7fd07e0179c4b7c489634f",
+    "reference_runner_sha256": "8c22d025d139bc97c8702dbcb710593534608e0adcce7b64a09546d677dc58d2"
   },
   "state_metrics": {
     "electron_density_m3": 0.0005436413294748529,

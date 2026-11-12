@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -329,8 +330,9 @@ def _system_health_check() -> None:
     try:
         import numpy as np
 
-        if int(np.__version__.split(".")[0]) < 1:
-            LOGGER.error("NumPy version too old: %s", np.__version__)
+        version = re.match(r"(\d+)\.(\d+)", str(np.__version__))
+        if version is None or (int(version.group(1)), int(version.group(2))) < (2, 4):
+            LOGGER.error("NumPy version too old (requires >=2.4): %s", np.__version__)
     except ImportError:
         LOGGER.critical("NumPy not found! Core physics will fail.")
 

@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -116,3 +117,46 @@ def test_load_and_normalise_uses_canonical_geqdsk_boundary_fields(
     assert features[0, 9] == pytest.approx(0.0)
     assert features[0, 10] == pytest.approx(0.0)
     assert features[0, 11] == pytest.approx(4.0)
+
+
+def test_save_weights_writes_a_pickle_free_archive_and_metrics(tmp_path: Path) -> None:
+    """Persist PCA, network and scalar metadata as plain arrays plus metrics JSON."""
+    from scpn_fusion.io.safe_loaders import checked_np_load
+
+    module = _load_module()
+    weights = [np.ones((12, 3)), np.ones((3, 2))]
+    biases = [np.zeros(3), np.zeros(2)]
+    mlp = SimpleNamespace(weights=weights, biases=biases)
+    pca = SimpleNamespace(
+        n_components=2,
+        mean_=np.arange(4.0),
+        components_=np.eye(2, 4),
+        explained_variance_ratio_=np.array([0.75, 0.25]),
+    )
+    result = SimpleNamespace(
+        n_samples=10,
+        n_components=2,
+        explained_variance=1.0,
+        final_train_loss=0.1,
+        best_val_loss=0.2,
+        test_mse=0.3,
+        test_max_error=0.4,
+        train_time_s=1.5,
+        n_epochs_run=3,
+        lr_initial=1e-3,
+        lr_final=1e-4,
+        per_machine={},
+    )
+    path = tmp_path / "weights" / "neural_equilibrium.npz"
+
+    module.save_weights(path, mlp, pca, np.zeros(12), np.ones(12), result)
+
+    with checked_np_load(path, allow_pickle=False) as archive:
+        assert "allow_pickle" not in archive.files
+        assert int(archive["n_layers"][0]) == 2
+        assert int(archive["grid_nh"][0]) == module.TARGET_GRID
+        np.testing.assert_array_equal(archive["pca_mean"], pca.mean_)
+        np.testing.assert_array_equal(archive["w1"], weights[1])
+    metrics = json.loads(path.with_suffix(".metrics.json").read_text(encoding="utf-8"))
+    assert metrics["n_samples"] == 10
+    assert metrics["psi_normalized"] is True

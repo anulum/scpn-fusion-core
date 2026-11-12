@@ -49,7 +49,7 @@
           "nonconformity": "absolute_error",
           "interval": "[max(0, prediction - radius), prediction + radius]",
           "radius": 2.915758581324,
-          "calibration_score_sha256": "905f23cb26657ac04b36cb863b367f12d18c51540a1cf7c543160bfe2538c864",
+          "calibration_score_sha256": "a1d14fb1b5da862a2acd51bf386b2e8934724ff6adeee1ccd3ae5b0ea7db0e2e",
           "holdout_empirical_coverage": 0.9007485155139249
         },
         {
@@ -58,7 +58,7 @@
           "nonconformity": "absolute_error",
           "interval": "[max(0, prediction - radius), prediction + radius]",
           "radius": 3.302462278593,
-          "calibration_score_sha256": "85f00155c466634c85474814285641b1335ab64b26817495c024dadc7daee8b4",
+          "calibration_score_sha256": "8d30b70af229e9c1cf353816fad83c2c7b1b0c52d828abac063e010b3318f443",
           "holdout_empirical_coverage": 0.9001839926402944
         },
         {
@@ -67,7 +67,7 @@
           "nonconformity": "absolute_error",
           "interval": "[max(0, prediction - radius), prediction + radius]",
           "radius": 0.393531312934,
-          "calibration_score_sha256": "0950b4bfbbce4cc4335d4abb632372a1eeb205e9e79459ebe00864ac4293d47f",
+          "calibration_score_sha256": "3bde418067dcfbc2b80ef93b154c0cd061fbce92cdaefbfc8fc2a3b56f138422",
           "holdout_empirical_coverage": 0.9027557079535
         }
       ]
