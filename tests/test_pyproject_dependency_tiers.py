@@ -8,7 +8,10 @@
 
 from __future__ import annotations
 
+import tomllib
 from pathlib import Path
+
+from packaging.requirements import Requirement
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,10 +50,31 @@ def test_optional_dependency_groups_expose_ui_ml_rl_and_full() -> None:
     assert "ml = [" in content
     assert "rl = [" in content
     assert "full = [" in content
-    assert '"streamlit"' in content
+    assert '"streamlit<2"' in content
     assert '"jax>=0.7.1,<0.8"' in content
     assert '"jaxlib>=0.7.1,<0.8"' in content
-    assert '"gymnasium>=1.0.0"' in content
+    assert '"gymnasium>=1.0.0,<2"' in content
+
+
+def test_every_published_dependency_has_an_upper_bound() -> None:
+    """Every base and optional requirement in the release metadata caps its version.
+
+    An unbounded specifier lets a future major release of a dependency reach
+    users of an already published version; exact pins and compatible-release
+    clauses count as bounded.
+    """
+    project = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))["project"]
+    declared = [("dependencies", spec) for spec in project["dependencies"]]
+    for extra, specs in project["optional-dependencies"].items():
+        declared += [(extra, spec) for spec in specs]
+    assert declared
+
+    unbounded = []
+    for group, spec in declared:
+        operators = {clause.operator for clause in Requirement(spec).specifier}
+        if not operators & {"<", "<=", "==", "===", "~="}:
+            unbounded.append(f"{group}: {spec}")
+    assert unbounded == []
 
 
 def test_full_lock_source_covers_declared_heavy_extras() -> None:
