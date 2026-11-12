@@ -1095,7 +1095,7 @@ module = ["freegsnke", "freegsnke.*", "freegs4e", "freegs4e.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["streamlit<2", "streamlit.*"]
+module = ["streamlit", "streamlit.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
