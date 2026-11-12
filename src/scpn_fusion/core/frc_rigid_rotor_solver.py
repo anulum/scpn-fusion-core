@@ -471,7 +471,7 @@ def _rotating_pressure_from_density_closure(
             f"{exponent_cap:.3g}); the reduced rigid-rotor closure is only valid "
             "for sub-sonic to transonic rotation."
         )
-    return cast(FloatArray, magnetostatic_pressure * np.exp(exponent))
+    return magnetostatic_pressure * np.exp(exponent)
 
 
 def frc_no_rotation_jax_observables(

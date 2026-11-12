@@ -10,9 +10,10 @@
 from __future__ import annotations
 
 import io
+import struct
 import zipfile
 from pathlib import Path
-from typing import IO, Any, Callable, cast
+from typing import IO, Any
 
 import numpy as np
 import pytest
@@ -24,10 +25,27 @@ from scpn_fusion.io.safe_loaders import (
     checked_np_load,
 )
 
-_write_array_header = cast(
-    Callable[[IO[bytes], dict[str, object], tuple[int, int]], None],
-    vars(np.lib.format)["_write_array_header"],
-)
+
+def _write_array_header(
+    stream: IO[bytes],
+    header: dict[str, object],
+    version: tuple[int, int],
+) -> None:
+    """Write one NPY header as the format specification lays it out.
+
+    Versions 1.0 and 2.0 encode the header dictionary as latin-1 and 3.0 as
+    UTF-8; 1.0 stores its length in two bytes and 2.0/3.0 in four. The text is
+    padded with spaces so magic, length and header end on a 64-byte boundary.
+    """
+    encoding = "utf-8" if version == (3, 0) else "latin-1"
+    length_format = "<H" if version == (1, 0) else "<I"
+    prefix = len(np.lib.format.magic(*version)) + struct.calcsize(length_format)
+    text = repr(header).encode(encoding)
+    padding = -(prefix + len(text) + 1) % 64
+    body = text + b" " * padding + b"\n"
+    stream.write(np.lib.format.magic(*version))
+    stream.write(struct.pack(length_format, len(body)))
+    stream.write(body)
 
 
 def _npy_header(
@@ -231,6 +249,42 @@ def test_checked_np_load_accepts_supported_header_versions(
 
     assert loaded.shape == (0, 4)
     assert loaded.dtype == np.dtype("<f8")
+
+
+def test_checked_np_load_rejects_unsupported_header_version(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Refuse an NPY format version that no NumPy release defines."""
+    path = tmp_path / "future.npy"
+    path.write_bytes(_npy_header(shape=(0,), descr="<f8", version=(2, 0)))
+    raw = bytearray(path.read_bytes())
+    raw[6:8] = bytes((4, 0))
+    path.write_bytes(bytes(raw))
+    calls = _forbid_numpy_load(monkeypatch)
+
+    with pytest.raises(ValueError, match="unsupported NPY format version"):
+        checked_np_load(path)
+
+    assert calls == []
+
+
+def test_checked_np_load_bounds_utf8_v3_header_with_non_ascii_fields(
+    tmp_path: Path,
+) -> None:
+    """Size a 3.0 header with non-ASCII field names exactly like NumPy does."""
+    dtype = np.dtype([("\u03c8", "<f8"), ("\u0394t", "<i4")])
+    path = tmp_path / "unicode_fields.npy"
+    with pytest.warns(UserWarning, match="format 3.0"):
+        np.save(path, np.zeros(3, dtype=dtype))
+    assert path.read_bytes()[6:8] == bytes((3, 0))
+
+    with pytest.raises(ValueError, match="logical payload too large"):
+        checked_np_load(path, max_member_bytes=3 * dtype.itemsize - 1)
+
+    loaded = checked_np_load(path, max_member_bytes=3 * dtype.itemsize)
+    assert loaded.dtype == dtype
+    assert loaded.shape == (3,)
 
 
 def test_checked_np_load_accepts_zero_width_dtype(tmp_path: Path) -> None:

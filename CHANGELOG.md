@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+### Changed
+
+- scpn-fusion now requires NumPy 2 (`numpy>=2.2,<3`, was `numpy>=1.24,<2.0`).
+  NumPy 1.26, the last 1.x release, has wheels only up to CPython 3.12, so
+  consumers could not move to newer interpreters. 2.2 is the first release
+  whose `np.savez` accepts `allow_pickle`. `np.trapz` calls are now
+  `np.trapezoid`; the bounded NPY loader uses NumPy's public header readers
+  instead of a private function that NumPy 2 hides; archives written with
+  `np.savez`/`np.savez_compressed` pass `allow_pickle=False` explicitly.
+  The hash-pinned locks move only NumPy (2.5.4 on Python 3.12, 2.4.6 on
+  3.11). The FreeGSNKE comparison lane stays on NumPy 1.26 because FreeGS4E
+  0.13.1 declares `numpy<2`. The coupled TORAX reference was regenerated
+  with TORAX 1.4.3 under NumPy 2.5.4; its profiles agree with the previous
+  reference to 1.5e-14 relative.
+
 ### Fixed
 
 - Explicit matrix inverses of symmetric positive-definite matrices are

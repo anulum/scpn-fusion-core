@@ -4,6 +4,10 @@
 # server even though the headless inverse gate never imports it.  The workflow
 # installs the hash-pinned FreeGSNKE wheel with --no-deps; keep its exercised
 # numerical runtime explicit here and omit the unused notebook server.
+# FreeGS4E 0.13.1 declares numpy<2.0, so this third-party comparison lane stays
+# on NumPy 1.26 while scpn-fusion itself requires NumPy 2.  The lane installs
+# scpn-fusion with --no-deps and exercises only the inverse benchmark surface,
+# which uses no NumPy-2-only API.
 numpy==1.26.4
 scipy==1.15.3
 matplotlib>=3.10.3,<3.11

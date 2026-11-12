@@ -246,7 +246,7 @@ def train_fno(
 
     # Save
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(output_path, **best_params)
+    np.savez(output_path, allow_pickle=False, **best_params)
     print(f"  Saved weights to {output_path}")
 
     # Save metrics

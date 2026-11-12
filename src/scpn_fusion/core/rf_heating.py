@@ -502,7 +502,7 @@ class ECRHHeatingSystem:
         for i, rho in enumerate(rho_bins):
             r_shell = rho * a
             R_local = self.R0 + r_shell
-            dV = 2.0 * np.pi * R_local * 2.0 * np.pi * r_shell * a / n_radial_bins
+            dV = float(2.0 * np.pi * R_local * 2.0 * np.pi * r_shell * a / n_radial_bins)
             dV = max(dV, 1e-6)
             dep = np.exp(-((rho - rho_res) ** 2) / (2.0 * delta_rho**2))
             P_dep[i] = dep / dV

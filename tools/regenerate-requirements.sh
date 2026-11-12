@@ -11,6 +11,8 @@
 #
 # REGEN_UPGRADE=1 moves every lock to the newest versions allowed by its .in
 # constraints (whole dependency chain); without it existing pins are kept.
+# REGEN_UPGRADE_PACKAGES="pkg ..." moves only the named packages (uv
+# --upgrade-package), e.g. after a .in constraint on one package changed.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -36,6 +38,12 @@ upgrade_flags=()
 if [ "${REGEN_UPGRADE:-0}" = "1" ]; then
     upgrade_flags=(--upgrade)
 fi
+# REGEN_UPGRADE_PACKAGES="numpy scipy" moves only the named packages, and what
+# they force, to the newest versions their .in constraints allow; every other
+# pin is kept.
+for pkg in ${REGEN_UPGRADE_PACKAGES:-}; do
+    upgrade_flags+=(--upgrade-package "${pkg}")
+done
 
 # Closures that are not produced by uv from their .in file. Each is refreshed by
 # hand from its upstream source and is audited by the dependency-policy workflow:

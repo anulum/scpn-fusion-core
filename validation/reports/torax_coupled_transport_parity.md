@@ -17,9 +17,9 @@ The report admits parity only for the frozen circular, prescribed-coefficient mo
 ## Source and conservation budgets
 
 - TORAX maximum source-total relative error: `4.36557456851e-16`
-- Native maximum source-total relative error: `2.91038304567e-16`
+- Native maximum source-total relative error: `1.45519152284e-16`
 - Native maximum linear residual: `7.1054273576e-15`
-- Native maximum exchange relative closure: `8.55447110938e-18`
+- Native maximum exchange relative closure: `1.55767981395e-17`
 
 ## Pareto gates
 

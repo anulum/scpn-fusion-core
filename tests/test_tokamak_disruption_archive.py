@@ -62,7 +62,7 @@ def _write_disruption_shot(
         payload["disruption_time_idx"] = np.array(disruption_time_idx, dtype=np.int64)
     if omit_key != "disruption_type":
         payload["disruption_type"] = np.array(disruption_type, dtype=np.str_)
-    np.savez(path, **payload)
+    np.savez(path, allow_pickle=False, **payload)
 
 
 def test_list_disruption_shots_returns_empty_list_for_missing_directory(

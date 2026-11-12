@@ -71,7 +71,7 @@ def _integral(values: FloatArray, measure: FloatArray, rho: FloatArray) -> float
     trapezoid = getattr(np, "trapezoid", None)
     if callable(trapezoid):
         return float(trapezoid(integrand, rho))
-    return float(np.trapz(integrand, rho))
+    return float(np.trapezoid(integrand, rho))
 
 
 def _cell_integral(values: FloatArray, measure: FloatArray, rho: FloatArray) -> float:

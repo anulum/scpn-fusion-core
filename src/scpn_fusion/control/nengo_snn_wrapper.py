@@ -173,7 +173,7 @@ class _Channel:
                 tau_ref=0.002,
                 max_rates=rng.uniform(cfg.max_rate_hz * 0.5, cfg.max_rate_hz, n),
                 intercepts=rng.uniform(*cfg.intercept_range, n),
-                encoders=rng.choice([-1.0, 1.0], n),
+                encoders=rng.choice(np.array([-1.0, 1.0], dtype=np.float64), n),
                 dt=dt,
             )
 

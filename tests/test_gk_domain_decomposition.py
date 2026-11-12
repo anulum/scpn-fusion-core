@@ -390,8 +390,8 @@ def test_production_decomposition_contract_is_fail_closed() -> None:
     assert dependency_evidence["schema"] == "production-decomposition-runtime-dependencies.v1"
     assert dependency_evidence["numpy_contract_pass"] is True
     rows_by_module = {row["module"]: row for row in dependency_evidence["rows"]}
-    assert rows_by_module["numpy"]["required_specifier"] == "numpy>=1.24,<2.0"
-    assert not str(rows_by_module["numpy"]["version"]).startswith("2.")
+    assert rows_by_module["numpy"]["required_specifier"] == "numpy>=2.2,<3"
+    assert str(rows_by_module["numpy"]["version"]).split(".", 1)[0] == "2"
     assert rows_by_module["mpi4py"]["required_specifier"] == "mpi4py>=4.1"
     assert rows_by_module["cupy"]["required_specifier"] == "cupy-cuda12x>=13.6,<14.0"
     mpi_runtime = report["mpi_runtime_evidence"]

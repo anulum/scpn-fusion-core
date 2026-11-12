@@ -183,7 +183,7 @@ def effective_acceleration_from_pulsed_compression(
                 mode="valid",
             ),
         )
-    return cast(FloatArray, projection * radial_acceleration_m_s2)
+    return projection * radial_acceleration_m_s2
 
 
 @dataclass(frozen=True)
@@ -336,7 +336,7 @@ class MRTISpectrumTracker:
         )
         self._growth_rates_s_inv = gamma_end
         growth_exponent = np.maximum(0.5 * (gamma_start + gamma_end) * dt, 0.0)
-        self._log_amplitudes = cast(FloatArray, self._log_amplitudes + growth_exponent)
+        self._log_amplitudes = self._log_amplitudes + growth_exponent
         max_log = float(np.log(np.finfo(np.float64).max))
         self._amplitude_overflow_limited = bool(
             self._amplitude_overflow_limited or np.any(self._log_amplitudes > max_log)

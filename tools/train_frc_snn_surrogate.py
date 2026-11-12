@@ -223,7 +223,13 @@ def main() -> None:
 
     # Save
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    np.savez(args.out, **params, pca_mean=pca.mean_, pca_components=pca.components_)
+    np.savez(
+        args.out,
+        allow_pickle=False,
+        **params,
+        pca_mean=pca.mean_,
+        pca_components=pca.components_,
+    )
     if args.export_verilog:
         export_to_verilog(params, "build/frc_snn_core.v")
     logger.info("SNN surrogate saved for software experiments.")

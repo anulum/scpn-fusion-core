@@ -553,10 +553,11 @@ class HPCBridge:
             raise ValueError("j_phi must be non-empty")
         if not np.all(np.isfinite(j_input)):
             raise ValueError("j_phi must contain only finite values")
-        expected_shape = (
-            getattr(self, "nz", j_input.shape[0]),
-            getattr(self, "nr", j_input.shape[-1]),
-        )
+        input_rows: int = j_input.shape[0]
+        input_cols: int = j_input.shape[-1]
+        expected_nz: int = getattr(self, "nz", input_rows)
+        expected_nr: int = getattr(self, "nr", input_cols)
+        expected_shape = (expected_nz, expected_nr)
         if tuple(j_input.shape) != tuple(expected_shape):
             raise ValueError(
                 f"j_phi shape mismatch: expected {expected_shape}, received {tuple(j_input.shape)}"

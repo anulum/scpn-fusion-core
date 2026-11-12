@@ -747,10 +747,7 @@ class NeuralEquilibriumAccelerator:
             payload[f"w{i}"] = w
             payload[f"b{i}"] = b
 
-        # numpy's savez stub types **kwds against its keyword-only allow_pickle: bool
-        # parameter, so a dynamically-keyed payload mapping cannot be expressed without
-        # this suppression; unused under the CI-pinned numpy 1.26.4 stubs.
-        np.savez(path, **payload)  # type: ignore[arg-type, unused-ignore]
+        np.savez(path, allow_pickle=False, **payload)
         logger.info("Saved neural equilibrium weights to %s", path)
 
     def load_weights(self, path: str | Path = DEFAULT_WEIGHTS_PATH) -> None:

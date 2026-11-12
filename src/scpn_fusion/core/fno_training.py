@@ -146,10 +146,7 @@ class MultiLayerFNO:
             payload[f"layer{i}_skip_w"] = layer["skip_w"].astype(np.float64)
             payload[f"layer{i}_skip_b"] = layer["skip_b"].astype(np.float64)
 
-        # numpy's savez stub types **kwds against its keyword-only allow_pickle: bool
-        # parameter, so a dynamically-keyed payload mapping cannot be expressed without
-        # this suppression; the runtime call is the documented dict-unpacking form.
-        np.savez(path, **payload)  # type: ignore[arg-type, unused-ignore]
+        np.savez(path, allow_pickle=False, **payload)
 
     def load_weights(self, path: str | Path) -> None:
         """Load FNO architecture metadata and NumPy weights from ``path``."""

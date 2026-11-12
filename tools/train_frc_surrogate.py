@@ -235,7 +235,7 @@ def main() -> None:
         payload[f"w{i}"] = np.asarray(p["W"])
         payload[f"b{i}"] = np.asarray(p["b"])
 
-    np.savez(out_path, **payload)
+    np.savez(out_path, allow_pickle=False, **payload)
 
     t_total = time.perf_counter() - t_start
     logger.info("Retraining complete in %.2f s. Saved to %s", t_total, out_path)

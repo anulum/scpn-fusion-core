@@ -9,7 +9,7 @@ The evidence covers only the frozen circular prescribed-coefficient coupled mode
 
 ## Gradient and optimisation evidence
 
-- Maximum AD/central-FD relative error: `2.18396459473e-08`
+- Maximum AD/central-FD relative error: `4.12403761676e-08`
 - Initial objective: `6.14973983171e-06`
 - Final objective: `3.53357311148e-08`
 - TORAX nominal baseline objective: `0.000380625152985`

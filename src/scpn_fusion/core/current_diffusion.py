@@ -393,7 +393,7 @@ class CurrentDiffusionSolver:
         self.last_step_budget = CurrentDiffusionBudget(
             dt_s=float(dt),
             resistivity_multiplier=float(resistivity_multiplier),
-            source_density_l1=float(np.trapz(np.abs(j_tot_source), self.rho)),
+            source_density_l1=float(np.trapezoid(np.abs(j_tot_source), self.rho)),
             flux_l2_before=float(np.linalg.norm(psi_before)),
             flux_l2_after=float(np.linalg.norm(self.psi)),
             linear_residual_linf=float(np.max(np.abs(residual))),

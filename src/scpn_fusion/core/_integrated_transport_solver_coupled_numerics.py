@@ -83,7 +83,7 @@ def normalised_gaussian(
 ) -> FloatArray:
     """Normalize a Gaussian profile against a caller-supplied measure."""
     shape = np.exp(-0.5 * ((rho - center) / width) ** 2)
-    integral = float(np.trapz(shape * measure, rho))
+    integral = float(np.trapezoid(shape * measure, rho))
     if not np.isfinite(integral) or integral <= 0.0:
         raise ValueError("source profile has a non-positive normalization integral")
     return np.asarray(shape / integral, dtype=np.float64)
@@ -100,7 +100,7 @@ def thermal_energy_j(
     energy_density = (
         1.5 * density_1e19_m3 * 1.0e19 * _KEV_J * (ion_temperature_kev + electron_temperature_kev)
     )
-    return float(np.trapz(energy_density * volume_derivative, rho))
+    return float(np.trapezoid(energy_density * volume_derivative, rho))
 
 
 __all__ = [

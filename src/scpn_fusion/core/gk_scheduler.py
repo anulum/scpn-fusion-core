@@ -100,7 +100,7 @@ class GKScheduler:
                 safe_prev = np.maximum(np.abs(self._prev_chi_i), 1e-10)
                 rel_change = np.abs(chi_i - self._prev_chi_i) / safe_prev
                 big_change = np.where(rel_change > self.config.chi_change_threshold)[0]
-                for idx in big_change:
+                for idx in big_change.tolist():
                     if len(indices) < self.config.budget:
                         indices[int(idx)] = "chi_change"
 

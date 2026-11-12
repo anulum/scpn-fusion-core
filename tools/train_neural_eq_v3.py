@@ -536,7 +536,7 @@ def main() -> int:
     for i, (w, b) in enumerate(zip(mlp.W, mlp.b)):
         payload[f"w{i}"] = w
         payload[f"b{i}"] = b
-    np.savez(save_path, **payload)
+    np.savez(save_path, allow_pickle=False, **payload)
 
     metrics_out = {
         "model": "neural_equilibrium_augmented_v3",

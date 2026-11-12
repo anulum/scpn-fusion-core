@@ -33,6 +33,7 @@ def _write_shot(path: Path, *, machine: str = "ITER", disruption: bool = False) 
         str(path),
         disruption_label=np.bool_(disruption),
         machine=np.array(machine, dtype="U16"),
+        allow_pickle=False,
         **arrays,
     )
 

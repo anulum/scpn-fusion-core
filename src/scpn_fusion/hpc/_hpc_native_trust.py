@@ -41,9 +41,11 @@ _SOLVER_LIB_ENV = "SCPN_SOLVER_LIB"
 
 
 def _as_contiguous_f64(array: NDArray[np.floating[Any]]) -> NDArray[np.float64]:
-    """Return ``array`` as C-contiguous ``float64`` with minimal copying."""
-    if isinstance(array, np.ndarray) and array.dtype == np.float64 and array.flags.c_contiguous:
-        return array
+    """Return ``array`` as C-contiguous ``float64`` with minimal copying.
+
+    NumPy returns the input object itself when it already is a C-contiguous
+    ``float64`` array, so no copy is made in that case.
+    """
     return np.ascontiguousarray(array, dtype=np.float64)
 
 
@@ -63,7 +65,8 @@ def _require_c_contiguous_f64(
         raise ValueError(
             f"{name} shape mismatch: expected {expected_shape}, received {tuple(array.shape)}"
         )
-    return array
+    # Same object after the dtype check above; asarray only narrows the static type.
+    return np.asarray(array, dtype=np.float64)
 
 
 def _sanitize_convergence_params(

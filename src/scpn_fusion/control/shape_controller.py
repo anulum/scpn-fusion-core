@@ -241,7 +241,9 @@ class PlasmaShapeController:
         # Normalise by peak magnitude to keep error scales stable.
         scale = max(float(np.max(np.abs(field))), 1e-12)
         f = field / scale
-        grad_r, grad_z = np.gradient(f)
+        gradients = np.gradient(f)
+        grad_r = np.asarray(gradients[0], dtype=np.float64)
+        grad_z = np.asarray(gradients[1], dtype=np.float64)
         h_rr = np.gradient(grad_r, axis=0)
         h_zz = np.gradient(grad_z, axis=1)
         h_rz = np.gradient(grad_r, axis=1)

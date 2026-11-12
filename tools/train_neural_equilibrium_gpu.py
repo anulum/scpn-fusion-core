@@ -625,7 +625,7 @@ def save_weights(
         payload[f"b{i}"] = b
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez(path, **payload)
+    np.savez(path, allow_pickle=False, **payload)
 
     # Metrics JSON
     metrics_path = path.with_suffix(".metrics.json")

@@ -332,7 +332,7 @@ class NeuroSymbolicController(
     @property
     def marking(self) -> List[float]:
         """Return the current marking as a Python ``list`` of floats."""
-        return cast(List[float], self._marking.tolist())
+        return self._marking.tolist()
 
     @marking.setter
     def marking(self, values: Sequence[float]) -> None:

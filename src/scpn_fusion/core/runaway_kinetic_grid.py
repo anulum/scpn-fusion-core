@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -111,11 +110,10 @@ class RunawayKineticGrid:
         residuals.  Geometry imported from DREAM can instead supply its exact
         bounce-averaged cell volumes to the operator.
         """
-        return cast(
-            FloatArray,
+        return (
             self.radial_shell_measure_m2[:, None, None]
             * np.diff(self.pitch_faces)[None, :, None]
-            * (2.0 * np.pi * self.momentum_shell_measure)[None, None, :],
+            * (2.0 * np.pi * self.momentum_shell_measure)[None, None, :]
         )
 
     def require_state(self, name: str, values: FloatArray) -> FloatArray:

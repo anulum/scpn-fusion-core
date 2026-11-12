@@ -31,7 +31,7 @@ from typing import Any, cast
 
 import numpy as np
 
-NUMPY_MULTIARRAY = cast(Any, importlib.import_module("numpy.core.multiarray"))
+NUMPY_MULTIARRAY = cast(Any, importlib.import_module("numpy._core.multiarray"))
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE_ROOT = ROOT / "data" / "external" / "full_fidelity_public_sources"

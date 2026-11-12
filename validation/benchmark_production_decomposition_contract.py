@@ -67,7 +67,7 @@ OPTIONAL_RUNTIME_DEPENDENCIES = {
     "cupy": "cupy-cuda12x>=13.6,<14.0",
     "mpi4py": "mpi4py>=4.1",
     "nvidia.cuda_nvrtc": "nvidia-cuda-nvrtc-cu12>=12.0,<13.0",
-    "numpy": "numpy>=1.24,<2.0",
+    "numpy": "numpy>=2.2,<3",
 }
 FACE_OPPOSITES = {
     "radial_lower": "radial_upper",
@@ -354,9 +354,8 @@ def _runtime_dependency_evidence() -> dict[str, Any]:
         )
     numpy_row = next(row for row in rows if row["module"] == "numpy")
     numpy_version = str(numpy_row["version"] or "")
-    numpy_contract_pass = bool(
-        numpy_row["importable"] and numpy_version and not numpy_version.startswith("2.")
-    )
+    # The contract is the NumPy 2 major line declared in pyproject.toml.
+    numpy_contract_pass = bool(numpy_row["importable"] and numpy_version.split(".", 1)[0] == "2")
     optional_runtime_dependency_ready = bool(
         numpy_contract_pass
         and all(row["importable"] for row in rows if row["module"] in {"cupy", "mpi4py"})

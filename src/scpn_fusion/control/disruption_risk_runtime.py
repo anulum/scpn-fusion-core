@@ -202,7 +202,8 @@ def build_disruption_feature_vector(
     n1 = float(obs.get("toroidal_n1_amp", 0.0))
     n2 = float(obs.get("toroidal_n2_amp", 0.0))
     n3 = float(obs.get("toroidal_n3_amp", 0.0))
-    asym = float(obs.get("toroidal_asymmetry_index", np.sqrt(n1 * n1 + n2 * n2 + n3 * n3)))
+    default_asym = float(np.sqrt(n1 * n1 + n2 * n2 + n3 * n3))
+    asym = float(obs.get("toroidal_asymmetry_index", default_asym))
     spread = float(obs.get("toroidal_radial_spread", 0.0))
     if not np.all(np.isfinite([n1, n2, n3, asym, spread])):
         raise ValueError("toroidal observables must be finite.")

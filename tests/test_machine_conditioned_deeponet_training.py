@@ -457,7 +457,7 @@ def test_large_update_preserves_parity_and_detects_field_polarity_breach(tmp_pat
     assert np.any(altered["field_mean"] != 0.0)
     altered["field_mean"] = -altered["field_mean"]
     mismatched_artifact = tmp_path / "reversed_field_polarity.npz"
-    np.savez_compressed(mismatched_artifact, **altered)
+    np.savez_compressed(mismatched_artifact, allow_pickle=False, **altered)
     native = DeepONetEquilibriumAccelerator(prefer_rust=True)
     reference = DeepONetEquilibriumAccelerator(prefer_rust=False)
     native.load_weights(arguments["output_path"])

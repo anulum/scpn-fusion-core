@@ -417,15 +417,11 @@ class DreamFullKineticOutput:
         pitch = self.grid.pitch[:, None]
         gamma = np.sqrt(1.0 + momentum * momentum)
         parallel_speed = SPEED_OF_LIGHT_M_PER_S * momentum * pitch / gamma
-        return cast(
-            FloatArray,
-            ELECTRON_CHARGE_C
-            * np.sum(
-                self.distribution
-                * self.geometry.density_cell_measure[None, :, :, :]
-                * parallel_speed[None, None, :, :],
-                axis=(2, 3),
-            ),
+        return ELECTRON_CHARGE_C * np.sum(
+            self.distribution
+            * self.geometry.density_cell_measure[None, :, :, :]
+            * parallel_speed[None, None, :, :],
+            axis=(2, 3),
         )
 
     def native_operator(self, step: int) -> RunawayKineticOperator:

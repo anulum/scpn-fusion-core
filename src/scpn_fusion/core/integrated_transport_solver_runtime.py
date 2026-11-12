@@ -572,7 +572,9 @@ class TransportSolverRuntimeMixin(
             dW_source = dt * 1.5 * np.sum((weight * (net_source_i_eff + Lh_cn_i))[inner])
 
         dW_actual = W_after - W_before
-        self._last_conservation_error = abs(dW_actual - dW_source) / max(abs(W_before), 1e-10)
+        self._last_conservation_error = float(
+            abs(dW_actual - dW_source) / max(abs(W_before), 1e-10)
+        )
         if not np.isfinite(self._last_conservation_error):
             self._last_conservation_error = float("inf")
 

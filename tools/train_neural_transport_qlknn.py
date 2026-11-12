@@ -185,6 +185,7 @@ def _save_best_checkpoint(
                 handle,
                 best_val_rel=np.asarray(best_val_rel, dtype=np.float64),
                 epoch=np.asarray(epoch, dtype=np.int64),
+                allow_pickle=False,
                 **params,
             )
         os.replace(tmp, checkpoint_path)

@@ -180,7 +180,7 @@ class OracleESN:
             random_state=random_state,
         ).toarray()
         nonzero = self.W_res != 0.0
-        self.W_res[nonzero] = reservoir_values(np.count_nonzero(nonzero))
+        self.W_res[nonzero] = reservoir_values(int(np.count_nonzero(nonzero)))
 
         # Scale spectral radius
         eigenvalues = np.linalg.eigvals(self.W_res)

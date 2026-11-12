@@ -199,13 +199,13 @@ class CoupledTransportRuntimeMixin(TransportSolverState):
         te_after[-1] = inputs.electron_temperature_edge_kev
 
         ion_exchange_energy = float(
-            np.trapz(
+            np.trapezoid(
                 1.5 * ne_after * 1.0e19 * _KEV_J * (ti_after - ti_trial) * volume_derivative,
                 rho,
             )
         )
         electron_exchange_energy = float(
-            np.trapz(
+            np.trapezoid(
                 1.5 * ne_after * 1.0e19 * _KEV_J * (te_after - te_trial) * volume_derivative,
                 rho,
             )
@@ -244,19 +244,19 @@ class CoupledTransportRuntimeMixin(TransportSolverState):
             self.Ti,
             self.Te,
         )
-        particle_before = float(np.trapz(ne_before * 1.0e19 * volume_derivative, rho))
-        particle_after = float(np.trapz(self.ne * 1.0e19 * volume_derivative, rho))
-        reconstructed_ion_heat = float(np.trapz(ion_heat_density * volume_derivative, rho))
+        particle_before = float(np.trapezoid(ne_before * 1.0e19 * volume_derivative, rho))
+        particle_after = float(np.trapezoid(self.ne * 1.0e19 * volume_derivative, rho))
+        reconstructed_ion_heat = float(np.trapezoid(ion_heat_density * volume_derivative, rho))
         reconstructed_electron_heat = float(
-            np.trapz(electron_heat_density * volume_derivative, rho)
+            np.trapezoid(electron_heat_density * volume_derivative, rho)
         )
         reconstructed_particles = float(
-            np.trapz(
+            np.trapezoid(
                 particle_source * 1.0e19 * volume_derivative,
                 rho,
             )
         )
-        reconstructed_current = float(np.trapz(driven_current_density * area_derivative, rho))
+        reconstructed_current = float(np.trapezoid(driven_current_density * area_derivative, rho))
         heat_injected = inputs.heat_power_w * inputs.dt_s
         particles_injected = inputs.particle_rate_s * inputs.dt_s
         thermal_boundary_and_diffusion = (

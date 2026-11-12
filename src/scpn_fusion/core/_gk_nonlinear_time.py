@@ -314,7 +314,10 @@ class NonlinearGKTimeMixin(NonlinearGKSolverState):
         vpar2 = self.vpar[None, None, None, None, :, None] ** 2
         mu_val = self.mu[None, None, None, None, None, :]
         FM = np.exp(-(0.5 * vpar2 + mu_val))
-        f = amplitude * (rng.standard_normal(shape) + 1j * rng.standard_normal(shape)) * FM
+        f = np.asarray(
+            amplitude * (rng.standard_normal(shape) + 1j * rng.standard_normal(shape)) * FM,
+            dtype=np.complex128,
+        )
 
         phi = self.field_solve(f)
         A_par = self.ampere_solve(f) if c.electromagnetic else None

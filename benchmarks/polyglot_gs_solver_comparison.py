@@ -174,14 +174,14 @@ def _vertical_symmetry_abs_max(psi: FloatArray) -> float:
 def _axis_midplane_offset_cells(psi: FloatArray) -> int:
     """Measure the interior flux-axis offset from the vertical midplane."""
     axis_z_index = int(np.unravel_index(np.argmax(psi), psi.shape)[0])
-    midplane_index = psi.shape[0] // 2
+    midplane_index = int(psi.shape[0]) // 2
     return abs(axis_z_index - midplane_index)
 
 
 def _axis_radial_center_offset_cells(psi: FloatArray) -> int:
     """Measure the interior flux-axis offset from the radial grid center."""
     axis_r_index = int(np.unravel_index(np.argmax(psi), psi.shape)[1])
-    radial_center_index = psi.shape[1] // 2
+    radial_center_index = int(psi.shape[1]) // 2
     return abs(axis_r_index - radial_center_index)
 
 

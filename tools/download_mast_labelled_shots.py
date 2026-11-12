@@ -112,7 +112,7 @@ def materialise_shot(ingestor: MastIngestor, cache_dir: Path, shot_id: int) -> d
     cache_dir.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".npz.tmp")
     with tmp.open("wb") as handle:
-        np.savez_compressed(handle, **arrays)
+        np.savez_compressed(handle, allow_pickle=False, **arrays)
     tmp.replace(out)
     return {
         "shot_id": shot_id,

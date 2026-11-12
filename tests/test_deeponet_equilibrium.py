@@ -55,7 +55,11 @@ def _write_artifact(
     }
     if overrides:
         payload.update(overrides)
-    np.savez(path, **{name: value for name, value in payload.items() if name not in drop})
+    np.savez(
+        path,
+        allow_pickle=False,
+        **{name: value for name, value in payload.items() if name not in drop},
+    )
 
 
 def test_deeponet_runtime_loads_and_predicts_single_and_batch(tmp_path: Path) -> None:

@@ -58,7 +58,7 @@ def test_fno_controller_loads_saved_weights(tmp_path: Path) -> None:
     output = tmp_path / "fno_controller.npz"
     key = jrandom.PRNGKey(13)
     params = init_fno_params(key, MODES, WIDTH)
-    np.savez(output, **{k: np.array(v) for k, v in params.items()})
+    np.savez(output, allow_pickle=False, **{k: np.array(v) for k, v in params.items()})
 
     controller = FNO_Controller(weights_path=str(output), allow_legacy=True)
     suppression, prediction = controller.predict_and_suppress(np.zeros((64, 64), dtype=np.float64))

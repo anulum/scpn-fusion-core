@@ -28,13 +28,36 @@ _read_magic = cast(
     Callable[[IO[bytes]], tuple[int, int]],
     npy_format.read_magic,
 )
-_read_array_header = cast(
-    Callable[
-        [IO[bytes], tuple[int, int], int],
-        tuple[tuple[int, ...], bool, np.dtype[Any]],
-    ],
-    vars(npy_format)["_read_array_header"],
+_ArrayHeader = tuple[tuple[int, ...], bool, np.dtype[Any]]
+_read_array_header_1_0 = cast(
+    Callable[..., _ArrayHeader],
+    npy_format.read_array_header_1_0,
 )
+_read_array_header_2_0 = cast(
+    Callable[..., _ArrayHeader],
+    npy_format.read_array_header_2_0,
+)
+
+
+def _read_array_header(
+    stream: IO[bytes],
+    version: tuple[int, int],
+    max_header_size: int,
+) -> _ArrayHeader:
+    """Parse one NPY header with NumPy's public, size-bounded readers.
+
+    NumPy 2 no longer exposes its private version dispatcher, so it is done
+    here. Format 3.0 differs from 2.0 only in encoding the header as UTF-8
+    instead of latin-1. Non-ASCII bytes can occur only inside quoted field
+    names, and UTF-8 never produces an ASCII byte there, so the 2.0 reader
+    returns the same shape, order, item size and object flag; only field
+    names may differ, and they are not used by the bounds check.
+    """
+    if version == (1, 0):
+        return _read_array_header_1_0(stream, max_header_size=max_header_size)
+    if version in ((2, 0), (3, 0)):
+        return _read_array_header_2_0(stream, max_header_size=max_header_size)
+    raise ValueError(f"unsupported NPY format version {version!r}")
 
 
 def _require_nonnegative_limit(value: int, *, name: str) -> None:

@@ -56,7 +56,7 @@ class _DummyKernel:
         rr, zz = np.meshgrid(self.R, self.Z)
         self.RR = cast(FloatArray, rr)
         self.ZZ = cast(FloatArray, zz)
-        self.Psi = cast(FloatArray, (self.RR - 3.0) ** 2 + (self.ZZ / 1.5) ** 2)
+        self.Psi = (self.RR - 3.0) ** 2 + (self.ZZ / 1.5) ** 2
         self.config_path = config_path
         self.solved = False
 
