@@ -55,6 +55,11 @@ jobs:
         echo "a620ff1641616222c8d37c54845492004bb84d6877cdbc944dd65c1aa685bf53  /tmp/elan-init.sh" | sha256sum -c -
         sh /tmp/elan-init.sh -y --default-toolchain leanprover/lean4:v4.29.1
         echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+    # ubuntu-latest (Ubuntu 26.04) no longer preinstalls Julia.
+    - name: Install Julia for polyglot solver contracts
+      uses: julia-actions/setup-julia@da908477b5db94c10ffce8cfea9f2b3b9d5db687  # v3.0.3
+      with:
+        version: "1.10"
     - name: Install dependencies
       run: |
         pyver="${{ matrix.python-version }}"

@@ -41,7 +41,27 @@ from validation.dream_full_kinetic_execution_custody import (
 )
 
 h5py = importlib.import_module("h5py")
-TEST_DREAMI = Path("/usr/bin/false")
+# Ubuntu 26.04 ships /usr/bin/true and /usr/bin/false as symlinks to a multi-call
+# coreutils binary, and execution custody refuses symlinks. The tests therefore
+# run their own regular-file stand-ins, written once per module.
+FALSE_EXECUTABLE = Path("/nonexistent/false")
+TRUE_EXECUTABLE = Path("/nonexistent/true")
+
+
+def _write_stand_in_executable(path: Path, *, exit_code: int) -> Path:
+    """Write a regular, non-symlink shell script that exits with ``exit_code``."""
+    path.write_text(f"#!/bin/sh\nexit {exit_code}\n", encoding="utf-8")
+    path.chmod(0o755)
+    return path
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _stand_in_executables(tmp_path_factory: pytest.TempPathFactory) -> None:
+    """Point the false/true stand-ins at regular executables for this module."""
+    global FALSE_EXECUTABLE, TRUE_EXECUTABLE
+    directory = tmp_path_factory.mktemp("dream-stand-in-executables")
+    FALSE_EXECUTABLE = _write_stand_in_executable(directory / "false", exit_code=1)
+    TRUE_EXECUTABLE = _write_stand_in_executable(directory / "true", exit_code=0)
 
 
 def _prepare_campaign(
@@ -55,7 +75,7 @@ def _prepare_campaign(
         campaign_root=campaign_root,
         run_id=run_id,
         dream_root=dream_root,
-        dreami=TEST_DREAMI if dreami is None else dreami,
+        dreami=FALSE_EXECUTABLE if dreami is None else dreami,
     )
 
 
@@ -110,7 +130,7 @@ def _bind_executable(campaign_dir: Path, executable: Path) -> None:
 def _prepare_failed_campaign(campaign_root: Path, run_id: str) -> tuple[Path, dict[str, Any]]:
     manifest = _prepare_campaign(campaign_root=campaign_root, run_id=run_id)
     campaign_dir = Path(manifest["campaign_dir"])
-    _bind_executable(campaign_dir, Path("/usr/bin/false"))
+    _bind_executable(campaign_dir, FALSE_EXECUTABLE)
     failed = execute_campaign(campaign_dir, heartbeat_seconds=0.01)
     assert failed["status"] == "failed"
     return campaign_dir, failed
@@ -180,7 +200,7 @@ def test_execute_reaps_real_failure_and_stops_before_superfine(
 ) -> None:
     manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="reaping-failure")
     campaign_dir = Path(manifest["campaign_dir"])
-    failing_executable = Path("/usr/bin/false")
+    failing_executable = FALSE_EXECUTABLE
     _bind_executable(campaign_dir, failing_executable)
 
     result = execute_campaign(campaign_dir, heartbeat_seconds=0.01)
@@ -200,7 +220,7 @@ def test_failed_attempt_is_archived_before_safe_retry(
 ) -> None:
     manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="recover-failure")
     campaign_dir = Path(manifest["campaign_dir"])
-    _bind_executable(campaign_dir, Path("/usr/bin/false"))
+    _bind_executable(campaign_dir, FALSE_EXECUTABLE)
     failed = execute_campaign(campaign_dir, heartbeat_seconds=0.01)
     assert failed["status"] == "failed"
 
@@ -217,7 +237,7 @@ def test_failed_attempt_is_archived_before_safe_retry(
     assert not Path(member["process_log_path"]).exists()
     assert not Path(member["receipt_path"]).exists()
 
-    _bind_executable(campaign_dir, Path("/usr/bin/true"))
+    _bind_executable(campaign_dir, TRUE_EXECUTABLE)
     retried = execute_campaign(campaign_dir, heartbeat_seconds=0.01)
     retry_receipt = read_json_object(Path(retried["resolutions"]["veryfine"]["receipt_path"]))
     assert retried["status"] == "failed"
@@ -229,7 +249,7 @@ def test_reconcile_resumes_an_interrupted_attempt_archive_journal(
 ) -> None:
     manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="resume-archive")
     campaign_dir = Path(manifest["campaign_dir"])
-    _bind_executable(campaign_dir, Path("/usr/bin/false"))
+    _bind_executable(campaign_dir, FALSE_EXECUTABLE)
     failed = execute_campaign(campaign_dir, heartbeat_seconds=0.01)
     member = failed["resolutions"]["veryfine"]
     attempt_dir = campaign_dir / "veryfine/attempts/attempt-0001"
@@ -438,7 +458,7 @@ def test_execute_accepts_clean_exit_but_rejects_missing_output(
 ) -> None:
     manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="missing-output")
     campaign_dir = Path(manifest["campaign_dir"])
-    _bind_executable(campaign_dir, Path("/usr/bin/true"))
+    _bind_executable(campaign_dir, TRUE_EXECUTABLE)
 
     result = execute_campaign(campaign_dir, heartbeat_seconds=0.01)
 
@@ -660,7 +680,7 @@ def test_prepare_cli_publishes_machine_readable_manifest(
                 "--run-id",
                 "prepare-cli",
                 "--dreami",
-                str(TEST_DREAMI),
+                str(FALSE_EXECUTABLE),
             ]
         )
         == 0
@@ -704,7 +724,7 @@ def test_execute_cli_reaps_backend_and_prints_terminal_state(
 ) -> None:
     manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="execute-cli")
     campaign_dir = Path(manifest["campaign_dir"])
-    _bind_executable(campaign_dir, Path("/usr/bin/true"))
+    _bind_executable(campaign_dir, TRUE_EXECUTABLE)
 
     assert main(["execute", "--campaign-dir", str(campaign_dir)]) == 0
 
@@ -719,7 +739,7 @@ def test_reconcile_cli_archives_terminal_attempt_and_prints_prepared_state(
 ) -> None:
     manifest = _prepare_campaign(campaign_root=durable_campaign_root, run_id="reconcile-cli")
     campaign_dir = Path(manifest["campaign_dir"])
-    _bind_executable(campaign_dir, Path("/usr/bin/false"))
+    _bind_executable(campaign_dir, FALSE_EXECUTABLE)
     assert execute_campaign(campaign_dir, heartbeat_seconds=0.01)["status"] == "failed"
 
     assert main(["reconcile", "--campaign-dir", str(campaign_dir)]) == 0

@@ -30,6 +30,29 @@ from validation.dream_full_kinetic_execution_custody import (
 )
 
 
+# Ubuntu 26.04 ships /usr/bin/true and /usr/bin/false as symlinks to a multi-call
+# coreutils binary, and execution custody refuses symlinks. The tests therefore
+# run their own regular-file stand-ins, written once per module.
+FALSE_EXECUTABLE = Path("/nonexistent/false")
+TRUE_EXECUTABLE = Path("/nonexistent/true")
+
+
+def _write_stand_in_executable(path: Path, *, exit_code: int) -> Path:
+    """Write a regular, non-symlink shell script that exits with ``exit_code``."""
+    path.write_text(f"#!/bin/sh\nexit {exit_code}\n", encoding="utf-8")
+    path.chmod(0o755)
+    return path
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _stand_in_executables(tmp_path_factory: pytest.TempPathFactory) -> None:
+    """Point the false/true stand-ins at regular executables for this module."""
+    global FALSE_EXECUTABLE, TRUE_EXECUTABLE
+    directory = tmp_path_factory.mktemp("dream-stand-in-executables")
+    FALSE_EXECUTABLE = _write_stand_in_executable(directory / "false", exit_code=1)
+    TRUE_EXECUTABLE = _write_stand_in_executable(directory / "true", exit_code=0)
+
+
 @pytest.fixture
 def durable_campaign_root() -> Generator[Path, None, None]:
     parent = ROOT / "data/external"
@@ -45,10 +68,10 @@ def _failed_campaign(campaign_root: Path, run_id: str) -> tuple[Path, dict[str, 
     manifest = prepare_campaign(
         campaign_root=campaign_root,
         run_id=run_id,
-        dreami=Path("/usr/bin/false"),
+        dreami=FALSE_EXECUTABLE,
     )
     campaign_dir = Path(manifest["campaign_dir"])
-    executable = Path("/usr/bin/false")
+    executable = FALSE_EXECUTABLE
     manifest["dream"]["dreami_path"] = str(executable)
     manifest["dream"]["dreami_sha256"] = sha256_file(executable)
     atomic_write_json(campaign_dir / "campaign.json", manifest)
