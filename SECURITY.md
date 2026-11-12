@@ -4,7 +4,7 @@
 
 | Version | Supported          | Notes |
 |---------|--------------------|-------|
-| 4.1.0   | :white_check_mark: | Current stable - NumPy 2 and Python 3.11+ baseline; linear reduced-MHD eigenvalue solver, full runaway-electron kinetic solver, TORAX 1.4.3 contract, complete FAIR-MAST magnetic archive, DeepONet equilibrium surrogate and QLKNN conformal certificates; Cholesky SPD solves and patched dependency locks |
+| 4.1.0   | :white_check_mark: | Current stable - NumPy 2 and Python 3.11+ baseline; linear reduced-MHD eigenvalue solver, full runaway-electron kinetic solver, official TGLF runtime, coupled transport with TORAX parity gate, TORAX 1.4.3 contract, complete FAIR-MAST magnetic archive, cfspopcon/PROCESS/RustBCA integrations, DeepONet equilibrium surrogate and QLKNN conformal certificates; Cholesky SPD solves, bounded NumPy archive loading and patched dependency locks |
 | 4.0.0   | :white_check_mark: | Previous stable - differentiable predictive free-boundary equilibrium line (compiled + batched forward, adjoint, real-DIII-D validation, IMAS bridge) with fail-closed input hardening |
 | 3.11.0  | :white_check_mark: | Previous stable - control/transport/surrogate/equilibrium feature wave (safety shield, TGLF surrogate, Petri-to-SNN interlock, PB-KBM pedestal, Solov'ev exact suite) with modular-decomposition and validation-evidence passes |
 | 3.10.1  | :white_check_mark: | Previous stable - CI publication, dependency-maintenance, and release-surface alignment wave |

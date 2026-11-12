@@ -15,7 +15,7 @@ near real plant hardware?
 | Surface | Current public truth | Where to verify it |
 |---|---|---|
 | Tagged package release | `4.1.0` | `pyproject.toml`, `CITATION.cff`, `CHANGELOG.md` |
-| Release focus | NumPy 2 and Python 3.11+ baseline; linear reduced-MHD eigenvalue solver, full runaway-electron kinetic solver, TORAX 1.4.3 contract, complete FAIR-MAST magnetic archive, DeepONet equilibrium surrogate, and QLKNN conformal certificates, on the 4.0.0 differentiable free-boundary equilibrium line | v4.1.0 release notes and `RESULTS.md` |
+| Release focus | NumPy 2 and Python 3.11+ baseline; linear reduced-MHD eigenvalue solver, full runaway-electron kinetic solver, official TGLF runtime, coupled transport with a TORAX parity gate and autodiff, TORAX 1.4.3 contract, complete FAIR-MAST magnetic archive, cfspopcon/PROCESS/RustBCA integrations, DeepONet equilibrium surrogate, and QLKNN conformal certificates, on the 4.0.0 differentiable free-boundary equilibrium line | v4.1.0 release notes and `RESULTS.md` |
 | Static inventory | 13 Rust crates, 374 Python capability modules, 682 Python test files, and 71 public documentation pages | `docs/_generated/capability_snapshot.md` |
 | Full-fidelity status | Not complete; external same-case and production-scale rows remain fail-closed | `validation/reports/full_fidelity_end_to_end_campaign.md` |
 | Safety status | Research and assurance-roadmap material; no IEC 61508 or SIL certification claim | `docs/IEC_61508_ROADMAP.md` |

@@ -11,17 +11,23 @@ v4.1.0 (Current)
 - Minor release on top of v4.0.0: scpn-fusion requires NumPy 2
   (``numpy>=2.4,<3``) and Python 3.11 or newer; Python 3.10 support is removed.
 - Adds a linear resistive reduced-MHD eigenvalue solver, a full
-  runaway-electron kinetic solver with an equivalent Rust kernel, a
+  runaway-electron kinetic solver with an equivalent Rust kernel, official
+  TGLF runtime support with dataset custody, a coupled transport model
+  intersection with a TORAX parity gate and end-to-end autodiff, a
   process-isolated TORAX 1.4.3 contract, a complete FAIR-MAST magnetic archive
-  contract, a recovery-safe equilibrium DeepONet with Rust inference, and
-  split-conformal certificates for the QLKNN transport surrogate.
+  contract, source-pinned cfspopcon, PROCESS and RustBCA integrations, a
+  recovery-safe equilibrium DeepONet with Rust inference, split-conformal
+  certificates for the QLKNN transport surrogate, and a standalone
+  ``scpn-fusion-rs`` PyPI distribution.
 - Replaces explicit SPD inverses with Cholesky solves, unifies limiter
   containment across Python and Rust, takes tungsten radiation from the
   Pütterich et al. (2010) table, and moves every hash-locked dependency closure
   to patched releases.
-- Renames the FreeGS public-example metric ``boundary_containment_fraction`` to
-  ``wall_flux_agreement_fraction`` and retires the Rust projected DREAM-style
-  export; nonlinear GK, full electromagnetic, DREAM kinetic, Aurora/STRAHL, and
+- Renames the validation modules formerly named by internal programme codes,
+  makes the ordered species fluxes the TGLF surrogate bridge's default
+  targets, renames the FreeGS public-example metric
+  ``boundary_containment_fraction`` to ``wall_flux_agreement_fraction`` and
+  retires the Rust projected DREAM-style export; nonlinear GK, full electromagnetic, DREAM kinetic, Aurora/STRAHL, and
   production MPI/multi-GPU parity stay fail-closed.
 
 v4.0.0

@@ -8,22 +8,29 @@ Minor release on top of 4.0.0. scpn-fusion now requires Python 3.11 or newer
 and NumPy 2 (`numpy>=2.4,<3`). New public capabilities: a linear resistive
 reduced-MHD eigenvalue solver (Harris slab and periodic cylinder, with a
 shaped-section extension limited to operator experiments), a full
-runaway-electron kinetic solver with an equivalent Rust kernel, a
-process-isolated contract for pinned TORAX 1.4.3 runs, a complete FAIR-MAST
-magnetic archive contract with the shot 27707 qualification, a recovery-safe
-equilibrium DeepONet with Rust inference and a solver-seeding API, and
-split-conformal certificates for the QLKNN transport surrogate. Numerical
+runaway-electron kinetic solver with an equivalent Rust kernel, official TGLF
+runtime support with dataset custody, a coupled transport model intersection
+with a TORAX parity gate and end-to-end autodiff, a process-isolated contract
+for pinned TORAX 1.4.3 runs, a complete FAIR-MAST magnetic archive contract
+with the shot 27707 qualification, source-pinned cfspopcon, PROCESS and
+RustBCA integrations, a recovery-safe equilibrium DeepONet with Rust inference
+and a solver-seeding API, split-conformal certificates for the QLKNN transport
+surrogate, and a standalone `scpn-fusion-rs` PyPI distribution. Numerical
 fixes replace explicit inverses of SPD matrices with Cholesky solves, give
-limiter containment one closed-contour contract in Python and Rust, and take
+limiter containment one closed-contour contract in Python and Rust, restrict
+plasma current to the axis-connected region on diverted topologies, and take
 tungsten radiation from the Pütterich et al. (2010) table. Every hash-locked
 dependency closure resolves to patched releases.
 
-Compatibility: Python 3.10 support is removed; the FreeGS public-example
-metric `boundary_containment_fraction` is renamed `wall_flux_agreement_fraction`;
-the Rust 1D-to-3D projected DREAM-style artifact export is retired. The
-full-fidelity evidence boundary is unchanged: the acceptance contract still
-fails closed, the predictive IDA same-case evidence still misses its gates,
-and no DeepONet solver-speed claim is promoted.
+Compatibility: Python 3.10 support is removed; the validation modules formerly
+named by internal programme codes are renamed (new names under Changed); the
+TGLF surrogate bridge's default targets are the ordered species fluxes; the
+FreeGS public-example metric `boundary_containment_fraction` is renamed
+`wall_flux_agreement_fraction`; the Rust 1D-to-3D projected DREAM-style
+artifact export is retired. The full-fidelity evidence boundary is unchanged:
+the acceptance contract still fails closed, the predictive IDA same-case
+evidence still misses its gates, and no DeepONet solver-speed or TGLF
+surrogate claim is promoted.
 
 ### Removed
 
@@ -57,6 +64,42 @@ and no DeepONet solver-speed claim is promoted.
   upload-artifact 7.0.2, download-artifact 8.0.2, CodeQL 4.39.3, Scorecard
   2.5.0, setup-julia 3.0.3, install-action 2.87.32, pypi-publish 1.14.3 and the
   current rust-toolchain stable commit.
+- `general_gs_source` and the predictive IDA path take plasma current only from
+  the region connected to the magnetic axis: a soft, differentiable flood fill
+  from the axis seed excludes private-flux islands on diverted topologies.
+  `axis_connected=False` keeps the previous level-set support for diagnostics.
+- Integrated transport advances each step with an in-step Picard
+  predictor-corrector instead of relaxing diffusivities between steps;
+  coefficients are time-centred and nonlinear convergence is recorded. Axis
+  rows use half control volumes in the thermal, species, impurity and JAX
+  Crank–Nicolson paths, and the Rust transport kernel follows the same
+  cylindrical Crank–Nicolson discretisation.
+- The TGLF surrogate bridge's `DEFAULT_TGLF_TARGETS` are the ordered species
+  fluxes `particle_e`, `particle_i`, `q_i`, `q_e` and `gamma_max` (previously
+  `chi_i`, `chi_e`, `gamma_max`, `q_i`, `q_e`).
+- Validation benchmarks whose module names carried internal programme codes
+  are renamed descriptively. The shipped `validation` package now provides
+  `validation.snn_rl_tearing_mode_fault_benchmark`,
+  `validation.gyro_swin_turbulence_surrogate_benchmark`,
+  `validation.heat_ml_magnetic_shadow_benchmark`,
+  `validation.nstx_u_sparc_digital_twin_ingestion` and
+  `validation.eu_demo_k_demo_synthetic_holdout_validation`; imports of the
+  former module names must move to these.
+- The Gym environment applies normalised coil commands as baseline-relative
+  MA offsets, rejects invalid actions before mutating state and renders the
+  solved flux field. Simulated actuator limits use `None` for an unbounded
+  limit and reject NaN and infinity.
+- Studio federation requires the compatible v2 SDK and emits era-v2
+  manifests.
+- JAX double precision stays the application's choice: models that require
+  binary64 refuse to run when JAX x64 is disabled instead of computing in
+  single precision.
+- The optional IMAS adapters load on demand, so the bounded JSON and archive
+  helpers no longer import OMAS; all 96 legacy package exports are kept.
+- The Rust workspace declares Rust 1.94 as its minimum version.
+- Historical controller latency, speedup and disruption guarantees without
+  current evidence are withdrawn; the historical observations stay with their
+  evidence boundaries.
 
 ### Added
 
@@ -192,6 +235,65 @@ and no DeepONet solver-speed claim is promoted.
   and exterior regions; record regional error moments and masks; and quantify
   candidate-versus-reference plasma-current support, distribution distance,
   and centroid shift without changing solver physics or promotion gates.
+- Official TGLF support: the runtime runs a pinned GACODE `tglf` from `PATH`,
+  writes current input decks, parses signed flux and spectrum outputs,
+  supports ordered species transport and fails closed on backend errors. A
+  versioned dataset manifest binds official GACODE runs with deterministic
+  group-isolated splits and raw-file custody (public API and CLI), a
+  recoverable generator produces development corpora, and a frozen,
+  charge-constrained model-selection study evaluates candidate surrogate
+  families. No TGLF surrogate model, weights or runtime path is admitted or
+  promoted.
+- A coupled transport model intersection:
+  `scpn_fusion.core.integrated_transport_solver_coupled` advances Ti, Te, ne
+  and poloidal flux from one beginning-of-step state with explicit source,
+  boundary, exchange and linear-solve accounting, with a TORAX parity gate on a
+  narrow prescribed-coefficient case;
+  `scpn_fusion.core.integrated_transport_solver_differentiable` gives the same
+  path end-to-end JAX autodiff and bounded optimisation. Neither is promoted as
+  a full-device transport model.
+- `solve_predictive_equilibrium_newton` solves the predictive free-boundary
+  equilibrium through a causal two-stage Newton path with fail-closed
+  convergence evidence, and `differentiate_predictive_equilibrium_root`
+  attaches the implicit adjoint to a converged root.
+- `general_gs_source` accepts an opt-in `subcell` sub-sampling of each control
+  volume for cells the boundary straddles; the default of 1 is bit-identical
+  to the point sample.
+- Strict OMAS PF-active and magnetics ingestion with canonical COCOS,
+  IMAS-version, provenance, uncertainty, validity and geometry checks.
+  Ingestion readiness stays separate from scientific admission, which remains
+  refused.
+- A DIII-D coil-vacuum grid-convergence diagnostic over 33, 65, 129 and 257
+  grids with exact source and runtime provenance, current-recovery and
+  inverse-closure metrics, a fixed-physical partition and authenticated
+  execution provenance. Its published evidence grants no experimental,
+  control, safety or scientific admission.
+- A reproducible ITER-like synthetic equilibrium baseline with a dataset
+  verifier, retraining that resumes exactly from checkpoints bound to dataset
+  digests, and a 50,000-case machine-conditioned equilibrium dataset (v2)
+  generated with recoverable, checksum-verified streaming.
+- A FreeGSNKE inverse comparison in its own workflow and NumPy 1.26 lane, with
+  a frozen profile bridge and a total-ψ parity check.
+- Source-pinned integrations with cfspopcon operating maps, PROCESS power
+  diagnostics and RustBCA reference execution, each with its own hash-locked
+  CI lane and explicit authority limits.
+- Validation of synthetic disruption anomaly-alarm sensitivity and
+  specificity, and a stress-campaign fidelity contract with crash-resumable
+  recovery for the stress-test campaign.
+- Recovery-grade custody for DREAM full-kinetic campaigns: supervised
+  veryfine-to-superfine runs, complete HDF5 custody validation and
+  crash-resumable attempts.
+- Origin-bound native kernel checkpoints: complete kernel state is captured
+  and restored with opaque recipient-bound tokens through the Rust core and
+  PyO3, and foreign tokens are refused before any mutation.
+- `scpn-fusion-rs` builds independently from its own sdist and is published to
+  PyPI.
+- A transport polyglot comparison benchmark
+  (`benchmarks/bench_transport_polyglot.py`) with a performance-comparison
+  schema and a published report.
+- Opt-in solver tracing: compiled continuation and Anderson checkpoints, eager
+  iteration snapshots and the terminal compiled transition; traced and
+  untraced outputs are bit-identical.
 
 ### Fixed
 
@@ -280,6 +382,39 @@ and no DeepONet solver-speed claim is promoted.
   cold-start continuation after JIT compilation. The report now separates cold
   iterations, warm setup/compilation, steady-state warm iterations, and timing
   samples, and rejects relabelled cold-start or unconverged warm evidence.
+- Predictive free-boundary continuation: the separatrix saddle seed is
+  smoothed and refined, cold starts continue onto the refined separatrix,
+  Anderson history restarts at continuation endpoints and the primary X-point
+  selection is stable.
+- Free-boundary current fitting uses bounded absolute currents and an
+  actual-solve budget, accepts only inner-converged Armijo steps and restores
+  the complete Python and native history after a rejected step or a runtime
+  failure.
+- Adaptive transport isolates trial state, refuses non-finite or non-positive
+  error estimates before any history, timestep or controller memory changes,
+  and refuses non-positive steady-state step counts. Numerical-recovery
+  telemetry counts each accepted solution clip once.
+- Missing or invalid conductor observations in the JAX vacuum fields stay
+  non-finite instead of becoming zero contributions, and Grad–Shafranov flux
+  diagnostics refuse arithmetic overflow.
+- The FNO spectral convolution keeps complex128 precision for float32 inputs
+  with float64 weights, and the equilibrium surrogate applies its latent
+  normalisation before PCA reconstruction again.
+- The runaway-electron kinetic solver closes its pitch and SSPRK boundaries in
+  Python and Rust; the Rust SPI step rejects empty plasma or grid inputs before
+  indexing.
+- Balance-of-plant thermal hydraulics accepts configured parallel cooling paths
+  and rejects invalid numerics.
+- Python, Julia, Go, Rust and Lean parse the same required TOML physical cases
+  and run 232 shared case fixtures through their native APIs; NumPy and PyO3
+  array inputs are checked explicitly for dtype.
+- Free-boundary parity evidence is re-evaluated instead of trusting a cached
+  acceptance, scientific qualification is refused without matching raw field
+  custody, and public claim checks stay fail-closed when Python assertions are
+  disabled.
+- The IPB98(y,2) validation page states the ITPA DB2.8 fit ranges instead of
+  calling the repository's input envelope the training domain, and the SPARC
+  full-field H-mode reference uses the values printed by Creely et al. (2020).
 
 ### Security
 
@@ -294,6 +429,10 @@ and no DeepONet solver-speed claim is promoted.
 - `.npz` archives are read and written through `fusion_math::npz` on zip
   9.5.0; `ndarray-npy` is used without its zip feature, which removes zip 2.4.2
   (RUSTSEC-2026-0367, RUSTSEC-2026-0368, RUSTSEC-2026-0369).
+- NumPy archives are bounded before loading: NPZ member and aggregate expanded
+  sizes are checked from the central directory, every NPY header is parsed for
+  overflow-safe logical-size caps, and object dtypes are refused.
+- The GPU bootstrap environment is hash-locked.
 
 ### Validation
 

@@ -135,14 +135,21 @@ facades and evidence-bounded validation reports.
 Version `4.1.0` is the current public release. It moves the package to
 NumPy 2 (`numpy>=2.4,<3`) and Python 3.11 or newer, and adds a linear resistive
 reduced-MHD eigenvalue solver (Harris slab and periodic cylinder), a full
-runaway-electron kinetic solver with an equivalent Rust kernel, a
-process-isolated contract for pinned TORAX 1.4.3 runs, a complete FAIR-MAST
-magnetic archive contract with the shot 27707 qualification, a recovery-safe
-equilibrium DeepONet with Rust inference, and split-conformal certificates for
-the QLKNN transport surrogate. Explicit inverses of symmetric positive-definite
-matrices are replaced by Cholesky solves, limiter containment follows one
-closed-contour contract in Python and Rust, and every hash-locked dependency
-closure resolves to patched releases.
+runaway-electron kinetic solver with an equivalent Rust kernel, official TGLF
+runtime support with dataset custody, a coupled transport model intersection
+with a TORAX parity gate and end-to-end autodiff, a process-isolated contract
+for pinned TORAX 1.4.3 runs, a complete FAIR-MAST magnetic archive contract
+with the shot 27707 qualification, source-pinned cfspopcon, PROCESS and
+RustBCA integrations, a recovery-safe equilibrium DeepONet with Rust inference,
+split-conformal certificates for the QLKNN transport surrogate, and a
+standalone `scpn-fusion-rs` PyPI distribution. Explicit inverses of symmetric
+positive-definite matrices are replaced by Cholesky solves, limiter
+containment follows one closed-contour contract in Python and Rust, plasma
+current is restricted to the axis-connected region on diverted topologies,
+and every hash-locked dependency closure resolves to patched releases.
+Validation modules formerly named by internal programme codes have new module
+names; see the 4.1.0 entry of [`CHANGELOG.md`](CHANGELOG.md) for them and the
+other compatibility notes.
 
 The 4.x line is the differentiable predictive free-boundary Grad-Shafranov
 solver introduced in 4.0.0, with exact coil-current gradients, a compiled and
