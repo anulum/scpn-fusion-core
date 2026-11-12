@@ -1,6 +1,6 @@
 {
   "title": "SCPN Fusion Core: Tokamak Plasma Physics Simulation and Neuro-Symbolic Control Suite",
-  "description": "A comprehensive tokamak plasma physics simulation and control suite with 54 Python modules, 10 Rust crates, 26 simulation modes, and a neuro-symbolic Petri net to stochastic neuron compiler. Features Grad-Shafranov equilibrium, MHD stability, transport, RF heating, neutronics, disruption prediction, and the MVR-0.96 compact reactor optimizer with optional SC-NeuroCore SNN integration.",
+  "description": "Tokamak plasma physics simulation and neuro-symbolic control suite in Python with a Rust acceleration workspace. It covers free-boundary and differentiable Grad-Shafranov equilibrium, MHD stability, integrated and coupled transport, heating, neutronics, runaway electrons, disruption prediction and control, and a Petri-net to stochastic-neuron compiler with optional SC-NeuroCore integration. Validation evidence is fail-closed: full-fidelity parity with external production codes is not claimed.",
   "creators": [
     {
       "name": "Sotek, Miroslav",
@@ -9,8 +9,8 @@
     }
   ],
   "upload_type": "software",
-  "version": "3.9.3",
-  "publication_date": "2026-03-01",
+  "version": "4.1.0",
+  "publication_date": "2026-11-12",
   "access_right": "open",
   "license": "AGPL-3.0-or-later",
   "keywords": [

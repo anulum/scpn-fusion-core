@@ -143,6 +143,16 @@ def sync(*, check_only: bool = False) -> int:
         )
     )
 
+    # 3a. .zenodo.json (archive metadata of the GitHub release)
+    changed_count += int(
+        update_file(
+            REPO_ROOT / ".zenodo.json",
+            r'"version": ".*?"',
+            f'"version": "{version}"',
+            check_only=check_only,
+        )
+    )
+
     # 3b. validation/__init__.py
     changed_count += int(
         update_file(
