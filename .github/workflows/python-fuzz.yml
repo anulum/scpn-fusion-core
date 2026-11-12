@@ -58,8 +58,13 @@ jobs:
           python -m pip install --require-hashes -r requirements/minimal.txt
           python -m pip install --require-hashes -r requirements/fuzz.txt
           python -m pip install --no-deps -e .
+      # The ASan runtime bundled with Atheris supports at most 28 bits of mmap
+      # randomisation; newer runner kernels use more, which can stall the run.
+      - name: Limit mmap randomisation for AddressSanitizer
+        run: sudo sysctl -w vm.mmap_rnd_bits=28
       - name: Run bounded Atheris campaign
         shell: bash
+        timeout-minutes: 12
         run: |
           sanitizer="$(python -c 'import atheris; print(atheris.path())')/asan_with_fuzzer.so"
           if [[ ! -r "${sanitizer}" ]]; then
