@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_REVISION = "02d45ec3f25b79e0a232bb44a327cbcc845ca133"
+PACKAGE_REVISION = "598beb237e784a4abc38b71e7245fbf235a56d97"
 SOURCE_CUSTODY: dict[str, dict[str, str]] = {
     "vertical_stability_reduced_order.json": {
         "source_path": (
@@ -62,8 +62,8 @@ IMPLEMENTATION_SOURCES: dict[str, dict[str, str]] = {
         "role": "one threshold-configured spiking unit per transition and float fallback",
     },
     "src/scpn_fusion/scpn/controller.py": {
-        "git_blob_oid_sha1": "019086fec433611200cf3459f2127830a58250be",
-        "sha256": "7c8df261d5cdbcce11e79925e51232c4ab8e491a33067348a68cc7279cf06504",
+        "git_blob_oid_sha1": "9ffa3491626e57c80ba51de835824f1917aebe55",
+        "sha256": "fddd01010cdef1e94fcc30a2a027caf2d1e5a0b5d13f282dc800a517c831a0f0",
         "role": "public neuro-symbolic controller surface",
     },
     "src/scpn_fusion/scpn/controller_features_mixin.py": {

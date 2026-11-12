@@ -7,7 +7,7 @@
   "contact": "www.anulum.li | protoscience@anulum.li",
   "projectDescription": "SCPN-FUSION-CORE extended-abstract evidence manifest.",
   "schema_version": "2.0",
-  "repository_revision": "02d45ec3f25b79e0a232bb44a327cbcc845ca133",
+  "repository_revision": "598beb237e784a4abc38b71e7245fbf235a56d97",
   "claim_boundary": {
     "petri_compiler": "source-level production contract; one threshold-configured spiking unit per transition when the optional backend is available, with a float fallback",
     "vertical_control": "independent reduced-order ODE benchmark of PID, LQRController and SpikingControllerPool; it does not execute a compiled Petri artifact",
@@ -49,8 +49,8 @@
       "role": "one threshold-configured spiking unit per transition and float fallback"
     },
     "src/scpn_fusion/scpn/controller.py": {
-      "git_blob_oid_sha1": "019086fec433611200cf3459f2127830a58250be",
-      "sha256": "7c8df261d5cdbcce11e79925e51232c4ab8e491a33067348a68cc7279cf06504",
+      "git_blob_oid_sha1": "9ffa3491626e57c80ba51de835824f1917aebe55",
+      "sha256": "fddd01010cdef1e94fcc30a2a027caf2d1e5a0b5d13f282dc800a517c831a0f0",
       "role": "public neuro-symbolic controller surface"
     },
     "src/scpn_fusion/scpn/controller_features_mixin.py": {
@@ -76,7 +76,7 @@
   },
   "generators": {
     "papers/submissions/003_stochastic_petri_net_tokamak_control_conference_abstract/generate_evidence_manifest.py": {
-      "sha256": "d125836bee760a8daee39276b765c22820e75dba36186a0d3ddee1df35e9e788"
+      "sha256": "401210b5aa53e16a22489a7c3de30c26efc066fcad33110cb6f3369c8aa23774"
     }
   },
   "files": {
