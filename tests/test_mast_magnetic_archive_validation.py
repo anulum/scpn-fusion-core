@@ -15,6 +15,7 @@ import math
 from pathlib import Path
 from typing import cast
 
+import numpy as np
 import pytest
 
 from scpn_fusion.io import (
@@ -396,3 +397,15 @@ def test_scalar_type_guards_and_producer_inventory_are_exact() -> None:
     artifacts = _array(payload, "producer_artifacts")
     artifacts[1]["path"] = cast(str, artifacts[0]["path"])
     _assert_rejected(payload, "sorted/unique")
+
+
+def test_decoded_string_digest_is_independent_of_numpy_string_dtype() -> None:
+    """Zarr strings digest the same as NumPy 2 StringDType and as NumPy 1 object."""
+    from scpn_fusion.io.mast_magnetic_archive import _decoded_array_digest
+
+    values = ["201", "210", "3a"]
+    as_object = np.array(values, dtype=object)
+    as_string_dtype = np.array(values, dtype=np.dtypes.StringDType())
+    assert as_string_dtype.dtype.kind == "T"
+    assert _decoded_array_digest(as_string_dtype) == _decoded_array_digest(as_object)
+    assert _decoded_array_digest(np.array(values, dtype="<U3")) != _decoded_array_digest(as_object)

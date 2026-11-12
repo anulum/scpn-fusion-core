@@ -439,8 +439,12 @@ def _dimension_names(metadata: JsonObject, shape: list[int], name: str) -> list[
 def _decoded_array_digest(values: NDArray[Any]) -> str:
     shape = list(values.shape)
     if values.dtype.kind in {"O", "S", "U", "T"}:
+        # Zarr variable-length strings decode as StringDType under NumPy 2 and as
+        # object under NumPy 1; label both "object" so the digest depends on the
+        # decoded values, not on the NumPy release.
+        dtype_label = "object" if values.dtype.kind in {"O", "T"} else str(values.dtype)
         content: JsonObject = {
-            "dtype": str(values.dtype),
+            "dtype": dtype_label,
             "shape": cast(JsonValue, shape),
             "values": cast(JsonValue, values.tolist()),
         }
