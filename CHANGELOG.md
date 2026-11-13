@@ -455,8 +455,11 @@ surrogate claim is promoted.
 - Add a real primary/repeat/refined TORAX runtime contract gate. The primary
   and repeat scientific projections and canonical 204-variable DataTree
   inventories are identical; 0.01 s versus 0.005 s fixed-step final-profile
-  relative L2 differences range from `1.38247688965e-4` to
-  `1.89112766889e-3`. The tracked outcome binds the exact NetCDF container,
+  relative L2 differences range from `9.705e-5` (poloidal flux) to
+  `1.339e-3` (ion temperature). (Corrected 2026-11-13: the report shipped
+  since 2026-08-30 records these values; the first notes quoted
+  `1.38247688965e-4` to `1.89112766889e-3`, which no tracked report contains.)
+  The tracked outcome binds the exact NetCDF container,
   while the deterministic review envelope binds the container-independent full
   content inventory. Invalid input, unavailable backend, configuration refusal,
   timeout, truncation, duplicate JSON keys, and post-run corruption fail closed.
