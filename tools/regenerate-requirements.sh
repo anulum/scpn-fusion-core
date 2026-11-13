@@ -68,11 +68,12 @@ done
 
 # Every other *.in carries its EXACT canonical command in a "# Regenerate: uv pip
 # compile ..." header line — the single source of truth for its per-file Python
-# version / platform / universal flags (these genuinely differ: build/ci-interop/
-# ci-stress are 3.11-linux, ci-benchmark/docs/studio are 3.12-linux, full/minimal
-# are --universal with no pinned version). Execute that header command verbatim so
-# the script can never drift from it — the drift that previously mis-locked
-# ci-interop / ci-stress / build against 3.12 when their headers require 3.11.
+# version / platform / universal flags (these genuinely differ: build is
+# 3.11.5-linux, ci-interop/ci-stress are 3.11-linux, ci-benchmark/docs/studio are
+# 3.12-linux, full/minimal are --universal with no pinned version). Execute that
+# header command verbatim so the script can never drift from it — the drift
+# that previously mis-locked ci-interop / ci-stress / build against 3.12 when
+# their headers required 3.11.
 for infile in requirements/*.in; do
     base="$(basename "${infile}" .in)"
     [ "${base}" = "ci" ] && continue  # handled above

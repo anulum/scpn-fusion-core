@@ -1,5 +1,5 @@
 # Build, publish, and audit tool dependencies
-# Regenerate: uv pip compile requirements/build.in --generate-hashes --python-platform linux --python-version 3.11 -o requirements/build.txt
+# Regenerate: uv pip compile requirements/build.in --generate-hashes --python-platform linux --python-version 3.11.5 -o requirements/build.txt
 build
 twine
 pip-audit
@@ -22,6 +22,6 @@ pillow>=13.0.0
 pip>=26.2
 pytest>=9.0.3
 requests>=2.33.0
-soupsieve>=2.9.2
+soupsieve>=4.0
 tornado>=6.6,<6.7
 urllib3>=2.8.0

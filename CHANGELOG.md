@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Security
+
+- soupsieve moves to 4.1 in the build and docs locks (GHSA-mmhr-3c5m-f64f,
+  CVE-2026-126190, high: polynomial-time denial of service in the descendant
+  combinator; fixed in 4.0). The `.in` floors require 4.0. The build lock
+  now targets Python 3.11.5, the lowest version soupsieve 3.0 and later
+  support; all of its consumers run Python 3.12.
+
 ### Changed
 
 - The PyPI publish workflow publishes only from a pushed `v*` tag, or from a
