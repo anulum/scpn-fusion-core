@@ -26,10 +26,10 @@
 \title{SCPN-Fusion-Core: A Hybrid Rust--Python Grad--Shafranov Solver\\
 with Evidence-Bounded Reconstruction and Neural Fallback}
 \author{Miroslav \v{S}otek\\
-\small Anulum Research, \url{https://www.anulum.li}\\
+\small ANULUM CH\&LI, Marbach SG, Switzerland, \url{https://www.anulum.li}\\
 \small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
 \small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
-\date{Review draft --- 4 September 2026}
+\date{Preprint --- 13 November 2026 (from the review draft of 4 September 2026)}
 
 \begin{document}
 \maketitle
@@ -62,6 +62,15 @@ software, the negative results, and the validation work still required.
 inverse reconstruction; Rust; Python; fail-closed surrogate; reproducibility
 
 \section{Scope and claim boundary}
+
+\paragraph{Software version and date.} This preprint describes \scpn{} at
+evidence revision \code{476908debdd8} of 26 August 2026, on the development
+line between releases 4.0.0 and 4.1.0.  On 13 November 2026 the DIII-D
+reproduction and the SPARC pointwise benchmark were rerun on the release 4.1.0
+line (commit \code{36326e5eec27}); every quantity reported below was
+reproduced at its printed precision, and the SPARC rows reproduced exactly.
+Corrections made since the review draft are listed in the dated note at the
+end of the paper.
 
 The Grad--Shafranov (GS) equation is the standard axisymmetric
 magnetohydrostatic equilibrium equation for a toroidal plasma
@@ -125,9 +134,8 @@ convention is not a valid equilibrium result.
 \subsection{Inverse reconstruction}
 
 The inverse path adjusts a finite parameter vector to reduce residuals between
-modelled and supplied diagnostic values.  It includes Tikhonov regularisation
-\citep{Tikhonov1977}, Huber loss \citep{Huber1964}, and Levenberg--Marquardt
-updates \citep{Levenberg1944,Marquardt1963}.  Figure~\ref{fig:inverse} is a
+modelled and supplied diagnostic values.  It uses Levenberg--Marquardt updates \citep{Levenberg1944,Marquardt1963}
+with Tikhonov regularisation \citep{Tikhonov1977} of the parameter step.  Figure~\ref{fig:inverse} is a
 deterministic synthetic probe example.  It illustrates the spatial input and
 residual layout; it does not execute the inverse solver or recover a real
 diagnostic system.
@@ -258,6 +266,24 @@ generation time and generator hash are retained, and the paper-local JSON is
 therefore the authoritative public custody copy.  The final PDF is a review
 artefact generated from this source.  The manuscript-content licence has not
 yet been selected by the author; repository code retains its existing licence.
+
+\section*{Note added (13 November 2026)}
+
+This note lists every change from the review draft of 4 September 2026.
+\begin{itemize}
+  \item The review draft stated that the inverse path includes a Huber loss.
+        That was wrong for the bound revision: a Huber loss existed in the
+        repository only on 12 February 2026 and was replaced the same day by
+        the Tikhonov-regularised Levenberg--Marquardt step described above.
+        The sentence and its citation are corrected.
+  \item The hosted matrix named in the implementation section is the one at
+        the bound revision.  Release 4.1.0 removed Python 3.10; the matrix now
+        covers Python 3.11 and 3.12.
+  \item The author affiliation now reads ANULUM CH\&LI, Marbach SG,
+        Switzerland.
+  \item The figures were regenerated with the plotting library pinned at
+        release 4.1.0; only the typesetting of axis tick labels changed.
+\end{itemize}
 
 \section{Conclusion}
 

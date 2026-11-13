@@ -147,7 +147,8 @@ verify_submission_metadata() {
     if ! jq -e \
         --arg catalogue_id "${package_name:0:3}" '
             .catalogue_id == $catalogue_id and
-            .status == "review_draft_not_submitted" and
+            (.status == "review_draft_not_submitted" or
+             .status == "preprint_prepared_not_deposited") and
             (.repository_revision | type == "string" and test("^[0-9a-f]{40}$")) and
             .author.orcid == "0009-0009-3560-0851" and
             .doi == null and

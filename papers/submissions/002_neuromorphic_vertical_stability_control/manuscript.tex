@@ -24,10 +24,10 @@
 \title{Neuromorphic Vertical Stability Control via Petri-Net-to-Spiking\\
 Compilation: A Reduced-Order Evaluation}
 \author{Miroslav \v{S}otek\\
-\small Anulum Research, \url{https://www.anulum.li}\\
+\small ANULUM CH\&LI, Marbach SG, Switzerland, \url{https://www.anulum.li}\\
 \small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
 \small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
-\date{Review draft --- 4 September 2026}
+\date{Preprint --- 13 November 2026 (from the review draft of 4 September 2026)}
 
 \begin{document}
 \maketitle
@@ -62,6 +62,16 @@ experiment has been performed.
 vertical stability; neuromorphic control; stochastic computing; negative result
 
 \section{Motivation and boundary}
+
+\paragraph{Software version and date.} This preprint describes \scpn{} as
+it stood on 4 September 2026, at commit \code{8df066b60bf7} on the
+development line between releases 4.0.0 and 4.1.0.  On 13 November 2026 the reduced-order
+vertical benchmark was rerun at commit \code{36326e5eec27}, on the release
+4.1.0 line, and gave the same response: PID 25 ms and 5.00 mm, LQR
+39 ms and 5.20 mm, and a spiking controller that diverges near 160 mm.  The
+historical, schema-v3 and protocol records below are custody copies and were
+not rerun.  Changes since the review draft are listed in the dated note at
+the end of the paper.
 
 Elongated tokamak plasmas can be unstable to the axisymmetric vertical mode,
 requiring active feedback on timescales set by the resistive structure and the
@@ -336,6 +346,23 @@ and build instructions.  Code is available at
 commit \code{8df066b60bf7}; the full revision is recorded in the paper metadata.  The
 manuscript-content licence has not yet been selected by the author; repository
 code retains its existing licence.
+
+\section*{Note added (13 November 2026)}
+
+This note lists every change from the review draft of 4 September 2026.
+\begin{itemize}
+  \item Release 4.1.0 replaced explicit inverses of symmetric
+        positive-definite matrices with Cholesky solves, including the LQR
+        input weight.  The rerun on that line reproduced the reduced-order
+        response of Table~\ref{tab:vde} unchanged.
+  \item The fresh cohort is still prepared and blocked
+        (\code{prepared\_blocked\_not\_executable}); no cohort result is
+        added.
+  \item The author affiliation now reads ANULUM CH\&LI, Marbach SG,
+        Switzerland.
+  \item The figures were regenerated with the plotting library pinned at
+        release 4.1.0; only the typesetting of axis tick labels changed.
+\end{itemize}
 
 \section{Conclusion}
 

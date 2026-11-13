@@ -8,14 +8,18 @@
   "projectDescription": "SCPN-FUSION-CORE extended-abstract review metadata.",
   "schema_version": "2.0",
   "catalogue_id": "003",
-  "status": "review_draft_not_submitted",
+  "status": "preprint_prepared_not_deposited",
   "title": "Evidence-Bounded Stochastic Petri Net Control in SCPN-Fusion-Core: Reduced-Order Results and Open Validation Gaps",
   "author": {
     "name": "Miroslav Sotek",
-    "orcid": "0009-0009-3560-0851"
+    "orcid": "0009-0009-3560-0851",
+    "affiliation": "ANULUM CH&LI, Marbach SG, Switzerland"
   },
   "repository_revision": "598beb237e784a4abc38b71e7245fbf235a56d97",
-  "companion_catalogue_ids": ["001", "002"],
+  "companion_catalogue_ids": [
+    "001",
+    "002"
+  ],
   "evidence_files": [
     "evidence/evidence_manifest.json",
     "evidence/vertical_stability_reduced_order.json",
@@ -29,5 +33,12 @@
     "sparc": "pointwise_gate_with_partial_adapted_source_contract"
   },
   "doi": null,
-  "manuscript_content_license": null
+  "manuscript_content_license": null,
+  "preprint": {
+    "date": "2026-11-13",
+    "derived_from_review_draft_of": "2026-09-04",
+    "software_described": "scpn-fusion release 4.1.0 (bound commit of 2026-11-12 is part of tag v4.1.0)",
+    "reverified_on_release_line_at": "36326e5eec276f9db63b840c851dc2a5da5f9e32",
+    "corrections_note": "Note added (13 November 2026) in manuscript.tex"
+  }
 }

@@ -6,13 +6,14 @@
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN-FUSION-CORE — equilibrium-paper citation metadata.
 cff-version: 1.2.0
-message: "If you use this review draft and its software artefacts, use the preferred citation."
+message: "If you use this preprint and its software artefacts, use the preferred citation."
 type: software
-title: "Supporting materials for the hybrid Rust-Python Grad-Shafranov solver review draft"
+title: "Supporting materials for the hybrid Rust-Python Grad-Shafranov solver preprint"
 authors:
   - family-names: "Sotek"
     given-names: "Miroslav"
     orcid: "https://orcid.org/0009-0009-3560-0851"
+    affiliation: "ANULUM CH&LI, Marbach SG, Switzerland"
 repository-code: "https://github.com/anulum/scpn-fusion-core"
 url: "https://www.anulum.li"
 preferred-citation:
@@ -22,4 +23,5 @@ preferred-citation:
     - family-names: "Sotek"
       given-names: "Miroslav"
       orcid: "https://orcid.org/0009-0009-3560-0851"
+      affiliation: "ANULUM CH&LI, Marbach SG, Switzerland"
   year: 2026

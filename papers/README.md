@@ -16,6 +16,10 @@ Each submission directory is self-contained: manuscript source, bibliography,
 figures and their generators, evidence, citation metadata, build instructions,
 and the generated review PDF are kept together.  A directory is a review
 workspace, not evidence that the manuscript has been submitted or accepted.
+A package whose metadata status is `preprint_prepared_not_deposited` carries a
+dated preprint: its first section names the software version it describes,
+and a dated note lists every change from the review draft.  Depositing it is
+the author's decision.
 
 From the repository root, rebuild and validate every numbered package in a
 disposable tree with:
