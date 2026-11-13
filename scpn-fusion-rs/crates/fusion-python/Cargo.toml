@@ -12,7 +12,6 @@ name = "scpn-fusion-rs"
 version = "4.1.0"
 edition = "2021"
 description = "Native Rust acceleration for SCPN Fusion Core via PyO3"
-homepage = "https://github.com/anulum/scpn-fusion-core"
 repository = "https://github.com/anulum/scpn-fusion-core"
 readme = "README.md"
 

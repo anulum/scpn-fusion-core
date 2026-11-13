@@ -157,7 +157,6 @@ dependencies = [
 name = "fusion-math"
 version = "0.1.0"
 dependencies = [
- "approx",
  "fusion-types",
  "ndarray",
  "ndarray-npy",

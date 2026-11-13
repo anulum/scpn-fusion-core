@@ -476,8 +476,6 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 name = "fusion-control"
 version = "0.1.0"
 dependencies = [
- "fusion-core",
- "fusion-math",
  "fusion-types",
  "ndarray",
  "rand 0.8.8",
@@ -502,7 +500,6 @@ dependencies = [
 name = "fusion-diagnostics"
 version = "0.1.0"
 dependencies = [
- "fusion-math",
  "fusion-types",
  "ndarray",
  "rand 0.8.8",
@@ -513,9 +510,6 @@ dependencies = [
 name = "fusion-engineering"
 version = "0.1.0"
 dependencies = [
- "fusion-types",
- "log",
- "ndarray",
  "serde",
 ]
 
@@ -537,7 +531,6 @@ dependencies = [
 name = "fusion-math"
 version = "0.1.0"
 dependencies = [
- "approx",
  "criterion",
  "fusion-types",
  "ndarray",

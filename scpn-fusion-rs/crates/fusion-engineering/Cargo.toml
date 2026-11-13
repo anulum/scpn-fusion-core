@@ -13,7 +13,4 @@ license = "AGPL-3.0-or-later"
 description = "SCPN Fusion Core - Engineering (balance of plant, divertor)"
 
 [dependencies]
-fusion-types = { path = "../fusion-types" }
-ndarray = { workspace = true }
 serde = { workspace = true }
-log = { workspace = true }

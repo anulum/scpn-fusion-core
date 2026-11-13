@@ -109,8 +109,7 @@ impl FokkerPlanckSolver {
         let mut a = Vec::with_capacity(n);
         let d = vec![DIFFUSION_FLOOR; n];
 
-        for i in 0..n {
-            let pi = self.p[i];
+        for &pi in &self.p[..n] {
             let gamma = (1.0 + pi * pi).sqrt();
             let f_drag = fc_norm * (1.0 + (z_eff + 1.0) / (pi * pi + p_thermal_sq));
             let f_synch = (1.0 / tau_rad) * pi * gamma * (1.0 + z_eff).sqrt();

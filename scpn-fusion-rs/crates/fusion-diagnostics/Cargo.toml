@@ -15,7 +15,6 @@ description = "SCPN Fusion Core - Synthetic diagnostics (sensors, tomography)"
 
 [dependencies]
 fusion-types = { path = "../fusion-types" }
-fusion-math = { path = "../fusion-math" }
 ndarray = { workspace = true }
 rand = { workspace = true }
 rand_distr = { workspace = true }

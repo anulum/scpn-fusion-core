@@ -93,10 +93,9 @@ impl SandpileReactor {
         let norm_temp = core_temp / (Z_CRIT_BASE * L as f64);
 
         // Simple policy: increase suppression near core if avalanches are large
-        for i in 0..L {
+        for (i, suppression) in self.suppression[..L].iter_mut().enumerate() {
             let radial_factor = 1.0 - (i as f64) / (L as f64);
-            self.suppression[i] = (norm_aval * 0.5 + norm_temp * 0.5) * radial_factor;
-            self.suppression[i] = self.suppression[i].clamp(0.0, 1.0);
+            *suppression = ((norm_aval * 0.5 + norm_temp * 0.5) * radial_factor).clamp(0.0, 1.0);
         }
     }
 
