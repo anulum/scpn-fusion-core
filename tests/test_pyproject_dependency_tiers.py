@@ -8,9 +8,11 @@
 
 from __future__ import annotations
 
+import re
 import tomllib
 from pathlib import Path
 
+import yaml
 from packaging.requirements import Requirement
 
 
@@ -89,6 +91,22 @@ def test_full_lock_source_covers_declared_heavy_extras() -> None:
     ):
         assert dependency in pyproject
         assert dependency in full_requirements
+
+
+def test_docs_workflow_rebuilds_when_the_lock_it_installs_changes() -> None:
+    """Every requirements file the docs jobs install is in the push path filter.
+
+    A lock that a path-filtered workflow installs but does not watch can change
+    on main without that workflow ever building against it.
+    """
+    text = DOCS_WORKFLOW.read_text(encoding="utf-8")
+    document = yaml.load(text, Loader=yaml.BaseLoader)
+    watched = set(document["on"]["push"]["paths"])
+    installed = set(re.findall(r"-r (requirements/[A-Za-z0-9_.-]+\.txt)", text))
+    assert installed == {"requirements/docs.txt"}
+    for lock in installed:
+        assert lock in watched
+        assert lock.removesuffix(".txt") + ".in" in watched
 
 
 def test_root_docs_targets_match_native_docs_ci_contract() -> None:

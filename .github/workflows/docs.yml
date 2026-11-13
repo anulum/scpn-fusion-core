@@ -23,6 +23,9 @@ on:
       - ".github/workflows/docs.yml"
       - ".readthedocs.yaml"
       - "pyproject.toml"
+      # The jobs install this lock; a change to it must rebuild the docs.
+      - "requirements/docs.in"
+      - "requirements/docs.txt"
   workflow_dispatch:
 
 permissions:
