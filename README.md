@@ -407,9 +407,9 @@ state history, and radially resolved density/current/energy moments. Its Rust
 backend is explicit and fail-closed (there is no silent NumPy fallback), and
 the same-output comparison is recorded in
 [`validation/reports/runaway_kinetic_rust_benchmark.md`](validation/reports/runaway_kinetic_rust_benchmark.md).
-On the recorded shared-host `(8, 16, 32)` case Rust was `2.342x` faster at
-`5.272e-14` maximum component relative L2 error; the report records the active
-DREAM load and does not generalize that timing to other hardware. Python
+On the recorded shared-host `(8, 16, 32)` case Rust was `2.233x` faster at
+`5.357e-14` maximum component relative L2 error; the report records the host
+load averages and does not generalize that timing to other hardware. Python
 remains the orchestration/DREAM/HDF5 tier. Julia is reserved for a measured
 stiff-implicit, sparse-nonlinear, adjoint, or differentiable-solve advantage;
 Go remains a service/orchestration choice rather than this tensor kernel.

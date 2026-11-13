@@ -462,10 +462,13 @@ surrogate claim is promoted.
   timeout, truncation, duplicate JSON keys, and post-run corruption fail closed.
 - Add component-by-component NumPy/Rust full-kinetic parity and a
   host-conditioned `(8, 16, 32)` benchmark. The recorded shared-host run keeps
-  every declared output within `5.272e-14` maximum relative L2 error and
-  measures a `2.342x` Rust median speedup while a pinned DREAM reference solve
-  is active; the report explicitly avoids hardware-neutral extrapolation and
-  gates Julia on a future measured stiff/implicit/adjoint advantage.
+  every declared output within `5.357e-14` maximum relative L2 error and
+  measures a `2.233x` Rust median speedup; the report explicitly avoids
+  hardware-neutral extrapolation and gates Julia on a future measured
+  stiff/implicit/adjoint advantage. (Corrected 2026-11-13: these are the values
+  of the report shipped at `v4.1.0`; the first 4.1.0 notes quoted the earlier
+  run's `5.272e-14` and `2.342x` and a concurrent DREAM solve that the report
+  generator asserts but does not measure.)
 - Record the completed 20,000-step seed-42 DeepONet run from published source
   SHA `0f369b50`: validation selected step 19,500, untouched final-test field
   RMSE is `0.023554938170431822 Wb/rad`, mean relative L2 is
