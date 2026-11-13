@@ -8,7 +8,9 @@
 
 # Hybrid Rust–Python Grad–Shafranov equilibrium solver
 
-Status: evidence-bounded review draft; not submitted.
+Status: dated preprint prepared on 13 November 2026, describing evidence revision
+`476908debdd8` (26 August 2026, between releases 4.0.0 and 4.1.0); its numbers
+were rerun on the 4.1.0 line.  Not deposited or submitted.
 
 The manuscript describes implemented equilibrium-solver components and the
 strongest currently packaged real-data result.  It distinguishes a warm-start,

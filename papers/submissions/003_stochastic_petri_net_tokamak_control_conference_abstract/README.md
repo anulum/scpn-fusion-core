@@ -8,7 +8,8 @@
 
 # Stochastic Petri net tokamak control extended abstract
 
-Status: venue-neutral review draft; not submitted.
+Status: dated extended-abstract preprint prepared on 13 November 2026,
+describing release 4.1.0.  Not deposited or submitted.
 
 This concise manuscript summarizes the bounded equilibrium and reduced-order
 control evidence.  It is not named for, formatted for, or submitted to any

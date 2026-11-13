@@ -8,7 +8,9 @@
 
 # Neuromorphic vertical stability control
 
-Status: evidence-bounded review draft; not submitted.
+Status: dated preprint prepared on 13 November 2026, describing commit
+`8df066b60bf7` (4 September 2026, between releases 4.0.0 and 4.1.0); the
+reduced-order benchmark was rerun on the 4.1.0 line.  Not deposited or submitted.
 
 This manuscript evaluates the implemented PID, LQR and push-pull spiking
 controllers on one declared reduced-order vertical-instability model. It

@@ -11,7 +11,8 @@
 Submission workspaces use `NNN_descriptive_title`, starting at `001`.  The
 number is a stable local catalogue identifier, not a priority or venue ranking.
 
-Current review drafts:
+Current packages (dated preprints prepared on 13 November 2026; not deposited
+or submitted; each names the software version it describes):
 
 - [`001_hybrid_rust_python_grad_shafranov_equilibrium_solver/`](001_hybrid_rust_python_grad_shafranov_equilibrium_solver/)
 - [`002_neuromorphic_vertical_stability_control/`](002_neuromorphic_vertical_stability_control/)
