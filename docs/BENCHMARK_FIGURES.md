@@ -59,8 +59,6 @@ Forward Solve Time (ms)           Est. LM Iteration (ms)
 |---------------|---------------------|-------|
 | Default (LS) | 8 forward solves + Cholesky | baseline |
 | + Tikhonov (α=0.1) | same + N_PARAMS additions | negligible overhead |
-| + Huber (δ=0.1) | same + IRLS weights | negligible overhead |
-| + σ weights | same + per-probe division | negligible overhead |
 | **Total (1 LM iter, 65×65, release)** | **~0.8 s** | dominated by forward solve |
 | **Full reconstruction (5 iters)** | **~4 s** | competitive with EFIT |
 
@@ -73,7 +71,7 @@ Forward Solve Time (ms)           Est. LM Iteration (ms)
 | Forward solve (65×65) | ~100 ms | ~50 ms |
 | 1 LM iteration | ~0.8 s | ~0.4 s (Picard) |
 | Full reconstruction | ~4 s (5 LM iters) | ~2 s (converged) |
-| Regularisation | Tikhonov + Huber + σ | Von-Hagenow smoothing |
+| Regularisation | Tikhonov | Von-Hagenow smoothing |
 | Profile model | mtanh (7 params) | Spline knots (~20 params) |
 
 *Lao, L.L. et al. (1985). "Reconstruction of current profile parameters
@@ -179,7 +177,7 @@ Metric & SCPN Fusion Core (Rust) & EFIT~\cite{Lao1985} \\
 Forward solve (65$\times$65) & $\sim$100\,ms & $\sim$50\,ms \\
 1 LM iteration & $\sim$0.8\,s & $\sim$0.4\,s \\
 Full reconstruction & $\sim$4\,s & $\sim$2\,s \\
-Regularisation & Tikhonov + Huber + $\sigma$ & Von-Hagenow \\
+Regularisation & Tikhonov & Von-Hagenow \\
 Profile model & mtanh (7 params) & Spline ($\sim$20 params) \\
 \bottomrule
 \end{tabular}

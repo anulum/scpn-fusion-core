@@ -1613,9 +1613,8 @@ blocked rather than inferred.
 The full-kernel Levenberg-Marquardt inverse solver calls the forward
 Grad-Shafranov equilibrium solver 9 times per iteration: 1 baseline solve plus
 8 finite-difference Jacobian columns for the mtanh pressure and FF profile
-parameters. The forward solve dominates wall time;
-Tikhonov regularisation, Huber robust loss, and per-probe σ-weighting add
-negligible overhead.
+parameters. The forward solve dominates wall time; the Tikhonov term adds
+negligible overhead. The solver has no robust loss and no per-probe weighting.
 
 The normalized profile-space inverse still exposes a closed-form mtanh
 Jacobian. The physical `(R, Z)` kernel inverse does not use that reduced
@@ -1626,8 +1625,6 @@ forward-solve finite differences.
 |---------------|---------------------|-------|
 | Full-kernel default | 9 forward solves + damped least squares | baseline |
 | + Tikhonov (α=0.1) | same + N_PARAMS additions | negligible overhead |
-| + Huber (δ=0.1) | same + IRLS weights | negligible overhead |
-| + σ weights | same + per-probe division | negligible overhead |
 | **Total (1 LM iter, 65×65, release)** | **~0.8 s** | dominated by forward solve |
 | **Full reconstruction (5 iters)** | **~4 s** | see EFIT comparison below |
 
@@ -1642,7 +1639,7 @@ forward-solve finite differences.
 | Forward solve (65×65) | ~0.1 s | ~50 ms |
 | 1 LM iteration | ~0.8 s | ~0.4 s (Picard) |
 | Full reconstruction | ~4 s | ~2 s |
-| Regularisation | Tikhonov + Huber + σ | Von-Hagenow smoothing |
+| Regularisation | Tikhonov | Von-Hagenow smoothing |
 | Profile model | mtanh (7 params) | Spline knots (~20 params) |
 
 SCPN is currently ~2× slower than reported EFIT timings. The gap is expected

@@ -103,7 +103,7 @@ measurement data is sparse or noisy.
 
 | Value | Effect | When to use |
 |-------|--------|-------------|
-| **0** | Disabled (pure least-squares) | Clean synthetic data, many well-placed probes (> 16) |
+| **1e-4** (default) | Minimal regularisation; the solver requires a value > 0 | Clean synthetic data, many well-placed probes (> 16) |
 | **0.001–0.01** | Light regularisation | Moderate noise (SNR > 20 dB), standard probe layouts |
 | **0.01–0.1** | Moderate regularisation | High noise, few probes (8–12), or ill-conditioned geometries |
 | **0.1–1.0** | Strong regularisation | Very few probes (< 8), heavily contaminated data, or when the reconstruction oscillates wildly |
@@ -111,8 +111,9 @@ measurement data is sparse or noisy.
 
 ### How to tune
 
-1. Run a reconstruction with `tikhonov = 0` on clean synthetic data.
-   If chi-squared converges to near zero, regularisation is unnecessary.
+1. Run a reconstruction with the default `tikhonov = 1e-4` on clean
+   synthetic data. If chi-squared converges to near zero, no stronger
+   regularisation is needed. The solver rejects `tikhonov <= 0`.
 2. Add noise to the synthetic data (`noise_std = 0.01`). If the
    reconstruction diverges or parameters hit their bounds, increase
    `tikhonov` until parameters stay physical.
@@ -132,67 +133,28 @@ let config = InverseConfig {
 
 ---
 
-## 4. Huber Robust Loss (`loss`)
+## 4. Outliers and Measurement Weights
 
-The Huber loss function reduces the influence of outlier measurements.
-For residuals with `|r| <= delta` it behaves like least-squares; for
-`|r| > delta` it switches to linear growth, limiting the pull of any
-single bad probe.
-
-| Delta | Effect | When to use |
-|-------|--------|-------------|
-| **Large (> 1.0)** | Effectively standard least-squares | Clean data, no outliers expected |
-| **0.05–0.5** | Standard robust range | Real experimental data with occasional probe failures or calibration drift |
-| **0.01–0.05** | Very aggressive outlier rejection | Known bad probes that can't be excluded, very noisy data |
-| **< 0.01** | Nearly L1 loss | Extreme outliers; risk of slow convergence due to non-smooth gradient |
-
-### How to tune
-
-1. Run with standard least-squares first. Inspect the residual vector:
-   if 1–2 probes have residuals 10× larger than the rest, those are
-   outliers.
-2. Set `delta` to roughly 2–3× the median residual magnitude. This
-   lets "normal" probes contribute quadratically while capping outliers.
-3. Combine with `sigma` weights for best results: sigma handles known
-   calibration uncertainty, Huber handles unexpected outliers.
-
-### Code example (Rust)
-
-```rust
-let config = InverseConfig {
-    loss: LossFunction::Huber(0.1),
-    sigma: Some(vec![0.01; n_probes]),  // 1% measurement uncertainty
-    ..InverseConfig::default()
-};
-```
-
----
-
-## 5. Measurement Weights (`sigma`)
-
-Per-probe inverse-variance weighting: residuals are divided by sigma_i,
-so noisier probes contribute less to the fit. This is standard
-weighted least-squares.
-
-| Approach | Description |
-|----------|-------------|
-| **Uniform (None)** | All probes weighted equally. Use when probe uncertainties are unknown or similar. |
-| **Calibrated sigma** | Set sigma_i to the known measurement uncertainty of each probe (e.g. 0.5% for flux loops, 2% for B_pol pickups). |
-| **SNR-based** | Set sigma_i = noise_floor / signal_amplitude for each probe. |
+The inverse solver has no robust loss and no per-probe weighting.
+`InverseConfig` has six fields: `max_iterations`, `tolerance`, `damping`,
+`fd_step`, `tikhonov` and `jacobian_mode`. Every probe enters the residual
+with equal weight. A Huber loss existed in the repository only briefly
+(12 February 2026) and was replaced the same day by the Tikhonov-regularised
+Levenberg-Marquardt step.
 
 ### Guidelines
 
-- Flux loops are typically more accurate than B_pol pickups; give them
-  smaller sigma (higher weight).
-- If one probe is known to be malfunctioning, set its sigma to a large
-  value (e.g. 1e6) rather than removing it — this preserves the
-  Jacobian structure.
-- Sigma length must exactly match the number of probes; a mismatch
-  returns a `ConfigError`.
+- Exclude a malfunctioning or saturated probe from the measurement set
+  before the fit; a single bad probe pulls the least-squares solution.
+- Bring probes of different kinds to comparable units before fitting, for
+  example by normalising each signal by its expected range, because the
+  solver does not divide residuals by a per-probe uncertainty.
+- If the reconstruction still oscillates, raise `tikhonov` (Section 3) or
+  lower `damping` (0 < damping <= 1; default 0.6).
 
 ---
 
-## 6. Grid Resolution vs Speed
+## 5. Grid Resolution vs Speed
 
 | Grid | Python (NumPy) | Rust (release) | Rust (GPU projected) | Use case |
 |------|---------------|----------------|---------------------|----------|
@@ -212,7 +174,7 @@ weighted least-squares.
 
 ---
 
-## 7. Inverse Solver: Full-Kernel Jacobian Fidelity
+## 6. Inverse Solver: Full-Kernel Jacobian Fidelity
 
 The Rust inverse module has two distinct surfaces:
 
@@ -290,7 +252,7 @@ equilibria.
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
 | Parameters hit bounds every iteration | Ill-conditioned Jacobian | Add `tikhonov = 0.01`–`0.1` |
-| One probe dominates the fit | Outlier / malfunctioning sensor | Add `loss = Huber(0.1)` |
+| One probe dominates the fit | Outlier / malfunctioning sensor | Exclude the probe before fitting; the solver has no robust loss (Section 4) |
 | Reconstruction oscillates between iterations | Underdetermined (too many params, too few probes) | Increase `tikhonov`; reduce `fd_step` if using very large perturbations |
 | chi-squared stuck at ~1 (never decreases) | `fd_step` too small → Jacobian numerically zero | Increase `fd_step` to `1e-3` |
 
@@ -353,10 +315,9 @@ equilibria.
 | Parameter | Location | Default | Safe range |
 |-----------|----------|---------|------------|
 | `relaxation_factor` | `solver` JSON | 0.1 | 0.02–0.25 |
-| `tikhonov` | `InverseConfig` | 0.0 | 0–1.0 |
-| `loss` (Huber delta) | `InverseConfig` | LeastSquares | 0.01–1.0 |
-| `sigma` | `InverseConfig` | None (uniform) | Per-probe float |
-| `fd_step` | `InverseConfig` | 1e-4 | 1e-5–1e-3 |
+| `tikhonov` | `InverseConfig` | 1e-4 | > 0; 1e-4–1.0 |
+| `damping` | `InverseConfig` | 0.6 | (0, 1] |
+| `fd_step` | `InverseConfig` | 1e-6 | 1e-6–1e-3 |
 | `max_iterations` | `solver` JSON | 1000 | 100–5000 |
 | `convergence_threshold` | `solver` JSON | 1e-4 | 1e-8–1e-3 |
 | Grid resolution | `grid_resolution` JSON | [65, 65] | [33, 33]–[256, 256] |
