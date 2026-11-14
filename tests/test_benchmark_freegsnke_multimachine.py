@@ -182,7 +182,7 @@ def test_markdown_renders_each_case_and_the_claim_boundary() -> None:
     assert "Status: **PASS**" in rendered
     assert "| sparc_like | 129×129 |" in rendered
     assert "no_magnetic_axis_inside_limiter (7 iterations)" in rendered
-    assert "No facility, experimental, control, safety or speed claim." in rendered
+    assert "No facility, control, safety or speed claim; no comparison with measured" in rendered
     assert "ab" * 32 in rendered
 
 

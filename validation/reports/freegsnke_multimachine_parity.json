@@ -78,14 +78,14 @@
         "iteration_count": 270,
         "outcome": "same_fixed_point_as_warm_start",
         "psi_n_rmse_inside_limiter": 0.0006417799186314818,
-        "seconds_orientation_only": 749.5261749929632
+        "seconds_orientation_only": 563.7856014259742
       },
       "freegsnke_run": {
         "forward_refinement_relative_change": 1.0222140323901473e-10,
         "forward_refinement_tolerance": 1e-09,
         "inverse_relative_change": 9.758677894303431e-05,
         "passive_current_max_abs_a": 0.0,
-        "seconds_orientation_only": 81.72219001501799,
+        "seconds_orientation_only": 77.42270870198263,
         "upstream_reference": "examples/example08 - static_inverse_solve_ITER.ipynb"
       },
       "grid_shape_r_z": [
@@ -378,14 +378,14 @@
         "converged": false,
         "iteration_count": 600,
         "outcome": "no_magnetic_axis_inside_limiter",
-        "seconds_orientation_only": 530.8458462939598
+        "seconds_orientation_only": 543.3811054960242
       },
       "freegsnke_run": {
         "forward_refinement_relative_change": 1.4301211042541097e-10,
         "forward_refinement_tolerance": 1e-09,
         "inverse_relative_change": 7.783983575185629e-07,
         "passive_current_max_abs_a": 0.0,
-        "seconds_orientation_only": 40.53308528801426,
+        "seconds_orientation_only": 36.677062859002035,
         "upstream_reference": "freegsnke/tests/test_inverse_static_solver.py"
       },
       "grid_shape_r_z": [
@@ -677,14 +677,14 @@
         "iteration_count": 153,
         "outcome": "same_fixed_point_as_warm_start",
         "psi_n_rmse_inside_limiter": 0.0004590537964641204,
-        "seconds_orientation_only": 310.7276725579868
+        "seconds_orientation_only": 246.6431824999745
       },
       "freegsnke_run": {
         "forward_refinement_relative_change": 1.9614962899181417e-10,
         "forward_refinement_tolerance": 1e-09,
         "inverse_relative_change": 6.254677797653302e-07,
         "passive_current_max_abs_a": 0.0,
-        "seconds_orientation_only": 27.010000963986386,
+        "seconds_orientation_only": 15.155700065020937,
         "upstream_reference": "examples/example07 - static_inverse_solve_SPARC.ipynb"
       },
       "grid_shape_r_z": [
@@ -903,9 +903,9 @@
   },
   "generator": {
     "path": "validation/benchmark_freegsnke_multimachine.py",
-    "sha256": "711c9503e497f1532a8f5babedda6725bf2f9be800d0cb3cb510a4b1594f6e60"
+    "sha256": "c6b1ae377b36eea618276d483e8a6174c414879c5474ca3c856559a772fd5b0f"
   },
-  "payload_sha256": "7efe69bf5de59ed60115dbe188e479db815ec66d057192827590ce44333f6e92",
+  "payload_sha256": "2365bc8bebf2c0840b8f630a9c7ce06dfb1e201c5d74dd7272cd8d26845df21b",
   "provenance": {
     "host": {
       "cpu_model": "Intel(R) Xeon(R) CPU E5-2640 0 @ 2.50GHz",

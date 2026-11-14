@@ -23,7 +23,7 @@ examples 07 and 08.  For every case this benchmark
    same fixed point.
 
 The comparison is bounded to these three synthetic public machine descriptions.  It makes no
-facility, experimental, control, safety or speed claim.  A cold start that does not converge is
+facility, control, safety or speed claim and compares nothing with measured discharges.  A cold start that does not converge is
 recorded as a robustness result of the SCPN solver; it does not fail the parity gates, which
 concern the warm-started fixed point.
 """
@@ -527,8 +527,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"Status: **{report['status'].upper()}**",
         "",
-        "Synthetic public machine descriptions only. No facility, experimental, control, safety "
-        "or speed claim.",
+        "Synthetic public machine descriptions only. No facility, control, safety or speed "
+        "claim; no comparison with measured discharges.",
         "",
         "| Case | Grid | Vacuum max (Wb) | Source rel. L2 | Warm ψ_N RMSE | Frozen ψ_N RMSE "
         "| Cold start |",
