@@ -19,7 +19,9 @@ on:
       - "src/scpn_fusion/core/jax_plasma_support.py"
       - "src/scpn_fusion/core/jax_x_point.py"
       - "tests/test_benchmark_freegsnke_inverse.py"
+      - "tests/test_benchmark_freegsnke_multimachine.py"
       - "validation/benchmark_freegsnke_inverse.py"
+      - "validation/benchmark_freegsnke_multimachine.py"
   push:
     paths:
       - ".github/workflows/freegsnke-inverse.yml"
@@ -31,7 +33,9 @@ on:
       - "src/scpn_fusion/core/jax_plasma_support.py"
       - "src/scpn_fusion/core/jax_x_point.py"
       - "tests/test_benchmark_freegsnke_inverse.py"
+      - "tests/test_benchmark_freegsnke_multimachine.py"
       - "validation/benchmark_freegsnke_inverse.py"
+      - "validation/benchmark_freegsnke_multimachine.py"
 
 concurrency:
   group: freegsnke-inverse-${{ github.workflow }}-${{ github.ref }}
@@ -54,7 +58,8 @@ jobs:
   inverse-comparison:
     name: Pinned MAST-U inverse comparison
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # The live suite runs the pinned MAST-U case and the SPARC-like multi-machine case end to end.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
@@ -81,7 +86,10 @@ jobs:
           test "$(git -C "$source_path" rev-parse HEAD)" = "$FREEGSNKE_SOURCE_COMMIT"
 
       - name: Exercise the real benchmark surface
-        run: pytest -q tests/test_benchmark_freegsnke_inverse.py
+        run: >-
+          pytest -q
+          tests/test_benchmark_freegsnke_inverse.py
+          tests/test_benchmark_freegsnke_multimachine.py
 
       - name: Generate and enforce fresh comparison evidence
         run: |

@@ -90,6 +90,8 @@
     "src/scpn_fusion/core/mhd_sawtooth.py",
     "src/scpn_fusion/core/divertor_thermal_sim.py",
     "validation/benchmark_freegsnke_inverse.py",
-    "tests/test_benchmark_freegsnke_inverse.py"
+    "tests/test_benchmark_freegsnke_inverse.py",
+    "validation/benchmark_freegsnke_multimachine.py",
+    "tests/test_benchmark_freegsnke_multimachine.py"
   ]
 }

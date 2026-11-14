@@ -301,14 +301,25 @@ def solve_inverse_case(source: Path) -> tuple[Any, Any, list[list[float | None]]
 def _active_filaments(
     source: Path,
     circuit_currents: FloatArray,
+    active_coils_path: Path | None = None,
 ) -> tuple[FloatArray, FloatArray, FloatArray, FloatArray, list[dict[str, Any]]]:
-    """Expand public circuit currents into signed active-coil filament currents."""
-    active_path = _case_paths(source)["active_coils"]
+    """Expand public circuit currents into signed active-coil filament currents.
+
+    ``active_coils_path`` selects another machine file of the same pinned upstream checkout;
+    the default is the MAST-U-like case of this benchmark.
+    """
+    active_path = (
+        _case_paths(source)["active_coils"] if active_coils_path is None else active_coils_path
+    )
+    if source.resolve() not in active_path.resolve().parents:
+        raise ValueError("active-coil file must belong to the pinned FreeGSNKE checkout")
     with active_path.open("rb") as handle:
         # Exact pinned, digest-bound public upstream input; never accepts caller-supplied pickle.
         config = pickle.load(handle)  # noqa: S301  # nosec B301
     if not isinstance(config, dict) or len(config) != circuit_currents.size:
-        raise ValueError("active-coil configuration does not match the 12 circuit currents")
+        raise ValueError(
+            f"active-coil configuration does not match the {circuit_currents.size} circuit currents"
+        )
 
     radii: list[float] = []
     heights: list[float] = []
@@ -656,8 +667,14 @@ def _total_psi_comparison(
     coil_r: FloatArray,
     coil_z: FloatArray,
     incidence: FloatArray,
+    ip_target_a: float = 600000.0,
+    reference_xpoints_m: FloatArray = EXPECTED_XPOINTS_M,
 ) -> dict[str, Any]:
-    """Run F-1e production-smooth and frozen-topology total-flux comparisons."""
+    """Run the production-smooth and frozen-topology total-flux comparisons.
+
+    ``ip_target_a`` and ``reference_xpoints_m`` default to the pinned MAST-U-like case; another
+    pinned case passes its own plasma current and the X-points of its converged FreeGSNKE flux.
+    """
     r_grid = np.asarray(eq.R[:, 0], dtype=np.float64)
     z_grid = np.asarray(eq.Z[0, :], dtype=np.float64)
     reference_psi = np.asarray(eq.psi(), dtype=np.float64).T
@@ -694,7 +711,7 @@ def _total_psi_comparison(
         coil_r_jax,
         coil_z_jax,
         knots_jax,
-        600000.0,
+        ip_target_a,
         response_matrix,
         wall_idx,
         source_idx,
@@ -730,7 +747,7 @@ def _total_psi_comparison(
             knots_jax,
             pprime_jax,
             ffprime_jax,
-            jnp.asarray(600000.0),
+            jnp.asarray(ip_target_a),
             jnp.asarray(d_area),
             0.03,
             MU0_SI,
@@ -738,7 +755,7 @@ def _total_psi_comparison(
         dtype=np.float64,
     )
     candidate_current = float(np.sum(candidate_jtor) * d_area)
-    current_relative_error = abs(candidate_current - 600000.0) / 600000.0
+    current_relative_error = abs(candidate_current - ip_target_a) / abs(ip_target_a)
     support_current_relative_l2 = _relative_l2(candidate_jtor, reference_jtor)
     residual = np.asarray(
         predictive_gs_residual(
@@ -751,7 +768,7 @@ def _total_psi_comparison(
             coil_r_jax,
             coil_z_jax,
             knots_jax,
-            jnp.asarray(600000.0),
+            jnp.asarray(ip_target_a),
             response_matrix,
             wall_idx,
             source_idx,
@@ -789,7 +806,7 @@ def _total_psi_comparison(
         if candidate_axis_positions.size
         else None
     )
-    reference_xpoint_positions = EXPECTED_XPOINTS_M
+    reference_xpoint_positions = np.asarray(reference_xpoints_m, dtype=np.float64)
     candidate_xpoint_positions = np.asarray(candidate_xpt[:, :2], dtype=np.float64)
     xpoint_position_errors = (
         [
@@ -817,7 +834,7 @@ def _total_psi_comparison(
         coil_r_jax,
         coil_z_jax,
         knots_jax,
-        600000.0,
+        ip_target_a,
         response_matrix,
         wall_idx,
         source_idx,
@@ -855,7 +872,7 @@ def _total_psi_comparison(
             coil_r_jax,
             coil_z_jax,
             knots_jax,
-            600000.0,
+            ip_target_a,
             response_matrix,
             wall_idx,
             source_idx,
@@ -895,7 +912,7 @@ def _total_psi_comparison(
             coil_r_jax,
             coil_z_jax,
             knots_jax,
-            600000.0,
+            ip_target_a,
             response_matrix,
             wall_idx,
             source_idx,

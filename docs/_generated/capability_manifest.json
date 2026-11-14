@@ -3100,7 +3100,7 @@
     "python_capability_classes": 646,
     "python_capability_source_modules": 374,
     "rust_workspace_crates": 13,
-    "test_files": 683
+    "test_files": 684
   },
   "documentation": {
     "public_pages": [
@@ -3298,6 +3298,7 @@
       "tests/test_benchmark_free_boundary.py",
       "tests/test_benchmark_free_boundary_strict_parity.py",
       "tests/test_benchmark_freegsnke_inverse.py",
+      "tests/test_benchmark_freegsnke_multimachine.py",
       "tests/test_benchmark_ida_same_case.py",
       "tests/test_benchmark_regression_guard.py",
       "tests/test_benchmark_sparc_geqdsk_rmse.py",
