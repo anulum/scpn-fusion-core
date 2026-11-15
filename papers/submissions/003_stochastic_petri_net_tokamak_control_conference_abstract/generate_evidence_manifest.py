@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_REVISION = "598beb237e784a4abc38b71e7245fbf235a56d97"
+PACKAGE_REVISION = "d1f8e5d9176fecd0b9357ebed6ec38316c5df9bd"
 SOURCE_CUSTODY: dict[str, dict[str, str]] = {
     "vertical_stability_reduced_order.json": {
         "source_path": (
@@ -57,8 +57,8 @@ IMPLEMENTATION_SOURCES: dict[str, dict[str, str]] = {
         "role": "public stochastic Petri-net topology and firing semantics",
     },
     "src/scpn_fusion/scpn/compiler.py": {
-        "git_blob_oid_sha1": "dadf0611fc0831a4eb6bf32da4b7b2adc5db0212",
-        "sha256": "3215fbdf44f49730e4bb31e0950e28096f47e524459a23e7626305a5c69c2f1b",
+        "git_blob_oid_sha1": "d2e0adc1bf7c0e010f522fcfd95939744960f777",
+        "sha256": "9afbb6c1da42eafe5bd9e9f8247a5c9cf18e2772e6e60b5b51f507e4c84a34b0",
         "role": "one threshold-configured spiking unit per transition and float fallback",
     },
     "src/scpn_fusion/scpn/controller.py": {

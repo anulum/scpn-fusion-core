@@ -15,7 +15,7 @@
     "orcid": "0009-0009-3560-0851",
     "affiliation": "ANULUM CH&LI, Marbach SG, Switzerland"
   },
-  "repository_revision": "598beb237e784a4abc38b71e7245fbf235a56d97",
+  "repository_revision": "d1f8e5d9176fecd0b9357ebed6ec38316c5df9bd",
   "companion_catalogue_ids": [
     "001",
     "002"
@@ -35,10 +35,10 @@
   "doi": null,
   "manuscript_content_license": null,
   "preprint": {
-    "date": "2026-11-13",
+    "date": "2026-11-15",
     "derived_from_review_draft_of": "2026-09-04",
-    "software_described": "scpn-fusion release 4.1.0 (bound commit of 2026-11-12 is part of tag v4.1.0)",
+    "software_described": "scpn-fusion main at d1f8e5d9 (2026-11-15), after release 4.1.0; six of seven bound sources are byte-identical at v4.1.0, compiler.py differs only in its vectorised popcount",
     "reverified_on_release_line_at": "36326e5eec276f9db63b840c851dc2a5da5f9e32",
-    "corrections_note": "Note added (13 November 2026) in manuscript.tex"
+    "corrections_note": "Software version and date section of manuscript.tex (15 November 2026)"
   }
 }

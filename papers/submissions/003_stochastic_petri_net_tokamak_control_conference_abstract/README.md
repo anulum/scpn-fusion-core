@@ -8,8 +8,10 @@
 
 # Stochastic Petri net tokamak control extended abstract
 
-Status: dated extended-abstract preprint prepared on 13 November 2026,
-describing release 4.1.0.  Not deposited or submitted.
+Status: dated extended-abstract preprint of 15 November 2026 (prepared on 13
+November 2026), describing commit d1f8e5d9 on main after release 4.1.0; only
+the popcount of `compiler.py` differs from the release.  Not deposited or
+submitted.
 
 This concise manuscript summarizes the bounded equilibrium and reduced-order
 control evidence.  It is not named for, formatted for, or submitted to any

@@ -22,7 +22,7 @@ Reduced-Order Results and Open Validation Gaps}
 \small ANULUM CH\&LI, Marbach SG, Switzerland, \url{https://www.anulum.li}\\
 \small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
 \small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
-\date{Extended-abstract preprint --- 13 November 2026 (from the review draft of 4 September 2026)}
+\date{Extended-abstract preprint --- 15 November 2026 (from the review draft of 4 September 2026)}
 
 \begin{document}
 \maketitle
@@ -31,7 +31,7 @@ Reduced-Order Results and Open Validation Gaps}
 SCPN-Fusion-Core is an open-source Python--Rust research toolkit combining
 axisymmetric equilibrium, reduced-order transport and control experiments.  We
 report an evidence-bounded snapshot of its stochastic-Petri-net control path at
-software commit \texttt{598beb237e78}; the full revision is recorded in the
+software commit \texttt{d1f8e5d9176f}; the full revision is recorded in the
 paper metadata.  The production compiler maps each Petri-net transition to one
 threshold-configured leaky integrate-and-fire unit when the optional
 \texttt{sc\_neurocore} backend is available, and retains a deterministic float
@@ -74,14 +74,17 @@ tokamak control; Grad--Shafranov; reduced-order validation; negative result
 
 \section*{Software version and date}
 
-This preprint describes \texttt{scpn-fusion} release 4.1.0.  The bound commit
-\texttt{598beb237e78} of 12 November 2026 is part of that release, and the
-seven implementation sources named in the evidence manifest are byte-identical
-at the release tag \texttt{v4.1.0}.  On 13 November 2026 the vertical
-benchmark, the DIII-D reproduction and the SPARC pointwise benchmark were
-rerun on the release line and reproduced every number above.  Compared with
-the review draft, only this section, the date, the author affiliation and
-the sentences that called it a review draft changed.
+This preprint describes \texttt{scpn-fusion} at commit \texttt{d1f8e5d9176f}
+of 15 November 2026, on the main line after release 4.1.0.  Six of the seven
+implementation sources named in the evidence manifest are byte-identical at
+the release tag \texttt{v4.1.0}.  The seventh, \texttt{compiler.py}, differs
+only in its stochastic popcount: a check for a NumPy function that does not
+exist had disabled the vectorised count, which now runs with bit-identical
+outputs.  On 13 November 2026 the vertical benchmark, the DIII-D reproduction
+and the SPARC pointwise benchmark were rerun on the release line and
+reproduced every number above; none of them uses that count.  Compared with
+the review draft, only this section, the date, the author affiliation, the
+bound commit and the sentences that called it a review draft changed.
 
 \section*{Methods and evidence boundary}
 
