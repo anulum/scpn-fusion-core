@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TORNADO_SECURITY_FLOOR = (6, 6)
+TORNADO_SECURITY_FLOOR = (6, 6, 1)
 
 
 def _version_tuple(value: str) -> tuple[int, ...]:

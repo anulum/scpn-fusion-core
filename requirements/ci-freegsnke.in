@@ -30,3 +30,5 @@ requests>=2.31,<3
 omas>=0.70
 
 urllib3>=2.8.0
+# Security floor for a transitive dependency (GHSA-vvf4-9x63-8xvv).
+dnspython>=2.9.2

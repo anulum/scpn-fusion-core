@@ -17,7 +17,9 @@ pytest>=9.0.3
 requests>=2.33.0,<3
 setuptools>=84.1.0
 urllib3>=2.8.0
-tornado>=6.6,<6.7
+tornado>=6.6.1,<6.7
 
 Mako>=1.4.2
 multidict>=6.9.1
+# Security floor for a transitive dependency (GHSA-vvf4-9x63-8xvv).
+dnspython>=2.9.2
