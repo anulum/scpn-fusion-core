@@ -1,0 +1,43 @@
+{
+  "cases": [
+    {
+      "bitstream_length": 1024,
+      "identical": true,
+      "n_in": 8,
+      "n_out": 8,
+      "per_stream_median_s": 0.0008387989946641028,
+      "speedup": 1.5177295948727854,
+      "vectorised_median_s": 0.000552666955627501
+    },
+    {
+      "bitstream_length": 1024,
+      "identical": true,
+      "n_in": 32,
+      "n_out": 32,
+      "per_stream_median_s": 0.00822366401553154,
+      "speedup": 4.226331831078675,
+      "vectorised_median_s": 0.0019458159804344177
+    },
+    {
+      "bitstream_length": 4096,
+      "identical": true,
+      "n_in": 16,
+      "n_out": 64,
+      "per_stream_median_s": 0.008637753955554217,
+      "speedup": 4.96046045037204,
+      "vectorised_median_s": 0.0017413210007362068
+    }
+  ],
+  "host": {
+    "logical_cpus": 12,
+    "machine": "x86_64",
+    "numpy": "2.5.4",
+    "processor": "x86_64",
+    "python": "3.12.3"
+  },
+  "identical": true,
+  "repeats": 5,
+  "schema": "scpn-fusion.stochastic-popcount-benchmark.v1",
+  "seed": 20261115,
+  "timing_scope": "orientation only; wall time on the named host"
+}

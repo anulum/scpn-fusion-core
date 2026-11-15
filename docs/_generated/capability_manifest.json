@@ -3100,7 +3100,7 @@
     "python_capability_classes": 646,
     "python_capability_source_modules": 374,
     "rust_workspace_crates": 13,
-    "test_files": 684
+    "test_files": 685
   },
   "documentation": {
     "public_pages": [
@@ -3291,6 +3291,7 @@
       "tests/test_ballooning_reference_runner.py",
       "tests/test_ballooning_second_stability.py",
       "tests/test_ballooning_solver.py",
+      "tests/test_bench_stochastic_popcount.py",
       "tests/test_benchmark_disruption_replay_pipeline.py",
       "tests/test_benchmark_disruption_transfer_generalization.py",
       "tests/test_benchmark_disturbance_rejection_hardening.py",

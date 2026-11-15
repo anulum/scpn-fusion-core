@@ -9,6 +9,35 @@
   combinator; fixed in 4.0). The `.in` floors require 4.0. The build lock
   now targets Python 3.11.5, the lowest version soupsieve 3.0 and later
   support; all of its consumers run Python 3.12.
+- tornado moves to 6.6.1 (GHSA-5cjw-f85j-cv6r, low: open redirect through
+  triple-slash paths) and dnspython to 2.9.2 (GHSA-vvf4-9x63-8xvv, high:
+  excessive memory and CPU use) in every lock that pins them. dnspython is
+  transitive, so `full.in` and `ci-freegsnke.in` carry a security floor.
+
+### Added
+
+- `validation/benchmark_freegsnke_multimachine.py` compares SCPN with
+  FreeGSNKE 3.0.1 on the three public machine descriptions FreeGSNKE ships
+  (MAST-U-like, SPARC-like, ITER-like):
+  - vacuum flux from the same currents;
+  - the translated profile source;
+  - the self-consistent solve, warm-started and with the support frozen;
+  - a cold start.
+
+  The report (`validation/reports/freegsnke_multimachine_parity.json`)
+  records the executing host, because the cold-start outcome depends on it.
+- `benchmarks/bench_stochastic_popcount.py` times the stochastic AND +
+  popcount product against the former per-stream loop and fails if their
+  outputs ever differ (`validation/reports/stochastic_popcount_benchmark.json`).
+
+### Fixed
+
+- `CompiledNet.dense_forward` and `neurocore_compat.vec_popcount` tested
+  `hasattr(np, "bit_count")`, which no NumPy release provides, so their
+  vectorised popcount never ran and the per-stream loop always did. Both now
+  use `np.bitwise_count` (NumPy 2.0 and later; the package requires 2.4).
+  Outputs are bit-identical to the former path. On the recording host the
+  product is 1.5 to 5.0 times faster for 8 to 64 outputs (orientation only).
 
 ### Changed
 

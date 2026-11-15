@@ -13,8 +13,13 @@ from typing import cast
 
 import numpy as np
 import pytest
-from numpy.typing import NDArray
 
+from scpn_fusion.neurocore_compat import (
+    RNG,
+    SC_NEUROCORE_AVAILABLE,
+    generate_bernoulli_bitstream,
+    pack_bitstream,
+)
 from scpn_fusion.scpn import compiler as compiler_mod
 from scpn_fusion.scpn.compiler import CompiledNet, FusionCompiler
 from scpn_fusion.scpn.structure import StochasticPetriNet
@@ -54,27 +59,38 @@ class TestDenseForwardGuards:
         with pytest.raises(RuntimeError, match="dense_forward requires sc_neurocore"):
             net.dense_forward(np.zeros((1, 1, 1), dtype=np.uint64), np.array([0.5]))
 
-    def test_vectorized_bit_count_matches_popcount_fallback(
-        self, monkeypatch: pytest.MonkeyPatch
+    @pytest.mark.parametrize(("n_out", "n_in", "length"), [(1, 1, 128), (3, 4, 256), (2, 5, 64)])
+    def test_vectorised_popcount_matches_a_per_stream_oracle(
+        self, n_out: int, n_in: int, length: int
     ) -> None:
-        if not getattr(compiler_mod, "_HAS_SC_NEUROCORE", False):
-            pytest.skip("dense_forward numeric path requires sc_neurocore")
-        net = _identity_net(bitstream_length=128)  # 128 bits -> 2 uint64 words
-        w_packed = np.array([[[0xF0F0F0F0F0F0F0F0, 0x0F0F0F0F0F0F0F0F]]], dtype=np.uint64)
-        input_probs = np.array([0.7])
+        """The vectorised AND + bitwise_count equals an independent per-stream count."""
+        assert SC_NEUROCORE_AVAILABLE
+        net = _identity_net(bitstream_length=length)
+        rng = np.random.default_rng(20261115)
+        n_words = length // 64
+        w_packed = rng.integers(0, 2**64, size=(n_out, n_in, n_words), dtype=np.uint64)
+        w_packed[0, 0, 0] = np.uint64(0xFFFFFFFFFFFFFFFF)  # every bit set
+        w_packed[-1, -1, -1] = np.uint64(0)  # no bit set
+        input_probs = rng.uniform(0.0, 1.0, size=n_in)
+        vectorised = net.dense_forward(w_packed, input_probs)
 
-        # Fallback path (no numpy bit_count): explicit sc_neurocore popcount.
-        fallback = net.dense_forward(w_packed, input_probs)
+        # Oracle: rebuild the same input streams, then count each AND word by
+        # Python's int.bit_count, one stream pair at a time.
+        expected = np.zeros(n_out, dtype=np.float64)
+        for j in range(n_in):
+            bits = generate_bernoulli_bitstream(
+                float(np.clip(input_probs[j], 0.0, 1.0)),
+                length,
+                rng=RNG(net.seed + 1_000_000 + j),
+            )
+            stream = pack_bitstream(bits)
+            for i in range(n_out):
+                words = np.bitwise_and(w_packed[i, j, :], stream)
+                expected[i] += sum(int(word).bit_count() for word in words)
+        expected /= length
 
-        def _bit_count(values: NDArray[np.uint64]) -> NDArray[np.uint64]:
-            popcount = np.vectorize(lambda x: int(x).bit_count(), otypes=[np.uint64])
-            return cast("NDArray[np.uint64]", popcount(values))
-
-        # Vectorized path taken once numpy exposes bit_count; must agree exactly.
-        monkeypatch.setattr(np, "bit_count", _bit_count, raising=False)
-        vectorized = net.dense_forward(w_packed, input_probs)
-
-        assert np.allclose(vectorized, fallback)
+        assert vectorised.shape == (n_out,)
+        np.testing.assert_array_equal(vectorised, expected)
 
 
 class TestCompileWeightGuards:

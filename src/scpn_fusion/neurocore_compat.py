@@ -93,13 +93,21 @@ def vec_and(a_packed: UInt64Array, b_packed: UInt64Array) -> UInt64Array:
 
 
 def vec_popcount(packed: UInt64Array) -> int:
-    """Count set bits across packed stochastic bitstream words."""
+    """Count set bits across packed stochastic bitstream words.
+
+    Parameters
+    ----------
+    packed : array_like of uint64
+        Packed bitstream words of any shape; they are flattened.
+
+    Returns
+    -------
+    int
+        Total number of set bits, from NumPy's vectorised ``bitwise_count``
+        (NumPy 2.0 and later; the package requires NumPy 2.4).
+    """
     arr = np.asarray(packed, dtype=np.uint64).reshape(-1)
-    if hasattr(np, "bit_count"):
-        return int(np.bit_count(arr).sum(dtype=np.uint64))
-    # NumPy < 2 fallback that is independent of Python's int.bit_count availability.
-    byte_view = arr.view(np.uint8)
-    return int(np.unpackbits(byte_view, bitorder="little").sum(dtype=np.uint64))
+    return int(np.bitwise_count(arr).sum(dtype=np.uint64))
 
 
 @dataclass

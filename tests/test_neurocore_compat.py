@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 
 from scpn_fusion.neurocore_compat import (
     RNG,
@@ -39,6 +40,28 @@ def test_packed_and_popcount_product_estimate() -> None:
     bx = generate_bernoulli_bitstream(0.4, L, rng=RNG(2))
     est = vec_popcount(vec_and(pack_bitstream(bw), pack_bitstream(bx))) / L
     assert abs(est - 0.28) < 3.0 / np.sqrt(L)
+
+
+@pytest.mark.parametrize(
+    "words",
+    [
+        [0],
+        [0xFFFFFFFFFFFFFFFF],
+        [1 << 63, 1],
+        [0xF0F0F0F0F0F0F0F0, 0x0F0F0F0F0F0F0F0F, 0x8000000000000001],
+    ],
+)
+def test_vec_popcount_matches_python_bit_count(words: list[int]) -> None:
+    """Vectorised popcount equals int.bit_count on boundary words (empty, full, top bit)."""
+    packed = np.asarray(words, dtype=np.uint64)
+    assert vec_popcount(packed) == sum(word.bit_count() for word in words)
+
+
+def test_vec_popcount_flattens_any_shape_and_handles_empty_input() -> None:
+    rng = np.random.default_rng(7)
+    packed = rng.integers(0, 2**64, size=(3, 4, 5), dtype=np.uint64)
+    assert vec_popcount(packed) == sum(int(word).bit_count() for word in packed.reshape(-1))
+    assert vec_popcount(np.zeros(0, dtype=np.uint64)) == 0
 
 
 def test_lif_neuron_emits_spikes_for_sustained_drive() -> None:
