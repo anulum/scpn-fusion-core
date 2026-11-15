@@ -403,8 +403,8 @@ The full runaway-electron kernel has an apples-to-apples NumPy/Rust report at
 Both tiers evolve the same `(radius, pitch, momentum)` state and return every
 named tendency, the total-density balance, full output history, and radial
 moments. On the recorded shared-host `(8, 16, 32)` problem the NumPy median is
-`0.015769141 s`, the Rust median is `0.007061332 s`, and the Rust speedup is
-`2.233x`. The maximum component relative L2 error is `5.357e-14`. These values are evidence for that host and
+`0.012564712 s`, the Rust median is `0.005990588 s`, and the Rust speedup is
+`2.097x`. The maximum component relative L2 error is `5.357e-14`. These values are evidence for that host and
 problem only; the report retains load averages and does not assert a
 hardware-neutral speedup.
 

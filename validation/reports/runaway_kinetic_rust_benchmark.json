@@ -6,13 +6,14 @@
     "internal_ssprk3_steps_exact": true,
     "rust_measured_faster_on_this_host_problem": true
   },
-  "generated_at_utc": "2026-11-12T04:58:34.796556+00:00",
+  "generated_at_utc": "2026-11-15T19:43:57.172541+00:00",
   "host": {
-    "conditioning": "Local shared host; a concurrent pinned DREAM reference run was active. Timings are evidence for this host and problem only.",
+    "concurrent_workload": null,
+    "conditioning": "Local shared host; no concurrent workload was declared. Timings are evidence for this host and problem only.",
     "load_average_1m_5m_15m": [
-      8.44775390625,
-      11.7080078125,
-      16.29736328125
+      7.560546875,
+      14.55517578125,
+      14.5869140625
     ],
     "logical_cpu_count": 12,
     "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
@@ -130,7 +131,7 @@
   },
   "schema": "runaway-kinetic-rust-benchmark.v1",
   "schema_version": 1,
-  "scientific_projection_sha256": "8e32f9ef25badc789dfb596c6628ed1bf752bc32dc00396a384b2dcc25972a59",
+  "scientific_projection_sha256": "a3a4539fab7339e5da090aaa2fcd9c1281f6e87831b81f2cf2fa6bb0cd8ecffd",
   "source_provenance": {
     "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/coefficients.rs": "9151bbd823368f14cfa0e3fc4575bfcd15f5c168fa6c9b1cab1d1b9aaf930dfd",
     "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/grid.rs": "5f36fd096f56e0d8c22b3aeac6f240df2776818a3047d62f45a985f8404cb7f3",
@@ -143,40 +144,40 @@
     "src/scpn_fusion/core/runaway_kinetic_grid.py": "6a6785c3cfdeba08070cd7ee01fed0e0f32a0b2683fdacd9f3a901aaf898cdf4",
     "src/scpn_fusion/core/runaway_kinetic_operator.py": "77511f3ec134f142817861cde65b52e40bce155bb05de17d33b76b1892e8eb58",
     "src/scpn_fusion/core/runaway_kinetic_solver.py": "16c4dcf91c844e69c49601a2d2b32e2a44ff5201f2cef8feca5567d6d2aa7de1",
-    "validation/benchmark_runaway_kinetic_rust.py": "925291b92d6aa8e9734537da752854bbedc03140c5f957b8cefb6bf03170c9a6"
+    "validation/benchmark_runaway_kinetic_rust.py": "84fbc149b4ba98baf8efdd5a8bee8d3d07d18325f4444cdbc24e219516e631b5"
   },
-  "source_revision": "598beb237e784a4abc38b71e7245fbf235a56d97",
+  "source_revision": "98b6d4d2cfde1e8cf22129fa90e779b0291f8149",
   "status": "accepted_full_kinetic_rust_backend_parity",
   "timing_seconds": {
-    "numpy_median": 0.01576914099860005,
+    "numpy_median": 0.012564711971208453,
     "numpy_samples": [
-      0.017960730998311192,
-      0.02107045099910465,
-      0.01518540599863627,
-      0.01576914099860005,
-      0.01626599000155693,
-      0.018125831997167552,
-      0.013576019999163691,
-      0.015466119999473449,
-      0.015276474001439055,
-      0.015394977999676485,
-      0.017430836996936705
+      0.016353634011466056,
+      0.013952636974863708,
+      0.012611718033440411,
+      0.012292061990592629,
+      0.01287160097854212,
+      0.011706458986736834,
+      0.012564711971208453,
+      0.011283224972430617,
+      0.012845194025430828,
+      0.0124278370058164,
+      0.011737563007045537
     ],
     "repeats": 11,
-    "rust_median": 0.007061331998556852,
+    "rust_median": 0.005990587989799678,
     "rust_samples": [
-      0.010162512000533752,
-      0.010267945999657968,
-      0.006853519000287633,
-      0.007061331998556852,
-      0.007676887998968596,
-      0.006537655001011444,
-      0.005953392999799689,
-      0.007523282001784537,
-      0.007033059999230318,
-      0.006964578999031801,
-      0.008079297000222141
+      0.0064592770067974925,
+      0.008842415001709014,
+      0.006446907005738467,
+      0.005869588989298791,
+      0.005670397018548101,
+      0.007309027016162872,
+      0.0055246929987333715,
+      0.005793017975520343,
+      0.005990587989799678,
+      0.006047918985132128,
+      0.005658060021232814
     ],
-    "rust_speedup_over_numpy": 2.2331680484394223
+    "rust_speedup_over_numpy": 2.0974088007058236
   }
 }
