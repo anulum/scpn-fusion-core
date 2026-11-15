@@ -38,6 +38,10 @@
   use `np.bitwise_count` (NumPy 2.0 and later; the package requires 2.4).
   Outputs are bit-identical to the former path. On the recording host the
   product is 1.5 to 5.0 times faster for 8 to 64 outputs (orientation only).
+- The free-boundary public machine metadata inventory now ends its Markdown
+  report with a newline, so a rebuild no longer rewrites the tracked file.
+  Its builder takes an `output_root`, and its tests write into a temporary
+  root instead of the repository.
 
 ### Changed
 

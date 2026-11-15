@@ -334,7 +334,9 @@ def _freegs_reconstruction_reference_evidence() -> dict[str, Any]:
     }
 
 
-def _write_markdown(report: dict[str, Any], artifact: dict[str, Any]) -> None:
+def _write_markdown(
+    report: dict[str, Any], artifact: dict[str, Any], path: Path = MD_REPORT
+) -> None:
     lines = [
         "# Free-Boundary Public Machine Metadata Inventory",
         "",
@@ -381,11 +383,36 @@ def _write_markdown(report: dict[str, Any], artifact: dict[str, Any]) -> None:
             lines.append(f"- {item}")
     else:
         lines.append("- None")
-    MD_REPORT.write_text("\n".join(lines), encoding="utf-8")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # End with a newline, as the tracked report does, so a rebuild is byte-stable.
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dict[str, Any]:
-    """Build and optionally write the free-boundary metadata inventory."""
+def build_free_boundary_machine_metadata_inventory(
+    *, write: bool = True, output_root: Path | None = None
+) -> dict[str, Any]:
+    """Build and optionally write the free-boundary metadata inventory.
+
+    Parameters
+    ----------
+    write
+        Write the artifact, its metadata and the JSON and Markdown reports.
+    output_root
+        Directory that receives the written files at their repository-relative
+        paths. ``None`` writes into the repository itself. The report always
+        records the repository-relative paths, and the tracked-report fallback
+        always reads the repository's own tracked report.
+
+    Returns
+    -------
+    dict
+        The inventory report.
+    """
+    base = ROOT if output_root is None else output_root
+    artifact_out = base / _rel(ARTIFACT_PATH)
+    metadata_out = base / _rel(METADATA_PATH)
+    json_out = base / _rel(JSON_REPORT)
+    md_out = base / _rel(MD_REPORT)
     freegs_commit = _git_commit(FREEGS_REPO) if FREEGS_REPO.exists() else None
     freegsnke_commit = _git_commit(FREEGSNKE_REPO) if FREEGSNKE_REPO.exists() else None
     machine_configs = [_machine_record(path, freegsnke_commit) for path in _machine_config_paths()]
@@ -395,14 +422,14 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
         fallback = _tracked_report_fallback()
         if fallback is not None:
             if write:
-                REPORT_DIR.mkdir(parents=True, exist_ok=True)
-                JSON_REPORT.write_text(json.dumps(fallback, indent=2, sort_keys=True) + "\n")
+                json_out.parent.mkdir(parents=True, exist_ok=True)
+                json_out.write_text(json.dumps(fallback, indent=2, sort_keys=True) + "\n")
                 artifact = (
                     json.loads(ARTIFACT_PATH.read_text(encoding="utf-8"))
                     if ARTIFACT_PATH.exists()
                     else {"machine_configs": []}
                 )
-                _write_markdown(fallback, artifact)
+                _write_markdown(fallback, artifact, md_out)
             return fallback
     artifact = {
         "schema": "free-boundary-public-machine-metadata-inventory.v1",
@@ -444,11 +471,11 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
         "surface": "free_boundary_equilibrium",
     }
     if write:
-        ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
-        REPORT_DIR.mkdir(parents=True, exist_ok=True)
-        ARTIFACT_PATH.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n")
-        metadata["sha256"] = _sha256(ARTIFACT_PATH)
-        METADATA_PATH.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
+        artifact_out.parent.mkdir(parents=True, exist_ok=True)
+        json_out.parent.mkdir(parents=True, exist_ok=True)
+        artifact_out.write_text(json.dumps(artifact, indent=2, sort_keys=True) + "\n")
+        metadata["sha256"] = _sha256(artifact_out)
+        metadata_out.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
     elif ARTIFACT_PATH.exists():
         metadata["sha256"] = _sha256(ARTIFACT_PATH)
     machine_metadata_ready = bool(machine_configs)
@@ -480,8 +507,8 @@ def build_free_boundary_machine_metadata_inventory(*, write: bool = True) -> dic
         "status": status,
     }
     if write:
-        JSON_REPORT.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
-        _write_markdown(report, artifact)
+        json_out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+        _write_markdown(report, artifact, md_out)
     return report
 
 
