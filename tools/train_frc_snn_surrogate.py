@@ -218,7 +218,7 @@ def main() -> None:
         _ = model_forward_snn(params, x_single).block_until_ready()
     lat = (time.perf_counter() - t0) / 100 * 1e6
     logger.info(
-        "Software SNN inference latency on this host: %.2f us (%.1f kHz)", lat, 1000 / lat * 1000
+        "Software SNN inference latency on this host: %.2f us (%.3f kHz)", lat, 1000.0 / lat
     )
 
     # Save

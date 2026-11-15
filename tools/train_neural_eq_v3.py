@@ -22,10 +22,17 @@ V3 changes:
   4. Wider network: 512-256-128-64 (~200K params)
   5. Lower initial LR: 5e-4 (less overshooting on outlier gradients)
   6. Patience: 300 epochs
+
+Usage: ``python tools/train_neural_eq_v3.py`` trains on every per-machine GEQDSK
+folder under ``validation/reference_data`` and writes
+``weights/neural_equilibrium_augmented_v3.npz`` with its metrics beside it.
+``--reference-dir``, ``--output``, ``--epochs`` and ``--perturbations`` override
+those defaults.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import sys
@@ -34,6 +41,9 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_REFERENCE_DIR = REPO_ROOT / "validation" / "reference_data"
+DEFAULT_OUTPUT = REPO_ROOT / "weights" / "neural_equilibrium_augmented_v3.npz"
+DEFAULT_PERTURBATIONS = 100
 sys.path.insert(0, str(REPO_ROOT / "src"))
 
 import numpy as np
@@ -397,13 +407,39 @@ def main() -> int:
     -------
     int
         ``0`` for acceptance success, ``2`` when acceptance criteria fail.
+        Both write the weights and metrics.
     """
+    parser = argparse.ArgumentParser(description="Train the augmented neural equilibrium (v3)")
+    parser.add_argument(
+        "--reference-dir",
+        type=Path,
+        default=DEFAULT_REFERENCE_DIR,
+        help="folder of per-machine GEQDSK subfolders",
+    )
+    parser.add_argument(
+        "--output", type=Path, default=DEFAULT_OUTPUT, help="weights path; metrics go beside it"
+    )
+    parser.add_argument("--epochs", type=int, default=EPOCHS, help="maximum training epochs")
+    parser.add_argument(
+        "--perturbations",
+        type=int,
+        default=DEFAULT_PERTURBATIONS,
+        help="synthetic perturbations per reference equilibrium",
+    )
+    args = parser.parse_args()
+    if args.epochs < 1:
+        parser.error("--epochs must be at least 1")
+    if args.perturbations < 0:
+        parser.error("--perturbations must not be negative")
+    epochs = int(args.epochs)
+    ref_dir = Path(args.reference_dir)
+    save_path = Path(args.output)
+
     logging.basicConfig(level=logging.INFO, format="%(name)s %(message)s")
     rng = np.random.default_rng(42)
-    ref_dir = REPO_ROOT / "validation" / "reference_data"
 
     print("Loading data...")
-    X, Y, labels, sample_weights = load_data(ref_dir, 100, rng)
+    X, Y, labels, sample_weights = load_data(ref_dir, int(args.perturbations), rng)
     print(f"X: {X.shape}, Y: {Y.shape}")
     print(f"Psi range: [{Y.min():.3f}, {Y.max():.3f}]")
 
@@ -437,9 +473,9 @@ def main() -> int:
     rng2 = np.random.default_rng(43)
     t0 = time.perf_counter()
 
-    print(f"\nTraining: {EPOCHS} epochs, network {HIDDEN}...")
-    for ep in range(EPOCHS):
-        lr = LR_END + 0.5 * (LR0 - LR_END) * (1 + np.cos(np.pi * ep / EPOCHS))
+    print(f"\nTraining: {epochs} epochs, network {HIDDEN}...")
+    for ep in range(epochs):
+        lr = LR_END + 0.5 * (LR0 - LR_END) * (1 + np.cos(np.pi * ep / epochs))
         order = rng2.permutation(len(Xtr))
         eloss = 0.0
 
@@ -517,7 +553,7 @@ def main() -> int:
         ):
             all_pass = False
 
-    save_path = REPO_ROOT / "weights" / "neural_equilibrium_augmented_v3.npz"
+    save_path.parent.mkdir(parents=True, exist_ok=True)
     if pca.mean_ is None or pca.V is None or pca.evr is None:
         raise RuntimeError("PCA fit completed without serializable state")
     payload: dict[str, NDArray[Any]] = {

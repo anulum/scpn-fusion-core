@@ -563,6 +563,7 @@ files = [
     "tests/test_iter_synthetic_dataset_verifier.py",
     "tools/train_mast_snn.py",
     "tools/train_neural_eq_v3.py",
+    "tests/test_training_tool_entry_points.py",
     "tools/train_neural_equilibrium_augmented.py",
     "tools/train_neural_equilibrium_gpu.py",
     "tools/train_neural_transport.py",

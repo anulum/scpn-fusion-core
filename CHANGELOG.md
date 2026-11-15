@@ -29,6 +29,9 @@
 - `benchmarks/bench_stochastic_popcount.py` times the stochastic AND +
   popcount product against the former per-stream loop and fails if their
   outputs ever differ (`validation/reports/stochastic_popcount_benchmark.json`).
+- `tools/train_neural_eq_v3.py` accepts `--reference-dir`, `--output`,
+  `--epochs` and `--perturbations`; without them it trains as before and writes
+  `weights/neural_equilibrium_augmented_v3.npz`.
 
 ### Fixed
 
@@ -69,6 +72,14 @@
   no longer states that the CUDA device was reserved by an operator:
   `SCPN_BENCHMARK_ACCELERATOR_ISOLATION` declares it, and the default claims no
   reservation.
+- `tools/train_frc_snn_surrogate.py` logged its inference rate 1000 times too
+  high: `1000 / latency_us * 1000` is hertz, not kilohertz. A 207 ms inference
+  was reported as "4.8 kHz".
+- The weight-saving step of four training tools (FNO spatial, FRC SNN, FRC MLP,
+  neural equilibrium v3), changed by the NumPy 2 migration, now runs in tests.
+  Each tool is driven from its CLI with small settings, and each archive must
+  load with `allow_pickle=False`. The FNO gate test also checks that a model
+  which fails the gate writes nothing.
 
 ### Changed
 
