@@ -15,10 +15,12 @@ The intended use is to help contributors, collaborators, and evaluators decide w
 # License: GNU AGPL v3 | Commercial licensing available
 # ──────────────────────────────────────────────────────────────────────
 
-**Version:** 3.9.8 | **Last updated:** 2026-05-24
+**Last updated:** 2026-11-15
 
 Community code timings are from published literature (references at end).
-SCPN timings are CI-verified on GitHub Actions ubuntu-latest unless noted.
+Each SCPN timing names its source: rows marked CI Criterion come from the CI
+Rust benchmark job, and the other rows are local measurements recorded in the
+named artefacts.
 Latency IDs are defined in `docs/PERFORMANCE_METRIC_TAXONOMY.md`; this table
 reports `control.pid_kernel_step_us` (Rust kernel) and
 `control.closed_loop_step_us` (controller loop with explicit plant-update
@@ -32,8 +34,8 @@ same-work speedup pairs.
 | Code | Control Freq | Step Latency | Language | Source |
 |------|-------------|-------------|----------|--------|
 | **SCPN (Rust reduced-order kernel)** | **~2 MHz** | **0.52 us P50 / 0.70 us P99** | Rust | Committed Rust-extension campaign artifact |
-| **SCPN (controller loop, surrogate plant)** | **>10 kHz** | **PID p95 0.012 ms; SNN p95 0.284 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
-| **SCPN (controller loop, full-mode plant)** | **>10 kHz** | **PID p95 0.047 ms; SNN p95 0.294 ms** | Python | `validation/reports/scpn_end_to_end_latency.md` |
+| **SCPN (controller loop, surrogate plant)** | **PID 42.7 kHz; SNN 4.28 kHz (1/p95)** | **PID p95 0.023420 ms; SNN p95 0.233691 ms** | Python harness; SNN on the Rust backend | `validation/reports/scpn_end_to_end_latency.md` (2026-11-15, taskset on CPUs 10,11 of a shared workstation) |
+| **SCPN (controller loop, full-mode plant)** | **PID 30.0 kHz; SNN 4.58 kHz (1/p95)** | **PID p95 0.033363 ms; SNN p95 0.218182 ms** | Python harness; SNN on the Rust backend | `validation/reports/scpn_end_to_end_latency.md` (2026-11-15, taskset on CPUs 10,11 of a shared workstation) |
 | DIII-D PCS (production) | 4--10 kHz | 100--250 us per physics cycle | C / Fortran | Rothstein et al. 2025 (arXiv:2511.11964) |
 | ITER CODAC (spec) | ~1 kHz | ~1 ms processing budget | TBD | ITER RTF design docs |
 | P-EFIT (GPU) | N/A (reconstruction) | 300--375 us per iter (129x129) | Fortran + CUDA | no traceable source |

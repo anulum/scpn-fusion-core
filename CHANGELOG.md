@@ -54,6 +54,21 @@
   evidence, every replay must reproduce the primary projection byte for byte,
   and the limit is unchanged. The reference and report schemas move to v2, and
   the report Markdown shows the warm times and their ratio.
+- The controller and sensor-to-control latencies quoted in the README,
+  `docs/BENCHMARKS.md`, `docs/hil_demo.md`, `docs/PERFORMANCE_METRIC_TAXONOMY.md`
+  and `docs/competitive_analysis.md` came from a June run that a later
+  regeneration of `validation/reports/scpn_end_to_end_latency.md` had replaced,
+  and the comparison page called them CI-verified. The report is re-measured on
+  the current code with `taskset` on logical CPUs 10,11 of a shared workstation
+  (load 7.8): PID p95 0.023 ms surrogate / 0.033 ms full plant, Python
+  sensor-to-control p95 0.076 ms, simulated 256-actuator HIL p95 273 us. Every
+  quoted number is now bound to its report row by the claims audit. The
+  comparison page's ">10 kHz" column and the README's ">10 kHz" sentence for
+  the compiled control loop now give the measured rates: the PID loop is above
+  40 kHz, but the compiled SNN loop runs at about 4 kHz (1/p95). The benchmark
+  no longer states that the CUDA device was reserved by an operator:
+  `SCPN_BENCHMARK_ACCELERATOR_ISOLATION` declares it, and the default claims no
+  reservation.
 
 ### Changed
 

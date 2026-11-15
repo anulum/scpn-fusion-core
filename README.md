@@ -75,13 +75,15 @@ hardware-in-the-loop and safety-assurance work.
 
 Most fusion codes are physics-first — solve equations, then bolt on control.
 SCPN Fusion Core inverts this: **control-first**. Express plasma control logic
-as stochastic Petri nets, compile to spiking neural networks, and execute the
-reduced-order control kernel at **>10 kHz** against a simplified surrogate plant.
+as stochastic Petri nets, compile to spiking neural networks, and run the
+reduced-order control loop against a simplified surrogate plant. In the latest
+local run the PID loop takes **0.023420 ms** at p95 (above 40 kHz) and the
+compiled SNN loop **0.233691 ms** (about 4 kHz).
 The physics-in-loop rate is far lower than the control rate: the compiled
 predictive free-boundary Grad–Shafranov forward measures 13.0 ms per
 warm-started, fully converged 129² FP64 solve on a dedicated H100 (164.8 ms
 cold; evidence chain in [RESULTS.md](RESULTS.md)) — order 10–100 Hz, not
-10 kHz. Pure Python with optional Rust acceleration for reduced-order control
+kilohertz. Pure Python with optional Rust acceleration for reduced-order control
 kernels; latency claims are metric-scoped, measured on a simplified plant, and
 are neither same-work Rust-versus-Python physics speedups nor a
 physics-in-loop real-time rate.
@@ -286,8 +288,8 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 |--------|-------|-----------------|
 | Historical Rust-PID aggregate latency | **0.522531 us P50**, separate-plant observation; not kernel timing or a current guarantee | [Historical evidence](papers/submissions/002_neuromorphic_vertical_stability_control/evidence/historical_controller_latency.json) |
 | Closed-loop HIL latency | **24.5 us P50** legacy collect-results row | `RESULTS.md`; re-run with `python validation/collect_results.py` |
-| Taskset-affinity CPU sensor-to-control latency | **0.053408 ms P95** on logical CPUs 10,11; not shielded cpuset evidence | `validation/reports/scpn_end_to_end_latency.md` records the exact command |
-| Simulated 256-actuator HIL scaffold | **232.522 us P95** host ADC/DAC loop; not physical HIL rig timing | `python validation/scpn_end_to_end_latency.py --strict` |
+| Taskset-affinity CPU sensor-to-control latency | **0.076077 ms P95** on logical CPUs 10,11 of a shared workstation; the cores were not reserved; not shielded cpuset evidence | `validation/reports/scpn_end_to_end_latency.md` records the exact command |
+| Simulated 256-actuator HIL scaffold | **273.154650 us P95** host ADC/DAC loop; not physical HIL rig timing | `python validation/scpn_end_to_end_latency.py --strict` |
 | Whole-plant fault scenario campaign | **10/10 measured reduced-order lanes pass**; DEC, REBCO/HTS quench, and disruption structural-shock screens now have software evidence; not plant hardware, HIL, FEA-grade, or certified fault tolerance | `python validation/whole_plant_fault_tolerant_scenario.py --strict` |
 | Rust full-order GS solve | **413 us** SOR / **845 us** multigrid (33x33 local Criterion; multigrid is slower in this low-grid case) | `cargo bench -p fusion-core --bench picard_bench` |
 | Rust vacuum field solve | **140 us** (33x33) / **489 us** (65x65) | `cargo bench -p fusion-core --bench vacuum_bench` |
@@ -306,16 +308,17 @@ docker compose up --build    # Streamlit dashboard at localhost:8501
 Latency taxonomy: `control.pid_kernel_step_us` (Rust reduced-order kernel),
 `control.closed_loop_step_us` (controller loop with explicit surrogate/full
 physics mode), and `control.hil_loop_us` (hardware-in-the-loop integration
-path). Current local end-to-end benchmark: PID surrogate p95 0.012 ms, PID
-full-mode p95 0.047 ms; full definitions:
+path). Current local end-to-end benchmark: PID surrogate p95 0.023420 ms, PID
+full-mode p95 0.033363 ms; full definitions:
 [`docs/PERFORMANCE_METRIC_TAXONOMY.md`](docs/PERFORMANCE_METRIC_TAXONOMY.md).
 The 256-actuator HIL scaffold row is a measured host-side simulated ADC/DAC
 contract, not a physical rig, FPGA bitstream, CODAC, or actuator-hardware
 timing claim.
 The current sensor-to-control timing artifact records a taskset-affinity run on
-logical CPUs `10,11`, including command, affinity, host load before/after, CPU
-governor/frequency context, and concurrent-heavy-job note. It is not a shielded
-cpuset or dedicated-runner claim.
+logical CPUs `10,11` of a shared workstation, including command, affinity, host
+load before/after, CPU governor/frequency context, accelerator isolation, and
+concurrent-heavy-job note. The cores were not reserved, and other processes could
+run on them. It is not a shielded cpuset or dedicated-runner claim.
 
 Full numbers: [`RESULTS.md`](RESULTS.md) — re-run `python validation/collect_results.py` to reproduce.
 
@@ -650,9 +653,9 @@ Passing the claim-integrity checks does not mean passing a performance gate.
 
 For same-harness controller-loop timings and the measured digital-twin
 sensor-to-control path, use `validation/scpn_end_to_end_latency.py`. The
-tracked 2026-06-17 local run reports Python CPU and Rust native
-sensor-to-control p50/p95/p99 latency, CUDA GPU p50/p95/p99 latency on the
-operator-reserved NVIDIA GeForce GTX 1060 6GB device, host-load metadata, and
+tracked 2026-11-15 local run reports Python CPU and Rust native
+sensor-to-control p50/p95/p99 latency, CUDA GPU p50/p95/p99 latency on a
+shared, unreserved NVIDIA GeForce GTX 1070 Ti, host-load metadata, and
 degraded-mode fallback counts. It also reports actuator fanout through `256`
 channels and reduced-order predictive-horizon timing at `50 ms` and `100 ms`;
 see

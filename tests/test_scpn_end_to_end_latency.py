@@ -188,6 +188,36 @@ def test_render_markdown_contains_latency_sections() -> None:
     assert "Surrogate Physics Mode" in text
     assert "Full Physics Mode" in text
     assert "p95 loop [ms]" in text
+    assert "- Pinned CPU set: `" in text
+    assert "- Accelerator isolation: `" in text
+
+
+@pytest.mark.parametrize(
+    ("declared", "recorded"),
+    [
+        (None, scpn_end_to_end_latency.DEFAULT_ACCELERATOR_ISOLATION),
+        ("cuda_device_reserved_by_operator", "cuda_device_reserved_by_operator"),
+    ],
+)
+def test_accelerator_isolation_records_only_what_the_operator_declares(
+    monkeypatch: pytest.MonkeyPatch, declared: str | None, recorded: str
+) -> None:
+    """Verify the CUDA-device isolation label claims no reservation unless one is declared."""
+    if declared is None:
+        monkeypatch.delenv(scpn_end_to_end_latency.ACCELERATOR_ISOLATION_ENV, raising=False)
+    else:
+        monkeypatch.setenv(scpn_end_to_end_latency.ACCELERATOR_ISOLATION_ENV, declared)
+
+    out = scpn_end_to_end_latency.run_digital_twin_latency_campaign(steps=32)
+
+    assert out["measurement_context"]["accelerator_isolation"] == recorded
+    assert (
+        scpn_end_to_end_latency.ACCELERATOR_ISOLATION_ENV
+        in (out["measurement_context"]["accelerator_isolation_note"])
+    )
+    if out["gpu"]["status"] == "measured":
+        # The GPU lane runs in a subprocess, which inherits the declaration.
+        assert out["gpu"]["accelerator_isolation"] == recorded
 
 
 def test_cli_writes_scoped_reports(tmp_path: Path) -> None:
@@ -208,6 +238,8 @@ def test_cli_writes_scoped_reports(tmp_path: Path) -> None:
     assert proc.returncode == 0, proc.stderr
     assert out_json.exists()
     assert out_md.exists()
+    assert out_json.read_text(encoding="utf-8").endswith("}\n")
+    assert out_md.read_text(encoding="utf-8").endswith("\n")
     payload = json.loads(out_json.read_text(encoding="utf-8"))
     assert payload["schema"] == "scpn-fusion-core.end_to_end_latency_report.v1"
     assert payload["status"] in {

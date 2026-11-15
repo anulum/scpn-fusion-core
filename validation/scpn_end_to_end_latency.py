@@ -87,6 +87,8 @@ _PIPELINE_STAGE_KEYS = (
 )
 _ACTUATOR_SCALING_COUNTS = (2, 16, 64, 128, 256)
 _PREDICTIVE_HORIZON_MS = (50, 100)
+ACCELERATOR_ISOLATION_ENV = "SCPN_BENCHMARK_ACCELERATOR_ISOLATION"
+DEFAULT_ACCELERATOR_ISOLATION = "shared_local_device_not_reserved"
 REPORT_SCHEMA = "scpn-fusion-core.end_to_end_latency_report.v1"
 REPORT_CLAIM_BOUNDARY = (
     "Local reduced-order control latency evidence; not physical HIL, FPGA, "
@@ -389,6 +391,21 @@ def _host_snapshot() -> dict[str, Any]:
     }
 
 
+def _accelerator_isolation() -> str:
+    """Return the CUDA-device isolation the operator declared for this run.
+
+    The benchmark cannot see who else uses the device, so it records only what
+    ``SCPN_BENCHMARK_ACCELERATOR_ISOLATION`` declares; without it the report
+    claims no reservation.
+
+    Returns
+    -------
+    str
+        Declared isolation label, or ``DEFAULT_ACCELERATOR_ISOLATION``.
+    """
+    return os.environ.get(ACCELERATOR_ISOLATION_ENV, DEFAULT_ACCELERATOR_ISOLATION)
+
+
 def _run_gpu_digital_twin_latency(*, steps: int, actuator_count: int = 2) -> dict[str, Any]:
     """Measure the same sensor-to-control contract on a CUDA/CuPy device.
 
@@ -647,7 +664,7 @@ def _run_gpu_digital_twin_latency(*, steps: int, actuator_count: int = 2) -> dic
             "Local non-isolated CuPy/CUDA measurement of the same reduced-order "
             "sensor-to-control contract; includes host snapshot assembly and output serialisation."
         ),
-        "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
+        "accelerator_isolation": _accelerator_isolation(),
     }
 
 
@@ -1389,9 +1406,11 @@ def run_digital_twin_latency_campaign(*, steps: int = 320) -> dict[str, Any]:
                 "GPU rows are accelerator measurements only when status is measured. "
                 "HIL rows are simulated host ADC/DAC timing unless hardware_status names a physical rig."
             ),
+            "accelerator_isolation": _accelerator_isolation(),
             "accelerator_isolation_note": (
-                "CUDA device was operator-reserved for this benchmark run; CPU host "
-                "process isolation is recorded in host_before/host_after."
+                f"CUDA device isolation as declared through {ACCELERATOR_ISOLATION_ENV}; "
+                "the default claims no reservation. CPU host process isolation is "
+                "recorded in host_before/host_after."
             ),
             "warmup_policy": "No samples discarded; deterministic synthetic stream is measured from cold local process state.",
             "sample_count_per_case": steps,
@@ -1710,7 +1729,8 @@ def render_markdown(report: dict[str, Any]) -> str:
             "",
             f"- Command: `{twin['measurement_context'].get('benchmark_command') or 'not_recorded'}`",
             f"- CPU isolation method: `{twin['measurement_context'].get('cpu_isolation_method')}`",
-            f"- Reserved CPU set: `{twin['measurement_context'].get('reserved_cpu_set') or 'not_recorded'}`",
+            f"- Pinned CPU set: `{twin['measurement_context'].get('reserved_cpu_set') or 'not_recorded'}`",
+            f"- Accelerator isolation: `{twin['measurement_context'].get('accelerator_isolation') or 'not_recorded'}`",
             f"- Host load before: `{twin['measurement_context']['host_before'].get('loadavg_1_5_15')}`",
             f"- Host load after: `{twin['measurement_context']['host_after'].get('loadavg_1_5_15')}`",
             f"- CPU governors: `{twin['measurement_context']['host_before']['cpu_frequency'].get('governors')}`",
@@ -1885,7 +1905,7 @@ def main(argv: list[str] | None = None) -> int:
     report = generate_report(seed=args.seed, steps=args.steps)
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
-    out_json.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    out_json.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     out_md.write_text(render_markdown(report).rstrip() + "\n", encoding="utf-8")
 
     g = report["scpn_end_to_end_latency"]

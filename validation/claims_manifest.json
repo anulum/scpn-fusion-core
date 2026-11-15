@@ -628,6 +628,196 @@
           "pattern": "\"latency_metric\"\\s*:\\s*\"wall_clock_for_complete_run_shot_divided_by_reported_steps\""
         }
       ]
+    },
+    {
+      "id": "competitive_controller_loop_latency_rows",
+      "source_file": "docs/competitive_analysis.md",
+      "source_pattern": "\\| \\*\\*SCPN \\(controller loop, surrogate plant\\)\\*\\* \\| \\*\\*PID 42\\.7 kHz; SNN 4\\.28 kHz \\(1/p95\\)\\*\\* \\| \\*\\*PID p95 0\\.023420 ms; SNN p95 0\\.233691 ms\\*\\* \\|[^\\n]*\\n\\| \\*\\*SCPN \\(controller loop, full-mode plant\\)\\*\\* \\| \\*\\*PID 30\\.0 kHz; SNN 4\\.58 kHz \\(1/p95\\)\\*\\* \\| \\*\\*PID p95 0\\.033363 ms; SNN p95 0\\.218182 ms\\*\\* \\|",
+      "evidence_files": [
+        "validation/reports/scpn_end_to_end_latency.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Surrogate\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| PID \\| [0-9.]+ \\| 0\\.023420 \\|"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Surrogate\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| SNN \\| [0-9.]+ \\| 0\\.233691 \\|"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Full\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| PID \\| [0-9.]+ \\| 0\\.033363 \\|"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Full\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| SNN \\| [0-9.]+ \\| 0\\.218182 \\|"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\-\\ Pinned\\ CPU\\ set:\\ `10,11`$"
+        }
+      ]
+    },
+    {
+      "id": "readme_sensor_to_control_and_hil_latency",
+      "source_file": "README.md",
+      "source_pattern": "Taskset-affinity CPU sensor-to-control latency \\| \\*\\*0\\.076077 ms P95\\*\\* on logical CPUs 10,11 of a shared workstation[\\s\\S]*?Simulated 256-actuator HIL scaffold \\| \\*\\*273\\.154650 us P95\\*\\*[\\s\\S]*?PID surrogate p95 0\\.023420 ms, PID\\s+full-mode p95 0\\.033363 ms[\\s\\S]*?shared, unreserved NVIDIA GeForce GTX 1070 Ti",
+      "evidence_files": [
+        "validation/reports/scpn_end_to_end_latency.md",
+        "validation/reports/scpn_end_to_end_latency.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ Python\\ CPU\\ \\|\\ measured\\ \\|\\ 0\\.041568\\ \\|\\ 0\\.076077\\ \\|\\ 0\\.100267\\ \\|\\ taskset_affinity_shared_workstation_cores\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\-\\ Pinned\\ CPU\\ set:\\ `10,11`$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\-\\ CPU\\ isolation\\ method:\\ `taskset_affinity_shared_workstation_cores`$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ measured_simulated_hil\\ \\|\\ simulated_host_adc_dac_loop\\ \\|\\ 256\\ \\|\\ 209\\.979000\\ \\|\\ 273\\.154650\\ \\|\\ 336\\.719570\\ \\|\\ YES\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Surrogate\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| PID \\| [0-9.]+ \\| 0\\.023420 \\|"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Full\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| PID \\| [0-9.]+ \\| 0\\.033363 \\|"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\-\\ Accelerator\\ isolation:\\ `shared_local_device_not_reserved`$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.json",
+          "pattern": "\"device_name\":\\ \"b'NVIDIA\\ GeForce\\ GTX\\ 1070\\ Ti'\""
+        }
+      ]
+    },
+    {
+      "id": "benchmarks_digital_twin_latency_rows",
+      "source_file": "docs/BENCHMARKS.md",
+      "source_pattern": "The 2026-11-15 report separates controller-loop timing[\\s\\S]*?\\| Python CPU \\| measured \\| `0\\.041568 ms` \\| `0\\.076077 ms` \\| `0\\.100267 ms` \\| `taskset_affinity_shared_workstation_cores` on CPUs `10,11` \\|\\n\\| Rust native \\| measured \\| `0\\.023582 ms` \\| `0\\.030349 ms` \\| `0\\.034881 ms` \\|[^\\n]*\\n\\| CUDA GPU \\| measured \\| `1\\.562348 ms` \\| `1\\.911913 ms` \\| `2\\.103508 ms` \\| shared, unreserved NVIDIA GeForce GTX 1070 Ti;[^\\n]*\\n[\\s\\S]*?\\| simulated_host_adc_dac_loop \\| `256` \\| `209\\.979000 us` \\| `273\\.154650 us` \\| `336\\.719570 us` \\| pass \\|[\\s\\S]*?\\| `2` \\| `0\\.138533 ms` \\| `0\\.032018 ms` \\| `1\\.692250 ms` \\| `3` \\|\\n\\| `16` \\| `0\\.112619 ms` \\| `0\\.040907 ms` \\| `2\\.004491 ms` \\| `3` \\|\\n\\| `64` \\| `0\\.228114 ms` \\| `0\\.053792 ms` \\| `1\\.632200 ms` \\| `3` \\|\\n\\| `128` \\| `0\\.204335 ms` \\| `0\\.049056 ms` \\| `1\\.968878 ms` \\| `3` \\|\\n\\| `256` \\| `0\\.298261 ms` \\| `0\\.088392 ms` \\| `1\\.985865 ms` \\| `3` \\|[\\s\\S]*?\\| `50 ms` \\| `0\\.967393 ms` \\| `51\\.685x` \\| pass \\|\\n\\| `100 ms` \\| `1\\.862350 ms` \\| `53\\.696x` \\| pass \\|",
+      "evidence_files": [
+        "validation/reports/scpn_end_to_end_latency.md",
+        "validation/reports/scpn_end_to_end_latency.json"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ Python\\ CPU\\ \\|\\ measured\\ \\|\\ 0\\.041568\\ \\|\\ 0\\.076077\\ \\|\\ 0\\.100267\\ \\|\\ taskset_affinity_shared_workstation_cores\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ Rust\\ native\\ \\|\\ measured\\ \\|\\ 0\\.023582\\ \\|\\ 0\\.030349\\ \\|\\ 0\\.034881\\ \\|\\ local\\ release\\ binary\\ when\\ measured\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ GPU\\ \\|\\ measured\\ \\|\\ 1\\.562348\\ \\|\\ 1\\.911913\\ \\|\\ 2\\.103508\\ \\|\\ Local\\ non\\-isolated\\ CuPy/CUDA\\ measurement\\ of\\ the\\ same\\ reduced\\-order\\ sensor\\-to\\-control\\ contract;\\ includes\\ host\\ snapshot\\ assembly\\ and\\ output\\ serialisation\\.\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.json",
+          "pattern": "\"device_name\":\\ \"b'NVIDIA\\ GeForce\\ GTX\\ 1070\\ Ti'\""
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\-\\ Accelerator\\ isolation:\\ `shared_local_device_not_reserved`$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ measured_simulated_hil\\ \\|\\ simulated_host_adc_dac_loop\\ \\|\\ 256\\ \\|\\ 209\\.979000\\ \\|\\ 273\\.154650\\ \\|\\ 336\\.719570\\ \\|\\ YES\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ 2\\ \\|\\ 0\\.138533\\ \\|\\ 0\\.032018\\ \\|\\ 1\\.692250\\ \\|\\ 3\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ 16\\ \\|\\ 0\\.112619\\ \\|\\ 0\\.040907\\ \\|\\ 2\\.004491\\ \\|\\ 3\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ 64\\ \\|\\ 0\\.228114\\ \\|\\ 0\\.053792\\ \\|\\ 1\\.632200\\ \\|\\ 3\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ 128\\ \\|\\ 0\\.204335\\ \\|\\ 0\\.049056\\ \\|\\ 1\\.968878\\ \\|\\ 3\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ 256\\ \\|\\ 0\\.298261\\ \\|\\ 0\\.088392\\ \\|\\ 1\\.985865\\ \\|\\ 3\\ \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\| 50 \\| [0-9.]+ \\| 0\\.967393 \\| [0-9.]+ \\| 51\\.685 \\| YES \\|$"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\| 100 \\| [0-9.]+ \\| 1\\.862350 \\| [0-9.]+ \\| 53\\.696 \\| YES \\|$"
+        }
+      ]
+    },
+    {
+      "id": "hil_demo_simulated_hil_latency",
+      "source_file": "docs/hil_demo.md",
+      "source_pattern": "nominal p95 `273\\.154650 us`, p99 `336\\.719570 us`",
+      "evidence_files": [
+        "validation/reports/scpn_end_to_end_latency.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\|\\ measured_simulated_hil\\ \\|\\ simulated_host_adc_dac_loop\\ \\|\\ 256\\ \\|\\ 209\\.979000\\ \\|\\ 273\\.154650\\ \\|\\ 336\\.719570\\ \\|\\ YES\\ \\|$"
+        }
+      ]
+    },
+    {
+      "id": "taxonomy_closed_loop_pid_latency",
+      "source_file": "docs/PERFORMANCE_METRIC_TAXONOMY.md",
+      "source_pattern": "PID p95: 0\\.023420 ms surrogate mode / 0\\.033363 ms full mode in `validation/reports/scpn_end_to_end_latency\\.md`",
+      "evidence_files": [
+        "validation/reports/scpn_end_to_end_latency.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Surrogate\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| PID \\| [0-9.]+ \\| 0\\.023420 \\|"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Full\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| PID \\| [0-9.]+ \\| 0\\.033363 \\|"
+        }
+      ]
+    },
+    {
+      "id": "readme_control_first_loop_rates",
+      "source_file": "README.md",
+      "source_pattern": "In the latest\\s+local run the PID loop takes \\*\\*0\\.023420 ms\\*\\* at p95 \\(above 40 kHz\\) and the\\s+compiled SNN loop \\*\\*0\\.233691 ms\\*\\* \\(about 4 kHz\\)\\.",
+      "evidence_files": [
+        "validation/reports/scpn_end_to_end_latency.md"
+      ],
+      "evidence_patterns": [
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Surrogate\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| PID \\| [0-9.]+ \\| 0\\.023420 \\|"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^\\#\\#\\ Surrogate\\ Physics\\ Mode\\n(?:(?!\\n## )[\\s\\S])*?^\\| SNN \\| [0-9.]+ \\| 0\\.233691 \\|"
+        },
+        {
+          "file": "validation/reports/scpn_end_to_end_latency.md",
+          "pattern": "^- SNN runtime backend: `rust`$"
+        }
+      ]
     }
   ]
 }

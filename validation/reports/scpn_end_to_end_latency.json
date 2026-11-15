@@ -7,8 +7,8 @@
   "fpga_timing_ready": false,
   "codac_timing_ready": false,
   "actuator_hardware_timing_ready": false,
-  "generated_at_utc": "2026-06-29T21:05:14.232207+00:00",
-  "runtime_seconds": 63.12741592194652,
+  "generated_at_utc": "2026-11-15T17:05:21.036813+00:00",
+  "runtime_seconds": 18.658547072962392,
   "scpn_end_to_end_latency": {
     "seed": 42,
     "steps": 320,
@@ -17,77 +17,77 @@
         "SNN": {
           "runtime_backend": "rust",
           "rmse": 0.07458332825575847,
-          "p50_loop_ms": 0.2129129716195166,
-          "p95_loop_ms": 0.40212259627878716,
-          "p99_loop_ms": 2.4099298031069374,
-          "p95_sensor_ms": 0.01165857829619199,
-          "p95_controller_ms": 0.36472722422331577,
-          "p95_actuator_ms": 0.013818286242894828,
-          "p95_physics_ms": 0.0010627496521919968
+          "p50_loop_ms": 0.1837410090956837,
+          "p95_loop_ms": 0.2336913661565632,
+          "p99_loop_ms": 0.28286715794820344,
+          "p95_sensor_ms": 0.0083673105109483,
+          "p95_controller_ms": 0.21273852908052507,
+          "p95_actuator_ms": 0.01029596314765513,
+          "p95_physics_ms": 0.0008870207238942385
         },
         "PID": {
           "runtime_backend": "n/a",
           "rmse": 0.13663350372195604,
-          "p50_loop_ms": 0.019754021195694804,
-          "p95_loop_ms": 0.03890161169692874,
-          "p99_loop_ms": 0.05752221040893347,
-          "p95_sensor_ms": 0.0126664963318035,
-          "p95_controller_ms": 0.013784578186459845,
-          "p95_actuator_ms": 0.010935025056824088,
-          "p95_physics_ms": 0.001041192444972694
+          "p50_loop_ms": 0.0191435101442039,
+          "p95_loop_ms": 0.023420067736878995,
+          "p99_loop_ms": 0.027797719230875373,
+          "p95_sensor_ms": 0.006729629239998759,
+          "p95_controller_ms": 0.008047587471082807,
+          "p95_actuator_ms": 0.006492860848084092,
+          "p95_physics_ms": 0.0004059082129970195
         },
         "MPC-lite": {
           "runtime_backend": "n/a",
           "rmse": 0.05115337472048825,
-          "p50_loop_ms": 0.11745200026780367,
-          "p95_loop_ms": 0.20664695475716158,
-          "p99_loop_ms": 0.3268706455128269,
-          "p95_sensor_ms": 0.015067300410009931,
-          "p95_controller_ms": 0.1597593101905659,
-          "p95_actuator_ms": 0.03099007590208203,
-          "p95_physics_ms": 0.0011963449651375413
+          "p50_loop_ms": 0.13260397827252746,
+          "p95_loop_ms": 0.14793070149607956,
+          "p99_loop_ms": 0.16626579803414643,
+          "p95_sensor_ms": 0.007366202771663666,
+          "p95_controller_ms": 0.12648702249862254,
+          "p95_actuator_ms": 0.014663138426840305,
+          "p95_physics_ms": 0.0006555579602718354
         }
       },
       "full": {
         "SNN": {
           "runtime_backend": "rust",
           "rmse": 0.07443897829335305,
-          "p50_loop_ms": 0.23221448645927012,
-          "p95_loop_ms": 0.32703020551707596,
-          "p99_loop_ms": 0.8052674465579912,
-          "p95_sensor_ms": 0.012684485409408808,
-          "p95_controller_ms": 0.28343066514935344,
-          "p95_actuator_ms": 0.013578534708358347,
-          "p95_physics_ms": 0.02294928417541087
+          "p50_loop_ms": 0.17925951397046447,
+          "p95_loop_ms": 0.2181817515520379,
+          "p99_loop_ms": 0.237652191426605,
+          "p95_sensor_ms": 0.008934151264838874,
+          "p95_controller_ms": 0.1870972802862525,
+          "p95_actuator_ms": 0.009140389738604428,
+          "p95_physics_ms": 0.011676197755150499
         },
         "PID": {
           "runtime_backend": "n/a",
           "rmse": 0.13817093429586896,
-          "p50_loop_ms": 0.01785348285920918,
-          "p95_loop_ms": 0.03554653376340867,
-          "p99_loop_ms": 0.0378755759447813,
-          "p95_sensor_ms": 0.008219416486099364,
-          "p95_controller_ms": 0.008823815733194353,
-          "p95_actuator_ms": 0.006871126242913307,
-          "p95_physics_ms": 0.011097665992565453
+          "p50_loop_ms": 0.025037501472979784,
+          "p95_loop_ms": 0.033362527028657496,
+          "p99_loop_ms": 0.038837050087749965,
+          "p95_sensor_ms": 0.0076528493082150826,
+          "p95_controller_ms": 0.008232769323512912,
+          "p95_actuator_ms": 0.006566953379660846,
+          "p95_physics_ms": 0.007820618338882923
         },
         "MPC-lite": {
           "runtime_backend": "n/a",
           "rmse": 0.05258547371664243,
-          "p50_loop_ms": 0.0876345147844404,
-          "p95_loop_ms": 0.1590164436493069,
-          "p99_loop_ms": 0.17207603494171053,
-          "p95_sensor_ms": 0.008496802183799446,
-          "p95_controller_ms": 0.12239077186677605,
-          "p95_actuator_ms": 0.014298324822448194,
-          "p95_physics_ms": 0.013898563338443639
+          "p50_loop_ms": 0.07889352855272591,
+          "p95_loop_ms": 0.14519464748445898,
+          "p99_loop_ms": 0.14999772363808006,
+          "p95_sensor_ms": 0.007268355693668128,
+          "p95_controller_ms": 0.11662836477626115,
+          "p95_actuator_ms": 0.01150319876614958,
+          "p95_physics_ms": 0.009988978854380551
         }
       }
     },
     "snn_runtime_backend": "rust",
     "threshold_profile": "accelerated",
     "ratios": {
-      "snn_full_to_surrogate_p95_ratio": 0.8132599573945591
+      "snn_full_to_surrogate_p95_ratio": 0.9336320598419776
     },
     "thresholds": {
       "max_snn_p95_loop_ms_surrogate": 8.0,
@@ -105,135 +105,116 @@
     "codac_timing_ready": false,
     "actuator_hardware_timing_ready": false,
     "measurement_context": {
-      "claim_boundary": "Python CPU and Rust rows are local non-isolated wall-clock measurements. GPU rows are accelerator measurements only when status is measured. HIL rows are simulated host ADC/DAC timing unless hardware_status names a physical rig.",
-      "accelerator_isolation_note": "CUDA device was operator-reserved for this benchmark run; CPU host process isolation is recorded in host_before/host_after.",
+      "claim_boundary": "Taskset-affinity benchmark evidence on logical CPUs 10,11 of a shared workstation; the cores were not reserved and other processes could run on them. Not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.",
+      "accelerator_isolation": "shared_local_device_not_reserved",
+      "accelerator_isolation_note": "CUDA device isolation as declared through SCPN_BENCHMARK_ACCELERATOR_ISOLATION; the default claims no reservation. CPU host process isolation is recorded in host_before/host_after.",
       "warmup_policy": "No samples discarded; deterministic synthetic stream is measured from cold local process state.",
       "sample_count_per_case": 320,
-      "benchmark_command": null,
-      "cpu_isolation_method": "non_isolated_local_workstation",
-      "reserved_cpu_set": null,
-      "concurrent_heavy_jobs": null,
+      "benchmark_command": "taskset -c 10,11 env SCPN_BENCHMARK_ISOLATION_METHOD=taskset_affinity_shared_workstation_cores SCPN_BENCHMARK_CPUSET=10,11 SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS=none_started_by_this_task_other_seats_share_the_host SCPN_BENCHMARK_ACCELERATOR_ISOLATION=shared_local_device_not_reserved SCPN_BENCHMARK_CLAIM_BOUNDARY='Taskset-affinity benchmark evidence on logical CPUs 10,11 of a shared workstation; the cores were not reserved and other processes could run on them. Not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.' .venv/bin/python validation/scpn_end_to_end_latency.py --steps 320 --strict --commit-evidence",
+      "cpu_isolation_method": "taskset_affinity_shared_workstation_cores",
+      "reserved_cpu_set": "10,11",
+      "concurrent_heavy_jobs": "none_started_by_this_task_other_seats_share_the_host",
       "host_before": {
-        "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+        "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
         "python_version": "3.12.3",
         "processor": "x86_64",
         "machine": "x86_64",
         "cpu_count": 12,
         "affinity_cpus": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
           10,
           11
         ],
-        "affinity_cpu_count": 12,
-        "reserved_cpu_set": null,
+        "affinity_cpu_count": 2,
+        "reserved_cpu_set": "10,11",
         "loadavg_1_5_15": [
-          27.81103515625,
-          26.12939453125,
-          25.36279296875
+          7.8154296875,
+          11.00244140625,
+          11.7314453125
         ],
-        "numpy_version": "1.26.4",
+        "numpy_version": "2.5.4",
         "cpu_frequency": {
           "governors": [
             "powersave"
           ],
-          "current_khz_min": 3599427,
-          "current_khz_max": 3600000,
+          "current_khz_min": 3699787,
+          "current_khz_max": 3701953,
           "scaling_min_khz_min": 800000,
           "scaling_max_khz_max": 4900000
         },
-        "isolation": "non_isolated_local_workstation",
-        "benchmark_command": null,
-        "concurrent_heavy_jobs": null,
-        "claim_boundary": "Local wall-clock regression evidence only; not an isolated-core or hardware-in-the-loop latency claim."
+        "isolation": "taskset_affinity_shared_workstation_cores",
+        "benchmark_command": "taskset -c 10,11 env SCPN_BENCHMARK_ISOLATION_METHOD=taskset_affinity_shared_workstation_cores SCPN_BENCHMARK_CPUSET=10,11 SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS=none_started_by_this_task_other_seats_share_the_host SCPN_BENCHMARK_ACCELERATOR_ISOLATION=shared_local_device_not_reserved SCPN_BENCHMARK_CLAIM_BOUNDARY='Taskset-affinity benchmark evidence on logical CPUs 10,11 of a shared workstation; the cores were not reserved and other processes could run on them. Not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.' .venv/bin/python validation/scpn_end_to_end_latency.py --steps 320 --strict --commit-evidence",
+        "concurrent_heavy_jobs": "none_started_by_this_task_other_seats_share_the_host",
+        "claim_boundary": "Taskset-affinity benchmark evidence on logical CPUs 10,11 of a shared workstation; the cores were not reserved and other processes could run on them. Not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped."
       },
       "host_after": {
-        "platform": "Linux-6.17.0-35-generic-x86_64-with-glibc2.39",
+        "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
         "python_version": "3.12.3",
         "processor": "x86_64",
         "machine": "x86_64",
         "cpu_count": 12,
         "affinity_cpus": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
           10,
           11
         ],
-        "affinity_cpu_count": 12,
-        "reserved_cpu_set": null,
+        "affinity_cpu_count": 2,
+        "reserved_cpu_set": "10,11",
         "loadavg_1_5_15": [
-          27.81103515625,
-          26.12939453125,
-          25.36279296875
+          7.8154296875,
+          11.00244140625,
+          11.7314453125
         ],
-        "numpy_version": "1.26.4",
+        "numpy_version": "2.5.4",
         "cpu_frequency": {
           "governors": [
             "powersave"
           ],
-          "current_khz_min": 3599770,
-          "current_khz_max": 3600107,
+          "current_khz_min": 3799882,
+          "current_khz_max": 3800467,
           "scaling_min_khz_min": 800000,
           "scaling_max_khz_max": 4900000
         },
-        "isolation": "non_isolated_local_workstation",
-        "benchmark_command": null,
-        "concurrent_heavy_jobs": null,
-        "claim_boundary": "Local wall-clock regression evidence only; not an isolated-core or hardware-in-the-loop latency claim."
+        "isolation": "taskset_affinity_shared_workstation_cores",
+        "benchmark_command": "taskset -c 10,11 env SCPN_BENCHMARK_ISOLATION_METHOD=taskset_affinity_shared_workstation_cores SCPN_BENCHMARK_CPUSET=10,11 SCPN_BENCHMARK_CONCURRENT_HEAVY_JOBS=none_started_by_this_task_other_seats_share_the_host SCPN_BENCHMARK_ACCELERATOR_ISOLATION=shared_local_device_not_reserved SCPN_BENCHMARK_CLAIM_BOUNDARY='Taskset-affinity benchmark evidence on logical CPUs 10,11 of a shared workstation; the cores were not reserved and other processes could run on them. Not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped.' .venv/bin/python validation/scpn_end_to_end_latency.py --steps 320 --strict --commit-evidence",
+        "concurrent_heavy_jobs": "none_started_by_this_task_other_seats_share_the_host",
+        "claim_boundary": "Taskset-affinity benchmark evidence on logical CPUs 10,11 of a shared workstation; the cores were not reserved and other processes could run on them. Not shielded cpuset or dedicated-runner evidence. GPU and HIL boundaries remain separately scoped."
       }
     },
     "cpu": {
       "status": "measured",
       "backend": "python_numpy_cpu",
-      "p50_loop_ms": 0.049953494453802705,
-      "p95_loop_ms": 0.1347599318251014,
-      "p99_loop_ms": 0.15415024536196142,
+      "p50_loop_ms": 0.041567516745999455,
+      "p95_loop_ms": 0.07607672014273706,
+      "p99_loop_ms": 0.10026699979789556,
       "stages": {
         "input_validation": {
-          "p50_ms": 0.0014955003280192614,
-          "p95_ms": 0.003270141314715147,
-          "p99_ms": 0.004040655912831426
+          "p50_ms": 0.0014120014384388924,
+          "p95_ms": 0.002254097489640117,
+          "p99_ms": 0.002846743445843458
         },
         "feature_assembly": {
-          "p50_ms": 0.0017780112102627754,
-          "p95_ms": 0.005225656786933542,
-          "p99_ms": 0.007960108923725784
+          "p50_ms": 0.0014065008144825697,
+          "p95_ms": 0.002684997161850333,
+          "p99_ms": 0.00393017486203462
         },
         "digital_twin_update": {
-          "p50_ms": 0.010415504220873117,
-          "p95_ms": 0.028516343445517126,
-          "p99_ms": 0.03504174237605185
+          "p50_ms": 0.010135001502931118,
+          "p95_ms": 0.01835029106587172,
+          "p99_ms": 0.024477547267451886
         },
         "controller_decision": {
-          "p50_ms": 0.0018855207599699497,
-          "p95_ms": 0.005237350706011057,
-          "p99_ms": 0.006340437685139477
+          "p50_ms": 0.0017124984879046679,
+          "p95_ms": 0.002942589344456792,
+          "p99_ms": 0.003579525509849191
         },
         "fallback_policy": {
-          "p50_ms": 0.019286497263237834,
-          "p95_ms": 0.055997102754190564,
-          "p99_ms": 0.06268481956794858
+          "p50_ms": 0.01368299126625061,
+          "p95_ms": 0.02427255385555327,
+          "p99_ms": 0.04557817592285574
         },
         "output_serialization": {
-          "p50_ms": 0.011622993042692542,
-          "p95_ms": 0.03074663109146059,
-          "p99_ms": 0.03716998500749469
+          "p50_ms": 0.009599985787644982,
+          "p95_ms": 0.01762887986842543,
+          "p99_ms": 0.024759808438830085
         }
       },
       "degraded_modes": {
@@ -245,39 +226,39 @@
           "safe_output_rate": 1.0,
           "fallback_reasons": {},
           "checksum": -77.13915732179238,
-          "p50_loop_ms": 0.049953494453802705,
-          "p95_loop_ms": 0.1347599318251014,
-          "p99_loop_ms": 0.15415024536196142,
+          "p50_loop_ms": 0.041567516745999455,
+          "p95_loop_ms": 0.07607672014273706,
+          "p99_loop_ms": 0.10026699979789556,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0014955003280192614,
-              "p95_ms": 0.003270141314715147,
-              "p99_ms": 0.004040655912831426
+              "p50_ms": 0.0014120014384388924,
+              "p95_ms": 0.002254097489640117,
+              "p99_ms": 0.002846743445843458
             },
             "feature_assembly": {
-              "p50_ms": 0.0017780112102627754,
-              "p95_ms": 0.005225656786933542,
-              "p99_ms": 0.007960108923725784
+              "p50_ms": 0.0014065008144825697,
+              "p95_ms": 0.002684997161850333,
+              "p99_ms": 0.00393017486203462
             },
             "digital_twin_update": {
-              "p50_ms": 0.010415504220873117,
-              "p95_ms": 0.028516343445517126,
-              "p99_ms": 0.03504174237605185
+              "p50_ms": 0.010135001502931118,
+              "p95_ms": 0.01835029106587172,
+              "p99_ms": 0.024477547267451886
             },
             "controller_decision": {
-              "p50_ms": 0.0018855207599699497,
-              "p95_ms": 0.005237350706011057,
-              "p99_ms": 0.006340437685139477
+              "p50_ms": 0.0017124984879046679,
+              "p95_ms": 0.002942589344456792,
+              "p99_ms": 0.003579525509849191
             },
             "fallback_policy": {
-              "p50_ms": 0.019286497263237834,
-              "p95_ms": 0.055997102754190564,
-              "p99_ms": 0.06268481956794858
+              "p50_ms": 0.01368299126625061,
+              "p95_ms": 0.02427255385555327,
+              "p99_ms": 0.04557817592285574
             },
             "output_serialization": {
-              "p50_ms": 0.011622993042692542,
-              "p95_ms": 0.03074663109146059,
-              "p99_ms": 0.03716998500749469
+              "p50_ms": 0.009599985787644982,
+              "p95_ms": 0.01762887986842543,
+              "p99_ms": 0.024759808438830085
             }
           },
           "passes_semantics": true
@@ -292,39 +273,39 @@
             "stale_snapshot_safe_mode": 46
           },
           "checksum": -77.13784328915892,
-          "p50_loop_ms": 0.08811947191134095,
-          "p95_loop_ms": 0.13136997586116195,
-          "p99_loop_ms": 0.3311394271440808,
+          "p50_loop_ms": 0.03739452222362161,
+          "p95_loop_ms": 0.04979455843567848,
+          "p99_loop_ms": 0.07862356666009875,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0024765031412243843,
-              "p95_ms": 0.003975501749664545,
-              "p99_ms": 0.009051252854987982
+              "p50_ms": 0.0013535027392208576,
+              "p95_ms": 0.0019100378267467026,
+              "p99_ms": 0.0025284697767347097
             },
             "feature_assembly": {
-              "p50_ms": 0.0029415241442620754,
-              "p95_ms": 0.0062535254983231425,
-              "p99_ms": 0.007636909140273929
+              "p50_ms": 0.0012770178727805614,
+              "p95_ms": 0.0019018043531104924,
+              "p99_ms": 0.00269642798230052
             },
             "digital_twin_update": {
-              "p50_ms": 0.018834485672414303,
-              "p95_ms": 0.030122019234113395,
-              "p99_ms": 0.03797868965193629
+              "p50_ms": 0.009322509868070483,
+              "p95_ms": 0.013464986113831404,
+              "p99_ms": 0.021186104277148843
             },
             "controller_decision": {
-              "p50_ms": 0.003258493961766362,
-              "p95_ms": 0.00526348885614425,
-              "p99_ms": 0.006947986548766495
+              "p50_ms": 0.0016244885046035051,
+              "p95_ms": 0.002681338810361922,
+              "p99_ms": 0.0041590427281335005
             },
             "fallback_policy": {
-              "p50_ms": 0.03426251350902021,
-              "p95_ms": 0.05478068778757006,
-              "p99_ms": 0.0643804529681802
+              "p50_ms": 0.012761011021211743,
+              "p95_ms": 0.01691256475169212,
+              "p99_ms": 0.023733231355436146
             },
             "output_serialization": {
-              "p50_ms": 0.019791012164205313,
-              "p95_ms": 0.03214676398783922,
-              "p99_ms": 0.07799927378073344
+              "p50_ms": 0.008731003617867827,
+              "p95_ms": 0.011818431084975602,
+              "p99_ms": 0.01866384642198682
             }
           },
           "passes_semantics": true
@@ -339,39 +320,39 @@
             "ood_snapshot_safe_mode": 30
           },
           "checksum": -101.45274425888707,
-          "p50_loop_ms": 0.04878398613072932,
-          "p95_loop_ms": 0.0896550714969635,
-          "p99_loop_ms": 0.11213932302780451,
+          "p50_loop_ms": 0.03917302819900215,
+          "p95_loop_ms": 0.07615337090101096,
+          "p99_loop_ms": 0.09747436619363725,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0015050172805786133,
-              "p95_ms": 0.0028514186851680283,
-              "p99_ms": 0.007389981183223434
+              "p50_ms": 0.0014069955796003342,
+              "p95_ms": 0.002485551522113383,
+              "p99_ms": 0.003060224116779864
             },
             "feature_assembly": {
-              "p50_ms": 0.001619482645764947,
-              "p95_ms": 0.0034559954656288036,
-              "p99_ms": 0.0045341154327616096
+              "p50_ms": 0.0013700046110898256,
+              "p95_ms": 0.0028640904929488897,
+              "p99_ms": 0.0037538306787610063
             },
             "digital_twin_update": {
-              "p50_ms": 0.010161515092477202,
-              "p95_ms": 0.020995899103581905,
-              "p99_ms": 0.02559040556661785
+              "p50_ms": 0.009668001439422369,
+              "p95_ms": 0.019265309674665335,
+              "p99_ms": 0.02405679668299854
             },
             "controller_decision": {
-              "p50_ms": 0.001855980372056365,
-              "p95_ms": 0.0035290664527565245,
-              "p99_ms": 0.005568764754571024
+              "p50_ms": 0.0016755075193941593,
+              "p95_ms": 0.003136260784231128,
+              "p99_ms": 0.004016743041574955
             },
             "fallback_policy": {
-              "p50_ms": 0.018590508261695504,
-              "p95_ms": 0.03723550762515516,
-              "p99_ms": 0.045583536848425865
+              "p50_ms": 0.013356475392356515,
+              "p95_ms": 0.02530146448407323,
+              "p99_ms": 0.03245428204536438
             },
             "output_serialization": {
-              "p50_ms": 0.011006020940840244,
-              "p95_ms": 0.020796252647414807,
-              "p99_ms": 0.03323733340948822
+              "p50_ms": 0.00929803354665637,
+              "p95_ms": 0.018177586025558412,
+              "p99_ms": 0.02415712457150221
             }
           },
           "passes_semantics": true
@@ -386,39 +367,39 @@
             "missing_q95_defaulted": 64
           },
           "checksum": -77.18063967996703,
-          "p50_loop_ms": 0.04834550782106817,
-          "p95_loop_ms": 0.12119210732635112,
-          "p99_loop_ms": 0.14184679312165827,
+          "p50_loop_ms": 0.036933517549186945,
+          "p95_loop_ms": 0.04369181115180254,
+          "p99_loop_ms": 0.06467054190579802,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0015425030142068863,
-              "p95_ms": 0.0034931465052068238,
-              "p99_ms": 0.004841216723434627
+              "p50_ms": 0.001320993760600686,
+              "p95_ms": 0.0017091340851038694,
+              "p99_ms": 0.0024340982781723146
             },
             "feature_assembly": {
-              "p50_ms": 0.0015755067579448223,
-              "p95_ms": 0.005002462421543896,
-              "p99_ms": 0.006093717529438436
+              "p50_ms": 0.001264503225684166,
+              "p95_ms": 0.0016192992916330697,
+              "p99_ms": 0.002813175669871271
             },
             "digital_twin_update": {
-              "p50_ms": 0.01023148070089519,
-              "p95_ms": 0.026508449809625745,
-              "p99_ms": 0.02999972435645759
+              "p50_ms": 0.009135488653555512,
+              "p95_ms": 0.010771286906674504,
+              "p99_ms": 0.01639375288505107
             },
             "controller_decision": {
-              "p50_ms": 0.0018205028027296066,
-              "p95_ms": 0.004648248432204127,
-              "p99_ms": 0.006411994108930232
+              "p50_ms": 0.0016210251487791538,
+              "p95_ms": 0.0018751859897747636,
+              "p99_ms": 0.0028846669010818005
             },
             "fallback_policy": {
-              "p50_ms": 0.018611463019624352,
-              "p95_ms": 0.052364711882546544,
-              "p99_ms": 0.061994359712116434
+              "p50_ms": 0.012753967894241214,
+              "p95_ms": 0.014277113950811328,
+              "p99_ms": 0.02271693956572563
             },
             "output_serialization": {
-              "p50_ms": 0.01116449129767716,
-              "p95_ms": 0.02717648167163134,
-              "p99_ms": 0.031807494815438986
+              "p50_ms": 0.00855998951010406,
+              "p95_ms": 0.010110132279805839,
+              "p99_ms": 0.018385498551651835
             }
           },
           "passes_semantics": true
@@ -433,39 +414,39 @@
             "non_finite_input_replaced": 25
           },
           "checksum": -77.12985039555913,
-          "p50_loop_ms": 0.06991100963205099,
-          "p95_loop_ms": 0.11858935467898847,
-          "p99_loop_ms": 0.18354982661549007,
+          "p50_loop_ms": 0.037732505006715655,
+          "p95_loop_ms": 0.05424631235655398,
+          "p99_loop_ms": 0.0720166222890839,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0018869759514927864,
-              "p95_ms": 0.0029882357921451343,
-              "p99_ms": 0.004739026189781725
+              "p50_ms": 0.0013099925126880407,
+              "p95_ms": 0.0017429352737963202,
+              "p99_ms": 0.002585576730780304
             },
             "feature_assembly": {
-              "p50_ms": 0.0023459724616259336,
-              "p95_ms": 0.004735263064503671,
-              "p99_ms": 0.007197408122010531
+              "p50_ms": 0.001294014509767294,
+              "p95_ms": 0.002123057493008673,
+              "p99_ms": 0.002918872050940991
             },
             "digital_twin_update": {
-              "p50_ms": 0.014622986782342196,
-              "p95_ms": 0.028484198264777667,
-              "p99_ms": 0.036942134611308575
+              "p50_ms": 0.009320006938651204,
+              "p95_ms": 0.014136635581962768,
+              "p99_ms": 0.01973957172594965
             },
             "controller_decision": {
-              "p50_ms": 0.0023065076675266027,
-              "p95_ms": 0.004484690725803376,
-              "p99_ms": 0.007069457788020374
+              "p50_ms": 0.0016550184227526188,
+              "p95_ms": 0.002199003938585522,
+              "p99_ms": 0.002973165246658027
             },
             "fallback_policy": {
-              "p50_ms": 0.025020010070875287,
-              "p95_ms": 0.04816919390577823,
-              "p99_ms": 0.06473930028732866
+              "p50_ms": 0.012970500392839313,
+              "p95_ms": 0.020494675845839083,
+              "p99_ms": 0.024801852414384484
             },
             "output_serialization": {
-              "p50_ms": 0.015235476894304156,
-              "p95_ms": 0.026922885444946587,
-              "p99_ms": 0.0378497363999486
+              "p50_ms": 0.008780480129644275,
+              "p95_ms": 0.013954302994534378,
+              "p99_ms": 0.017489411402493715
             }
           },
           "passes_semantics": true
@@ -480,39 +461,39 @@
             "actuator_saturation_clamped": 36
           },
           "checksum": -114.9819217229597,
-          "p50_loop_ms": 0.0791260099504143,
-          "p95_loop_ms": 0.11457855871412904,
-          "p99_loop_ms": 0.1347586011979729,
+          "p50_loop_ms": 0.03977352753281593,
+          "p95_loop_ms": 0.05658986337948591,
+          "p99_loop_ms": 0.0732051715021953,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0020310108084231615,
-              "p95_ms": 0.0031637027859687805,
-              "p99_ms": 0.00390990637242794
+              "p50_ms": 0.0013430253602564335,
+              "p95_ms": 0.001854193396866322,
+              "p99_ms": 0.002149567590095103
             },
             "feature_assembly": {
-              "p50_ms": 0.002645509084686637,
-              "p95_ms": 0.004555642954073846,
-              "p99_ms": 0.005978645640425384
+              "p50_ms": 0.001375534338876605,
+              "p95_ms": 0.0021736166672781114,
+              "p99_ms": 0.003185619716532529
             },
             "digital_twin_update": {
-              "p50_ms": 0.016918493201956153,
-              "p95_ms": 0.026609667111188177,
-              "p99_ms": 0.0319789326749742
+              "p50_ms": 0.009845971362665296,
+              "p95_ms": 0.014148777700029314,
+              "p99_ms": 0.019582220702432096
             },
             "controller_decision": {
-              "p50_ms": 0.002792512532323599,
-              "p95_ms": 0.004824000643566252,
-              "p99_ms": 0.005676868022419512
+              "p50_ms": 0.0017124984879046679,
+              "p95_ms": 0.002386191044934094,
+              "p99_ms": 0.0031045166542753577
             },
             "fallback_policy": {
-              "p50_ms": 0.030801485991105437,
-              "p95_ms": 0.04789358645211905,
-              "p99_ms": 0.05686122283805162
+              "p50_ms": 0.013573502656072378,
+              "p95_ms": 0.020855004549957812,
+              "p99_ms": 0.026062540127895772
             },
             "output_serialization": {
-              "p50_ms": 0.017983518773689866,
-              "p95_ms": 0.027210492407903086,
-              "p99_ms": 0.03503990592435003
+              "p50_ms": 0.009407522156834602,
+              "p95_ms": 0.014612666564062238,
+              "p99_ms": 0.0188557937508449
             }
           },
           "passes_semantics": true
@@ -527,39 +508,39 @@
             "controller_non_finite_or_bad_shape": 32
           },
           "checksum": -69.53482551334567,
-          "p50_loop_ms": 0.06768450839444995,
-          "p95_loop_ms": 0.13236968079581857,
-          "p99_loop_ms": 0.1556934940163046,
+          "p50_loop_ms": 0.04492604057304561,
+          "p95_loop_ms": 0.08174656250048429,
+          "p99_loop_ms": 0.0924651586683467,
           "stages": {
             "input_validation": {
-              "p50_ms": 0.0017535057850182056,
-              "p95_ms": 0.00332221097778529,
-              "p99_ms": 0.004314475809223951
+              "p50_ms": 0.0014715187717229128,
+              "p95_ms": 0.0024599838070571427,
+              "p99_ms": 0.0031464564381167297
             },
             "feature_assembly": {
-              "p50_ms": 0.002180488081648946,
-              "p95_ms": 0.004645541775971652,
-              "p99_ms": 0.006642808439210057
+              "p50_ms": 0.0016385165508836508,
+              "p95_ms": 0.003113754792138934,
+              "p99_ms": 0.004092471790499986
             },
             "digital_twin_update": {
-              "p50_ms": 0.013046985259279609,
-              "p95_ms": 0.028095100424252468,
-              "p99_ms": 0.03843608312308788
+              "p50_ms": 0.01127898576669395,
+              "p95_ms": 0.021119287703186277,
+              "p99_ms": 0.028793031233362864
             },
             "controller_decision": {
-              "p50_ms": 0.0026739726308733225,
-              "p95_ms": 0.0058297853684052825,
-              "p99_ms": 0.007581317913718523
+              "p50_ms": 0.0019319995772093534,
+              "p95_ms": 0.0037256191717460756,
+              "p99_ms": 0.005323764635249974
             },
             "fallback_policy": {
-              "p50_ms": 0.023354979930445552,
-              "p95_ms": 0.052544308709912016,
-              "p99_ms": 0.06067841954063624
+              "p50_ms": 0.014624005416408181,
+              "p95_ms": 0.02750254352577031,
+              "p99_ms": 0.031289621256291866
             },
             "output_serialization": {
-              "p50_ms": 0.014317018212750554,
-              "p95_ms": 0.02862635301426053,
-              "p99_ms": 0.036609261878766126
+              "p50_ms": 0.010678486432880163,
+              "p95_ms": 0.020282750483602285,
+              "p99_ms": 0.024379108799621463
             }
           },
           "passes_semantics": true
@@ -567,97 +548,97 @@
       }
     },
     "gpu": {
-      "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
+      "accelerator_isolation": "shared_local_device_not_reserved",
       "actuator_count": 2,
       "backend": "cupy_cuda",
       "checksum": -52.0653331672099,
       "claim_boundary": "Local non-isolated CuPy/CUDA measurement of the same reduced-order sensor-to-control contract; includes host snapshot assembly and output serialisation.",
       "cuda_runtime_version": 12090,
-      "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
+      "device_name": "b'NVIDIA GeForce GTX 1070 Ti'",
       "fallback_count": 0,
-      "p50_loop_ms": 2.481406496372074,
-      "p95_loop_ms": 8.575208747060975,
-      "p99_loop_ms": 16.88649786345195,
+      "p50_loop_ms": 1.562347519211471,
+      "p95_loop_ms": 1.9119128672173247,
+      "p99_loop_ms": 2.1035079343710095,
       "preloaded_cuda_libraries": [
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
-        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
+        "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
       ],
       "stages": {
         "controller_decision": {
-          "p50_ms": 0.4959859943483025,
-          "p95_ms": 1.7646769672865081,
-          "p99_ms": 5.308588717598468
+          "p50_ms": 0.4051944997627288,
+          "p95_ms": 0.4960877500707284,
+          "p99_ms": 0.5450517887948081
         },
         "digital_twin_update": {
-          "p50_ms": 1.2068859941791743,
-          "p95_ms": 4.5639100280823195,
-          "p99_ms": 9.419440604979174
+          "p50_ms": 0.7912904839031398,
+          "p95_ms": 0.9927070961566643,
+          "p99_ms": 1.1500352877192201
         },
         "fallback_policy": {
-          "p50_ms": 0.3172444994561374,
-          "p95_ms": 1.087810134049505,
-          "p99_ms": 3.575558676966472
+          "p50_ms": 0.19207046716473997,
+          "p95_ms": 0.2621314692078159,
+          "p99_ms": 0.3244560380699113
         },
         "feature_assembly": {
-          "p50_ms": 0.1561639946885407,
-          "p95_ms": 0.7641169446287677,
-          "p99_ms": 1.475742008769885
+          "p50_ms": 0.08590798825025558,
+          "p95_ms": 0.12635406164918098,
+          "p99_ms": 0.14807027939241382
         },
         "input_validation": {
-          "p50_ms": 0.024649518309161067,
-          "p95_ms": 0.09168183605652304,
-          "p99_ms": 0.130936314817518
+          "p50_ms": 0.01373948180116713,
+          "p95_ms": 0.020084620337001983,
+          "p99_ms": 0.025178423966281116
         },
         "output_serialization": {
-          "p50_ms": 0.08267798693850636,
-          "p95_ms": 0.283348181983456,
-          "p99_ms": 0.674690481391736
+          "p50_ms": 0.04494652966968715,
+          "p95_ms": 0.06262128008529544,
+          "p99_ms": 0.0737619079882279
         }
       },
       "status": "measured",
       "steps": 320,
       "visible_device_count": 1,
-      "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 320 --actuators 2",
+      "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 320 --actuators 2",
       "ld_library_path_source": "project_venv_nvidia_wheels"
     },
     "rust": {
@@ -665,45 +646,45 @@
       "backend": "rust_release",
       "steps": 320,
       "actuator_count": 2,
-      "p50_loop_ms": 0.052549,
-      "p95_loop_ms": 0.11589315,
-      "p99_loop_ms": 1.81167997,
+      "p50_loop_ms": 0.0235825,
+      "p95_loop_ms": 0.03034865,
+      "p99_loop_ms": 0.0348805,
       "fallback_count": 0,
-      "checksum": 89.229300657,
+      "checksum": -18.525863311,
       "stages": {
         "input_validation": {
-          "p50_ms": 3.1e-05,
-          "p95_ms": 0.0002671,
-          "p99_ms": 0.00064247
+          "p50_ms": 2.2e-05,
+          "p95_ms": 2.605e-05,
+          "p99_ms": 8.029e-05
         },
         "feature_assembly": {
-          "p50_ms": 0.000154,
-          "p95_ms": 0.0006121,
-          "p99_ms": 0.00107189
+          "p50_ms": 7e-05,
+          "p95_ms": 0.00014215,
+          "p99_ms": 0.00021762
         },
         "digital_twin_update": {
-          "p50_ms": 0.042623,
-          "p95_ms": 0.09817575,
-          "p99_ms": 1.78737904
+          "p50_ms": 0.0205765,
+          "p95_ms": 0.02635405,
+          "p99_ms": 0.03171172
         },
         "controller_decision": {
-          "p50_ms": 0.0057485,
-          "p95_ms": 0.01134055,
-          "p99_ms": 0.02087881
+          "p50_ms": 0.002104,
+          "p95_ms": 0.00323365,
+          "p99_ms": 0.00397092
         },
         "fallback_policy": {
-          "p50_ms": 0.000175,
-          "p95_ms": 0.00095245,
-          "p99_ms": 0.00275395
+          "p50_ms": 7.5e-05,
+          "p95_ms": 0.00018715,
+          "p99_ms": 0.00030644
         },
         "output_serialization": {
-          "p50_ms": 0.0011745,
-          "p95_ms": 0.00349455,
-          "p99_ms": 0.01166075
+          "p50_ms": 0.000528,
+          "p95_ms": 0.00095,
+          "p99_ms": 0.00124929
         }
       },
       "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 320 --actuators 2 --json",
-      "runtime_seconds": 1.208308659028262
+      "runtime_seconds": 0.10998043598374352
     },
     "hil": {
       "schema": "scpn-fusion-core.simulated_hil_sensor_to_actuator_latency.v1",
@@ -725,61 +706,61 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5653.26875,
           "latency": {
-            "p50_us": 216.51350000000002,
-            "p95_us": 395.1659999999999,
-            "p99_us": 500.4341899999998,
-            "max_us": 948.3770000000001,
-            "mean_us": 249.82004375000002
+            "p50_us": 209.97899999999998,
+            "p95_us": 273.15464999999983,
+            "p99_us": 336.71957,
+            "max_us": 369.926,
+            "mean_us": 219.76124375
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 45.201,
-              "p95_us": 100.81914999999998,
-              "p99_us": 130.37033,
-              "max_us": 135.642,
-              "mean_us": 54.001793750000004
+              "p50_us": 52.694,
+              "p95_us": 82.33084999999998,
+              "p99_us": 99.14068,
+              "max_us": 110.82,
+              "mean_us": 56.786812499999996
             },
             "input_validation": {
-              "p50_us": 9.846,
-              "p95_us": 27.88684999999998,
-              "p99_us": 39.177779999999984,
-              "max_us": 45.463,
-              "mean_us": 12.3281625
+              "p50_us": 6.5969999999999995,
+              "p95_us": 11.781999999999998,
+              "p99_us": 16.10732999999999,
+              "max_us": 20.266,
+              "mean_us": 7.209631249999999
             },
             "state_estimation": {
-              "p50_us": 12.541,
-              "p95_us": 30.67019999999997,
-              "p99_us": 44.64749999999995,
-              "max_us": 676.966,
-              "mean_us": 19.35253125
+              "p50_us": 12.254000000000001,
+              "p95_us": 21.632249999999996,
+              "p99_us": 24.66134,
+              "max_us": 25.862,
+              "mean_us": 13.2479375
             },
             "controller_step": {
-              "p50_us": 2.2104999999999997,
-              "p95_us": 7.041449999999999,
-              "p99_us": 14.162809999999983,
-              "max_us": 24.057,
-              "mean_us": 3.12095
+              "p50_us": 1.958,
+              "p95_us": 2.9732,
+              "p99_us": 3.88528,
+              "max_us": 3.989,
+              "mean_us": 2.0752125
             },
             "actuator_guard": {
-              "p50_us": 12.931000000000001,
-              "p95_us": 32.416899999999984,
-              "p99_us": 40.84208999999999,
-              "max_us": 249.076,
-              "mean_us": 17.24465
+              "p50_us": 9.342500000000001,
+              "p95_us": 14.714799999999995,
+              "p99_us": 17.341049999999992,
+              "max_us": 18.877,
+              "mean_us": 9.9599
             },
             "dac_write": {
-              "p50_us": 13.379000000000001,
-              "p95_us": 31.411099999999994,
-              "p99_us": 37.337929999999986,
-              "max_us": 50.66,
-              "mean_us": 15.8532625
+              "p50_us": 11.373999999999999,
+              "p95_us": 17.6571,
+              "p99_us": 21.265059999999995,
+              "max_us": 26.079,
+              "mean_us": 11.95645
             },
             "output_serialization": {
-              "p50_us": 116.751,
-              "p95_us": 185.67424999999997,
-              "p99_us": 199.11256,
-              "max_us": 209.376,
-              "mean_us": 127.91869375000002
+              "p50_us": 113.51400000000001,
+              "p95_us": 140.33535,
+              "p99_us": 180.39695999999998,
+              "max_us": 196.764,
+              "mean_us": 118.52530000000002
             }
           },
           "passes_semantics": true
@@ -797,61 +778,61 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5651.79375,
           "latency": {
-            "p50_us": 380.9975,
-            "p95_us": 440.4654499999999,
-            "p99_us": 473.1116099999999,
-            "max_us": 813.493,
-            "mean_us": 359.3509125
+            "p50_us": 222.469,
+            "p95_us": 345.3448499999999,
+            "p99_us": 369.50985,
+            "max_us": 379.78700000000003,
+            "mean_us": 243.5593375
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 74.684,
-              "p95_us": 96.50824999999996,
-              "p99_us": 121.10443999999995,
-              "max_us": 470.151,
-              "mean_us": 75.22443125
+              "p50_us": 55.575,
+              "p95_us": 96.67395,
+              "p99_us": 105.82462,
+              "max_us": 116.375,
+              "mean_us": 62.74696250000001
             },
             "input_validation": {
-              "p50_us": 15.1785,
-              "p95_us": 26.345199999999952,
-              "p99_us": 37.56492,
-              "max_us": 41.882,
-              "mean_us": 16.233349999999998
+              "p50_us": 6.971500000000001,
+              "p95_us": 14.0651,
+              "p99_us": 24.641679999999965,
+              "max_us": 36.875,
+              "mean_us": 8.50975625
             },
             "state_estimation": {
-              "p50_us": 19.081,
-              "p95_us": 28.031749999999988,
-              "p99_us": 37.22832,
-              "max_us": 44.917,
-              "mean_us": 19.59215625
+              "p50_us": 12.921,
+              "p95_us": 21.47749999999999,
+              "p99_us": 23.19665,
+              "max_us": 25.196,
+              "mean_us": 14.06651875
             },
             "controller_step": {
-              "p50_us": 3.4515000000000002,
-              "p95_us": 5.033599999999997,
-              "p99_us": 6.40438,
-              "max_us": 8.279,
-              "mean_us": 3.511087500000001
+              "p50_us": 1.9820000000000002,
+              "p95_us": 3.5257499999999995,
+              "p99_us": 5.867329999999985,
+              "max_us": 26.324,
+              "mean_us": 2.37558125
             },
             "actuator_guard": {
-              "p50_us": 21.253999999999998,
-              "p95_us": 32.708549999999995,
-              "p99_us": 49.64273999999995,
-              "max_us": 59.794,
-              "mean_us": 21.738981250000002
+              "p50_us": 9.6985,
+              "p95_us": 17.002399999999998,
+              "p99_us": 39.93967,
+              "max_us": 43.892,
+              "mean_us": 11.199875
             },
             "dac_write": {
-              "p50_us": 22.8995,
-              "p95_us": 30.299799999999987,
-              "p99_us": 37.90967999999998,
-              "max_us": 41.346,
-              "mean_us": 22.526231250000002
+              "p50_us": 11.654499999999999,
+              "p95_us": 19.8845,
+              "p99_us": 23.11752,
+              "max_us": 41.553,
+              "mean_us": 13.1183875
             },
             "output_serialization": {
-              "p50_us": 216.3105,
-              "p95_us": 236.08795,
-              "p99_us": 252.27563,
-              "max_us": 264.346,
-              "mean_us": 200.52467499999997
+              "p50_us": 118.863,
+              "p95_us": 186.0313499999999,
+              "p99_us": 207.35263999999995,
+              "max_us": 247.116,
+              "mean_us": 131.54225624999998
             }
           },
           "passes_semantics": true
@@ -869,61 +850,61 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5665.4375,
           "latency": {
-            "p50_us": 412.81600000000003,
-            "p95_us": 456.9016,
-            "p99_us": 500.8630399999999,
-            "max_us": 632.799,
-            "mean_us": 415.16861874999995
+            "p50_us": 231.14600000000002,
+            "p95_us": 318.41419999999994,
+            "p99_us": 404.01735999999994,
+            "max_us": 452.331,
+            "mean_us": 239.39299375000002
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 89.167,
-              "p95_us": 109.58614999999995,
-              "p99_us": 122.84839,
-              "max_us": 153.611,
-              "mean_us": 91.23003750000001
+              "p50_us": 59.2825,
+              "p95_us": 98.3994,
+              "p99_us": 120.02023999999999,
+              "max_us": 143.389,
+              "mean_us": 64.86105
             },
             "input_validation": {
-              "p50_us": 17.6785,
-              "p95_us": 26.237849999999995,
-              "p99_us": 39.29648999999997,
-              "max_us": 46.415,
-              "mean_us": 18.73
+              "p50_us": 7.1935,
+              "p95_us": 12.90455,
+              "p99_us": 17.41268999999999,
+              "max_us": 41.058,
+              "mean_us": 8.112975
             },
             "state_estimation": {
-              "p50_us": 21.2105,
-              "p95_us": 29.95799999999999,
-              "p99_us": 37.317539999999994,
-              "max_us": 59.284,
-              "mean_us": 22.23173125
+              "p50_us": 13.085,
+              "p95_us": 22.402149999999985,
+              "p99_us": 35.453119999999984,
+              "max_us": 50.798,
+              "mean_us": 14.2816875
             },
             "controller_step": {
-              "p50_us": 3.8994999999999997,
-              "p95_us": 6.020649999999998,
-              "p99_us": 8.146549999999996,
-              "max_us": 9.627,
-              "mean_us": 4.227918750000001
+              "p50_us": 1.962,
+              "p95_us": 3.160399999999998,
+              "p99_us": 4.430229999999999,
+              "max_us": 5.792,
+              "mean_us": 2.16933125
             },
             "actuator_guard": {
-              "p50_us": 23.8415,
-              "p95_us": 31.978599999999997,
-              "p99_us": 42.06306,
-              "max_us": 61.14,
-              "mean_us": 25.11005
+              "p50_us": 9.5765,
+              "p95_us": 15.834649999999995,
+              "p99_us": 19.74009,
+              "max_us": 26.706,
+              "mean_us": 10.57149375
             },
             "dac_write": {
-              "p50_us": 24.817999999999998,
-              "p95_us": 30.011899999999997,
-              "p99_us": 36.08671,
-              "max_us": 40.036,
-              "mean_us": 25.211425000000002
+              "p50_us": 11.364,
+              "p95_us": 18.802699999999984,
+              "p99_us": 23.067309999999996,
+              "max_us": 44.913,
+              "mean_us": 12.586625000000002
             },
             "output_serialization": {
-              "p50_us": 228.02949999999998,
-              "p95_us": 242.14614999999998,
-              "p99_us": 249.80374999999998,
-              "max_us": 264.265,
-              "mean_us": 228.42745624999998
+              "p50_us": 119.253,
+              "p95_us": 164.7299,
+              "p99_us": 194.32944999999998,
+              "max_us": 209.508,
+              "mean_us": 126.80983125000003
             }
           },
           "passes_semantics": true
@@ -941,61 +922,61 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5194.175,
           "latency": {
-            "p50_us": 367.96299999999997,
-            "p95_us": 393.38855,
-            "p99_us": 404.73607,
-            "max_us": 461.039,
-            "mean_us": 307.61280625
+            "p50_us": 222.8635,
+            "p95_us": 376.83035,
+            "p99_us": 409.34418999999997,
+            "max_us": 423.374,
+            "mean_us": 241.31808124999998
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 72.289,
-              "p95_us": 80.43995,
-              "p99_us": 96.29725999999998,
-              "max_us": 163.62,
-              "mean_us": 63.95475624999999
+              "p50_us": 56.648,
+              "p95_us": 98.43934999999999,
+              "p99_us": 119.93533999999995,
+              "max_us": 133.673,
+              "mean_us": 63.85271250000001
             },
             "input_validation": {
-              "p50_us": 13.663,
-              "p95_us": 16.361849999999997,
-              "p99_us": 21.495899999999995,
-              "max_us": 39.462,
-              "mean_us": 12.458493749999999
+              "p50_us": 6.7415,
+              "p95_us": 12.313149999999997,
+              "p99_us": 14.812979999999994,
+              "max_us": 17.133,
+              "mean_us": 7.732887500000001
             },
             "state_estimation": {
-              "p50_us": 17.591,
-              "p95_us": 20.798999999999996,
-              "p99_us": 27.418619999999994,
-              "max_us": 62.554,
-              "mean_us": 16.3367625
+              "p50_us": 13.135,
+              "p95_us": 22.444749999999967,
+              "p99_us": 27.917589999999997,
+              "max_us": 28.565,
+              "mean_us": 14.868450000000001
             },
             "controller_step": {
-              "p50_us": 3.444,
-              "p95_us": 11.47604999999999,
-              "p99_us": 13.86892,
-              "max_us": 34.802,
-              "mean_us": 4.1134812499999995
+              "p50_us": 2.053,
+              "p95_us": 7.731499999999991,
+              "p99_us": 17.39164999999999,
+              "max_us": 20.666,
+              "mean_us": 3.1882124999999997
             },
             "actuator_guard": {
-              "p50_us": 19.642,
-              "p95_us": 23.412049999999997,
-              "p99_us": 26.601319999999998,
-              "max_us": 37.525,
-              "mean_us": 17.883993750000002
+              "p50_us": 9.535499999999999,
+              "p95_us": 17.180799999999998,
+              "p99_us": 19.584049999999998,
+              "max_us": 21.392,
+              "mean_us": 11.20395625
             },
             "dac_write": {
-              "p50_us": 22.060000000000002,
-              "p95_us": 26.340149999999973,
-              "p99_us": 29.840149999999998,
-              "max_us": 30.934,
-              "mean_us": 19.7762625
+              "p50_us": 11.6595,
+              "p95_us": 21.132450000000002,
+              "p99_us": 24.27283,
+              "max_us": 27.105,
+              "mean_us": 13.958437499999999
             },
             "output_serialization": {
-              "p50_us": 218.836,
-              "p95_us": 232.3382,
-              "p99_us": 234.15944,
-              "max_us": 237.419,
-              "mean_us": 173.08905625
+              "p50_us": 121.226,
+              "p95_us": 204.47934999999998,
+              "p99_us": 216.59215,
+              "max_us": 227.13,
+              "mean_us": 126.51342500000001
             }
           },
           "passes_semantics": true
@@ -1013,72 +994,72 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5228.26875,
           "latency": {
-            "p50_us": 230.1975,
-            "p95_us": 398.43584999999996,
-            "p99_us": 454.82318,
-            "max_us": 486.762,
-            "mean_us": 255.81765000000001
+            "p50_us": 327.089,
+            "p95_us": 380.81194999999997,
+            "p99_us": 387.66197,
+            "max_us": 394.21999999999997,
+            "mean_us": 329.19868125000005
           },
           "stages": {
             "adc_capture": {
-              "p50_us": 45.839,
-              "p95_us": 98.77399999999999,
-              "p99_us": 157.1257399999999,
-              "max_us": 183.321,
-              "mean_us": 57.93090000000001
+              "p50_us": 80.039,
+              "p95_us": 92.20705,
+              "p99_us": 103.88153999999999,
+              "max_us": 124.75,
+              "mean_us": 81.8195625
             },
             "input_validation": {
-              "p50_us": 10.6965,
-              "p95_us": 23.356599999999986,
-              "p99_us": 29.233929999999997,
-              "max_us": 34.921,
-              "mean_us": 12.367518749999999
+              "p50_us": 9.708,
+              "p95_us": 18.769299999999998,
+              "p99_us": 20.65056,
+              "max_us": 27.803,
+              "mean_us": 10.75739375
             },
             "state_estimation": {
-              "p50_us": 12.6425,
-              "p95_us": 27.809949999999986,
-              "p99_us": 33.10171,
-              "max_us": 35.277,
-              "mean_us": 15.12738125
+              "p50_us": 17.4395,
+              "p95_us": 21.575799999999997,
+              "p99_us": 26.26642999999999,
+              "max_us": 30.055,
+              "mean_us": 17.655825
             },
             "controller_step": {
-              "p50_us": 2.4859999999999998,
-              "p95_us": 5.451349999999995,
-              "p99_us": 6.543929999999999,
-              "max_us": 7.175,
-              "mean_us": 2.9181125000000003
+              "p50_us": 2.957,
+              "p95_us": 3.73425,
+              "p99_us": 4.1687899999999996,
+              "max_us": 5.441,
+              "mean_us": 3.05823125
             },
             "actuator_guard": {
-              "p50_us": 13.783000000000001,
-              "p95_us": 30.221949999999975,
-              "p99_us": 43.91882999999999,
-              "max_us": 50.544,
-              "mean_us": 17.18164375
+              "p50_us": 14.3835,
+              "p95_us": 16.7658,
+              "p99_us": 19.42746,
+              "max_us": 19.757,
+              "mean_us": 14.6265625
             },
             "dac_write": {
-              "p50_us": 14.155000000000001,
-              "p95_us": 30.804699999999997,
-              "p99_us": 38.78190999999999,
-              "max_us": 43.166,
-              "mean_us": 18.012237499999998
+              "p50_us": 18.929000000000002,
+              "p95_us": 20.723699999999997,
+              "p99_us": 21.82272,
+              "max_us": 22.805,
+              "mean_us": 19.017118749999998
             },
             "output_serialization": {
-              "p50_us": 123.1995,
-              "p95_us": 193.76554999999996,
-              "p99_us": 232.54631999999984,
-              "max_us": 275.085,
-              "mean_us": 132.27985625000002
+              "p50_us": 179.77100000000002,
+              "p95_us": 233.04590000000002,
+              "p99_us": 234.50331,
+              "max_us": 237.595,
+              "mean_us": 182.2639875
             }
           },
           "passes_semantics": true
         }
       },
       "nominal_latency": {
-        "p50_us": 216.51350000000002,
-        "p95_us": 395.1659999999999,
-        "p99_us": 500.4341899999998,
-        "max_us": 948.3770000000001,
-        "mean_us": 249.82004375000002
+        "p50_us": 209.97899999999998,
+        "p95_us": 273.15464999999983,
+        "p99_us": 336.71957,
+        "max_us": 369.926,
+        "mean_us": 219.76124375
       },
       "passes_thresholds": true,
       "thresholds": {
@@ -1119,13 +1100,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 83.40625,
           "checksum": -26.255194601786645,
-          "p50_loop_ms": 0.0938030134420842,
-          "p95_loop_ms": 0.19326055189594626,
-          "p99_loop_ms": 0.2389834244968368,
+          "p50_loop_ms": 0.08534849621355534,
+          "p95_loop_ms": 0.1385333918733522,
+          "p99_loop_ms": 1.492056989227411,
           "serialization": {
-            "p50_ms": 0.013771001249551773,
-            "p95_ms": 0.027639421750791364,
-            "p99_ms": 0.03861416247673331
+            "p50_ms": 0.012696487829089165,
+            "p95_ms": 0.018947347416542457,
+            "p99_ms": 0.04131573601625859
           }
         },
         "rust": {
@@ -1133,138 +1114,138 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 2,
-          "p50_loop_ms": 0.031085,
-          "p95_loop_ms": 0.1432191,
-          "p99_loop_ms": 0.49590082,
+          "p50_loop_ms": 0.024273,
+          "p95_loop_ms": 0.03201815,
+          "p99_loop_ms": 0.0431277,
           "fallback_count": 0,
-          "checksum": -65.725321887,
+          "checksum": -17.352389814,
           "stages": {
             "input_validation": {
-              "p50_ms": 2.7e-05,
-              "p95_ms": 0.000109,
-              "p99_ms": 0.00052532
+              "p50_ms": 2.5e-05,
+              "p95_ms": 3.105e-05,
+              "p99_ms": 6.835e-05
             },
             "feature_assembly": {
-              "p50_ms": 8.5e-05,
-              "p95_ms": 0.00047575,
-              "p99_ms": 0.00085755
+              "p50_ms": 7.3e-05,
+              "p95_ms": 0.0001455,
+              "p99_ms": 0.00029848
             },
             "digital_twin_update": {
-              "p50_ms": 0.0265065,
-              "p95_ms": 0.11191905,
-              "p99_ms": 0.31979143
+              "p50_ms": 0.0211345,
+              "p95_ms": 0.02795755,
+              "p99_ms": 0.03880614
             },
             "controller_decision": {
-              "p50_ms": 0.0034545,
-              "p95_ms": 0.01334305,
-              "p99_ms": 0.02989118
+              "p50_ms": 0.0021285,
+              "p95_ms": 0.0032299,
+              "p99_ms": 0.0035254
             },
             "fallback_policy": {
-              "p50_ms": 9.4e-05,
-              "p95_ms": 0.00061715,
-              "p99_ms": 0.00122124
+              "p50_ms": 7.8e-05,
+              "p95_ms": 0.0001867,
+              "p99_ms": 0.00038365
             },
             "output_serialization": {
-              "p50_ms": 0.000744,
-              "p95_ms": 0.0033082,
-              "p99_ms": 0.00704705
+              "p50_ms": 0.000546,
+              "p95_ms": 0.0009216,
+              "p99_ms": 0.00107859
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 2 --json",
-          "runtime_seconds": 0.7819814839749597
+          "runtime_seconds": 0.07441624999046326
         },
         "gpu": {
-          "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
+          "accelerator_isolation": "shared_local_device_not_reserved",
           "actuator_count": 2,
           "backend": "cupy_cuda",
           "checksum": -26.25519260178664,
           "claim_boundary": "Local non-isolated CuPy/CUDA measurement of the same reduced-order sensor-to-control contract; includes host snapshot assembly and output serialisation.",
           "cuda_runtime_version": 12090,
-          "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
+          "device_name": "b'NVIDIA GeForce GTX 1070 Ti'",
           "fallback_count": 0,
-          "p50_loop_ms": 0.8907404844649136,
-          "p95_loop_ms": 1.3132683612639082,
-          "p99_loop_ms": 1.6361312550725409,
+          "p50_loop_ms": 1.1574919917620718,
+          "p95_loop_ms": 1.6922503506066269,
+          "p99_loop_ms": 2.567126223002555,
           "preloaded_cuda_libraries": [
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.22882450139150023,
-              "p95_ms": 0.33032034698408086,
-              "p99_ms": 0.4133506317157297
+              "p50_ms": 0.2978905104100704,
+              "p95_ms": 0.4502833093283698,
+              "p99_ms": 0.4833408771082759
             },
             "digital_twin_update": {
-              "p50_ms": 0.4508924903348088,
-              "p95_ms": 0.6796411180403082,
-              "p99_ms": 1.019406205159612
+              "p50_ms": 0.5927245074417442,
+              "p95_ms": 0.9235381992766631,
+              "p99_ms": 1.3609948579687603
             },
             "fallback_policy": {
-              "p50_ms": 0.10967301204800606,
-              "p95_ms": 0.19020557811018077,
-              "p99_ms": 0.27794311405159533
+              "p50_ms": 0.14818497584201396,
+              "p95_ms": 0.2219262474682182,
+              "p99_ms": 0.3366442973492663
             },
             "feature_assembly": {
-              "p50_ms": 0.05214050179347396,
-              "p95_ms": 0.08048139570746565,
-              "p99_ms": 0.12545110424980516
+              "p50_ms": 0.07065501995384693,
+              "p95_ms": 0.12021866859868167,
+              "p99_ms": 0.19073593663051697
             },
             "input_validation": {
-              "p50_ms": 0.007253984222188592,
-              "p95_ms": 0.013507687253877514,
-              "p99_ms": 0.020473616896197186
+              "p50_ms": 0.01037298352457583,
+              "p95_ms": 0.017349101835861802,
+              "p99_ms": 0.024865912855602777
             },
             "output_serialization": {
-              "p50_ms": 0.019881495973095298,
-              "p95_ms": 0.04392786941025403,
-              "p99_ms": 0.06353300472255795
+              "p50_ms": 0.03198499325662851,
+              "p95_ms": 0.05462142580654472,
+              "p99_ms": 0.06827925564721225
             }
           },
           "status": "measured",
           "steps": 160,
           "visible_device_count": 1,
-          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 2",
+          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 2",
           "ld_library_path_source": "project_venv_nvidia_wheels"
         },
         "measured_lane_count": 3
@@ -1279,13 +1260,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 377.24375,
           "checksum": -210.087957814293,
-          "p50_loop_ms": 0.06575701991096139,
-          "p95_loop_ms": 0.1048582955263555,
-          "p99_loop_ms": 0.16509576002135862,
+          "p50_loop_ms": 0.07661801646463573,
+          "p95_loop_ms": 0.11261928884778159,
+          "p99_loop_ms": 0.1632638863520696,
           "serialization": {
-            "p50_ms": 0.015234487364068627,
-            "p95_ms": 0.021170027321204536,
-            "p99_ms": 0.032875459291972206
+            "p50_ms": 0.017891492461785674,
+            "p95_ms": 0.025938806356862187,
+            "p99_ms": 0.042702902574092094
           }
         },
         "rust": {
@@ -1293,138 +1274,138 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 16,
-          "p50_loop_ms": 0.0254435,
-          "p95_loop_ms": 0.0349798,
-          "p99_loop_ms": 0.05890939,
+          "p50_loop_ms": 0.035625,
+          "p95_loop_ms": 0.04090675,
+          "p99_loop_ms": 0.04886694,
           "fallback_count": 0,
-          "checksum": -212.194236825,
+          "checksum": 183.235752187,
           "stages": {
             "input_validation": {
-              "p50_ms": 2.2e-05,
-              "p95_ms": 2.61e-05,
-              "p99_ms": 0.00018788
+              "p50_ms": 2.9e-05,
+              "p95_ms": 3.8e-05,
+              "p99_ms": 9.7e-05
             },
             "feature_assembly": {
-              "p50_ms": 6.6e-05,
-              "p95_ms": 0.00011715,
-              "p99_ms": 0.00024016
+              "p50_ms": 0.000113,
+              "p95_ms": 0.0001883,
+              "p99_ms": 0.00025058
             },
             "digital_twin_update": {
-              "p50_ms": 0.020568,
-              "p95_ms": 0.02826605,
-              "p99_ms": 0.04733104
+              "p50_ms": 0.028157,
+              "p95_ms": 0.03288395,
+              "p99_ms": 0.04043504
             },
             "controller_decision": {
-              "p50_ms": 0.002343,
-              "p95_ms": 0.00444585,
-              "p99_ms": 0.00622173
+              "p50_ms": 0.0034535,
+              "p95_ms": 0.00427115,
+              "p99_ms": 0.00500935
             },
             "fallback_policy": {
-              "p50_ms": 0.0001015,
-              "p95_ms": 0.0003759,
-              "p99_ms": 0.00095584
+              "p50_ms": 0.000215,
+              "p95_ms": 0.00043675,
+              "p99_ms": 0.00089227
             },
             "output_serialization": {
-              "p50_ms": 0.0019615,
-              "p95_ms": 0.0033935,
-              "p99_ms": 0.0040902
+              "p50_ms": 0.0035425,
+              "p95_ms": 0.00427005,
+              "p99_ms": 0.00491636
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 16 --json",
-          "runtime_seconds": 0.10007934499299154
+          "runtime_seconds": 0.09127795702079311
         },
         "gpu": {
-          "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
+          "accelerator_isolation": "shared_local_device_not_reserved",
           "actuator_count": 16,
           "backend": "cupy_cuda",
           "checksum": -210.087937814293,
           "claim_boundary": "Local non-isolated CuPy/CUDA measurement of the same reduced-order sensor-to-control contract; includes host snapshot assembly and output serialisation.",
           "cuda_runtime_version": 12090,
-          "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
+          "device_name": "b'NVIDIA GeForce GTX 1070 Ti'",
           "fallback_count": 0,
-          "p50_loop_ms": 1.2110660027246922,
-          "p95_loop_ms": 5.021439291886051,
-          "p99_loop_ms": 7.339485741686074,
+          "p50_loop_ms": 1.6526044928468764,
+          "p95_loop_ms": 2.0044911711011077,
+          "p99_loop_ms": 4.845170142943969,
           "preloaded_cuda_libraries": [
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.29381748754531145,
-              "p95_ms": 1.1014812684152255,
-              "p99_ms": 2.4070548376766965
+              "p50_ms": 0.41618349496275187,
+              "p95_ms": 0.4795743268914521,
+              "p99_ms": 0.6583511596545574
             },
             "digital_twin_update": {
-              "p50_ms": 0.5912030173931271,
-              "p95_ms": 2.766310475999485,
-              "p99_ms": 4.125869435374624
+              "p50_ms": 0.8264070202130824,
+              "p95_ms": 1.0254625987727188,
+              "p99_ms": 3.898454318987203
             },
             "fallback_policy": {
-              "p50_ms": 0.1563105033710599,
-              "p95_ms": 0.5624348064884543,
-              "p99_ms": 0.9235669544432299
+              "p50_ms": 0.20788403344340622,
+              "p95_ms": 0.26888373249676073,
+              "p99_ms": 0.3431444265879689
             },
             "feature_assembly": {
-              "p50_ms": 0.07274450035765767,
-              "p95_ms": 0.3003089426783844,
-              "p99_ms": 1.0425317630870252
+              "p50_ms": 0.09389300248585641,
+              "p95_ms": 0.13514249294530586,
+              "p99_ms": 0.19064604304730884
             },
             "input_validation": {
-              "p50_ms": 0.010905496310442686,
-              "p95_ms": 0.057479145471006625,
-              "p99_ms": 0.1556806510780002
+              "p50_ms": 0.0158074835781008,
+              "p95_ms": 0.0274544465355575,
+              "p99_ms": 0.035001242649741464
             },
             "output_serialization": {
-              "p50_ms": 0.043400475988164544,
-              "p95_ms": 0.17077785742003457,
-              "p99_ms": 0.33287885831668956
+              "p50_ms": 0.0641315127722919,
+              "p95_ms": 0.0858343904837966,
+              "p99_ms": 0.09833432908635587
             }
           },
           "status": "measured",
           "steps": 160,
           "visible_device_count": 1,
-          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 16",
+          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 16",
           "ld_library_path_source": "project_venv_nvidia_wheels"
         },
         "measured_lane_count": 3
@@ -1439,13 +1420,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 1384.8,
           "checksum": -840.3716992571722,
-          "p50_loop_ms": 0.1085809781216085,
-          "p95_loop_ms": 0.24694268940947947,
-          "p99_loop_ms": 0.2958021522499619,
+          "p50_loop_ms": 0.17064050189219415,
+          "p95_loop_ms": 0.22811367234680743,
+          "p99_loop_ms": 0.6954874173970892,
           "serialization": {
-            "p50_ms": 0.03902247408404946,
-            "p95_ms": 0.07358494331128894,
-            "p99_ms": 0.07979238056577742
+            "p50_ms": 0.06979197496548295,
+            "p95_ms": 0.07813914853613813,
+            "p99_ms": 0.1141602516872808
           }
         },
         "rust": {
@@ -1453,138 +1434,138 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 64,
-          "p50_loop_ms": 0.0294215,
-          "p95_loop_ms": 0.1181858,
-          "p99_loop_ms": 0.17592469,
+          "p50_loop_ms": 0.0333675,
+          "p95_loop_ms": 0.0537921,
+          "p99_loop_ms": 0.06049447,
           "fallback_count": 0,
-          "checksum": 75.076566355,
+          "checksum": 959.155956138,
           "stages": {
             "input_validation": {
-              "p50_ms": 2.3e-05,
-              "p95_ms": 0.00026215,
-              "p99_ms": 0.00039302
+              "p50_ms": 2.6e-05,
+              "p95_ms": 4.245e-05,
+              "p99_ms": 0.00011892
             },
             "feature_assembly": {
-              "p50_ms": 6.8e-05,
-              "p95_ms": 0.00061215,
-              "p99_ms": 0.00101391
+              "p50_ms": 8.75e-05,
+              "p95_ms": 0.00021255,
+              "p99_ms": 0.00053415
             },
             "digital_twin_update": {
-              "p50_ms": 0.0205005,
-              "p95_ms": 0.08575065,
-              "p99_ms": 0.13184831
+              "p50_ms": 0.0221185,
+              "p95_ms": 0.0335067,
+              "p99_ms": 0.0482366
             },
             "controller_decision": {
-              "p50_ms": 0.001871,
-              "p95_ms": 0.0103344,
-              "p99_ms": 0.02052122
+              "p50_ms": 0.0023795,
+              "p95_ms": 0.004055,
+              "p99_ms": 0.00484339
             },
             "fallback_policy": {
-              "p50_ms": 0.000207,
-              "p95_ms": 0.0013946,
-              "p99_ms": 0.00255219
+              "p50_ms": 0.0002855,
+              "p95_ms": 0.00062125,
+              "p99_ms": 0.00088573
             },
             "output_serialization": {
-              "p50_ms": 0.0065045,
-              "p95_ms": 0.0207598,
-              "p99_ms": 0.0246704
+              "p50_ms": 0.0072095,
+              "p95_ms": 0.0149421,
+              "p99_ms": 0.01635189
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 64 --json",
-          "runtime_seconds": 0.1396213440457359
+          "runtime_seconds": 0.0823151390068233
         },
         "gpu": {
-          "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
+          "accelerator_isolation": "shared_local_device_not_reserved",
           "actuator_count": 64,
           "backend": "cupy_cuda",
           "checksum": -840.3717232571722,
           "claim_boundary": "Local non-isolated CuPy/CUDA measurement of the same reduced-order sensor-to-control contract; includes host snapshot assembly and output serialisation.",
           "cuda_runtime_version": 12090,
-          "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
+          "device_name": "b'NVIDIA GeForce GTX 1070 Ti'",
           "fallback_count": 0,
-          "p50_loop_ms": 1.3851540279574692,
-          "p95_loop_ms": 3.753955944557672,
-          "p99_loop_ms": 5.935773461242194,
+          "p50_loop_ms": 1.1461295071057975,
+          "p95_loop_ms": 1.6322000388754527,
+          "p99_loop_ms": 1.881647728732787,
           "preloaded_cuda_libraries": [
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.3012454544659704,
-              "p95_ms": 0.8018128894036634,
-              "p99_ms": 1.5879649744601882
+              "p50_ms": 0.2699879987630993,
+              "p95_ms": 0.4093029536306857,
+              "p99_ms": 0.49200284411199346
             },
             "digital_twin_update": {
-              "p50_ms": 0.6625469832215458,
-              "p95_ms": 1.6034652973758055,
-              "p99_ms": 2.121500132489018
+              "p50_ms": 0.555046513909474,
+              "p95_ms": 0.8243973978096618,
+              "p99_ms": 0.9441617591073735
             },
             "fallback_policy": {
-              "p50_ms": 0.17917549121193588,
-              "p95_ms": 0.6441303878091276,
-              "p99_ms": 0.7868281082483007
+              "p50_ms": 0.13857849990017712,
+              "p95_ms": 0.20829656277783212,
+              "p99_ms": 0.27904986520297814
             },
             "feature_assembly": {
-              "p50_ms": 0.08275150321424007,
-              "p95_ms": 0.24605648650322032,
-              "p99_ms": 0.3624987049261106
+              "p50_ms": 0.06705100531689823,
+              "p95_ms": 0.11109311890322704,
+              "p99_ms": 0.2691344451159237
             },
             "input_validation": {
-              "p50_ms": 0.014311488484963775,
-              "p95_ms": 0.046494015259668224,
-              "p99_ms": 0.06647125992458312
+              "p50_ms": 0.009534996934235096,
+              "p95_ms": 0.01761690655257552,
+              "p99_ms": 0.02679400844499467
             },
             "output_serialization": {
-              "p50_ms": 0.08989448542706668,
-              "p95_ms": 0.2431781031191346,
-              "p99_ms": 0.3581513947574422
+              "p50_ms": 0.06767699960619211,
+              "p95_ms": 0.10865803924389181,
+              "p99_ms": 0.12564209580887106
             }
           },
           "status": "measured",
           "steps": 160,
           "visible_device_count": 1,
-          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 64",
+          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 64",
           "ld_library_path_source": "project_venv_nvidia_wheels"
         },
         "measured_lane_count": 3
@@ -1599,13 +1580,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 2729.10625,
           "checksum": -1680.7498775143451,
-          "p50_loop_ms": 0.269070005742833,
-          "p95_loop_ms": 1.2928125332109626,
-          "p99_loop_ms": 2.2422350285341954,
+          "p50_loop_ms": 0.1438029867131263,
+          "p95_loop_ms": 0.20433511526789508,
+          "p99_loop_ms": 0.23415350297000248,
           "serialization": {
-            "p50_ms": 0.11031198664568365,
-            "p95_ms": 0.2589006384368983,
-            "p99_ms": 0.5883306253235768
+            "p50_ms": 0.07267200271598995,
+            "p95_ms": 0.11085992446169252,
+            "p99_ms": 0.12291207793168724
           }
         },
         "rust": {
@@ -1613,138 +1594,138 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 128,
-          "p50_loop_ms": 0.068272,
-          "p95_loop_ms": 0.4749494,
-          "p99_loop_ms": 0.97171591,
+          "p50_loop_ms": 0.0374515,
+          "p95_loop_ms": 0.04905605,
+          "p99_loop_ms": 0.06962414,
           "fallback_count": 0,
-          "checksum": -1442.006149458,
+          "checksum": 306.476850072,
           "stages": {
             "input_validation": {
-              "p50_ms": 3.1e-05,
-              "p95_ms": 0.00021285,
-              "p99_ms": 0.00061516
+              "p50_ms": 2.3e-05,
+              "p95_ms": 3.02e-05,
+              "p99_ms": 0.0002034
             },
             "feature_assembly": {
-              "p50_ms": 0.0001895,
-              "p95_ms": 0.0012296,
-              "p99_ms": 0.00459768
+              "p50_ms": 7.7e-05,
+              "p95_ms": 0.00024835,
+              "p99_ms": 0.00039771
             },
             "digital_twin_update": {
-              "p50_ms": 0.037459,
-              "p95_ms": 0.1140633,
-              "p99_ms": 0.66084983
+              "p50_ms": 0.0211375,
+              "p95_ms": 0.0279223,
+              "p99_ms": 0.04841334
             },
             "controller_decision": {
-              "p50_ms": 0.0057775,
-              "p95_ms": 0.01552805,
-              "p99_ms": 0.03061891
+              "p50_ms": 0.0022555,
+              "p95_ms": 0.0035134,
+              "p99_ms": 0.00410627
             },
             "fallback_policy": {
-              "p50_ms": 0.000955,
-              "p95_ms": 0.00436775,
-              "p99_ms": 0.08742445
+              "p50_ms": 0.0003875,
+              "p95_ms": 0.0007756,
+              "p99_ms": 0.00168205
             },
             "output_serialization": {
-              "p50_ms": 0.0236965,
-              "p95_ms": 0.0484108,
-              "p99_ms": 0.17679276
+              "p50_ms": 0.0130365,
+              "p95_ms": 0.01977035,
+              "p99_ms": 0.02131171
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 128 --json",
-          "runtime_seconds": 0.3051104730111547
+          "runtime_seconds": 0.07707720500184223
         },
         "gpu": {
-          "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
+          "accelerator_isolation": "shared_local_device_not_reserved",
           "actuator_count": 128,
           "backend": "cupy_cuda",
           "checksum": -1680.7499155143448,
           "claim_boundary": "Local non-isolated CuPy/CUDA measurement of the same reduced-order sensor-to-control contract; includes host snapshot assembly and output serialisation.",
           "cuda_runtime_version": 12090,
-          "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
+          "device_name": "b'NVIDIA GeForce GTX 1070 Ti'",
           "fallback_count": 0,
-          "p50_loop_ms": 0.9035884868353605,
-          "p95_loop_ms": 1.5630206384230403,
-          "p99_loop_ms": 1.8936299555934961,
+          "p50_loop_ms": 1.7208560020662844,
+          "p95_loop_ms": 1.9688783475430678,
+          "p99_loop_ms": 2.214594750548712,
           "preloaded_cuda_libraries": [
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.21686998661607504,
-              "p95_ms": 0.3738920291652903,
-              "p99_ms": 0.4801422945456578
+              "p50_ms": 0.41462251101620495,
+              "p95_ms": 0.4647686757380143,
+              "p99_ms": 0.4959050175966695
             },
             "digital_twin_update": {
-              "p50_ms": 0.43354948866181076,
-              "p95_ms": 0.7718464505160221,
-              "p99_ms": 1.0564783186418933
+              "p50_ms": 0.8181325101759285,
+              "p95_ms": 0.9912360605085266,
+              "p99_ms": 1.086204302846454
             },
             "fallback_policy": {
-              "p50_ms": 0.10387648944742978,
-              "p95_ms": 0.20451991003938017,
-              "p99_ms": 0.3320161113515495
+              "p50_ms": 0.19915198208764195,
+              "p95_ms": 0.2390311332419514,
+              "p99_ms": 0.2661986061139032
             },
             "feature_assembly": {
-              "p50_ms": 0.050979520892724395,
-              "p95_ms": 0.11213466641493136,
-              "p99_ms": 0.1427092810627073
+              "p50_ms": 0.09781349217519164,
+              "p95_ms": 0.15059943252708757,
+              "p99_ms": 0.20354868611320842
             },
             "input_validation": {
-              "p50_ms": 0.007084483513608575,
-              "p95_ms": 0.021207163808867318,
-              "p99_ms": 0.03432865370996293
+              "p50_ms": 0.015618512406945229,
+              "p95_ms": 0.02228895609732717,
+              "p99_ms": 0.03322886012028898
             },
             "output_serialization": {
-              "p50_ms": 0.07481002830900252,
-              "p95_ms": 0.14633813698310402,
-              "p99_ms": 0.20527349901385603
+              "p50_ms": 0.16349152429029346,
+              "p95_ms": 0.18252427980769426,
+              "p99_ms": 0.1905638526659459
             }
           },
           "status": "measured",
           "steps": 160,
           "visible_device_count": 1,
-          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 128",
+          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 128",
           "ld_library_path_source": "project_venv_nvidia_wheels"
         },
         "measured_lane_count": 3
@@ -1759,13 +1740,13 @@
           "safe_output_rate": 1.0,
           "mean_payload_bytes": 5417.33125,
           "checksum": -3361.506296028688,
-          "p50_loop_ms": 0.38011401193216443,
-          "p95_loop_ms": 0.49306752334814496,
-          "p99_loop_ms": 0.5657787993550301,
+          "p50_loop_ms": 0.20917647634632885,
+          "p95_loop_ms": 0.29826105455867935,
+          "p99_loop_ms": 0.358451911015436,
           "serialization": {
-            "p50_ms": 0.2363259845878929,
-            "p95_ms": 0.2858503663446753,
-            "p99_ms": 0.3286132356151938
+            "p50_ms": 0.131564011098817,
+            "p95_ms": 0.19605338748078785,
+            "p99_ms": 0.22683443559799343
           }
         },
         "rust": {
@@ -1773,138 +1754,138 @@
           "backend": "rust_release",
           "steps": 160,
           "actuator_count": 256,
-          "p50_loop_ms": 0.046527,
-          "p95_loop_ms": 0.0526672,
-          "p99_loop_ms": 0.05820828,
+          "p50_loop_ms": 0.052038,
+          "p95_loop_ms": 0.08839225,
+          "p99_loop_ms": 0.09498991,
           "fallback_count": 0,
-          "checksum": 2570.826959759,
+          "checksum": 3968.912276912,
           "stages": {
             "input_validation": {
-              "p50_ms": 2.2e-05,
-              "p95_ms": 2.4e-05,
-              "p99_ms": 7.084e-05
+              "p50_ms": 2.6e-05,
+              "p95_ms": 8.81e-05,
+              "p99_ms": 0.0002254
             },
             "feature_assembly": {
-              "p50_ms": 7.75e-05,
-              "p95_ms": 0.00013805,
-              "p99_ms": 0.00023815
+              "p50_ms": 0.0001275,
+              "p95_ms": 0.0003143,
+              "p99_ms": 0.00050007
             },
             "digital_twin_update": {
-              "p50_ms": 0.0196505,
-              "p95_ms": 0.02145335,
-              "p99_ms": 0.02914756
+              "p50_ms": 0.021839,
+              "p95_ms": 0.0311993,
+              "p99_ms": 0.03763569
             },
             "controller_decision": {
-              "p50_ms": 0.0018125,
-              "p95_ms": 0.0021739,
-              "p99_ms": 0.00262176
+              "p50_ms": 0.0025075,
+              "p95_ms": 0.0049777,
+              "p99_ms": 0.02835552
             },
             "fallback_policy": {
-              "p50_ms": 0.000605,
-              "p95_ms": 0.00070955,
-              "p99_ms": 0.00091706
+              "p50_ms": 0.0008825,
+              "p95_ms": 0.001827,
+              "p99_ms": 0.00233463
             },
             "output_serialization": {
-              "p50_ms": 0.0241675,
-              "p95_ms": 0.02671225,
-              "p99_ms": 0.03196091
+              "p50_ms": 0.0264005,
+              "p95_ms": 0.0490248,
+              "p99_ms": 0.05337499
             }
           },
           "command": "/home/anulum/.cargo/bin/cargo run -q -p fusion-control --release --bin digital_twin_latency -- --steps 160 --actuators 256 --json",
-          "runtime_seconds": 0.1367638249648735
+          "runtime_seconds": 0.0882454160018824
         },
         "gpu": {
-          "accelerator_isolation": "cuda_device_reserved_by_operator_for_this_benchmark",
+          "accelerator_isolation": "shared_local_device_not_reserved",
           "actuator_count": 256,
           "backend": "cupy_cuda",
           "checksum": -3361.506544028688,
           "claim_boundary": "Local non-isolated CuPy/CUDA measurement of the same reduced-order sensor-to-control contract; includes host snapshot assembly and output serialisation.",
           "cuda_runtime_version": 12090,
-          "device_name": "b'NVIDIA GeForce GTX 1060 6GB'",
+          "device_name": "b'NVIDIA GeForce GTX 1070 Ti'",
           "fallback_count": 0,
-          "p50_loop_ms": 3.303520003100857,
-          "p95_loop_ms": 15.660110773751493,
-          "p99_loop_ms": 22.998140711570155,
+          "p50_loop_ms": 1.2861565046478063,
+          "p95_loop_ms": 1.9858649146044616,
+          "p99_loop_ms": 2.522082480718381,
           "preloaded_cuda_libraries": [
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
-            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libcublasLt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cublas/lib/libnvblas.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcheckpoint.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libcupti.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_host.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libnvperf_target.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_cupti/lib/libpcsamplingutil.so",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.alt.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc-builtins.so.12.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.alt.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_nvrtc/lib/libnvrtc.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cuda_runtime/lib/libcudart.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_adv.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_cnn.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_precompiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_runtime_compiled.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_engines_tensor_ir.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ext.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_graph.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_heuristic.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cudnn/lib/libcudnn_ops.so.9",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufft.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cufft/lib/libcufftw.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolver.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusolver/lib/libcusolverMg.so.11",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/cusparse/lib/libcusparse.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nccl/lib/libnccl.so.2",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/libnvshmem_host.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_mpi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_pmi2.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_shmem.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_bootstrap_uid.so.3",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_gpunetio.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibdevx.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibgda.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ibrc.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_libfabric.so.6",
+            "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/lib/python3.12/site-packages/nvidia/nvshmem/lib/nvshmem_transport_ucx.so.6"
           ],
           "stages": {
             "controller_decision": {
-              "p50_ms": 0.5413669859990478,
-              "p95_ms": 4.42234181100502,
-              "p99_ms": 8.751908709527918
+              "p50_ms": 0.27317198691889644,
+              "p95_ms": 0.47368035593535746,
+              "p99_ms": 1.0302887967554821
             },
             "digital_twin_update": {
-              "p50_ms": 1.4307884848676622,
-              "p95_ms": 5.935677909292257,
-              "p99_ms": 13.058804695028812
+              "p50_ms": 0.5681504553649575,
+              "p95_ms": 0.8647293056128539,
+              "p99_ms": 1.1564041167730463
             },
             "fallback_policy": {
-              "p50_ms": 0.36566201015375555,
-              "p95_ms": 1.9657480006571832,
-              "p99_ms": 6.980532766319804
+              "p50_ms": 0.1418404863215983,
+              "p95_ms": 0.25668801681604236,
+              "p99_ms": 0.40487958351150116
             },
             "feature_assembly": {
-              "p50_ms": 0.21586447837762535,
-              "p95_ms": 1.4884243224514624,
-              "p99_ms": 4.024771020049221
+              "p50_ms": 0.07181797991506755,
+              "p95_ms": 0.12799115211237216,
+              "p99_ms": 0.15496260195504874
             },
             "input_validation": {
-              "p50_ms": 0.03227096749469638,
-              "p95_ms": 0.1238303229911247,
-              "p99_ms": 0.2616174973081796
+              "p50_ms": 0.01077554770745337,
+              "p95_ms": 0.022128777345642434,
+              "p99_ms": 0.045022583217359996
             },
             "output_serialization": {
-              "p50_ms": 0.3355689987074584,
-              "p95_ms": 1.0688572336221112,
-              "p99_ms": 2.5482723471941355
+              "p50_ms": 0.1628159952815622,
+              "p95_ms": 0.2745642879744991,
+              "p99_ms": 0.29769659449812025
             }
           },
           "status": "measured",
           "steps": 160,
           "visible_device_count": 1,
-          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 256",
+          "command": "/media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/.venv/bin/python /media/anulum/GOTM/aaa_God_of_the_Math_Collection/03_CODE/SCPN-REACTOR-SYSTEMS/repositories/SCPN-FUSION-CORE/validation/scpn_end_to_end_latency.py --gpu-only --steps 160 --actuators 256",
           "ld_library_path_source": "project_venv_nvidia_wheels"
         },
         "measured_lane_count": 3
@@ -1929,10 +1910,10 @@
         "rollout_dt_ms": 1,
         "steps": 160,
         "checksum": 459.8698653658816,
-        "p50_forecast_ms": 1.192322000861168,
-        "p95_forecast_ms": 2.871308894827953,
-        "p99_forecast_ms": 9.86054273671469,
-        "p95_real_time_factor": 17.413661097231397,
+        "p50_forecast_ms": 0.5902270204387605,
+        "p95_forecast_ms": 0.967393346945755,
+        "p99_forecast_ms": 1.1595210671657696,
+        "p95_real_time_factor": 51.68528412755734,
         "passes_realtime": true
       },
       {
@@ -1942,10 +1923,10 @@
         "rollout_dt_ms": 1,
         "steps": 160,
         "checksum": 476.642622919422,
-        "p50_forecast_ms": 2.405478968285024,
-        "p95_forecast_ms": 5.3502345312153885,
-        "p99_forecast_ms": 6.316376075847073,
-        "p95_real_time_factor": 18.69076942637942,
+        "p50_forecast_ms": 1.1325720406603068,
+        "p95_forecast_ms": 1.8623500072862933,
+        "p99_forecast_ms": 2.0956464484333988,
+        "p95_real_time_factor": 53.69559943552937,
         "passes_realtime": true
       }
     ],
