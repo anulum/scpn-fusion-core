@@ -13203,19 +13203,25 @@ the forward solves and is not timed separately here.</p>
 <span class="k">def</span><span class="w"> </span><span class="nf">bench_forward_solve</span><span class="p">():</span>
     <span class="n">k</span> <span class="o">=</span> <span class="n">FusionKernel</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
     <span class="n">k</span><span class="o">.</span><span class="n">calculate_vacuum_field</span><span class="p">()</span>
-    <span class="n">k</span><span class="o">.</span><span class="n">solve_equilibrium</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">k</span><span class="o">.</span><span class="n">solve_equilibrium</span><span class="p">()</span>
 
 
-<span class="c1"># Warm-up</span>
-<span class="n">bench_forward_solve</span><span class="p">()</span>
+<span class="c1"># Warm-up; also record which kernel ran and how many iterations it needed.</span>
+<span class="c1"># With the compiled extension installed, FusionKernel is the Rust-accelerated kernel.</span>
+<span class="n">probe</span> <span class="o">=</span> <span class="n">FusionKernel</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+<span class="n">probe</span><span class="o">.</span><span class="n">calculate_vacuum_field</span><span class="p">()</span>
+<span class="n">probe_result</span> <span class="o">=</span> <span class="n">probe</span><span class="o">.</span><span class="n">solve_equilibrium</span><span class="p">()</span>
+<span class="n">kernel_name</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">probe</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
 
 <span class="n">t_fwd</span> <span class="o">=</span> <span class="n">timeit</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">bench_forward_solve</span><span class="p">,</span> <span class="n">number</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
 <span class="n">t_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">t_fwd</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
 <span class="n">t_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">t_fwd</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Forward Solve Benchmark (65x65, Python)"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Forward Solve Benchmark (65x65, </span><span class="si">{</span><span class="n">kernel_name</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"="</span> <span class="o">*</span> <span class="mi">48</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Iterations: </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">probe_result</span><span class="p">,</span><span class="w"> </span><span class="s1">'iterations'</span><span class="p">,</span><span class="w"> </span><span class="s1">'n/a'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Converged:  </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">probe_result</span><span class="p">,</span><span class="w"> </span><span class="s1">'converged'</span><span class="p">,</span><span class="w"> </span><span class="s1">'n/a'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Mean:   </span><span class="si">{</span><span class="n">t_mean</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ms +/- </span><span class="si">{</span><span class="n">t_std</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ms"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  Best:   </span><span class="si">{</span><span class="nb">min</span><span class="p">(</span><span class="n">t_fwd</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">1000</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> ms"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">()</span>
@@ -13345,24 +13351,6 @@ equilibrium reconstruction code used at most tokamaks worldwide.</p>
 <td>65×65 (typical)</td>
 </tr>
 <tr>
-<td><strong>Forward solve</strong></td>
-<td>~5 s (NumPy)</td>
-<td>~0.1 s (release)</td>
-<td>~50 ms (Fortran)</td>
-</tr>
-<tr>
-<td><strong>1 LM iteration</strong></td>
-<td>~40 s (8 fwd)</td>
-<td>~0.8 s (8 fwd)</td>
-<td>~0.4 s (Picard)</td>
-</tr>
-<tr>
-<td><strong>Full reconstruction</strong></td>
-<td>~200 s (5 iters)</td>
-<td>~4 s (5 iters)</td>
-<td>~2 s (converged)</td>
-</tr>
-<tr>
 <td><strong>Regularisation</strong></td>
 <td>—</td>
 <td>Tikhonov</td>
@@ -13376,6 +13364,9 @@ equilibrium reconstruction code used at most tokamaks worldwide.</p>
 </tr>
 </tbody>
 </table>
+<p>The forward-solve time above is measured on the executing host, and the cell
+names the kernel that ran. This page makes no timing comparison with EFIT:
+no measurement of EFIT on the same case and host is part of it.</p>
 <p><em>Reference: Lao, L.L. et al. (1985). "Reconstruction of current profile
 parameters and plasma shapes in tokamaks." Nucl. Fusion 25, 1611.</em></p>
 </div>
@@ -13705,7 +13696,7 @@ Plasmas 27, 022310. doi:10.1063/1.5134126</em></p>
 <tbody>
 <tr>
 <td><strong>Inverse reconstruction</strong></td>
-<td>Forward solve dominates LM iteration cost; the Tikhonov term is not timed separately. Rust release build approaches EFIT speed (~4 s full reconstruction vs ~2 s for EFIT).</td>
+<td>Forward solve dominates LM iteration cost; it is measured above on the executing host, with the kernel named. The Tikhonov term is not timed separately.</td>
 </tr>
 <tr>
 <td><strong>Neural transport</strong></td>
@@ -13714,10 +13705,6 @@ Plasmas 27, 022310. doi:10.1063/1.5134126</em></p>
 <tr>
 <td><strong>vs QuaLiKiz</strong></td>
 <td>~200,000x faster than gyrokinetic at single-point; ~2x faster than QLKNN due to zero framework overhead.</td>
-</tr>
-<tr>
-<td><strong>vs EFIT</strong></td>
-<td>Rust inverse solver within 2x of EFIT; Python solver ~100x slower (expected for interpreted code).</td>
 </tr>
 </tbody>
 </table>

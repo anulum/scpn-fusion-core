@@ -131,6 +131,13 @@
   3e-6 against a 1e-12 gate), and the test failed. The benchmark now switches
   JAX to float64 before it computes, and the test sets float64 itself. The
   report is regenerated (all seven gates pass; replay error 7.1e-15).
+- Notebook 06's EFIT table and summary compared timings nobody had measured:
+  "~5 s" for a Python forward solve, "~4 s" for a Rust reconstruction, and
+  Rust "within 2x of EFIT". The benchmark cell measured about 3 ms, because
+  with the compiled extension installed `FusionKernel` is the Rust-accelerated
+  kernel and this case converges in one iteration; the cell had labelled the
+  result "Python". The cell now names the kernel and reports its iteration
+  count. The unmeasured timing rows and the EFIT speed comparison are removed.
 
 ### Changed
 
