@@ -893,6 +893,8 @@ files = [
     "tests/test_jax_continuation_history.py",
     "src/scpn_fusion/core/jax_free_boundary_predictive.py",
     "tests/test_jax_free_boundary_predictive.py",
+    "src/scpn_fusion/core/free_boundary_coil_fit.py",
+    "tests/test_free_boundary_coil_fit.py",
     "src/scpn_fusion/core/jax_predictive_checkpoint_trace.py",
     "src/scpn_fusion/core/jax_predictive_forward_compiled.py",
     "tests/test_jax_predictive_compiled_trace.py",

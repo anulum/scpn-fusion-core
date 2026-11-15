@@ -316,6 +316,14 @@
         "path": "src/scpn_fusion/control/tokamak_flight_sim.py"
       },
       {
+        "name": "CoilFitProblem",
+        "path": "src/scpn_fusion/core/free_boundary_coil_fit.py"
+      },
+      {
+        "name": "CoilFitResult",
+        "path": "src/scpn_fusion/core/free_boundary_coil_fit.py"
+      },
+      {
         "name": "CoilGeometry",
         "path": "src/scpn_fusion/core/pulsed_compression.py"
       },
@@ -880,6 +888,10 @@
         "path": "src/scpn_fusion/diagnostics/forward.py"
       },
       {
+        "name": "ForwardResult",
+        "path": "src/scpn_fusion/core/free_boundary_coil_fit.py"
+      },
+      {
         "name": "FourierMode3D",
         "path": "src/scpn_fusion/core/equilibrium_3d.py"
       },
@@ -1166,6 +1178,10 @@
       {
         "name": "IsoFluxController",
         "path": "src/scpn_fusion/control/tokamak_flight_sim.py"
+      },
+      {
+        "name": "IsofluxTargets",
+        "path": "src/scpn_fusion/core/free_boundary_coil_fit.py"
       },
       {
         "name": "JaxNonlinearGKSolver",
@@ -2801,6 +2817,7 @@
       "src/scpn_fusion/core/frc_rigid_rotor_contracts.py",
       "src/scpn_fusion/core/frc_rigid_rotor_solver.py",
       "src/scpn_fusion/core/frc_rigid_rotor_validation.py",
+      "src/scpn_fusion/core/free_boundary_coil_fit.py",
       "src/scpn_fusion/core/free_boundary_outer_solver.py",
       "src/scpn_fusion/core/free_boundary_solver_state.py",
       "src/scpn_fusion/core/fusion_burn_physics.py",
@@ -3097,10 +3114,10 @@
     "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 71,
-    "python_capability_classes": 646,
-    "python_capability_source_modules": 374,
+    "python_capability_classes": 650,
+    "python_capability_source_modules": 375,
     "rust_workspace_crates": 13,
-    "test_files": 687
+    "test_files": 688
   },
   "documentation": {
     "public_pages": [
@@ -3449,6 +3466,7 @@
       "tests/test_frc_rigid_rotor_validation.py",
       "tests/test_frc_rotating_bvp_acceptance_report.py",
       "tests/test_frc_to_gs_bridge.py",
+      "tests/test_free_boundary_coil_fit.py",
       "tests/test_free_boundary_estimator.py",
       "tests/test_free_boundary_outer_solver.py",
       "tests/test_free_boundary_plotting.py",

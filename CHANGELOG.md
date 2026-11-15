@@ -32,6 +32,17 @@
 - `tools/train_neural_eq_v3.py` accepts `--reference-dir`, `--output`,
   `--epochs` and `--perturbations`; without them it trains as before and writes
   `weights/neural_equilibrium_augmented_v3.npz`.
+- `scpn_fusion.core.free_boundary_coil_fit` fits coil currents so the
+  predictive free-boundary equilibrium meets isoflux and null-point targets,
+  the objective FreeGSNKE's inverse optimiser uses.
+  - Method: Levenberg-Marquardt with Marquardt scaling, a Tikhonov term and
+    optional current limits.
+  - Fails closed: a forward solve that does not converge is never used. A start
+    that does not converge directly can be reached by continuation from
+    converged currents. The fit reports why it stopped, and it refuses to run
+    without float64 JAX.
+  - Scope: tested on a synthetic diverted case. The same-case comparison with
+    FreeGSNKE that uses it is not yet tracked evidence.
 
 ### Fixed
 
