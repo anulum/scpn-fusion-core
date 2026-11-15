@@ -118,6 +118,12 @@
   It now states only what is measured or declared: the load averages, and a
   workload passed as `--concurrent-workload`. Without that argument the report
   claims none.
+- Notebook 06 (`examples/06_inverse_and_transport_benchmarks.ipynb` and its
+  page) still described a Huber loss and per-probe σ weighting, which the
+  inverse solver does not have. It also printed a "variant comparison" table
+  whose rows all repeated the same estimate. The cells now name the real
+  `InverseConfig` options, and the table is removed. The notebook runs end to
+  end, and the page is rendered with the docs lock's `nbconvert`, as CI does.
 
 ### Changed
 
