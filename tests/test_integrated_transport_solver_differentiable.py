@@ -9,6 +9,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from typing import cast
+
+import jax
 import numpy as np
 import pytest
 
@@ -16,6 +20,9 @@ from scpn_fusion.core import CoupledTransportControls, CoupledTransportTarget
 from scpn_fusion.core import _integrated_transport_solver_differentiable_numerics as numerics
 from scpn_fusion.core import integrated_transport_solver_differentiable_contracts as contracts
 from validation import benchmark_torax_differentiable_transport as benchmark
+
+# The 1e-12 comparisons below are float64 comparisons; JAX defaults to float32.
+cast(Callable[[str, bool], None], jax.config.update)("jax_enable_x64", True)
 
 
 def test_extracted_differentiable_modules_are_directly_exercised() -> None:

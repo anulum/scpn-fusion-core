@@ -16,6 +16,7 @@ import json
 import sys
 import time
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any, Mapping, Sequence, cast
 
 import numpy as np
@@ -189,8 +190,23 @@ def _scientific_projection(report: Mapping[str, Any]) -> dict[str, Any]:
     return {key: report[key] for key in keys}
 
 
+def _use_float64() -> None:
+    """Run JAX in float64, which the 1e-12 replay and gradient gates are written for.
+
+    JAX defaults to float32 and silently truncates the solver's float64 arrays; the
+    replay gate then fails at about 3e-6. No solver module creates arrays at import,
+    so switching here, before the first computation, covers every array the report uses.
+    """
+    import jax
+
+    # jax.config is untyped; state the signature of the one setter used here.
+    update = cast(Callable[[str, bool], None], jax.config.update)
+    update("jax_enable_x64", True)
+
+
 def build_report() -> dict[str, Any]:
-    """Run production replay, gradient checks, and deterministic optimisation."""
+    """Run production replay, gradient checks, and deterministic optimisation in float64."""
+    _use_float64()
     reference = load_reference()
     case = cast(Mapping[str, Any], reference["primary"])
     target = _target(case)

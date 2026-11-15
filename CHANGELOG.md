@@ -124,6 +124,13 @@
   whose rows all repeated the same estimate. The cells now name the real
   `InverseConfig` options, and the table is removed. The notebook runs end to
   end, and the page is rendered with the docs lock's `nbconvert`, as CI does.
+- `validation/benchmark_torax_differentiable_transport.py` and
+  `tests/test_integrated_transport_solver_differentiable.py` needed float64
+  JAX but relied on another module having switched it on. Run alone, the
+  benchmark computed in float32 and wrote a failing report (replay error about
+  3e-6 against a 1e-12 gate), and the test failed. The benchmark now switches
+  JAX to float64 before it computes, and the test sets float64 itself. The
+  report is regenerated (all seven gates pass; replay error 7.1e-15).
 
 ### Changed
 

@@ -154,14 +154,14 @@
   },
   "reference_projection_sha256": "fa0c7f4b1fbc26ee568d79602cb57c084bf52fdf6bc09ef00de5e42d6669f05e",
   "runtime_seconds": {
-    "differentiation_cold": 3.0715897509944625,
-    "native_optimisation_cold": 3.3443544839974493,
+    "differentiation_cold": 3.1233282419852912,
+    "native_optimisation_cold": 2.5766419949941337,
     "torax_nominal_cold": 8.453033199999481
   },
   "schema": "scpn-fusion-core.differentiable-coupled-transport.v1",
-  "scientific_projection_sha256": "988dd02d4b13ef8f8740daa3c0badb15f12fb4a2bcac43bb16f4dbe1f66b206f",
+  "scientific_projection_sha256": "07b7f3a3a8671adbb31fa94e870c1eedf4c6aebfb0beeb0eb135f2f66e7b3e74",
   "source_provenance": {
-    "benchmark_sha256": "10753c5f9d89de66ed2e870e718557797334b30f3b3cee571497c9214a46e6b7",
+    "benchmark_sha256": "eb09241567e3a7d387379a12d708f0263b204846d013ab693b71d8c002d5b808",
     "contracts_sha256": "6c0503edffa82f0de99bae5818d6c2ded36a52cd39c3355e0f0842fe0e65ec7f",
     "numerics_sha256": "d66a181c9634dfb44823af2231fbb2d021106fc3d116fb8f56cd4e4266582fd2",
     "reference_sha256": "c0e91c58f7bdb217832840af72bcbced21484275dd99d0e026dddc8ccdf07fbf",
