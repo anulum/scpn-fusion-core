@@ -31,7 +31,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -46,20 +46,17 @@ FloatArray = NDArray[np.float64]
 Float32Array = NDArray[np.float32]
 
 
-def _require_neural_transport_oracle(
-    weights_path: Path | str,
-    *,
-    model_cls: Callable[[Path | str], Any] | None = None,
-) -> Any:
-    """Load the trained QLKNN neural transport oracle or fail closed."""
-    if model_cls is None:
-        sys.path.insert(0, str(REPO_ROOT / "src"))
-        from scpn_fusion.core.neural_transport import NeuralTransportModel
+def _require_neural_transport_oracle(weights_path: Path | str) -> Any:
+    """Load the trained QLKNN neural transport oracle or fail closed.
 
-        model_cls = NeuralTransportModel
+    ``NeuralTransportModel`` sets ``is_neural`` only after its weights have loaded, so
+    the flag alone tells a trained oracle from an untrained model.
+    """
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    from scpn_fusion.core.neural_transport import NeuralTransportModel
 
-    model = model_cls(weights_path)
-    if not getattr(model, "is_neural", False) or getattr(model, "_weights", None) is None:
+    model = NeuralTransportModel(weights_path)
+    if not model.is_neural:
         raise RuntimeError(
             "FNO QLKNN spatial data generation requires trained QLKNN neural weights; "
             f"could not load a neural oracle from {weights_path}."

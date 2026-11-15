@@ -60,14 +60,21 @@ def _output_args(tmp_path: Path) -> tuple[list[str], Path, Path, Path]:
     )
 
 
-def test_build_scope_reports_returns_nonempty_payloads() -> None:
-    source_md, docs_md, summary_json = tool._build_scope_reports(top_limit=10, full_limit=20)  # noqa: SLF001
-    assert "# Internal readiness Register" in source_md
-    assert "# Internal readiness Register" in docs_md
-    payload = json.loads(summary_json)
+def test_main_writes_both_scope_reports_and_the_summary(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The CLI writes the source and docs reports and a summary of both scopes."""
+    args, source_out, docs_out, summary_out = _output_args(tmp_path)
+
+    assert tool.main(args) == 0
+
+    assert "# Internal readiness Register" in source_out.read_text(encoding="utf-8")
+    assert "# Internal readiness Register" in docs_out.read_text(encoding="utf-8")
+    payload = json.loads(summary_out.read_text(encoding="utf-8"))
     assert payload["generator"] == "tools/generate_readiness_scope_reports.py"
-    scopes = {snap["scope"] for snap in payload["snapshots"]}
-    assert scopes == {"source", "docs_claims"}
+    assert {snap["scope"] for snap in payload["snapshots"]} == {"source", "docs_claims"}
+    # Paths outside the repository are reported as they are.
+    assert f"- {source_out.as_posix()}" in capsys.readouterr().out
 
 
 def test_main_generates_and_check_passes(tmp_path: Path) -> None:
@@ -123,32 +130,51 @@ def test_main_check_fails_on_missing_outputs(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("missing_loader", [False, True])
-def test_load_readiness_module_rejects_invalid_spec(
-    monkeypatch: pytest.MonkeyPatch, *, missing_loader: bool
+def test_main_refuses_to_run_without_the_readiness_register_module(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, missing_loader: bool
 ) -> None:
     """Reject both a missing dynamic-import spec and a spec without a loader."""
     spec = ModuleSpec("generate_readiness_register", loader=None) if missing_loader else None
     monkeypatch.setattr(tool.importlib.util, "spec_from_file_location", lambda *_args: spec)
 
     with pytest.raises(RuntimeError, match="Failed to load"):
-        tool._load_readiness_module()  # noqa: SLF001
+        tool.main(_output_args(tmp_path)[0])
 
 
-def test_path_and_normalization_helpers_cover_dynamic_fields(tmp_path: Path) -> None:
-    """Resolve relative paths and normalize only timestamp-bearing fields."""
-    relative = Path("docs/internal/example.md")
-    resolved = tool._resolve(relative.as_posix())  # noqa: SLF001
+def test_check_names_missing_repository_outputs_relative_to_the_repository(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Relative output paths resolve under the repository and are reported that way."""
+    names = [
+        f"docs/internal/missing_scope_check_{part}" for part in ("src.md", "docs.md", "s.json")
+    ]
+    argv = ["--source-output", names[0], "--docs-output", names[1], "--summary-json", names[2]]
 
-    assert resolved == ROOT / relative
-    assert tool._display_path(resolved) == relative.as_posix()  # noqa: SLF001
-    assert tool._display_path(tmp_path / "outside.md") == (tmp_path / "outside.md").as_posix()  # noqa: SLF001
-    assert (
-        tool._normalize_for_check(  # noqa: SLF001
-            "heading\n- Generated at: `old`\ntail\n"
-        )
-        == "heading\n- Generated at: `<dynamic>`\ntail"
+    assert tool.main([*argv, "--top-limit", "8", "--full-limit", "12", "--check"]) == 1
+
+    out = capsys.readouterr().out
+    assert all(f"- {name}" in out for name in names)
+    assert not any((ROOT / name).exists() for name in names)
+
+
+def test_check_ignores_only_the_generation_timestamps(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A later run differs from the tracked reports only in its timestamps, which check ignores."""
+    monkeypatch.setattr(tool, "_build_scope_reports", _stub_scope_reports)
+    args, source_out, _docs_out, summary_out = _output_args(tmp_path)
+    assert tool.main(args) == 0
+    source_out.write_text(
+        source_out.read_text(encoding="utf-8").replace(
+            "2026-07-29T00:00:00Z", "2030-01-01T00:00:00Z"
+        ),
+        encoding="utf-8",
     )
-    assert tool._normalize_json_for_check("{}") == {"generated_at": "<dynamic>"}  # noqa: SLF001
+    summary = json.loads(summary_out.read_text(encoding="utf-8"))
+    summary["generated_at"] = "2030-01-01T00:00:00Z"
+    summary_out.write_text(json.dumps(summary), encoding="utf-8")
+
+    assert tool.main([*args, "--check"]) == 0
 
 
 @pytest.mark.parametrize(
@@ -158,10 +184,17 @@ def test_path_and_normalization_helpers_cover_dynamic_fields(tmp_path: Path) -> 
         ('{"generated_at": 7}', "generated_at must be a string when present"),
     ],
 )
-def test_normalize_json_rejects_malformed_contracts(payload: str, message: str) -> None:
-    """Fail closed when the summary root or dynamic timestamp has the wrong type."""
+def test_check_rejects_a_malformed_summary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, payload: str, message: str
+) -> None:
+    """Fail closed when the summary root or its timestamp has the wrong type."""
+    monkeypatch.setattr(tool, "_build_scope_reports", _stub_scope_reports)
+    args, _source_out, _docs_out, summary_out = _output_args(tmp_path)
+    assert tool.main(args) == 0
+    summary_out.write_text(payload, encoding="utf-8")
+
     with pytest.raises(ValueError, match=message):
-        tool._normalize_json_for_check(payload)  # noqa: SLF001
+        tool.main([*args, "--check"])
 
 
 @pytest.mark.parametrize(

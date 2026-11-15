@@ -21,14 +21,6 @@ from scpn_fusion.core import neural_transport
 from tools import generate_fno_qlknn_spatial as generator
 
 
-class _NonNeuralModel:
-    is_neural = False
-    _weights = None
-
-    def __init__(self, _weights_path: object) -> None:
-        pass
-
-
 class _NeuralModel:
     is_neural = True
     _weights = {"layer": "weights"}
@@ -37,67 +29,37 @@ class _NeuralModel:
         pass
 
 
-class _NeuralModelWithoutWeights:
-    is_neural = True
-    _weights = None
-
-    def __init__(self, _weights_path: object) -> None:
-        pass
+ROOT = Path(__file__).resolve().parents[1]
+TRAINED_WEIGHTS = ROOT / "weights" / "neural_transport_qlknn.npz"
 
 
-def test_require_neural_transport_oracle_rejects_non_neural_model() -> None:
+def test_generate_refuses_without_a_trained_oracle_and_writes_nothing(tmp_path: Path) -> None:
+    """Without trained QLKNN weights the analytic fallback is not accepted as the oracle."""
+    output_dir = tmp_path / "dataset"
+
     with pytest.raises(RuntimeError, match="requires trained QLKNN neural weights"):
-        generator._require_neural_transport_oracle(  # noqa: SLF001
-            "missing.npz", model_cls=_NonNeuralModel
-        )
+        generator.generate(tmp_path / "missing.npz", output_dir, n_equilibria=2, grid_size=4)
+
+    assert not output_dir.exists()
 
 
-def test_require_neural_transport_oracle_rejects_missing_weights() -> None:
-    """Reject a nominally neural model that did not load any weight payload."""
-    with pytest.raises(RuntimeError, match="requires trained QLKNN neural weights"):
-        generator._require_neural_transport_oracle(  # noqa: SLF001
-            "missing.npz", model_cls=_NeuralModelWithoutWeights
-        )
+def test_generate_writes_bounded_spatial_splits_from_the_trained_oracle(tmp_path: Path) -> None:
+    """The trained oracle yields finite flux fields on bounded normalised-psi equilibria."""
+    output_dir = tmp_path / "dataset"
 
+    generator.generate(TRAINED_WEIGHTS, output_dir, n_equilibria=4, grid_size=5, seed=11)
 
-def test_require_neural_transport_oracle_accepts_loaded_neural_model() -> None:
-    model = generator._require_neural_transport_oracle(  # noqa: SLF001
-        "weights.npz", model_cls=_NeuralModel
-    )
-    assert model.is_neural is True
-    assert model._weights is not None
-
-
-def test_equilibrium_and_profiles_preserve_spatial_contracts() -> None:
-    """Produce finite bounded equilibrium fields and physical profile floors."""
-    rng = np.random.default_rng(11)
-    psi, rho, rr, zz = generator._make_tokamak_equilibrium(  # noqa: SLF001
-        5, 4, 6.2, 2.0, 1.8, 0.3, 5.3, 15.0, rng
-    )
-    profiles = generator._profiles_from_rho(rho, 15.0, 12.0, 8.0, 1.0, 4.0)  # noqa: SLF001
-
-    assert psi.shape == rho.shape == rr.shape == zz.shape == (5, 4)
-    assert np.isfinite(psi).all()
-    assert float(psi.min()) >= 0.0
-    assert float(psi.max()) <= 1.2
-    assert float(rho.min()) >= 0.0
-    assert float(rho.max()) <= 1.5
-    assert set(profiles) == {
-        "Te",
-        "Ti",
-        "ne",
-        "q",
-        "s_hat",
-        "beta_e",
-        "grad_Te",
-        "grad_Ti",
-        "grad_ne",
-    }
-    assert all(value.shape == (5, 4) for value in profiles.values())
-    assert all(np.isfinite(value).all() for value in profiles.values())
-    assert float(profiles["Te"].min()) >= 0.1
-    assert float(profiles["Ti"].min()) >= 0.1
-    assert float(profiles["ne"].min()) >= 0.1
+    splits = {}
+    for split in ("train", "val"):
+        with np.load(output_dir / f"{split}.npz", allow_pickle=False) as archive:
+            splits[split] = (np.asarray(archive["X"]), np.asarray(archive["Y"]))
+    assert sum(x.shape[0] for x, _ in splits.values()) == 4
+    for psi, chi in splits.values():
+        assert psi.shape[1:] == chi.shape[1:] == (5, 5)
+        assert np.isfinite(psi).all() and np.isfinite(chi).all()
+        assert float(psi.min()) >= 0.0 and float(psi.max()) <= 1.2
+        assert float(chi.min()) >= 0.0
+    assert (output_dir / "metadata.json").is_file()
 
 
 @pytest.mark.parametrize(

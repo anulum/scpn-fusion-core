@@ -14,7 +14,7 @@ import sys
 from importlib.machinery import ModuleSpec
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -88,54 +88,69 @@ def test_main_writes_markdown_and_json(tmp_path: Path) -> None:
         assert isinstance(issue0.get("github_body"), str)
 
 
-def test_coverage_thresholds_and_marker_closure_contracts(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+def _closure_with_thresholds(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, thresholds: str | None, issue: Any
+) -> list[str]:
+    """Render one issue as JSON with the given coverage-thresholds file text (None: no file)."""
+    path = tmp_path / "coverage_thresholds.json"
+    if thresholds is not None:
+        path.write_text(thresholds, encoding="utf-8")
+    monkeypatch.setattr(mod, "COVERAGE_THRESHOLDS_PATH", path)
+    return cast(list[str], json.loads(mod.render_json([issue]))["issues"][0]["closure_metrics"])
+
+
+@pytest.mark.parametrize(
+    ("thresholds", "file_path", "expected_target"),
+    [
+        (None, "src/scpn_fusion/core/example.py", None),
+        ("[]\n", "src/scpn_fusion/core/example.py", None),
+        (
+            '{"file_min_line_rate": {"src/scpn_fusion/core/example.py": 99}}',
+            "src/scpn_fusion/core/example.py",
+            "99.0",
+        ),
+        (
+            '{"file_min_line_rate": {"src/scpn_fusion/core/example.py": "invalid"},'
+            ' "domain_min_line_rate": {"core": 97.5}}',
+            "src/scpn_fusion/core/example.py",
+            "97.5",
+        ),
+        (
+            '{"file_min_line_rate": [], "domain_min_line_rate": []}',
+            "src/scpn_fusion/core/example.py",
+            None,
+        ),
+        ('{"domain_min_line_rate": {"other": 90}}', "short.py", "90.0"),
+    ],
+)
+def test_closure_metrics_take_the_file_then_domain_coverage_target(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    thresholds: str | None,
+    file_path: str,
+    expected_target: str | None,
 ) -> None:
-    """Resolve file/domain thresholds and every marker-specific closure rule."""
-    missing = tmp_path / "missing.json"
-    monkeypatch.setattr(mod, "COVERAGE_THRESHOLDS_PATH", missing)
-    assert mod._load_coverage_thresholds() == {}  # noqa: SLF001
-
-    invalid = tmp_path / "invalid.json"
-    invalid.write_text("[]\n", encoding="utf-8")
-    monkeypatch.setattr(mod, "COVERAGE_THRESHOLDS_PATH", invalid)
-    assert mod._load_coverage_thresholds() == {}  # noqa: SLF001
-
-    issue = _issue(markers=("MONOLITH", "DEPRECATED", "NOT_VALIDATED", "FALLBACK"))
-    assert mod._module_domain_from_path("short.py") == "other"  # noqa: SLF001
-    assert (
-        mod._coverage_line_target(  # noqa: SLF001
-            issue, {"file_min_line_rate": {issue.file_path: 99}}
-        )
-        == 99.0
-    )
-    assert (
-        mod._coverage_line_target(  # noqa: SLF001
-            issue,
-            {
-                "file_min_line_rate": {issue.file_path: "invalid"},
-                "domain_min_line_rate": {"core": 97.5},
-            },
-        )
-        == 97.5
-    )
-    assert (
-        mod._coverage_line_target(  # noqa: SLF001
-            issue, {"file_min_line_rate": [], "domain_min_line_rate": []}
-        )
-        is None
+    """A file target wins over its domain; a missing, malformed or untyped target adds none."""
+    issue = _issue(
+        file_path=file_path, markers=("MONOLITH", "DEPRECATED", "NOT_VALIDATED", "FALLBACK")
     )
 
-    closure = mod._closure_metrics(  # noqa: SLF001
-        issue, {"file_min_line_rate": {issue.file_path: 99}}
-    )
-    assert len(closure) == 6
+    closure = _closure_with_thresholds(tmp_path, monkeypatch, thresholds, issue)
+
+    coverage = [item for item in closure if item.startswith("File line coverage")]
+    if expected_target is None:
+        assert coverage == [] and len(closure) == 5
+    else:
+        assert coverage == [
+            f"File line coverage in release lane is >= {expected_target}% (tools/coverage_guard.py)."
+        ]
+        assert len(closure) == 6
     assert any("Deprecated-default-lane" in item for item in closure)
     assert any("Fallback budget" in item for item in closure)
 
 
 @pytest.mark.parametrize("missing_loader", [False, True])
-def test_load_readiness_module_rejects_invalid_spec(
+def test_issue_collection_refuses_to_run_without_the_readiness_register_module(
     monkeypatch: pytest.MonkeyPatch, *, missing_loader: bool
 ) -> None:
     """Reject both a missing import spec and a spec without a loader."""
@@ -143,7 +158,7 @@ def test_load_readiness_module_rejects_invalid_spec(
     monkeypatch.setattr(mod.importlib.util, "spec_from_file_location", lambda *_args: spec)
 
     with pytest.raises(RuntimeError, match="Failed to load"):
-        mod._load_readiness_module()  # noqa: SLF001
+        mod.collect_source_issues(ROOT)
 
 
 def test_collect_source_issues_supports_legacy_unscoped_register(
@@ -274,19 +289,42 @@ def test_main_check_covers_missing_drift_and_malformed_json(
         mod.main([*args, "--check"])
 
 
-def test_output_and_normalization_helpers_cover_relative_and_external_paths(
-    tmp_path: Path,
+def test_cli_reports_repository_paths_relatively_and_others_as_given(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """Resolve output paths and normalize only dynamic generated-at fields."""
-    relative = Path("docs/internal/example.md")
-    resolved = mod._resolve_output(relative.as_posix())  # noqa: SLF001
-    assert resolved == ROOT / relative
-    assert mod._display_path(resolved) == relative.as_posix()  # noqa: SLF001
-    assert mod._display_path(tmp_path / "external.md") == (tmp_path / "external.md").as_posix()  # noqa: SLF001
-    assert (
-        mod._normalize_for_check(  # noqa: SLF001
-            "heading\n- Generated at: `old`\ntail\n"
-        )
-        == "heading\n- Generated at: `<dynamic>`\ntail"
-    )
-    assert mod._normalize_json_for_check("{}") == {"generated_at": "<dynamic>"}  # noqa: SLF001
+    """Relative outputs resolve under the repository; check mode names them without writing."""
+    monkeypatch.setattr(mod, "collect_source_issues", lambda _root: [_issue()])
+    monkeypatch.setattr(mod, "COVERAGE_THRESHOLDS_PATH", tmp_path / "none.json")
+    names = ["docs/internal/missing_p0p1_check.md", "docs/internal/missing_p0p1_check.json"]
+
+    assert mod.main(["--output-md", names[0], "--output-json", names[1], "--check"]) == 1
+    out = capsys.readouterr().out
+    assert all(f"- {name}" in out for name in names)
+    assert not any((ROOT / name).exists() for name in names)
+
+    md_path = tmp_path / "issues.md"
+    assert mod.main(["--output-md", str(md_path), "--output-json", str(tmp_path / "i.json")]) == 0
+    assert f"- {md_path.as_posix()}" in capsys.readouterr().out
+
+
+def test_cli_check_ignores_only_the_generation_timestamps(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A later run differs from the tracked outputs only in its timestamps, which check ignores."""
+    monkeypatch.setattr(mod, "collect_source_issues", lambda _root: [_issue()])
+    monkeypatch.setattr(mod, "COVERAGE_THRESHOLDS_PATH", tmp_path / "none.json")
+    md_path = tmp_path / "issues.md"
+    json_path = tmp_path / "issues.json"
+    args = ["--output-md", str(md_path), "--output-json", str(json_path)]
+    assert mod.main(args) == 0
+    lines = md_path.read_text(encoding="utf-8").splitlines()
+    stamped = [i for i, line in enumerate(lines) if line.startswith("- Generated at: `")]
+    assert stamped
+    for index in stamped:
+        lines[index] = "- Generated at: `2030-01-01T00:00:00+00:00`"
+    md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    payload = json.loads(json_path.read_text(encoding="utf-8"))
+    payload["generated_at"] = "2030-01-01T00:00:00+00:00"
+    json_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    assert mod.main([*args, "--check"]) == 0

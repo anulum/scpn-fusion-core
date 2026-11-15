@@ -132,23 +132,70 @@ def test_progress_rejects_raw_ready_without_raw_source_type_contract() -> None:
     assert summary["d3d_raw_ingestion_ready"] is False
 
 
-def test_json_path_and_ratio_contracts(tmp_path: Path) -> None:
-    """Exercise repository-relative paths, object-only JSON, and bounded ratios."""
-    relative = Path("artifacts/example.json")
-    assert real_data_roadmap_progress._resolve(relative.as_posix()) == ROOT / relative  # noqa: SLF001
+def test_cli_resolves_relative_paths_against_the_repository(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A relative --targets path names a repository file, whatever the working folder."""
+    report = tmp_path / "report.json"
+    _write_json(report, {"equilibrium": {"n_files": 1}})
+    output_json = tmp_path / "out" / "progress.json"
+    monkeypatch.chdir(tmp_path)
+    args = _cli_args(
+        report=report,
+        targets=Path("tools/real_data_roadmap_targets.json"),
+        output_json=output_json,
+        output_md=tmp_path / "out" / "progress.md",
+    )
 
-    object_path = tmp_path / "object.json"
-    _write_json(object_path, {"value": 1})
-    assert real_data_roadmap_progress._load_json(object_path) == {"value": 1}  # noqa: SLF001
+    assert real_data_roadmap_progress.main(args) == 0
 
-    array_path = tmp_path / "array.json"
-    _write_json(array_path, [1, 2])
+    tracked = json.loads((ROOT / "tools" / "real_data_roadmap_targets.json").read_text("utf-8"))
+    summary = json.loads(output_json.read_text(encoding="utf-8"))
+    assert [row["metric"] for row in summary["metrics"]] == list(tracked["targets"])
+
+
+def test_cli_refuses_a_report_that_is_not_a_json_object(tmp_path: Path) -> None:
+    """A JSON array is not a validation report."""
+    report = tmp_path / "report.json"
+    _write_json(report, [1, 2])
+    targets = tmp_path / "targets.json"
+    _write_json(targets, {"targets": {}})
+    args = _cli_args(
+        report=report,
+        targets=targets,
+        output_json=tmp_path / "progress.json",
+        output_md=tmp_path / "progress.md",
+    )
+
     with pytest.raises(ValueError, match="expected JSON object payload"):
-        real_data_roadmap_progress._load_json(array_path)  # noqa: SLF001
+        real_data_roadmap_progress.main(args)
+    assert not (tmp_path / "progress.json").exists()
 
-    assert real_data_roadmap_progress._safe_ratio(5, 0) == 1.0  # noqa: SLF001
-    assert real_data_roadmap_progress._safe_ratio(-1, 10) == 0.0  # noqa: SLF001
-    assert real_data_roadmap_progress._safe_ratio(11, 10) == 1.0  # noqa: SLF001
+
+def test_progress_ratios_stay_between_zero_and_one() -> None:
+    """A zero target counts as met; counts below zero or above target are clamped."""
+    report = {
+        "equilibrium": {"n_files": 11},
+        "transport": {"n_shots": -1},
+        "disruption": {"n_shots": 5},
+    }
+    targets = {
+        "targets": {
+            "equilibrium_files_total": 10,
+            "transport_shots_total": 10,
+            "disruption_shots_total": 0,
+        }
+    }
+
+    summary = real_data_roadmap_progress.evaluate_progress(report=report, targets=targets)
+
+    ratios = {row["metric"]: row["progress_ratio"] for row in summary["metrics"]}
+    assert ratios == {
+        "equilibrium_files_total": 1.0,
+        "transport_shots_total": 0.0,
+        "disruption_shots_total": 1.0,
+    }
+    assert summary["overall_progress_ratio"] == pytest.approx(2.0 / 3.0)
 
 
 def test_progress_rejects_nonobject_target_mapping() -> None:

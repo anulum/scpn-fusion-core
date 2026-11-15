@@ -103,6 +103,16 @@
   TORAX runtime evidence, the coupled TORAX reference and the ITER
   machine-conditioned dataset manifest. Editing them would invalidate evidence
   produced by that exact source.
+- Four test files tested private helpers (30 `noqa: SLF001`). They now
+  exercise the tools through their public entry points:
+  - `generate_fno_qlknn_spatial`: `generate()` with the tracked trained QLKNN
+    weights, and without them;
+  - the two readiness generators: their CLIs in write and `--check` modes;
+  - the roadmap tool: its CLI and `evaluate_progress()`.
+
+  The FNO generator loses a test-only `model_cls` hook. Its oracle check is
+  now the model's own `is_neural` flag, which `NeuralTransportModel` sets only
+  after its weights load.
 
 ### Changed
 
