@@ -2,7 +2,13 @@
   "determinism": {
     "byte_identical_scientific_projection": true,
     "primary_projection_sha256": "fa0c7f4b1fbc26ee568d79602cb57c084bf52fdf6bc09ef00de5e42d6669f05e",
-    "warm_projection_sha256": "fa0c7f4b1fbc26ee568d79602cb57c084bf52fdf6bc09ef00de5e42d6669f05e"
+    "warm_projection_sha256s": [
+      "fa0c7f4b1fbc26ee568d79602cb57c084bf52fdf6bc09ef00de5e42d6669f05e",
+      "fa0c7f4b1fbc26ee568d79602cb57c084bf52fdf6bc09ef00de5e42d6669f05e",
+      "fa0c7f4b1fbc26ee568d79602cb57c084bf52fdf6bc09ef00de5e42d6669f05e",
+      "fa0c7f4b1fbc26ee568d79602cb57c084bf52fdf6bc09ef00de5e42d6669f05e",
+      "fa0c7f4b1fbc26ee568d79602cb57c084bf52fdf6bc09ef00de5e42d6669f05e"
+    ]
   },
   "model_intersection": {
     "geometry": {
@@ -660,7 +666,7 @@
     "precision": "float64",
     "python": "3.12.3",
     "runner_path": "validation/torax_coupled_reference_runner.py",
-    "runner_sha256": "8c22d025d139bc97c8702dbcb710593534608e0adcce7b64a09546d677dc58d2",
+    "runner_sha256": "92926d291a0740932b9ab1f38eee343afdd4e6691638493c97a34f8fecb0a392",
     "runtime_backend": "cpu",
     "torax_version": "1.4.3"
   },
@@ -1578,12 +1584,21 @@
       0.02
     ]
   },
-  "runtime_seconds": {
-    "cold_primary": 7.503132958001515,
-    "refined": 0.3132565500018245,
-    "warm_primary": 0.06660591100080637
+  "runtime_samples_seconds": {
+    "warm_primary": [
+      0.11033022997435182,
+      0.0975004659849219,
+      0.10878808202687651,
+      0.09342718799598515,
+      0.09736840095138177
+    ]
   },
-  "schema": "scpn-fusion-core.torax-coupled-transport-reference.v1",
+  "runtime_seconds": {
+    "cold_primary": 8.453033199999481,
+    "refined": 0.46341084101004526,
+    "warm_primary": 0.09342718799598515
+  },
+  "schema": "scpn-fusion-core.torax-coupled-transport-reference.v2",
   "warm_repeat": {
     "comparison_profiles": {
       "electron_density_m3": [

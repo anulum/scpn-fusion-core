@@ -46,6 +46,14 @@
   sizes and sha256 digests, so a changed reference file passed as "up to
   date". It now compares them. Git LFS pointers are fingerprinted by the
   content they record, so checkouts with and without LFS content agree.
+- The warm-cost gate of the coupled TORAX parity report compared two single
+  warm runs, so a busy host could decide it: a reference recorded under a load
+  near 23 gave a ratio of 119 against the limit of 100. The TORAX reference
+  runner now records five warm replays and keeps the minimum, and the parity
+  benchmark does the same for the native path. Both sample lists are in the
+  evidence, every replay must reproduce the primary projection byte for byte,
+  and the limit is unchanged. The reference and report schemas move to v2, and
+  the report Markdown shows the warm times and their ratio.
 
 ### Changed
 

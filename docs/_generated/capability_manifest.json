@@ -3100,7 +3100,7 @@
     "python_capability_classes": 646,
     "python_capability_source_modules": 374,
     "rust_workspace_crates": 13,
-    "test_files": 685
+    "test_files": 686
   },
   "documentation": {
     "public_pages": [
@@ -3914,6 +3914,7 @@
       "tests/test_tools_pypi_downloads.py",
       "tests/test_tools_run_mypy_strict.py",
       "tests/test_tools_run_python_preflight.py",
+      "tests/test_torax_coupled_reference_runner.py",
       "tests/test_torax_coupled_transport_parity.py",
       "tests/test_torax_differentiable_transport.py",
       "tests/test_torax_hybrid_realtime_control_benchmark.py",

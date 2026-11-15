@@ -11,6 +11,11 @@
 This runner belongs in the dedicated ``.venv-torax`` environment.  It emits a
 provenance-bound reference artifact for verification by the main project
 environment; the native comparison never imports TORAX or its dependencies.
+
+The warm wall time is the minimum over ``WARM_REPEATS`` warm replays, and every
+replay sample is recorded.  Interference from other processes only lengthens a
+run, so the minimum estimates the unloaded cost: a single replay recorded under
+a host load near 23 once doubled the warm time and failed the warm-cost gate.
 """
 
 from __future__ import annotations
@@ -22,6 +27,7 @@ import json
 import platform
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, Mapping, Sequence, cast
 
@@ -39,6 +45,8 @@ DECK_PATH = (
 DEFAULT_OUTPUT = (
     ROOT / "validation" / "reference_data" / "torax" / "torax_coupled_transport_reference.json"
 )
+SCHEMA = "scpn-fusion-core.torax-coupled-transport-reference.v2"
+WARM_REPEATS = 5
 
 sys.path.insert(0, str(ROOT))
 
@@ -180,32 +188,52 @@ def _run_case(torax_module: Any, *, dt_s: float) -> tuple[dict[str, Any], float]
     )
 
 
+def _projection(case: Mapping[str, Any]) -> dict[str, Any]:
+    """Return the scientific content of one case, without its timing."""
+    return {
+        "time_s": case["time_s"],
+        "profiles": case["comparison_profiles"],
+        "sources": case["source_totals"],
+        "budgets": case["state_budgets"],
+        "sim_error": case["sim_error"],
+    }
+
+
+def _warm_replays(
+    run: Callable[[], tuple[dict[str, Any], float]], repeats: int
+) -> tuple[dict[str, Any], list[float], list[str]]:
+    """Replay a case ``repeats`` times.
+
+    Returns the first replay, the wall time of every replay in order, and the
+    projection digest of every replay in order.
+    """
+    if repeats < 1:
+        raise ValueError("at least one warm replay is required")
+    first, first_seconds = run()
+    seconds = [first_seconds]
+    digests = [_checksum(_projection(first))]
+    for _ in range(repeats - 1):
+        case, elapsed = run()
+        seconds.append(elapsed)
+        digests.append(_checksum(_projection(case)))
+    return first, seconds, digests
+
+
 def build_reference() -> dict[str, Any]:
-    """Execute primary, warm-repeat, and refined TORAX cases."""
+    """Execute the cold primary, ``WARM_REPEATS`` warm replays, and the refined case."""
     import torax  # type: ignore[import-not-found]
 
     time_config = cast(Mapping[str, Any], MODEL_INTERSECTION["time"])
     primary_dt = float(time_config["primary_dt_s"])
     refined_dt = float(time_config["refined_dt_s"])
     primary, cold_seconds = _run_case(torax, dt_s=primary_dt)
-    warm_repeat, warm_seconds = _run_case(torax, dt_s=primary_dt)
+    warm_repeat, warm_samples, warm_digests = _warm_replays(
+        lambda: _run_case(torax, dt_s=primary_dt), WARM_REPEATS
+    )
     refined, refined_seconds = _run_case(torax, dt_s=refined_dt)
-    primary_projection = {
-        "time_s": primary["time_s"],
-        "profiles": primary["comparison_profiles"],
-        "sources": primary["source_totals"],
-        "budgets": primary["state_budgets"],
-        "sim_error": primary["sim_error"],
-    }
-    warm_projection = {
-        "time_s": warm_repeat["time_s"],
-        "profiles": warm_repeat["comparison_profiles"],
-        "sources": warm_repeat["source_totals"],
-        "budgets": warm_repeat["state_budgets"],
-        "sim_error": warm_repeat["sim_error"],
-    }
+    primary_digest = _checksum(_projection(primary))
     return {
-        "schema": "scpn-fusion-core.torax-coupled-transport-reference.v1",
+        "schema": SCHEMA,
         "provenance": {
             "code": "TORAX",
             "code_url": "https://github.com/google-deepmind/torax",
@@ -226,16 +254,18 @@ def build_reference() -> dict[str, Any]:
         "warm_repeat": warm_repeat,
         "refined": refined,
         "determinism": {
-            "primary_projection_sha256": _checksum(primary_projection),
-            "warm_projection_sha256": _checksum(warm_projection),
-            "byte_identical_scientific_projection": _checksum(primary_projection)
-            == _checksum(warm_projection),
+            "primary_projection_sha256": primary_digest,
+            "warm_projection_sha256s": warm_digests,
+            "byte_identical_scientific_projection": all(
+                digest == primary_digest for digest in warm_digests
+            ),
         },
         "runtime_seconds": {
             "cold_primary": cold_seconds,
-            "warm_primary": warm_seconds,
+            "warm_primary": min(warm_samples),
             "refined": refined_seconds,
         },
+        "runtime_samples_seconds": {"warm_primary": warm_samples},
     }
 
 

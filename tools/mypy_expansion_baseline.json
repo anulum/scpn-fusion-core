@@ -94,6 +94,7 @@
     "validation/benchmark_freegsnke_multimachine.py",
     "tests/test_benchmark_freegsnke_multimachine.py",
     "benchmarks/bench_stochastic_popcount.py",
-    "tests/test_bench_stochastic_popcount.py"
+    "tests/test_bench_stochastic_popcount.py",
+    "tests/test_torax_coupled_reference_runner.py"
   ]
 }

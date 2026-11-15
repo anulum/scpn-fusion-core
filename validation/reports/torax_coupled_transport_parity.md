@@ -21,6 +21,14 @@ The report admits parity only for the frozen circular, prescribed-coefficient mo
 - Native maximum linear residual: `7.1054273576e-15`
 - Native maximum exchange relative closure: `1.55767981395e-17`
 
+## Warm cost
+
+Each warm wall time is the minimum over repeated warm replays; the samples are in the JSON report.
+
+- TORAX warm: `0.0934272` s
+- Native warm: `0.00150031` s
+- Maximum over minimum: `62.2721` (limit `100`)
+
 ## Pareto gates
 
 - `accuracy`: `True`

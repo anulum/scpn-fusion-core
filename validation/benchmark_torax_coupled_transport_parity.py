@@ -6,7 +6,13 @@
 # ORCID: 0009-0009-3560-0851
 # Contact: www.anulum.li | protoscience@anulum.li
 # SCPN Fusion Core — Coupled TORAX Transport Parity Benchmark
-"""Verify the frozen four-state TORAX/native model-intersection contract."""
+"""Verify the frozen four-state TORAX/native model-intersection contract.
+
+Both warm wall times are minima over repeated warm replays: the TORAX reference
+records ``runtime_samples_seconds`` from its own runner, and this benchmark
+replays the native path ``NATIVE_WARM_REPEATS`` times.  The warm-cost gate
+compares the two minima, so a busy host no longer decides it.
+"""
 
 from __future__ import annotations
 
@@ -45,7 +51,10 @@ COUPLED_NUMERICS_PATH = (
     SRC / "scpn_fusion" / "core" / "_integrated_transport_solver_coupled_numerics.py"
 )
 CURRENT_DIFFUSION_PATH = SRC / "scpn_fusion" / "core" / "current_diffusion.py"
-SCHEMA = "scpn-fusion-core.torax-coupled-transport-parity.v1"
+SCHEMA = "scpn-fusion-core.torax-coupled-transport-parity.v2"
+REFERENCE_SCHEMA = "scpn-fusion-core.torax-coupled-transport-reference.v2"
+NATIVE_WARM_REPEATS = 5
+MINIMUM_WARM_REPEATS = 3
 
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SRC))
@@ -90,10 +99,40 @@ def _numeric_float(value: object, *, name: str) -> float:
     return parsed
 
 
+def _warm_samples(raw: object, *, name: str) -> list[float]:
+    """Return at least ``MINIMUM_WARM_REPEATS`` finite positive wall times, or raise."""
+    if isinstance(raw, (str, bytes)) or not isinstance(raw, Sequence):
+        raise ValueError(f"{name} must be a sequence of wall times")
+    samples = [_numeric_float(value, name=name) for value in raw]
+    if len(samples) < MINIMUM_WARM_REPEATS or min(samples) <= 0.0:
+        raise ValueError(f"{name} needs at least {MINIMUM_WARM_REPEATS} positive wall times")
+    return samples
+
+
+def _check_reference_warm_runtime(payload: Mapping[str, Any]) -> None:
+    """Require the warm time to be the minimum of its samples, one identical replay each."""
+    runtime = payload.get("runtime_seconds")
+    samples_block = payload.get("runtime_samples_seconds")
+    if not isinstance(runtime, Mapping) or not isinstance(samples_block, Mapping):
+        raise ValueError("TORAX coupled reference lacks warm runtime samples")
+    samples = _warm_samples(samples_block.get("warm_primary"), name="TORAX warm runtime samples")
+    if _numeric_float(runtime.get("warm_primary"), name="TORAX warm runtime") != min(samples):
+        raise ValueError("TORAX warm runtime is not the minimum of its samples")
+    determinism = cast(Mapping[str, Any], payload["determinism"])
+    digests = determinism.get("warm_projection_sha256s")
+    if (
+        isinstance(digests, (str, bytes))
+        or not isinstance(digests, Sequence)
+        or len(digests) != len(samples)
+        or any(digest != determinism.get("primary_projection_sha256") for digest in digests)
+    ):
+        raise ValueError("TORAX warm replays do not reproduce the primary projection")
+
+
 def load_reference(path: Path = REFERENCE_PATH) -> dict[str, Any]:
     """Load and authenticate the dedicated-environment TORAX artifact."""
     payload = cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
-    if payload.get("schema") != "scpn-fusion-core.torax-coupled-transport-reference.v1":
+    if payload.get("schema") != REFERENCE_SCHEMA:
         raise ValueError("TORAX coupled reference has an unexpected schema")
     provenance = payload.get("provenance")
     if not isinstance(provenance, Mapping) or provenance.get("code") != "TORAX":
@@ -114,6 +153,7 @@ def load_reference(path: Path = REFERENCE_PATH) -> dict[str, Any]:
         determinism.get("byte_identical_scientific_projection", False)
     ):
         raise ValueError("TORAX coupled reference lacks deterministic replay")
+    _check_reference_warm_runtime(payload)
     for case_name in ("primary", "refined"):
         case = payload.get(case_name)
         if not isinstance(case, Mapping) or case.get("sim_error") != "SimError.NO_ERROR":
@@ -367,9 +407,12 @@ def build_report(reference_path: Path = REFERENCE_PATH) -> dict[str, Any]:
     primary_native, native_cold = _run_native(
         primary_reference, dt_s=float(time_config["primary_dt_s"])
     )
-    replay_native, native_warm = _run_native(
-        primary_reference, dt_s=float(time_config["primary_dt_s"])
-    )
+    replays = [
+        _run_native(primary_reference, dt_s=float(time_config["primary_dt_s"]))
+        for _ in range(NATIVE_WARM_REPEATS)
+    ]
+    native_warm_samples = [seconds for _case, seconds in replays]
+    native_warm = min(native_warm_samples)
     refined_native, native_refined = _run_native(
         primary_reference, dt_s=float(time_config["refined_dt_s"])
     )
@@ -391,8 +434,13 @@ def build_report(reference_path: Path = REFERENCE_PATH) -> dict[str, Any]:
     max_native_residual = _max_native_residual(primary_native)
     max_exchange_closure = _max_exchange_relative_closure(primary_native)
     native_projection_sha = _checksum(primary_native)
-    replay_projection_sha = _checksum(replay_native)
+    replay_projection_shas = [_checksum(case) for case, _seconds in replays]
+    native_byte_identical = all(sha == native_projection_sha for sha in replay_projection_shas)
     torax_runtime = cast(Mapping[str, Any], reference["runtime_seconds"])
+    torax_warm_samples = [
+        float(value)
+        for value in cast(Mapping[str, Any], reference["runtime_samples_seconds"])["warm_primary"]
+    ]
     warm_values = [float(torax_runtime["warm_primary"]), native_warm]
     warm_cost_ratio = max(warm_values) / max(min(warm_values), 1.0e-12)
 
@@ -420,7 +468,7 @@ def build_report(reference_path: Path = REFERENCE_PATH) -> dict[str, Any]:
         "robustness": max(native_refinement.values())
         <= float(thresholds["native_refinement_relative_l2"])
         and max(torax_refinement.values()) <= float(thresholds["torax_refinement_relative_l2"])
-        and native_projection_sha == replay_projection_sha
+        and native_byte_identical
         and bool(
             cast(Mapping[str, Any], reference["determinism"])[
                 "byte_identical_scientific_projection"
@@ -478,8 +526,8 @@ def build_report(reference_path: Path = REFERENCE_PATH) -> dict[str, Any]:
         },
         "determinism": {
             "native_primary_projection_sha256": native_projection_sha,
-            "native_replay_projection_sha256": replay_projection_sha,
-            "native_byte_identical": native_projection_sha == replay_projection_sha,
+            "native_replay_projection_sha256s": replay_projection_shas,
+            "native_byte_identical": native_byte_identical,
             "torax_byte_identical": cast(Mapping[str, Any], reference["determinism"])[
                 "byte_identical_scientific_projection"
             ],
@@ -492,6 +540,14 @@ def build_report(reference_path: Path = REFERENCE_PATH) -> dict[str, Any]:
             "native_refined": native_refined,
             "warm_max_over_min_ratio": warm_cost_ratio,
         },
+        "runtime_samples_seconds": {
+            "torax_warm": torax_warm_samples,
+            "native_warm": native_warm_samples,
+        },
+        "timing_estimator": (
+            "Each warm wall time is the minimum over its warm replays; cold times are "
+            "single first runs. Timings are wall time on the recording hosts."
+        ),
         "gates": gates,
         "passes_thresholds": all(gates.values()),
         "performance_superiority_claimed": False,
@@ -513,6 +569,8 @@ def render_markdown(report: Mapping[str, Any]) -> str:
     state_metrics = cast(Mapping[str, Any], report["state_metrics"])
     source_metrics = cast(Mapping[str, Any], report["source_budget_metrics"])
     conservation = cast(Mapping[str, Any], report["conservation_metrics"])
+    runtime = cast(Mapping[str, Any], report["runtime_seconds"])
+    thresholds = cast(Mapping[str, Any], MODEL_INTERSECTION["thresholds"])
     gates = cast(Mapping[str, Any], report["gates"])
     lines = [
         "# Coupled TORAX Transport Parity",
@@ -539,6 +597,16 @@ def render_markdown(report: Mapping[str, Any]) -> str:
             f"- Native maximum linear residual: `{float(conservation['native_max_linear_residual_linf']):.12g}`",
             f"- Native maximum exchange relative closure: `{float(conservation['native_max_exchange_relative_closure']):.12g}`",
             "",
+            "## Warm cost",
+            "",
+            "Each warm wall time is the minimum over repeated warm replays; the samples are in "
+            "the JSON report.",
+            "",
+            f"- TORAX warm: `{float(runtime['torax_warm']):.6g}` s",
+            f"- Native warm: `{float(runtime['native_warm']):.6g}` s",
+            f"- Maximum over minimum: `{float(runtime['warm_max_over_min_ratio']):.6g}` "
+            f"(limit `{float(thresholds['maximum_warm_cost_ratio']):g}`)",
+            "",
             "## Pareto gates",
             "",
         ]
@@ -556,6 +624,31 @@ def write_report(*, report_json: Path = REPORT_JSON, report_md: Path = REPORT_MD
     report_json.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     report_md.write_text(render_markdown(report), encoding="utf-8")
     return report
+
+
+def _runtime_errors(observed: Mapping[str, Any]) -> list[str]:
+    """Check that the warm times are the minima of their samples and the ratio follows."""
+    runtime = observed.get("runtime_seconds")
+    if not isinstance(runtime, Mapping) or not all(
+        np.isfinite(float(value)) and float(value) > 0.0 for value in runtime.values()
+    ):
+        return ["coupled parity report runtime evidence is incomplete"]
+    samples = observed.get("runtime_samples_seconds")
+    if not isinstance(samples, Mapping):
+        return ["coupled parity report lacks warm runtime samples"]
+    errors: list[str] = []
+    for name in ("torax_warm", "native_warm"):
+        try:
+            values = _warm_samples(samples.get(name), name=f"{name} samples")
+        except ValueError as exc:
+            errors.append(f"coupled parity report {exc}")
+            continue
+        if float(runtime.get(name, 0.0)) != min(values):
+            errors.append(f"coupled parity report {name} is not the minimum of its samples")
+    warm = [float(runtime.get("torax_warm", 0.0)), float(runtime.get("native_warm", 0.0))]
+    if float(runtime.get("warm_max_over_min_ratio", 0.0)) != max(warm) / max(min(warm), 1.0e-12):
+        errors.append("coupled parity report warm cost ratio does not follow its warm times")
+    return errors
 
 
 def check_report(*, report_json: Path = REPORT_JSON, report_md: Path = REPORT_MD) -> list[str]:
@@ -592,11 +685,7 @@ def check_report(*, report_json: Path = REPORT_JSON, report_md: Path = REPORT_MD
         errors.append("coupled parity report scientific projection digest is stale")
     if not bool(observed.get("passes_thresholds", False)):
         errors.append("coupled parity report does not pass its frozen thresholds")
-    runtime = observed.get("runtime_seconds")
-    if not isinstance(runtime, Mapping) or not all(
-        np.isfinite(float(value)) and float(value) > 0.0 for value in runtime.values()
-    ):
-        errors.append("coupled parity report runtime evidence is incomplete")
+    errors.extend(_runtime_errors(observed))
     expected_md = render_markdown(observed)
     if not report_md.exists():
         errors.append(f"missing coupled parity Markdown report: {report_md}")

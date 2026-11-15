@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,13 @@ def test_reference_authenticates_pinned_deck_and_deterministic_replay() -> None:
             "lacks deterministic replay",
         ),
         (("primary.sim_error", "SimError.NUMERICAL_ERROR"), "did not complete cleanly"),
+        (("runtime_samples_seconds", "x"), "lacks warm runtime samples"),
+        (("runtime_samples_seconds.warm_primary", "abc"), "must be a sequence of wall times"),
+        (("runtime_samples_seconds.warm_primary", [0.1, 0.2]), "needs at least 3 positive"),
+        (("runtime_samples_seconds.warm_primary", [0.1, 0.2, 0.0]), "needs at least 3 positive"),
+        (("runtime_seconds.warm_primary", 1.0), "not the minimum of its samples"),
+        (("determinism.warm_projection_sha256s", "abc"), "do not reproduce the primary"),
+        (("determinism.warm_projection_sha256s", ["0" * 64] * 5), "do not reproduce the primary"),
     ],
 )
 def test_reference_rejects_mutated_custody(
@@ -62,9 +70,29 @@ def test_reference_rejects_mutated_custody(
         benchmark.load_reference(path)
 
 
-def test_build_report_exercises_four_state_pareto_gate() -> None:
-    report = benchmark.build_report()
+def test_reference_needs_one_identical_replay_per_warm_sample(tmp_path: Path) -> None:
+    payload = _payload()
+    determinism = payload["determinism"]
+    determinism["warm_projection_sha256s"] = determinism["warm_projection_sha256s"][:-1]
+    path = tmp_path / "reference.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
 
+    with pytest.raises(ValueError, match="do not reproduce the primary"):
+        benchmark.load_reference(path)
+
+
+def test_build_report_exercises_four_state_pareto_gate(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    report_json = tmp_path / "parity.json"
+    report_md = tmp_path / "parity.md"
+    argv = ["--report-json", str(report_json), "--report-md", str(report_md), "--strict"]
+
+    assert benchmark.main(argv) == 0
+
+    assert json.loads(capsys.readouterr().out)["cost_completeness"] is True
+    report = json.loads(report_json.read_text(encoding="utf-8"))
+    assert benchmark.check_report(report_json=report_json, report_md=report_md) == []
     assert report["passes_thresholds"] is True
     assert all(report["gates"].values())
     assert set(report["state_metrics"]) == {
@@ -78,6 +106,14 @@ def test_build_report_exercises_four_state_pareto_gate() -> None:
     assert report["conservation_metrics"]["native_max_linear_residual_linf"] < 1e-10
     assert report["determinism"]["native_byte_identical"] is True
     assert report["determinism"]["torax_byte_identical"] is True
+    replay_shas = report["determinism"]["native_replay_projection_sha256s"]
+    assert replay_shas == [report["determinism"]["native_primary_projection_sha256"]] * (
+        benchmark.NATIVE_WARM_REPEATS
+    )
+    samples = report["runtime_samples_seconds"]
+    assert len(samples["native_warm"]) == benchmark.NATIVE_WARM_REPEATS
+    assert report["runtime_seconds"]["native_warm"] == min(samples["native_warm"])
+    assert report["runtime_seconds"]["torax_warm"] == min(samples["torax_warm"])
     assert report["performance_superiority_claimed"] is False
     assert report["physics_equivalence_claimed"] is False
 
@@ -90,6 +126,8 @@ def test_tracked_report_and_markdown_are_current() -> None:
     assert "Performance superiority claimed: `False`" in markdown
     assert "Physics equivalence claimed: `False`" in markdown
     assert "`source_budgets`: `True`" in markdown
+    assert "## Warm cost" in markdown
+    assert "(limit `100`)" in markdown
 
 
 def test_check_report_rejects_mutated_projection_and_runtime(tmp_path: Path) -> None:
@@ -105,6 +143,47 @@ def test_check_report_rejects_mutated_projection_and_runtime(tmp_path: Path) -> 
 
     assert "coupled parity report scientific projection digest is stale" in errors
     assert "coupled parity report runtime evidence is incomplete" in errors
+
+
+def _drop_samples(report: dict[str, Any]) -> None:
+    del report["runtime_samples_seconds"]
+
+
+def _shorten_native_samples(report: dict[str, Any]) -> None:
+    report["runtime_samples_seconds"]["native_warm"] = [1.0]
+
+
+def _double_torax_warm(report: dict[str, Any]) -> None:
+    report["runtime_seconds"]["torax_warm"] *= 2.0
+
+
+def _flatten_ratio(report: dict[str, Any]) -> None:
+    report["runtime_seconds"]["warm_max_over_min_ratio"] = 1.0
+
+
+@pytest.mark.parametrize(
+    ("mutate", "message"),
+    [
+        (_drop_samples, "coupled parity report lacks warm runtime samples"),
+        (
+            _shorten_native_samples,
+            "coupled parity report native_warm samples needs at least 3 positive wall times",
+        ),
+        (_double_torax_warm, "coupled parity report torax_warm is not the minimum of its samples"),
+        (_flatten_ratio, "coupled parity report warm cost ratio does not follow its warm times"),
+    ],
+)
+def test_check_report_rejects_warm_times_that_do_not_follow_their_samples(
+    tmp_path: Path, mutate: Callable[[dict[str, Any]], None], message: str
+) -> None:
+    report = json.loads(benchmark.REPORT_JSON.read_text(encoding="utf-8"))
+    mutate(report)
+    report_json = tmp_path / "report.json"
+    report_md = tmp_path / "report.md"
+    report_json.write_text(json.dumps(report), encoding="utf-8")
+    report_md.write_text(benchmark.render_markdown(report), encoding="utf-8")
+
+    assert message in benchmark.check_report(report_json=report_json, report_md=report_md)
 
 
 def test_cli_check_reports_success(capsys: pytest.CaptureFixture[str]) -> None:

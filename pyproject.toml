@@ -585,6 +585,7 @@ files = [
     "validation/benchmark_torax_coupled_transport_parity.py",
     "validation/reference_data/torax/coupled_transport_model_intersection_deck.py",
     "tests/test_torax_coupled_transport_parity.py",
+    "tests/test_torax_coupled_reference_runner.py",
     "src/scpn_fusion/integrations/__init__.py",
     "src/scpn_fusion/integrations/torax/__init__.py",
     "src/scpn_fusion/integrations/torax/__main__.py",
