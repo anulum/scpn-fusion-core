@@ -42,6 +42,10 @@
   report with a newline, so a rebuild no longer rewrites the tracked file.
   Its builder takes an `output_root`, and its tests write into a temporary
   root instead of the repository.
+- `tools/generate_reference_data_provenance_manifest.py --check` ignored file
+  sizes and sha256 digests, so a changed reference file passed as "up to
+  date". It now compares them. Git LFS pointers are fingerprinted by the
+  content they record, so checkouts with and without LFS content agree.
 
 ### Changed
 

@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import importlib.util
 import json
 import sys
@@ -435,43 +436,105 @@ def test_normalize_for_check_sorts_datasets_and_files() -> None:
     ]
 
 
-def test_normalize_for_check_ignores_byte_fingerprint_fields() -> None:
+def test_normalize_for_check_keeps_byte_fingerprint_fields() -> None:
+    """Digests and sizes are compared; only the generation time is normalised."""
+    row = {
+        "path": "sparc/example.npz",
+        "dataset_id": "sparc",
+        "source_type": "public_reference",
+        "source": "SPARC",
+        "license": "CC-BY-4.0",
+        "size_bytes": 111,
+        "sha256": "aaa",
+    }
     payload_a = {
         "generated_at_utc": "2026-03-03T00:00:00+00:00",
-        "datasets": [
-            {"id": "sparc", "file_count": 2, "total_bytes": 12345},
-        ],
-        "files": [
-            {
-                "path": "sparc/example.npz",
-                "dataset_id": "sparc",
-                "source_type": "public_reference",
-                "source": "SPARC",
-                "license": "CC-BY-4.0",
-                "size_bytes": 111,
-                "sha256": "aaa",
-            }
-        ],
+        "datasets": [{"id": "sparc", "file_count": 1, "total_bytes": 111}],
+        "files": [row],
     }
     payload_b = {
         "generated_at_utc": "2026-03-04T00:00:00+00:00",
-        "datasets": [
-            {"id": "sparc", "file_count": 2, "total_bytes": 99999},
-        ],
-        "files": [
-            {
-                "path": "sparc/example.npz",
-                "dataset_id": "sparc",
-                "source_type": "public_reference",
-                "source": "SPARC",
-                "license": "CC-BY-4.0",
-                "size_bytes": 222,
-                "sha256": "bbb",
-            }
-        ],
+        "datasets": [{"id": "sparc", "file_count": 1, "total_bytes": 111}],
+        "files": [dict(row)],
     }
-
     assert prov._normalize_for_check(payload_a) == prov._normalize_for_check(payload_b)
+    payload_b["files"] = [dict(row, sha256="bbb")]
+    assert prov._normalize_for_check(payload_a) != prov._normalize_for_check(payload_b)
+    payload_b["files"] = [dict(row, size_bytes=222)]
+    assert prov._normalize_for_check(payload_a) != prov._normalize_for_check(payload_b)
+
+
+def test_main_check_mode_detects_changed_content_of_an_existing_file(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A file whose bytes change under the same path makes the manifest stale."""
+    root = tmp_path / "reference_data"
+    root.mkdir(parents=True)
+    (root / "sample.npz").write_bytes(b"abc123")
+    policy = root / "provenance_policy.json"
+    manifest = root / "provenance_manifest.json"
+    _write_json(
+        policy,
+        _policy_with_rules(
+            [
+                {
+                    "id": "synthetic_data",
+                    "glob": "*.npz",
+                    "source_type": "synthetic_generated",
+                    "source": "tooling",
+                    "license": "synthetic-v1",
+                },
+                {
+                    "id": "policy",
+                    "glob": "provenance_policy.json",
+                    "source_type": "documentation",
+                    "source": "policy",
+                    "license": "AGPL-3.0-or-later",
+                },
+            ]
+        ),
+    )
+    args = ["--root", str(root), "--policy", str(policy), "--manifest", str(manifest)]
+    assert prov.main(args) == 0
+    assert prov.main([*args, "--check"]) == 0
+
+    (root / "sample.npz").write_bytes(b"abc124")  # same size, different digest
+    capsys.readouterr()
+    assert prov.main([*args, "--check"]) == 1
+    output = capsys.readouterr().out
+    assert "first differing file row: sample.npz" in output
+    assert "sha256" in output
+
+
+def test_lfs_pointer_and_its_content_fingerprint_identically(tmp_path: Path) -> None:
+    """A checkout without LFS content (pointer) and one with it give the same row."""
+    content = bytes(range(256)) * 3 + b"\r\n binary tail"
+    digest = hashlib.sha256(content).hexdigest()
+    pointer = (
+        f"version https://git-lfs.github.com/spec/v1\noid sha256:{digest}\nsize {len(content)}\n"
+    ).encode("ascii")
+    smudged = tmp_path / "with_content.npy"
+    smudged.write_bytes(content)
+    unsmudged = tmp_path / "pointer_only.npy"
+    unsmudged.write_bytes(pointer)
+
+    assert prov._file_fingerprint(smudged) == (len(content), digest)
+    assert prov._file_fingerprint(unsmudged) == (len(content), digest)
+
+
+def test_malformed_lfs_pointer_is_refused(tmp_path: Path) -> None:
+    broken = tmp_path / "broken.npy"
+    broken.write_bytes(b"version https://git-lfs.github.com/spec/v1\noid md5:abc\nsize 12\n")
+    with pytest.raises(ValueError, match="malformed Git LFS pointer"):
+        prov._file_fingerprint(broken)
+
+
+def test_text_fingerprint_normalises_line_endings(tmp_path: Path) -> None:
+    unix = tmp_path / "unix.json"
+    windows = tmp_path / "windows.json"
+    unix.write_bytes(b'{"a": 1}\n')
+    windows.write_bytes(b'{"a": 1}\r\n')
+    assert prov._file_fingerprint(unix) == prov._file_fingerprint(windows)
 
 
 def test_build_manifest_ignores_untracked_files_when_git_index_available(

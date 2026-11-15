@@ -11,6 +11,12 @@ case is a public EFIT gate or a synthetic diagnostic proxy, plus the expected
 solver contract and source convention. Public SPARC equilibrium rows are gate
 references; synthetic DIII-D/JET equilibrium rows are diagnostic-only proxies.
 
+`python tools/generate_reference_data_provenance_manifest.py --check` fails
+when any tracked file's size or sha256 differs from the manifest, as well as
+when files are added or missing. Text line endings are normalised, and a Git
+LFS pointer is fingerprinted by the content size and sha256 it records, so
+checkouts with and without LFS content give the same manifest.
+
 ### SPARC (Commonwealth Fusion Systems)
 
 Equilibrium files from the [SPARCPublic](https://github.com/cfs-energy/SPARCPublic)

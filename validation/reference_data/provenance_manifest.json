@@ -348,7 +348,7 @@
       "license_redistributable": true,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation",
-      "total_bytes": 30101
+      "total_bytes": 30470
     },
     {
       "file_count": 1,
@@ -583,8 +583,8 @@
       "license_citation_required": false,
       "license_redistributable": true,
       "path": "README.md",
-      "sha256": "5a0154c8362e61deb0a303d9dfc35e0a08eaec9c50e10ef89095a61268eaa837",
-      "size_bytes": 4167,
+      "sha256": "be85519a6c2edcc78c1228b02a8770379718c3b74164082eca527574c7fdec84",
+      "size_bytes": 4536,
       "source": "Repository-maintained reference-data documentation.",
       "source_type": "documentation"
     },
@@ -4903,7 +4903,7 @@
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-11-12T08:12:04.635573+00:00",
+  "generated_at_utc": "2026-11-15T16:22:35.401369+00:00",
   "license_registry": [
     {
       "attribution_required": true,

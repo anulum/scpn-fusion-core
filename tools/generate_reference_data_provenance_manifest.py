@@ -22,7 +22,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROOT = REPO_ROOT / "validation" / "reference_data"
 DEFAULT_POLICY = DEFAULT_ROOT / "provenance_policy.json"
 DEFAULT_MANIFEST = DEFAULT_ROOT / "provenance_manifest.json"
-_BINARY_SUFFIXES = {".npz"}
+_BINARY_SUFFIXES = {".npz", ".npy"}
+# A Git LFS pointer names the content's sha256 and size; checkouts without LFS content hold
+# the pointer, checkouts with it hold the content, and both must fingerprint identically.
+_LFS_POINTER_PREFIX = b"version https://git-lfs.github.com/spec/v1\n"
+_LFS_POINTER_MAX_BYTES = 1024
 REFERENCE_CURATION_FIELDS = (
     "reference_class",
     "reference_role",
@@ -47,6 +51,42 @@ def _content_bytes(path: Path) -> bytes:
     if path.suffix.lower() in _BINARY_SUFFIXES:
         return raw
     return raw.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+
+
+def _file_fingerprint(path: Path) -> tuple[int, str]:
+    """Return the size and sha256 of a file's content, independent of the host.
+
+    Parameters
+    ----------
+    path
+        Tracked reference-data file.
+
+    Returns
+    -------
+    tuple of (int, str)
+        Content size in bytes and hexadecimal sha256. A Git LFS pointer reports the
+        size and sha256 it records for the content, so a checkout without LFS content
+        and one with it give the same fingerprint. Text line endings are normalised.
+
+    Raises
+    ------
+    ValueError
+        If a file starts like an LFS pointer but does not record a sha256 oid and size.
+    """
+    raw = path.read_bytes()
+    if raw.startswith(_LFS_POINTER_PREFIX) and len(raw) <= _LFS_POINTER_MAX_BYTES:
+        fields = dict(
+            line.split(" ", 1)
+            for line in raw.decode("ascii", errors="strict").splitlines()[1:]
+            if " " in line
+        )
+        oid = fields.get("oid", "")
+        size = fields.get("size", "")
+        if not (oid.startswith("sha256:") and len(oid) == 71 and size.isdigit()):
+            raise ValueError(f"malformed Git LFS pointer: {path}")
+        return int(size), oid.removeprefix("sha256:")
+    content = _content_bytes(path)
+    return len(content), _sha256(content)
 
 
 def _sha256(content: bytes) -> str:
@@ -344,9 +384,7 @@ def build_manifest(
                 raise ValueError(
                     "synthetic proxy references cannot live under public reference namespace(s)."
                 )
-        content = _content_bytes(path)
-        size_bytes = int(len(content))
-        sha256 = _sha256(content)
+        size_bytes, sha256 = _file_fingerprint(path)
 
         row = {
             "path": rel,
@@ -456,36 +494,18 @@ def _normalize_for_check(payload: dict[str, Any]) -> dict[str, Any]:
             license_registry,
             key=lambda item: str(item.get("id", "")) if isinstance(item, dict) else "",
         )
+    # Sizes and digests are compared as recorded: _file_fingerprint makes them independent
+    # of line endings and of whether a checkout holds LFS pointers or content.
     datasets = out.get("datasets")
     if isinstance(datasets, list):
-        normalized_datasets: list[dict[str, Any] | Any] = []
-        for item in datasets:
-            if not isinstance(item, dict):
-                normalized_datasets.append(item)
-                continue
-            row = dict(item)
-            if "total_bytes" in row:
-                row["total_bytes"] = "<normalized>"
-            normalized_datasets.append(row)
         out["datasets"] = sorted(
-            normalized_datasets,
+            datasets,
             key=lambda item: str(item.get("id", "")) if isinstance(item, dict) else "",
         )
     files = out.get("files")
     if isinstance(files, list):
-        normalized_files: list[dict[str, Any] | Any] = []
-        for item in files:
-            if not isinstance(item, dict):
-                normalized_files.append(item)
-                continue
-            row = dict(item)
-            if "size_bytes" in row:
-                row["size_bytes"] = "<normalized>"
-            if "sha256" in row:
-                row["sha256"] = "<normalized>"
-            normalized_files.append(row)
         out["files"] = sorted(
-            normalized_files,
+            files,
             key=lambda item: str(item.get("path", "")) if isinstance(item, dict) else "",
         )
     return out
