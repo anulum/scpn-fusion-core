@@ -615,27 +615,36 @@ surrogate claim is promoted.
   and the RWM wall-time growth magnitude instead of qualitative signs alone.
 - Rebind the tracked predictive-forward and real-DIII-D evidence to the current
   axis-connected plasma-support implementation. Current reproducible CPU evidence
-  records 1.91 % full-domain and 0.070 % shell-pinned DIII-D ψ RMS, 2.253e-06
+  records 1.91 % full-domain and 0.070 % shell-pinned DIII-D ψ RMS, 2.262e-06
   adjoint/finite-difference agreement, and fail-closes the non-converged 65²
   warm-start comparison instead of presenting iteration-capped fields as a
   fixed-point equivalence. Every bound artifact now verifies its executable
   solver-source digest as well as its generator and pinned environment.
+  (Corrected 2026-11-15: the adjoint evidence shipped at `v4.1.0` records
+  `2.262e-06`, from the NumPy 2 refresh 3ea6025b. The first notes quoted
+  `2.253e-06`, the value before that refresh.)
 - The predictive IDA boundary estimator now uses a differentiable sub-cell
   saddle seed and cold-start separatrix homotopy. On the public 129×129
-  DIII-D-like evaluation candidate, the regenerated fail-closed evidence
-  improves ψ_N RMSE from `0.3077836366` to `0.2109971505` and raw
-  ψ-span NRMSE from `0.1996275498` to `0.1529060825`. Current closure
-  (`3.03633e-16`), nonlinear residual (`1.77720e-08`), and all three
+  DIII-D-like evaluation candidate, the fail-closed evidence shipped at
+  `v4.1.0` improves ψ_N RMSE from `0.3077836366` (ccf6ab82) to `0.2110185203`
+  and raw ψ-span NRMSE from `0.1996275498` to `0.1529834572`. The relative
+  current error (`0`), the nonlinear residual (`6.328e-09`) and all three
   finite-difference gradient audits pass. ψ_N accuracy and non-isolated CPU
   latency were originally reported from the relabelled cold-start loop. The
-  corrected non-isolated `cuda:0` same-input warm measurement records three
-  two-iteration solves and latest P95 `24.9163 ms`; it still fails the `20 ms`
+  corrected non-isolated GPU same-input warm measurement records three
+  two-iteration solves and a P95 of `30.8563 ms`; it still fails the `20 ms`
   gate. Spatial diagnostics localise the remaining mismatch to a current-profile
-  distribution TV distance of `0.25135` and a current-centroid shift of
-  `−4.20 cm` radially / `+5.84 cm` vertically, while only `4.71%` of absolute
+  distribution TV distance of `0.2513` and a current-centroid shift of
+  `−4.19 cm` radially / `+5.84 cm` vertically, while only `4.70%` of absolute
   candidate current lies outside the reference support. No scientific, CONTROL,
   facility, PCS, or safety admission is claimed. Solver commit `ad14457c`;
-  diagnostic source `097a784d`; evidence commit `95af8560`.
+  diagnostic source `097a784d`; evidence last regenerated in `94abfb79`.
+  (Corrected 2026-11-15: these are the values of the report shipped at
+  `v4.1.0`. The first notes quoted evidence commit `95af8560`: `0.2109971505`,
+  `0.1529060825`, P95 `24.9163 ms` on `cuda:0`, TV `0.25135`, `−4.20 cm` and
+  `4.71%`. That evidence was regenerated three times before the release. The
+  notes also gave a current closure of `3.03633e-16` from an earlier table and
+  a residual of `1.77720e-08` that no tracked report contains.)
 - The first tracked IDA same-case run remains fail-closed. On the public
   129×129 DIII-D example it measured ψ-span NRMSE `2.0875458241740508`,
   relative current error `0.5205740043457716`, nonlinear residual ratio
