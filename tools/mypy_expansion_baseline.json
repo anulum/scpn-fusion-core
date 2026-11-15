@@ -98,6 +98,8 @@
     "tests/test_torax_coupled_reference_runner.py",
     "tests/test_training_tool_entry_points.py",
     "src/scpn_fusion/core/free_boundary_coil_fit.py",
-    "tests/test_free_boundary_coil_fit.py"
+    "tests/test_free_boundary_coil_fit.py",
+    "validation/linear_mhd_reduced_model_acceptance.py",
+    "tests/test_linear_mhd_reduced_model_acceptance.py"
   ]
 }

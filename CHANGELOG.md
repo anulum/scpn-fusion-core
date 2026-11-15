@@ -157,6 +157,14 @@
   release-readiness check ran against that version). Any other manual run
   builds and verifies the distribution without publishing; before, every
   manual run published.
+- `validation/linear_mhd_reduced_model_acceptance.py` records where its result
+  came from, before the run starts:
+  - the source revision, and the sha256 of the four solver sources and of the
+    script;
+  - the Python, NumPy and SciPy versions, and the BLAS build;
+  - the thread variables, the CPU models, and the start and elapsed time.
+  The scored criteria are unchanged. A checkout without a revision now fails at
+  the start rather than after the run.
 
 ## [4.1.0] - 2026-11-12
 

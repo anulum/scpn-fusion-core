@@ -11,17 +11,29 @@ unchanged. A criterion that is missed is reported as a miss; the script never
 adjusts a tolerance. Runtime is several minutes; set
 OMP_NUM_THREADS / OPENBLAS_NUM_THREADS on a shared machine.
 
+The record carries the source revision, the digests of the solver sources and of
+this script, the library versions, the BLAS build, the thread settings and the
+host CPU, taken before the run, so that a result can be traced to its code and
+host.
+
 Usage: python validation/linear_mhd_reduced_model_acceptance.py [--output result.json]
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import os
+import platform
+import subprocess
 import sys
+import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
+import scipy
 
 from scpn_fusion.core.linear_mhd_1d import (
     WessonCylinder,
@@ -35,10 +47,55 @@ from scpn_fusion.core.linear_mhd_spectrum import all_eigenvalues, most_unstable
 from scpn_fusion.core.tearing_mode_theory import FKR_MATCHING_COEFFICIENT, HarrisSheetTearingModel
 
 ETAS = (1e-6, 1e-7, 1e-8)
+ROOT = Path(__file__).resolve().parents[1]
+SOURCE_PATHS = (
+    "src/scpn_fusion/core/linear_mhd_1d.py",
+    "src/scpn_fusion/core/linear_mhd_spectrum.py",
+    "src/scpn_fusion/core/linear_mhd_delta_prime.py",
+    "src/scpn_fusion/core/tearing_mode_theory.py",
+    "validation/linear_mhd_reduced_model_acceptance.py",
+)
+THREAD_VARIABLES = ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS")
 
 
 def _slope(values: list[float]) -> float:
     return float(np.polyfit(np.log(ETAS), np.log(values), 1)[0])
+
+
+def _cpu_models() -> list[str]:
+    cpuinfo = Path("/proc/cpuinfo")
+    text = cpuinfo.read_text(encoding="utf-8") if cpuinfo.is_file() else ""
+    return sorted(
+        {
+            line.split(":", 1)[1].strip()
+            for line in text.splitlines()
+            if line.startswith("model name")
+        }
+    )
+
+
+def provenance() -> dict[str, object]:
+    """Return the source revision, source digests, library versions and host of this run."""
+    revision = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True, capture_output=True, text=True
+    ).stdout.strip()
+    blas = np.show_config(mode="dicts")["Build Dependencies"]["blas"]
+    return {
+        "source_revision": revision,
+        "source_sha256": {
+            relative: hashlib.sha256((ROOT / relative).read_bytes()).hexdigest()
+            for relative in SOURCE_PATHS
+        },
+        "python": platform.python_version(),
+        "numpy": np.__version__,
+        "scipy": scipy.__version__,
+        "blas": {"name": blas["name"], "version": blas["version"]},
+        "threads": {name: os.environ.get(name) for name in THREAD_VARIABLES},
+        "machine": platform.machine(),
+        "cpu_models": _cpu_models(),
+        "cpu_count": os.cpu_count(),
+        "started_at": datetime.now(UTC).isoformat(),
+    }
 
 
 def run() -> dict[str, object]:
@@ -142,7 +199,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=None)
     args = parser.parse_args(argv)
+    origin = provenance()
+    started = time.monotonic()
     record = run()
+    record["provenance"] = {**origin, "elapsed_s": time.monotonic() - started}
     text = json.dumps(record, indent=2, sort_keys=True)
     if args.output is None:
         print(text)

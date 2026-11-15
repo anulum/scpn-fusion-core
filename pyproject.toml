@@ -347,6 +347,8 @@ files = [
     "tests/test_benchmark_freegsnke_inverse.py",
     "validation/benchmark_freegsnke_multimachine.py",
     "tests/test_benchmark_freegsnke_multimachine.py",
+    "validation/linear_mhd_reduced_model_acceptance.py",
+    "tests/test_linear_mhd_reduced_model_acceptance.py",
     "validation/ida_fixed_reference_source_contract.py",
     "tests/test_ida_fixed_reference_source_contract.py",
     "validation/diagnose_ida_fixed_reference_source.py",
