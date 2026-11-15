@@ -643,17 +643,15 @@ def _validate_completeness(
 
 
 def _canonical_json_bytes(value: JsonValue) -> bytes:
-    _reject_nonfinite_numbers(value, "document")
-    try:
-        encoded = json.dumps(
-            value,
-            allow_nan=False,
-            ensure_ascii=False,
-            separators=(",", ":"),
-            sort_keys=True,
-        )
-    except (TypeError, ValueError) as exc:  # pragma: no cover - JsonValue is prevalidated
-        raise MastMagneticDiagnosticQualificationError(f"JSON encoding failed: {exc}") from exc
+    # Callers pass payloads that the validator has checked field by field, so every
+    # value is JSON and finite; allow_nan=False still refuses a nonfinite number.
+    encoded = json.dumps(
+        value,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    )
     return (encoded + "\n").encode()
 
 
@@ -678,17 +676,6 @@ def _reject_duplicate_pairs(pairs: list[tuple[str, JsonValue]]) -> JsonObject:
             raise MastMagneticDiagnosticQualificationError(f"duplicate JSON key: {key}")
         result[key] = value
     return result
-
-
-def _reject_nonfinite_numbers(value: JsonValue, path: str) -> None:
-    if isinstance(value, float) and not math.isfinite(value):  # pragma: no cover - fields validate
-        raise MastMagneticDiagnosticQualificationError(f"{path} contains a nonfinite number")
-    if isinstance(value, list):
-        for index, item in enumerate(value):
-            _reject_nonfinite_numbers(item, f"{path}[{index}]")
-    if isinstance(value, dict):
-        for key, item in value.items():
-            _reject_nonfinite_numbers(item, f"{path}.{key}")
 
 
 def _as_object(value: JsonValue, label: str) -> JsonObject:

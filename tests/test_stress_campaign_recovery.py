@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+import threading
 import time
 from pathlib import Path
 
@@ -198,6 +199,54 @@ def test_progress_rejects_incomplete_active_episode_identity(tmp_path: Path) -> 
             started_monotonic=time.monotonic(),
             attempted_at_start=0,
         )
+
+
+def _heartbeat_with_storage_lost(tmp_path: Path, body_error: Exception | None) -> None:
+    """Run a heartbeat whose recovery folder is replaced by a plain file mid-run."""
+    config = tmp_path / "config.json"
+    config.write_text("{}\n", encoding="utf-8")
+    scenario = StressScenario(master_seed=23)
+    store = RecoveryStore(tmp_path / "recovery", _identity(config, scenario))
+    moved = tmp_path / "recovery-moved"
+    try:
+        with store.progress_heartbeat(
+            lanes={"PID": _metrics(scenario)},
+            active_controller="PID",
+            active_episode_index=1,
+            active_episode_seed=scenario.episode_seed(1),
+            started_monotonic=time.monotonic(),
+            attempted_at_start=1,
+            interval_s=0.01,
+        ):
+            store.directory.rename(moved)
+            store.directory.write_text("not a folder\n", encoding="utf-8")
+            # The heartbeat thread returns after its first failed write; wait for that.
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline and any(
+                thread.name.startswith("stress-heartbeat-") for thread in threading.enumerate()
+            ):
+                time.sleep(0.01)
+            if body_error is not None:
+                raise body_error
+    finally:
+        if store.directory.is_file():
+            store.directory.unlink()
+            moved.rename(store.directory)
+
+
+def test_heartbeat_storage_failure_fails_the_episode_it_was_watching(tmp_path: Path) -> None:
+    """A heartbeat that cannot write must not let a finished episode look healthy."""
+    with pytest.raises(RuntimeError, match="progress heartbeat failed") as raised:
+        _heartbeat_with_storage_lost(tmp_path, body_error=None)
+
+    # The storage error is chained, whichever OSError the filesystem raised.
+    assert isinstance(raised.value.__cause__, OSError)
+
+
+def test_heartbeat_storage_failure_does_not_mask_the_runner_error(tmp_path: Path) -> None:
+    """When the runner itself fails, its own error is the one that propagates."""
+    with pytest.raises(ValueError, match="runner failed"):
+        _heartbeat_with_storage_lost(tmp_path, body_error=ValueError("runner failed"))
 
 
 def test_active_episode_heartbeat_refreshes_stale_detectable_progress(tmp_path: Path) -> None:

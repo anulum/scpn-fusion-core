@@ -326,7 +326,7 @@ class RecoveryStore:
                         attempted_at_start=attempted_at_start,
                         snapshot_kind="heartbeat",
                     )
-                except BaseException as exc:  # pragma: no cover - rare storage failure
+                except BaseException as exc:
                     errors.append(exc)
                     return
 

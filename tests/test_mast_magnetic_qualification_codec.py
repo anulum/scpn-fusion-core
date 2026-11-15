@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Iterator
 from copy import deepcopy
 from pathlib import Path
 from typing import cast
@@ -80,3 +82,77 @@ def test_codec_rejects_noncanonical_and_oversized_transport() -> None:
     payload["unknown"] = cast(JsonValue, None)
     with pytest.raises(MastMagneticDiagnosticQualificationError, match="keys differ"):
         encode_mast_magnetic_diagnostic_qualification(payload)
+
+
+Path_ = tuple[str | int, ...]
+
+
+def _leaf_paths(value: object, path: Path_ = ()) -> Iterator[Path_]:
+    if isinstance(value, dict):
+        for key, item in value.items():
+            yield from _leaf_paths(item, (*path, key))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            yield from _leaf_paths(item, (*path, index))
+    else:
+        yield path
+
+
+def _value_at(value: object, path: Path_) -> object:
+    for step in path:
+        if isinstance(step, int):
+            value = cast(list[object], value)[step]
+        else:
+            value = cast(dict[str, object], value)[step]
+    return value
+
+
+def _replaced(payload: object, path: Path_, value: object) -> JsonObject:
+    copy = deepcopy(payload)
+    parent = _value_at(copy, path[:-1])
+    if isinstance(path[-1], int):
+        cast(list[object], parent)[path[-1]] = value
+    else:
+        cast(dict[str, object], parent)[path[-1]] = value
+    return cast(JsonObject, copy)
+
+
+def _one_path_per_field(payload: object) -> list[Path_]:
+    """Keep the first leaf of every field pattern; list items share their field's validator."""
+    seen: dict[tuple[str, ...], Path_] = {}
+    for path in _leaf_paths(payload):
+        pattern = tuple("*" if isinstance(step, int) else step for step in path)
+        seen.setdefault(pattern, path)
+    return list(seen.values())
+
+
+def test_validation_refuses_every_nonfinite_or_non_json_field_before_encoding() -> None:
+    """The encoder relies on field validation: no field may carry NaN, infinity or a non-JSON value."""
+    payload = _payload()
+    numeric = 0
+    for path in _one_path_per_field(payload):
+        candidates: list[object] = [{"not", "json"}]
+        leaf = _value_at(payload, path)
+        if isinstance(leaf, int | float) and not isinstance(leaf, bool):
+            numeric += 1
+            candidates += [float("nan"), float("inf"), float("-inf")]
+        for bad in candidates:
+            with pytest.raises(MastMagneticDiagnosticQualificationError):
+                encode_mast_magnetic_diagnostic_qualification(_replaced(payload, path, bad))
+    assert numeric >= 20
+
+
+def test_decoder_refuses_a_nan_that_json_text_can_carry() -> None:
+    """``json.loads`` accepts the NaN literal; the decoder must still refuse it."""
+    document = cast(dict[str, object], json.loads(_REFERENCE.read_bytes()))
+    path = next(
+        path
+        for path in _leaf_paths(document["payload"])
+        if isinstance(_value_at(document["payload"], path), float)
+    )
+    corrupted = _replaced(document, ("payload", *path), float("nan"))
+    data = (json.dumps(corrupted, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    assert b"NaN" in data
+
+    with pytest.raises(MastMagneticDiagnosticQualificationError):
+        decode_mast_magnetic_diagnostic_qualification(data)

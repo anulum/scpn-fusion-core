@@ -80,6 +80,16 @@
   Each tool is driven from its CLI with small settings, and each archive must
   load with `allow_pickle=False`. The FNO gate test also checks that a model
   which fails the gate writes nothing.
+- The four coverage pragmas added since 4.0.0 are removed:
+  - Two hid branches of the MAST magnetic qualification codec that field
+    validation makes unreachable. The branches are removed, and a test now
+    shows that every payload field refuses NaN, infinity and non-JSON values,
+    through encoding and through decoding (JSON text can carry `NaN`).
+  - The stress-campaign heartbeat's storage-failure branch is now tested with
+    a real filesystem fault: the watched episode fails, and a runner error is
+    not masked.
+  - The pragma in `tools/pypi_downloads.py` repeated the coverage
+    configuration, which already excludes `if __name__` blocks.
 
 ### Changed
 
