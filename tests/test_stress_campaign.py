@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -204,7 +204,7 @@ def test_failed_lane_serializes_null_metrics_and_failure_details(
 def test_result_writer_rejects_unbound_or_unprovenanced_input(tmp_path: Path) -> None:
     """A v3 scientific report cannot carry null campaign identity or provenance."""
     with pytest.raises(TypeError, match="CampaignResults"):
-        campaign.save_results_json({}, tmp_path / "plain.json", {"host": "test"})  # type: ignore[arg-type]
+        campaign.save_results_json(cast(Any, {}), tmp_path / "plain.json", {"host": "test"})
 
     scenario = StressScenario(master_seed=4)
     results = CampaignResults(scenario=scenario, campaign_identity={"digest": "test"})

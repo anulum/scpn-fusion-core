@@ -12,6 +12,7 @@ import ast
 import json
 import subprocess
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -132,6 +133,12 @@ def test_every_checkout_workflow_configures_default_branch() -> None:
     assert not violations, "\n".join(violations)
 
 
+def _first_result(payload: dict[str, object]) -> dict[str, Any]:
+    """Return the first SARIF result of the first run."""
+    runs = cast(list[dict[str, Any]], payload["runs"])
+    return cast(dict[str, Any], runs[0]["results"][0])
+
+
 def _scorecard_sarif(rule_id: str, *locations: object) -> dict[str, object]:
     """Build a minimal SARIF document containing the requested rule and locations."""
     return {
@@ -147,7 +154,7 @@ def test_scorecard_sarif_maps_placeholder_and_preserves_real_location() -> None:
     payload = _scorecard_sarif("VulnerabilitiesID", placeholder, real_location)
 
     assert sanitize_scorecard_sarif(payload) == 1
-    result = payload["runs"][0]["results"][0]  # type: ignore[index]
+    result = _first_result(payload)
     locations = result["locations"]
     assert locations[0]["physicalLocation"]["artifactLocation"]["uri"] == "SECURITY.md"
     assert locations[1] == real_location
@@ -163,7 +170,7 @@ def test_scorecard_sarif_maps_code_review_to_contributing_policy() -> None:
     payload = _scorecard_sarif("CodeReviewID", placeholder)
 
     assert sanitize_scorecard_sarif(payload) == 1
-    result = payload["runs"][0]["results"][0]  # type: ignore[index]
+    result = _first_result(payload)
     assert (
         result["locations"][0]["physicalLocation"]["artifactLocation"]["uri"] == "CONTRIBUTING.md"
     )

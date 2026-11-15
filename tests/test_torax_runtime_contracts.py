@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import copy
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -35,7 +36,8 @@ def test_request_round_trip_preserves_complete_config_and_typed_bindings() -> No
     assert len(restored.bindings) == 27
     assert restored.clock.final_ns == 20_000_000
     with pytest.raises(TypeError):
-        restored.torax_config["solver"] = {}  # type: ignore[index] # immutable contract assertion
+        # The contract exposes a read-only mapping; writing through it must fail.
+        cast(dict[str, object], restored.torax_config)["solver"] = {}
 
 
 def test_request_rejects_unknown_fields_and_typed_config_disagreement() -> None:

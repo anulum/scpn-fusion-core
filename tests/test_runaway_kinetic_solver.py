@@ -9,6 +9,8 @@
 
 from __future__ import annotations
 
+from typing import Any, cast
+
 import numpy as np
 import pytest
 
@@ -183,7 +185,7 @@ def test_solver_rejects_unknown_backend_without_fallback() -> None:
         solver.solve(
             np.ones(solver.operator.grid.shape),
             np.array([0.0, 0.1]),
-            backend="julia",  # type: ignore[arg-type]
+            backend=cast(Any, "julia"),  # deliberately unsupported
         )
 
 

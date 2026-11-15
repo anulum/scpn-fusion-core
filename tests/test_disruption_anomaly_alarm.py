@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 import runpy
 import sys
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pytest
@@ -241,7 +241,7 @@ def test_load_or_train_predictor_rejects_invalid_seq_len(tmp_path: Path, seq_len
     with pytest.raises(ValueError, match="seq_len"):
         dp.load_or_train_predictor(
             model_path=tmp_path / "missing_model.pth",
-            seq_len=seq_len,  # type: ignore[arg-type]
+            seq_len=cast(Any, seq_len),  # deliberately not a positive int
             train_if_missing=False,
             allow_fallback=True,
         )

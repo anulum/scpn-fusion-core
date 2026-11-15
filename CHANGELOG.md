@@ -90,6 +90,19 @@
     not masked.
   - The pragma in `tools/pypi_downloads.py` repeated the coverage
     configuration, which already excludes `if __name__` blocks.
+- Eight of the eleven `type: ignore` comments added since 4.0.0 are replaced
+  with typed code:
+  - the untyped `leggauss` call in `linear_mhd_1d` states its documented
+    result type;
+  - tests that pass deliberately invalid arguments say so with an explicit
+    cast, and the SARIF and JSON fixtures are typed.
+
+  The other three stay for now. They sit in
+  `integrations/torax/worker.py`, `validation/torax_coupled_reference_runner.py`
+  and `io/recoverable_npy_dataset.py`, whose SHA-256 digests are bound by the
+  TORAX runtime evidence, the coupled TORAX reference and the ITER
+  machine-conditioned dataset manifest. Editing them would invalidate evidence
+  produced by that exact source.
 
 ### Changed
 

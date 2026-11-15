@@ -48,6 +48,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 import scipy.sparse as sp
@@ -59,7 +60,10 @@ from scpn_fusion.core.linear_mhd_spectrum import most_unstable
 FloatArray = NDArray[np.float64]
 Profile = Callable[[FloatArray], FloatArray]
 
-_GAUSS_NODES, _GAUSS_WEIGHTS = np.polynomial.legendre.leggauss(6)  # type: ignore[no-untyped-call]  # numpy.polynomial is untyped
+# numpy.polynomial is untyped: leggauss returns Any, so state its documented result.
+_GAUSS_NODES, _GAUSS_WEIGHTS = cast(
+    tuple[FloatArray, FloatArray], np.polynomial.legendre.leggauss(6)
+)
 _GAUSS_T: FloatArray = 0.5 * (_GAUSS_NODES + 1.0)
 _GAUSS_W: FloatArray = 0.5 * _GAUSS_WEIGHTS
 _SMALL_R = 1e-6

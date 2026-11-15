@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -20,7 +20,7 @@ from validation import benchmark_torax_coupled_transport_parity as benchmark
 
 
 def _payload() -> dict[str, Any]:
-    return json.loads(benchmark.REFERENCE_PATH.read_text(encoding="utf-8"))  # type: ignore[no-any-return]
+    return cast(dict[str, Any], json.loads(benchmark.REFERENCE_PATH.read_text(encoding="utf-8")))
 
 
 def test_reference_authenticates_pinned_deck_and_deterministic_replay() -> None:
