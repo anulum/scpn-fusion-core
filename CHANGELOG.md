@@ -113,6 +113,11 @@
   The FNO generator loses a test-only `model_cls` hook. Its oracle check is
   now the model's own `is_neural` flag, which `NeuralTransportModel` sets only
   after its weights load.
+- `validation/benchmark_runaway_kinetic_rust.py` wrote "a concurrent pinned DREAM
+  reference run was active" into every report, whether or not one was running.
+  It now states only what is measured or declared: the load averages, and a
+  workload passed as `--concurrent-workload`. Without that argument the report
+  claims none.
 
 ### Changed
 

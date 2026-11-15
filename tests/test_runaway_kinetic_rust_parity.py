@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -23,6 +24,7 @@ from scpn_fusion.core.runaway_kinetic_grid import RunawayKineticGrid
 from scpn_fusion.core.runaway_kinetic_operator import RunawayKineticOperator
 from scpn_fusion.core.runaway_kinetic_solver import RunawayKineticSolver
 from validation.benchmark_runaway_kinetic_rust import (
+    main,
     _checksum,
     _source_provenance,
     scientific_projection,
@@ -198,3 +200,36 @@ def test_tracked_rust_benchmark_preserves_parity_and_language_boundaries() -> No
     assert selection["production_explicit_kernel"] == "rust"
     assert "stiff implicit" in selection["julia_gate"]
     assert "not this tensor kernel" in selection["go_role"]
+
+
+@pytest.mark.parametrize("declared", [None, "DREAM coarse deck on four cores"])
+def test_benchmark_records_a_concurrent_workload_only_when_declared(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, declared: str | None
+) -> None:
+    """The report states host conditions as declared; without a declaration it claims none."""
+    output_json = tmp_path / "benchmark.json"
+    output_md = tmp_path / "benchmark.md"
+    argv = [
+        "benchmark_runaway_kinetic_rust.py",
+        "--repeats",
+        "3",
+        "--output-json",
+        str(output_json),
+        "--output-markdown",
+        str(output_md),
+    ]
+    if declared is not None:
+        argv += ["--concurrent-workload", declared]
+    monkeypatch.setattr(sys, "argv", argv)
+
+    assert main() == 0
+
+    host = json.loads(output_json.read_text(encoding="utf-8"))["host"]
+    markdown = output_md.read_text(encoding="utf-8")
+    assert host["concurrent_workload"] == declared
+    if declared is None:
+        assert "no concurrent workload was declared" in host["conditioning"]
+        assert "pinned DREAM reference run" not in markdown
+    else:
+        assert declared in host["conditioning"]
+    assert f"The timing is host-conditioned: {host['conditioning']}" in markdown

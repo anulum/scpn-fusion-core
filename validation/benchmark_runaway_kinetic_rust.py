@@ -184,7 +184,22 @@ def _relative_l2(actual: NDArray[np.float64], expected: NDArray[np.float64]) -> 
     return float(np.linalg.norm((actual - expected).ravel()) / denominator)
 
 
-def benchmark(repeats: int) -> dict[str, Any]:
+def _conditioning(concurrent_workload: str | None) -> str:
+    """Describe the host as measured, adding a concurrent workload only when one is declared."""
+    shared = (
+        f"another workload was declared during timing: {concurrent_workload}."
+        if concurrent_workload
+        else "no concurrent workload was declared."
+    )
+    return f"Local shared host; {shared} Timings are evidence for this host and problem only."
+
+
+def benchmark(repeats: int, *, concurrent_workload: str | None = None) -> dict[str, Any]:
+    """Time the NumPy and Rust kernels on one problem and check their outputs agree.
+
+    ``concurrent_workload`` names another workload that shared the host during timing,
+    as the operator observed it; the report records only that and the load averages.
+    """
     if repeats < 3:
         raise ValueError("repeats must be at least three")
     solver, initial, density, times = _problem()
@@ -288,10 +303,8 @@ def benchmark(repeats: int) -> dict[str, Any]:
             "processor": platform.processor(),
             "logical_cpu_count": os.cpu_count(),
             "load_average_1m_5m_15m": list(os.getloadavg()),
-            "conditioning": (
-                "Local shared host; a concurrent pinned DREAM reference run was active. "
-                "Timings are evidence for this host and problem only."
-            ),
+            "concurrent_workload": concurrent_workload or None,
+            "conditioning": _conditioning(concurrent_workload),
         },
         "problem": {
             "grid_shape_radius_pitch_momentum": list(solver.operator.grid.shape),
@@ -347,7 +360,7 @@ def _markdown(report: dict[str, Any]) -> str:
 - Scientific projection SHA-256: `{report["scientific_projection_sha256"]}`
 - Compiled extension SHA-256: `{report["runtime_provenance"]["extension"]["artifact_sha256"]}`
 
-The timing is host-conditioned: a pinned DREAM reference run was active concurrently.
+The timing is host-conditioned: {report["host"]["conditioning"]}
 Rust is selected for the explicit production kernel because it preserves all outputs
 and has a measured advantage here. Python remains the orchestration/DREAM/HDF5 tier.
 Julia is gated on a future measured need for stiff implicit, sparse nonlinear, adjoint,
@@ -361,8 +374,12 @@ def main() -> int:
     parser.add_argument("--repeats", type=int, default=11)
     parser.add_argument("--output-json", type=Path)
     parser.add_argument("--output-markdown", type=Path)
+    parser.add_argument(
+        "--concurrent-workload",
+        help="another workload that shared the host during timing; omitted, none is claimed",
+    )
     args = parser.parse_args()
-    report = benchmark(args.repeats)
+    report = benchmark(args.repeats, concurrent_workload=args.concurrent_workload)
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     if args.output_json is None:
         print(rendered, end="")
