@@ -16,6 +16,25 @@
 
 ### Added
 
+- `validation/qlknn_conformal_self_consistent_envelope.py` carries the QLKNN-10D
+  conformal intervals self-consistently into a steady transport profile. The
+  frozen-coefficient study (`validation/qlknn_conformal_profile_envelope.py`)
+  fixed the bounded turbulent diffusivity. Here the bound follows the profiles
+  it produces. Every step:
+  - evaluates the neural closure on the current profiles through the solver's
+    public `update_transport_model`;
+  - applies the same bound as the frozen study;
+  - relaxes the applied coefficients toward it by 0.005;
+  - advances one step with the `fixed_coefficients` backend.
+
+  A run ends when the target and the applied coefficients agree to 1e-10. The
+  solver is not modified and no private member is used. Without relaxation the
+  lagged stiff closure oscillates from step to step. The gates require that:
+  - the nominal run reproduces the neural steady state;
+  - its fixed point does not depend on the relaxation;
+  - every run converges;
+  - the widths equal the frozen report's.
+
 - `validation/linear_mhd_miss_study.py` probes the two criteria that the linear
   reduced-MHD acceptance misses, without changing the acceptance or its bands:
   - the cylinder 2/1 tearing slope: the scan extends to η = 1e-10 and reports

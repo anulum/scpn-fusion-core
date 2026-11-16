@@ -114,6 +114,8 @@
     "validation/freegsnke_grid_convergence.py",
     "tests/test_freegsnke_grid_convergence.py",
     "validation/linear_mhd_miss_study.py",
-    "tests/test_linear_mhd_miss_study.py"
+    "tests/test_linear_mhd_miss_study.py",
+    "validation/qlknn_conformal_self_consistent_envelope.py",
+    "tests/test_qlknn_conformal_self_consistent_envelope.py"
   ]
 }

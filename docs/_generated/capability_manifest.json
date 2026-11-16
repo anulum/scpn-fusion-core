@@ -3117,7 +3117,7 @@
     "python_capability_classes": 650,
     "python_capability_source_modules": 375,
     "rust_workspace_crates": 13,
-    "test_files": 701
+    "test_files": 702
   },
   "documentation": {
     "public_pages": [
@@ -3798,6 +3798,7 @@
       "tests/test_pyproject_dependency_tiers.py",
       "tests/test_qlknn_conformal_profile_envelope.py",
       "tests/test_qlknn_conformal_regime_coverage.py",
+      "tests/test_qlknn_conformal_self_consistent_envelope.py",
       "tests/test_qlknn_conformal_stability_sets.py",
       "tests/test_qlknn_conformal_variants.py",
       "tests/test_quality_delta_report_tool.py",
