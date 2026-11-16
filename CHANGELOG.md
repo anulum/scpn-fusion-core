@@ -70,6 +70,12 @@
 
 ### Fixed
 
+- The end-to-end latency benchmark (`validation/scpn_end_to_end_latency.py`)
+  now reports its GPU lane as `blocked_gpu_subprocess_timeout` when the lane's
+  subprocess outlives its 120 s limit, as its docstring promised. Before, the
+  timeout raised `subprocess.TimeoutExpired` and stopped the whole run, which
+  blocked the first push of the v4.1.0 tag under load. The limit is now the
+  module constant `GPU_SUBPROCESS_TIMEOUT_S`; a test forces a real timeout.
 - The benchmark pages no longer state Rust, Python or GPU timings that nothing
   measured, or a reference machine that the repository never used:
   - `docs/BENCHMARKS.md` named an AMD Ryzen 9 7950X as the host of "all timing

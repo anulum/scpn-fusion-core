@@ -88,6 +88,8 @@ _PIPELINE_STAGE_KEYS = (
 _ACTUATOR_SCALING_COUNTS = (2, 16, 64, 128, 256)
 _PREDICTIVE_HORIZON_MS = (50, 100)
 ACCELERATOR_ISOLATION_ENV = "SCPN_BENCHMARK_ACCELERATOR_ISOLATION"
+# Wall-clock limit of the GPU lane's subprocess; past it the lane is reported blocked.
+GPU_SUBPROCESS_TIMEOUT_S = 120.0
 DEFAULT_ACCELERATOR_ISOLATION = "shared_local_device_not_reserved"
 REPORT_SCHEMA = "scpn-fusion-core.end_to_end_latency_report.v1"
 REPORT_CLAIM_BOUNDARY = (
@@ -431,15 +433,29 @@ def _run_gpu_digital_twin_latency(*, steps: int, actuator_count: int = 2) -> dic
             "--actuators",
             str(actuator_count),
         ]
-        proc = subprocess.run(
-            cmd,
-            cwd=ROOT,
-            env=env,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=120,
-        )
+        try:
+            proc = subprocess.run(
+                cmd,
+                cwd=ROOT,
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=GPU_SUBPROCESS_TIMEOUT_S,
+            )
+        except subprocess.TimeoutExpired as exc:
+            # The captured output of a timed-out child is bytes even with text=True.
+            stderr = exc.stderr if isinstance(exc.stderr, bytes) else b""
+            return {
+                "status": "blocked_gpu_subprocess_timeout",
+                "backend": "cupy_cuda",
+                "command": " ".join(cmd),
+                "timeout_s": GPU_SUBPROCESS_TIMEOUT_S,
+                "stderr_tail": stderr.decode("utf-8", errors="replace")[-2000:],
+                "p50_loop_ms": None,
+                "p95_loop_ms": None,
+                "p99_loop_ms": None,
+            }
         if proc.returncode != 0:
             return {
                 "status": "blocked_gpu_subprocess_failed",

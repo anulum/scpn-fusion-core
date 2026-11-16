@@ -66,6 +66,22 @@ def test_digital_twin_latency_campaign_reports_cpu_rust_gpu_boundaries() -> None
     assert out["thresholds"]["hil_wall_clock_threshold_required_for_report_acceptance"] is False
 
 
+def test_gpu_lane_timeout_is_reported_as_a_blocked_row(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A GPU subprocess that outlives its limit yields a blocked row; the campaign completes."""
+    monkeypatch.delenv("SCPN_LATENCY_GPU_SUBPROCESS", raising=False)
+    monkeypatch.setattr(scpn_end_to_end_latency, "GPU_SUBPROCESS_TIMEOUT_S", 0.01)
+
+    out = scpn_end_to_end_latency.run_digital_twin_latency_campaign(steps=32)
+
+    gpu = out["gpu"]
+    assert gpu["status"] == "blocked_gpu_subprocess_timeout"
+    assert gpu["timeout_s"] == 0.01
+    assert "--gpu-only" in gpu["command"]
+    assert isinstance(gpu["stderr_tail"], str)
+    assert gpu["p50_loop_ms"] is None and gpu["p99_loop_ms"] is None
+    assert out["cpu"]["status"] == "measured"
+
+
 def test_host_snapshot_records_taskset_isolation_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify host snapshot records benchmark isolation metadata."""
     monkeypatch.setenv(
