@@ -19,11 +19,19 @@ reservations starve cuBLAS handle creation on later JAX tests, surfacing as
 passes in isolation. On-demand allocation keeps the GPU available for the
 dedicated GPU tests while preventing that starvation cascade. Both settings are
 applied with ``setdefault`` so CI or a developer can override them.
+
+The ``float64_jax`` fixture gives one test float64 JAX and restores the previous
+setting afterwards. A test that needs float64 requests it; it must not depend on
+another collected module having enabled float64 when it was imported.
 """
 
 import os
 import sys
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any, cast
+
+import pytest
 
 os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
 os.environ.setdefault("XLA_PYTHON_CLIENT_ALLOCATOR", "platform")
@@ -31,3 +39,16 @@ os.environ.setdefault("XLA_PYTHON_CLIENT_ALLOCATOR", "platform")
 _SRC = str(Path(__file__).resolve().parent / "src")
 if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
+
+
+@pytest.fixture
+def float64_jax() -> Iterator[None]:
+    """Enable float64 JAX for one test, then restore the previous setting."""
+    jax = pytest.importorskip("jax")
+    config = cast(Any, jax.config)
+    previous = bool(config.read("jax_enable_x64"))
+    config.update("jax_enable_x64", True)
+    try:
+        yield
+    finally:
+        config.update("jax_enable_x64", previous)

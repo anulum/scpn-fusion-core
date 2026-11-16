@@ -28,6 +28,8 @@ from scpn_fusion.core.jax_transport_solver import (
     transport_step_jax,
 )
 
+pytestmark = pytest.mark.usefixtures("float64_jax")
+
 FloatArray = NDArray[np.float64]
 J01 = 2.4048255576957728
 

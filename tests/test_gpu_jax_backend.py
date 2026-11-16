@@ -42,6 +42,7 @@ class TestJAXBackendAvailability:
 
 
 @pytest.mark.skipif(not HAS_JAX, reason="JAX not installed")
+@pytest.mark.usefixtures("float64_jax")
 class TestJAXMultigridParity:
     def test_jax_matches_gpu_sim(self, bridge, test_field):
         cpu_result = bridge._gpu_sim_multigrid(test_field, iterations=4)

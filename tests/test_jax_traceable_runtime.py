@@ -238,6 +238,7 @@ def test_validate_traceable_backend_parity_invalid_args() -> None:
         runtime.validate_traceable_backend_parity(atol=-1.0)
 
 
+@pytest.mark.usefixtures("float64_jax")
 def test_validate_traceable_backend_parity_reports_numpy() -> None:
     reports = runtime.validate_traceable_backend_parity(
         steps=12,
@@ -254,6 +255,7 @@ def test_validate_traceable_backend_parity_reports_numpy() -> None:
     assert np_report.batch_max_abs_err == pytest.approx(0.0, abs=0.0)
 
 
+@pytest.mark.usefixtures("float64_jax")
 def test_validate_traceable_backend_parity_includes_only_available_backends() -> None:
     reports = runtime.validate_traceable_backend_parity(steps=8, batch=2, seed=11, atol=1e-8)
     expected = set(runtime.available_traceable_backends())

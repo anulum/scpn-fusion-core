@@ -27,6 +27,7 @@ def test_transport_cn_rollout_registers_evidence_ordered_tiers() -> None:
     assert multi.dispatch_tier("transport_cn_rollout") == "numpy"
 
 
+@pytest.mark.usefixtures("float64_jax")
 def test_jax_transport_provider_matches_numpy_provider() -> None:
     """The real provider boundary retains cylindrical CN parity."""
     pytest.importorskip("jax")
