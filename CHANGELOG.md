@@ -157,6 +157,16 @@
 
 ### Fixed
 
+- Importing the equilibrium solver no longer starts Julia. The backend
+  dispatcher (`scpn_fusion.core._multi_compat`) probed every tier on its first
+  dispatch, and `scpn_fusion.core` makes that dispatch at import time to
+  resolve `FusionKernel`. Wherever juliacall was installed, the import therefore
+  started a Julia runtime and let juliapkg resolve its environment, which took
+  more than two minutes on the first run. Each tier is now probed when a
+  dispatch first reaches it, so a kernel whose fastest registered tier is
+  available never probes the slower ones. `available_backends()` and the
+  registry listings still probe every tier, and tier order and selection are
+  unchanged.
 - `docs/BENCHMARKS.md` now describes the QLKNN-10D transport weights that ship:
   `weights/neural_transport_qlknn.npz`, a 14→1024→512→256→3 MLP that is not
   gated, with test relative L2 0.0943 per its metrics record. The page had

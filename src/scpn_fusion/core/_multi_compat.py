@@ -11,7 +11,11 @@ Probes available acceleration backends in priority order:
 
     Rust (PyO3) → GPU (wgpu) → Mojo → Julia (juliacall) → Go (cgo) → JAX → NumPy
 
-Each backend tier is detected once at import time. Individual compute
+Each backend tier is probed once, when a dispatch first reaches it, so a
+kernel whose fastest registered tier is available never starts a slower
+runtime: importing the equilibrium solver with the Rust extension present does
+not start Julia. :func:`available_backends` and the registry listings probe
+every tier. Individual compute
 kernels register themselves via :func:`register_kernel` and callers use
 :func:`dispatch` to invoke the first available implementation in the retained
 per-kernel evidence order. Kernels without an override use the default tier
@@ -167,37 +171,59 @@ def _probe_jax() -> bool:
         return False
 
 
+def _probe(tier: BackendTier) -> bool:
+    """Run the availability probe of one tier; NumPy is always available."""
+    if tier is BackendTier.NUMPY:
+        return True
+    # Resolved at call time, so a replaced module-level probe is the one that runs.
+    probes: dict[BackendTier, Callable[[], bool]] = {
+        BackendTier.RUST: _probe_rust,
+        BackendTier.GPU: _probe_gpu,
+        BackendTier.MOJO: _probe_mojo,
+        BackendTier.JULIA: _probe_julia,
+        BackendTier.GO: _probe_go,
+        BackendTier.JAX: _probe_jax,
+    }
+    return probes[tier]()
+
+
+def _tier_available(tier: BackendTier) -> bool:
+    """Return whether one tier is available, probing it on its first use (thread-safe)."""
+    known = _availability.get(tier)
+    if known is not None:
+        return known
+    with _probe_lock:
+        known = _availability.get(tier)
+        if known is None:
+            known = _probe(tier)
+            _availability[tier] = known
+    return known
+
+
 def _ensure_probed() -> None:
-    """Run backend probes once (thread-safe)."""
+    """Probe every tier once (thread-safe), for the functions that list all tiers."""
     global _probed
     if _probed:
         return
+    for tier in BackendTier:
+        _tier_available(tier)
     with _probe_lock:
         if _probed:
             return
-        _availability[BackendTier.RUST] = _probe_rust()
-        _availability[BackendTier.GPU] = _probe_gpu()
-        _availability[BackendTier.MOJO] = _probe_mojo()
-        _availability[BackendTier.JULIA] = _probe_julia()
-        _availability[BackendTier.GO] = _probe_go()
-        _availability[BackendTier.JAX] = _probe_jax()
-        _availability[BackendTier.NUMPY] = True  # always available
-
         available = [_TIER_NAMES[t] for t in sorted(_availability) if _availability[t]]
         logger.info("Multi-backend probe: %s", ", ".join(available))
         _probed = True
 
 
 def available_backends() -> dict[str, bool]:
-    """Return a mapping of backend name → availability."""
+    """Return a mapping of backend name → availability, probing every tier."""
     _ensure_probed()
-    return {_TIER_NAMES[t]: v for t, v in sorted(_availability.items())}
+    return {_TIER_NAMES[t]: _tier_available(t) for t in BackendTier}
 
 
 def is_available(tier: BackendTier) -> bool:
-    """Check if a specific backend tier is available."""
-    _ensure_probed()
-    return _availability.get(tier, False)
+    """Check if a specific backend tier is available, probing only that tier."""
+    return _tier_available(tier)
 
 
 # ---------------------------------------------------------------------------
@@ -327,7 +353,6 @@ def dispatch_for_tier(name: str, tier: BackendTier | str) -> Callable[..., Any]:
     RuntimeError
         If the requested registered backend is unavailable.
     """
-    _ensure_probed()
     if isinstance(tier, str):
         matches = [candidate for candidate, label in _TIER_NAMES.items() if label == tier]
         if not matches:
@@ -341,7 +366,7 @@ def dispatch_for_tier(name: str, tier: BackendTier | str) -> Callable[..., Any]:
             raise KeyError(f"No implementations registered for kernel {name!r}")
         for candidate, implementation in entries:
             if candidate == resolved_tier:
-                if not _availability.get(candidate, False):
+                if not _tier_available(candidate):
                     raise RuntimeError(
                         f"Requested backend {_TIER_NAMES[candidate]!r} for {name!r} is unavailable"
                     )
@@ -359,8 +384,6 @@ def dispatch(name: str) -> Callable[..., Any]:
     RuntimeError
         If all registered implementations belong to unavailable backends.
     """
-    _ensure_probed()
-
     # Check cache first
     cached = _dispatch_cache.get(name)
     if cached is not None:
@@ -376,8 +399,9 @@ def dispatch(name: str) -> Callable[..., Any]:
         if not entries:
             raise KeyError(f"No implementations registered for kernel {name!r}")
 
+        # Tiers are probed in order and only until one is available.
         for tier, impl in entries:
-            if _availability.get(tier, False):
+            if _tier_available(tier):
                 _dispatch_cache[name] = (tier, impl)
                 tier_name = _TIER_NAMES[tier]
                 logger.debug("Dispatching %s → %s", name, tier_name)
@@ -444,7 +468,6 @@ def dispatch_rust_symbol(symbol_name: str) -> Callable[..., object]:
 
 def dispatch_tier(name: str) -> str:
     """Return the name of the backend tier selected for *name*."""
-    _ensure_probed()
     cached = _dispatch_cache.get(name)
     if cached is not None:
         return _TIER_NAMES[cached[0]]
@@ -530,7 +553,6 @@ def dispatch_kernel_class(name: str) -> type:
     RuntimeError
         If every registered tier is unavailable.
     """
-    _ensure_probed()
     cached = _class_dispatch_cache.get(name)
     if cached is not None:
         return cached[1]
@@ -541,8 +563,9 @@ def dispatch_kernel_class(name: str) -> type:
         entries = _class_registry.get(name)
         if not entries:
             raise KeyError(f"No kernel class registered for {name!r}")
+        # Tiers are probed in order and only until one is available.
         for tier, loader in entries:
-            if _availability.get(tier, False):
+            if _tier_available(tier):
                 cls = loader()
                 _class_dispatch_cache[name] = (tier, cls)
                 if tier != entries[0][0]:

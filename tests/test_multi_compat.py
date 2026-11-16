@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import builtins
 import ctypes
+import os
+import subprocess
 import sys
 import types
 from collections.abc import Iterator, Mapping, Sequence
@@ -396,6 +398,108 @@ def test_julia_probe_accepts_importable_juliacall(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setitem(sys.modules, "juliacall", fake_juliacall)
 
     assert multi._probe_julia() is True
+
+
+def _record_probes(monkeypatch: pytest.MonkeyPatch, available: set[str]) -> list[str]:
+    """Replace every optional probe with a recorder and start from an unprobed state."""
+    probed: list[str] = []
+    for tier in ("rust", "gpu", "mojo", "julia", "go", "jax"):
+
+        def probe(name: str = tier) -> bool:
+            probed.append(name)
+            return name in available
+
+        monkeypatch.setattr(multi, f"_probe_{tier}", probe)
+    monkeypatch.setattr(multi, "_availability", {})
+    monkeypatch.setattr(multi, "_probed", False)
+    return probed
+
+
+def test_dispatch_probes_only_the_tiers_it_reaches(
+    kernel_name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A dispatch stops probing at the first available tier; a slower runtime never starts."""
+    probed = _record_probes(monkeypatch, available={"mojo"})
+    multi.register_kernel(kernel_name, multi.BackendTier.RUST, lambda: "rust")
+    multi.register_kernel(kernel_name, multi.BackendTier.MOJO, lambda: "mojo")
+    multi.register_kernel(kernel_name, multi.BackendTier.JULIA, lambda: "julia")
+
+    assert multi.dispatch(kernel_name)() == "mojo"
+    assert probed == ["rust", "mojo"]
+    assert multi.is_available(multi.BackendTier.GO) is False
+    assert probed == ["rust", "mojo", "go"]
+    assert multi.dispatch_for_tier(kernel_name, "mojo")() == "mojo"
+    assert probed == ["rust", "mojo", "go"]
+
+    backends = multi.available_backends()
+
+    assert backends == {
+        "rust": False,
+        "gpu": False,
+        "mojo": True,
+        "julia": False,
+        "go": False,
+        "jax": False,
+        "numpy": True,
+    }
+    assert sorted(probed) == ["go", "gpu", "jax", "julia", "mojo", "rust"]
+
+
+def test_class_dispatch_probes_only_the_tiers_it_reaches(
+    class_kernel_name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The equilibrium-kernel pattern: an available Rust tier is the only probe that runs."""
+    probed = _record_probes(monkeypatch, available={"rust"})
+    multi.register_kernel_class(class_kernel_name, multi.BackendTier.RUST, lambda: _MojoKernelStub)
+    multi.register_kernel_class(
+        class_kernel_name, multi.BackendTier.NUMPY, lambda: _NumpyKernelStub
+    )
+
+    assert multi.dispatch_kernel_class(class_kernel_name) is _MojoKernelStub
+    assert probed == ["rust"]
+
+
+def test_probe_result_is_kept_when_another_thread_probed_first(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The per-tier guard keeps a result recorded while it waited for the lock."""
+    probed = _record_probes(monkeypatch, available=set())
+
+    class _ProbeLock:
+        def __enter__(self) -> None:
+            multi._availability[multi.BackendTier.GO] = True
+
+        def __exit__(self, _exc_type: object, _exc: object, _traceback: object) -> None:
+            return None
+
+    monkeypatch.setattr(multi, "_probe_lock", _ProbeLock())
+
+    assert multi.is_available(multi.BackendTier.GO) is True
+    assert probed == []
+
+
+def test_importing_the_core_package_does_not_start_julia() -> None:
+    """Importing the equilibrium solver must not import juliacall or juliapkg."""
+    root = Path(__file__).resolve().parents[1]
+    script = (
+        "import sys\n"
+        "import scpn_fusion.core.jax_free_boundary_predictive\n"
+        "print(sorted(name for name in ('juliacall', 'juliapkg') if name in sys.modules))\n"
+    )
+    environment = {**os.environ, "PYTHONPATH": str(root / "src")}
+    environment.pop("SCPN_DISABLE_JULIA", None)
+    completed = subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=root,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert completed.stdout.strip().splitlines()[-1] == "[]"
 
 
 def test_go_probe_accepts_loadable_shared_library(monkeypatch: pytest.MonkeyPatch) -> None:
