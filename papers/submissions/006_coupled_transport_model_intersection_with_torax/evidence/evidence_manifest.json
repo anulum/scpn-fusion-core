@@ -1,0 +1,117 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE TORAX model-intersection paper evidence manifest.",
+  "schema_version": "2.0",
+  "repository_revision": "1445bb1405ed03341781d92afa6f62caa8fdb095",
+  "claim_boundary": {
+    "scope": "the declared circular prescribed-coefficient model intersection only",
+    "duration": "two 10 ms steps on 16 cells, refined with 5 ms steps",
+    "gradients": "this coupled step only; the controls are not identified",
+    "excluded": "TORAX equivalence outside the intersection, experiment, speed"
+  },
+  "source_custody": {
+    "torax_coupled_transport_parity.json": {
+      "source_path": "validation/reports/torax_coupled_transport_parity.json",
+      "source_revision": "849b9b2cfd1f8a41b898ddbc539734ad279e17dc",
+      "git_blob_oid_sha1": "2288693f3bdd9480ce722f63cf2849dca1fcd1e0",
+      "source_sha256": "846b19bef532db19ba232ccf216ffd4d720d132de2e968baf62591d9ef41b7c4",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "torax_differentiable_transport.json": {
+      "source_path": "validation/reports/torax_differentiable_transport.json",
+      "source_revision": "d84af5398f4ad5eb211b7073c1dae8b290e4d336",
+      "git_blob_oid_sha1": "93540f3167e8caaf556126d68c56c98569b2c8d9",
+      "source_sha256": "bb8e4b70c06f706f195bad4091103b164b8d15aace33b7ae2e6fe9df90e21bb7",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "torax_coupled_transport_reference.json": {
+      "source_path": "validation/reference_data/torax/torax_coupled_transport_reference.json",
+      "source_revision": "849b9b2cfd1f8a41b898ddbc539734ad279e17dc",
+      "git_blob_oid_sha1": "09d53b22c7c4a0c25aceaf5aa70888a62ad21abc",
+      "source_sha256": "c0e91c58f7bdb217832840af72bcbced21484275dd99d0e026dddc8ccdf07fbf",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    }
+  },
+  "implementation_sources": {
+    "validation/reference_data/torax/coupled_transport_model_intersection_deck.py": {
+      "git_blob_oid_sha1": "41e4cef33db4dfd514f072a9de17954f8fdfa24d",
+      "sha256": "c10662a201afbeb996746d6a71360e5b6c32a83eea71cb9a05732cbdb3894340",
+      "role": "declared model intersection and thresholds"
+    },
+    "validation/torax_coupled_reference_runner.py": {
+      "git_blob_oid_sha1": "f7258404ebeb98dcfe543d1c12e046f1018c75f7",
+      "sha256": "92926d291a0740932b9ab1f38eee343afdd4e6691638493c97a34f8fecb0a392",
+      "role": "pinned TORAX 1.4.3 reference runner"
+    },
+    "validation/benchmark_torax_coupled_transport_parity.py": {
+      "git_blob_oid_sha1": "52c3272e43c2bf2a00a5c1915e7ed8169e236471",
+      "sha256": "61359b33d79a2a0ac26c9cf37fb0f0ade44ca480f5f63bd1fc3ebc0995f36937",
+      "role": "parity benchmark and gates"
+    },
+    "validation/benchmark_torax_differentiable_transport.py": {
+      "git_blob_oid_sha1": "418158b9e73fe2adb8dcffc2d3759a627d71bdb5",
+      "sha256": "eb09241567e3a7d387379a12d708f0263b204846d013ab693b71d8c002d5b808",
+      "role": "gradient and optimisation benchmark"
+    },
+    "src/scpn_fusion/core/integrated_transport_solver_coupled.py": {
+      "git_blob_oid_sha1": "f75b5925d10d52251442e6e55cc943bca29dc43a",
+      "sha256": "8563f89a62a00a7bdce1b312aadfda8189f9ab7c6da32f54c86d7772f7d524b4",
+      "role": "coupled four-state step"
+    },
+    "src/scpn_fusion/core/integrated_transport_solver_coupled_contracts.py": {
+      "git_blob_oid_sha1": "6e06685ce1d245c0a047877bf78508896d9e1330",
+      "sha256": "d201cb72133e7f8e52e296e39b7e864255d78e4c8068f81729d1c0af6eb6898e",
+      "role": "coupled step contracts"
+    },
+    "src/scpn_fusion/core/_integrated_transport_solver_coupled_numerics.py": {
+      "git_blob_oid_sha1": "843f8db096c8f4b7a8bc7a89ed3295b7f122e4ae",
+      "sha256": "bb2e4be040d7c3d07966ba78038cc3bf5cadbdfb2e541e1cb05aeb7544ffb4ea",
+      "role": "coupled step numerics"
+    },
+    "src/scpn_fusion/core/current_diffusion.py": {
+      "git_blob_oid_sha1": "944d8c65685d5d80cc9413cdc55b962c05d1ec73",
+      "sha256": "7d4251347a961397b549cfcd46cdaffe607a6332f86f22ed9e9dc5351da1c82a",
+      "role": "current diffusion"
+    },
+    "src/scpn_fusion/core/integrated_transport_solver_differentiable.py": {
+      "git_blob_oid_sha1": "b264b0193503610c7e5e387ad81dd3ac0e736e6b",
+      "sha256": "0ccbc2fc22b5190db7162ecf3d200246f82177e9ba6826a2429418719cd551c9",
+      "role": "JAX step and bounded optimisation"
+    },
+    "src/scpn_fusion/core/_integrated_transport_solver_differentiable_numerics.py": {
+      "git_blob_oid_sha1": "978e22a10e3df2ed7cb9445b426453e62fa7b746",
+      "sha256": "d66a181c9634dfb44823af2231fbb2d021106fc3d116fb8f56cd4e4266582fd2",
+      "role": "JAX tridiagonal numerics"
+    },
+    "src/scpn_fusion/core/integrated_transport_solver_differentiable_contracts.py": {
+      "git_blob_oid_sha1": "ee7420f14f42e44905960fb12b9742e9400efb31",
+      "sha256": "6c0503edffa82f0de99bae5818d6c2ded36a52cd39c3355e0f0842fe0e65ec7f",
+      "role": "differentiable step contracts"
+    }
+  },
+  "quoted_values": 65,
+  "generators": {
+    "papers/submissions/006_coupled_transport_model_intersection_with_torax/generate_evidence_manifest.py": {
+      "sha256": "87e0d6ea6df6e7546b3aa1f16405b2c21a87b4d12b2ecc9cb939b7c93356e7c0"
+    }
+  },
+  "files": {
+    "torax_coupled_transport_parity.json": {
+      "sha256": "7a60288d4869428610c1d6baecf4819c63cfac8d79ba1f85184d36519ec12aff",
+      "role": "four-state parity, budgets, determinism, cost gate"
+    },
+    "torax_differentiable_transport.json": {
+      "sha256": "38fecf5b27b5f06b0601d21d149b77579d530053c41ab31da525fac2e86dcf22",
+      "role": "gradients, forward replay and bounded optimisation"
+    },
+    "torax_coupled_transport_reference.json": {
+      "sha256": "84d8c7fe5ce5832c362ef2f038a64bc7c6be622b844da0c7ba5b6a65091a9680",
+      "role": "pinned TORAX 1.4.3 reference run and its deck"
+    }
+  }
+}

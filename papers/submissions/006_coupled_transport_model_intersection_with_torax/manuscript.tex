@@ -1,0 +1,221 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — coupled transport model intersection with TORAX.
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[margin=1in]{geometry}
+\bibliographystyle{unsrtnat}
+
+\title{A Four-State Coupled Transport Step Checked Against TORAX on a Declared
+Model Intersection, with End-to-End Gradients}
+\author{Miroslav \v{S}otek\\
+\small ANULUM CH\&LI, Marbach SG, Switzerland, \url{https://www.anulum.li}\\
+\small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
+\small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
+\date{Preprint --- 16 November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We check a coupled transport step of SCPN-Fusion-Core against TORAX 1.4.3 on a
+model intersection that both codes implement: circular geometry, constant
+diffusivities, Gaussian heat, particle and current sources, collisional
+ion--electron exchange and prescribed edge values.  The step advances the ion
+and electron temperatures, the electron density and the poloidal flux together
+from one beginning-of-step state.  The case is short by design: two steps of
+10\,ms on 16 cells.  At the final time the two codes differ by a relative $L_2$
+of $5.4 \times 10^{-4}$ in density, $3.9 \times 10^{-2}$ in electron temperature,
+$1.1 \times 10^{-2}$ in ion temperature and $6.9 \times 10^{-3}$ in poloidal
+flux, inside thresholds declared before the run.  Halving the time step changes
+each code by at most $1.7 \times 10^{-3}$, so the difference between the codes
+is not a time-step effect of either.  Source totals close to $4.4 \times
+10^{-16}$ in both codes, and repeated runs are byte-identical.  A JAX version of
+the same step gives gradients that agree with central finite differences to
+$4.1 \times 10^{-8}$ and reproduces the production step to $7.1 \times
+10^{-15}$.  A bounded optimisation of three source scales lowers a target
+misfit 174-fold, but it does not recover the scales that produced the target:
+over 20\,ms the driven-current scale is nearly unobservable.  Nothing here
+claims equivalence with TORAX outside the intersection, experimental
+validity, or a speed advantage.
+\end{abstract}
+
+\noindent\textbf{Keywords:} tokamak transport; code comparison; TORAX;
+automatic differentiation; current diffusion; model intersection
+
+\section{Introduction}
+
+TORAX solves the coupled equations for ion heat, electron heat and particle
+transport and for current diffusion, in JAX, with just-in-time compilation and
+automatic differentiation \citep{Citrin2024}.  Comparing another transport
+code with it is only meaningful where both implement the same physics.  We
+therefore declare a model intersection, a set of models that both codes
+provide, and compare the codes on it alone.  The comparison checks the
+numerics of a coupled step, its source and conservation budgets, its
+determinism and its differentiability.  It does not check transport physics
+outside the intersection.
+
+\section{The model intersection}
+
+The deck fixes every input (Table~\ref{tab:deck}).  The geometry is circular
+with an elongation of one, at ITER-like size; it is not an ITER scenario.  The
+transport coefficients are constant: $\chi_i = \chi_e = 1$\,m$^2$\,s$^{-1}$ and
+$D = 0.3$\,m$^2$\,s$^{-1}$, with no convection.  The sources are Gaussian in
+the normalised radius.  The edge values change from their initial to their final values over the run.  The case
+runs from 0 to 20\,ms in two steps of 10\,ms on 16 TORAX cells, and the
+profiles are compared at 17 points.  A refined run uses steps of 5\,ms.  The
+thresholds were fixed in the deck before the runs.
+
+\begin{table}[ht]
+\centering
+\caption{The declared model intersection.}
+\label{tab:deck}
+\small
+\begin{tabular}{ll}
+\toprule
+Geometry & circular, $R = 6.2$\,m, $a = 2.0$\,m, $B = 5.3$\,T, $\kappa = 1$ \\
+Grid and time & 16 cells, 17 comparison points; 0--20\,ms, $\Delta t = 10$\,ms (refined 5\,ms) \\
+Plasma & $I_p = 5$\,MA, $Z_\mathrm{eff} = 1.5$ \\
+Initial core and edge & $T_i$ 5 and 0.5\,keV; $T_e$ 4 and 0.4\,keV; $n_e$ $5 \times 10^{19}$ and $2 \times 10^{19}$\,m$^{-3}$ \\
+Transport & $\chi_i = \chi_e = 1$\,m$^2$\,s$^{-1}$, $D = 0.3$\,m$^2$\,s$^{-1}$, resistivity multiplier 20 \\
+Heat source & 10\,MW, 60\% to electrons, centre 0.3, width 0.25 \\
+Particle source & $10^{20}$\,s$^{-1}$, centre 0.45, width 0.25 \\
+Driven current & 100\,kA, centre 0.35, width 0.2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The SCPN step advances $T_i$, $T_e$, $n_e$ and the poloidal flux $\psi$ from
+the same beginning-of-step state.  It keeps explicit accounts of the sources,
+the boundary values, the exchange and the linear solves.  The ordinary
+transport solver of the code remains its production path; this step is a
+separate surface for code-to-code comparison.  TORAX 1.4.3 ran on the CPU in
+float64 through a pinned reference runner.
+
+\section{Agreement with TORAX}
+
+Table~\ref{tab:parity} lists the final-state differences.  All four lie
+inside their thresholds.  The largest, $3.9 \times 10^{-2}$ in the electron
+temperature, is about a third of its threshold of 0.12.
+
+\begin{table}[ht]
+\centering
+\caption{Relative $L_2$ difference between the codes at the final time, the
+declared threshold, and the change of each code when the time step is halved.}
+\label{tab:parity}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+ & SCPN vs TORAX & Threshold & SCPN refined & TORAX refined \\
+\midrule
+$n_e$ & $5.44 \times 10^{-4}$ & 0.08 & $3.29 \times 10^{-5}$ & $2.95 \times 10^{-4}$ \\
+$T_e$ & $3.88 \times 10^{-2}$ & 0.12 & $2.64 \times 10^{-4}$ & $1.09 \times 10^{-3}$ \\
+$T_i$ & $1.12 \times 10^{-2}$ & 0.12 & $2.54 \times 10^{-4}$ & $1.72 \times 10^{-3}$ \\
+$\psi$ & $6.94 \times 10^{-3}$ & 0.20 & $2.32 \times 10^{-5}$ & $1.35 \times 10^{-4}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Halving the time step changes each code by at most $1.7 \times 10^{-3}$, well
+below the declared 0.02.  The difference between the codes in $T_e$ is about
+35 times the larger of the two refinement changes, so it does not come from
+either code's time discretisation.  Its source within the intersection, for
+example the spatial discretisation or the treatment of the exchange term, is
+not identified here.
+
+The budgets close to rounding.  The source totals agree with their declared
+integrals to $1.5 \times 10^{-16}$ in SCPN and $4.4 \times 10^{-16}$ in TORAX,
+against a threshold of $5 \times 10^{-3}$.  In SCPN the ion--electron exchange
+closes to $1.6 \times 10^{-17}$ and the largest linear residual is $7.1 \times
+10^{-15}$.  Five replays of the SCPN step are byte-identical, and so are the
+TORAX replays.
+
+The warm wall time of TORAX is the minimum of five replays, 0.0934\,s (the
+replays range from 0.0934 to 0.110\,s); SCPN's is 1.50\,ms, and the declared
+limit on their ratio is 100.  This gate only checks that the comparison is
+complete at a bounded cost.  The two codes differ in language, compilation
+and work per step, and the timings come from one loaded workstation, so they
+support no speed comparison.
+
+\section{End-to-end gradients}
+
+A JAX version of the same step, with JAX-native tridiagonal solves, is
+attached to the production solver and checked against it.  Over the two steps
+it reproduces the production states with a largest absolute difference of
+$7.1 \times 10^{-15}$.  Its gradients
+with respect to the scales of the heat source, the particle source and the
+driven current agree with central finite differences (step $10^{-4}$) to a
+relative $4.1 \times 10^{-8}$ at most.  A first-order prediction of the change
+of the objective under a small control change is within 1.0\% of the actual
+change.
+
+For the optimisation, a target is produced by the production step with the
+three scales set to 1.25, 0.8 and 1.3.  Starting from one for each, a bounded
+optimisation lowers the misfit to that target from $6.15 \times 10^{-6}$ to
+$3.53 \times 10^{-8}$ in 12 iterations, a factor of 174, and the run is
+byte-identical when repeated.  It does not recover the scales: it ends at
+1.269, 0.872 and 0.999.  The gradients explain why.  At the starting point the
+gradients with respect to the particle and driven-current scales are about
+$1.4 \times 10^{4}$ and $1.6 \times 10^{5}$ times smaller than the one with
+respect to the heat scale, so over 20\,ms those sources barely affect the
+misfit.  The objective is identifiable here; the controls are not.
+
+\section{Limitations}
+
+\begin{itemize}
+\item The intersection is narrow by design: constant coefficients, Gaussian
+sources and circular geometry.  Nothing is claimed for the production
+transport models or for TORAX outside it.
+\item The case covers 20\,ms in two steps.  Longer runs and finer grids are not
+compared.
+\item The cause of the remaining electron-temperature difference is not
+identified.
+\item No experimental data enter.  Timings come from one loaded workstation
+and support no speed comparison.
+\end{itemize}
+
+\section*{Software version and date}
+
+This preprint describes \texttt{scpn-fusion} at commit \texttt{1445bb1405ed}
+of 16 November 2026, on the main line after release 4.1.0.  The parity report
+was produced at commit \texttt{849b9b2cfd1f} and the gradient report at
+commit \texttt{d84af5398f4a}.  Every solver, benchmark and deck source those
+reports record is byte-identical at the commit above.  TORAX 1.4.3 ran on the
+CPU in float64 with Python 3.12.3.
+
+\section*{Data and code availability}
+
+Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  The two
+reports and the TORAX reference run cited here, with their source revisions,
+Git blob identities and SHA-256 digests, are in \texttt{evidence/} of this
+submission directory.  The generator in that directory checks every quoted
+value against them.  This is a venue-neutral preprint and has not been
+submitted.  No DOI has been reserved and the manuscript-content licence has not
+yet been selected by the author.
+
+\section*{Use of AI tools}
+
+Large language model coding agents were used substantively for generating and
+debugging the analysis code and for drafting and revising the manuscript text.
+The agents were commercially available models, which are not named because no
+vendor is involved in or sponsors this work.  They were coordinated through
+SYNAPSE CHANNEL (version 0.99.52 at the time of writing;
+\url{https://github.com/anulum/synapse-channel}), the open-source
+agent-coordination tool of the ANULUM Agentic Coordination, Assurance and
+Continuity Systems group.  The author specified the comparison, verified the
+code through its tests and every reported number against the committed
+reports, and takes full responsibility for the content.
+
+\bibliography{references}
+\end{document}
