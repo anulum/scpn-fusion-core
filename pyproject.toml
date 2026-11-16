@@ -630,6 +630,8 @@ files = [
     "tests/test_qlknn_conformal_profile_envelope.py",
     "validation/freegsnke_grid_convergence.py",
     "tests/test_freegsnke_grid_convergence.py",
+    "validation/linear_mhd_miss_study.py",
+    "tests/test_linear_mhd_miss_study.py",
     "tools/generate_surrogate_uq_cards.py",
     "tests/test_surrogate_uq_cards.py",
     "tests/test_free_boundary_plotting.py",

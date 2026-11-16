@@ -16,6 +16,19 @@
 
 ### Added
 
+- `validation/linear_mhd_miss_study.py` probes the two criteria that the linear
+  reduced-MHD acceptance misses, without changing the acceptance or its bands:
+  - the cylinder 2/1 tearing slope: the scan extends to η = 1e-10 and reports
+    the local slope between neighbouring resistivities, the ratio to the
+    asymptotic constant-ψ rate, and the change when the elements double at the
+    smallest η;
+  - the Harris sheet with Δ′ < 0 (ka = 1.2): the root search is repeated at
+    three resistivities with 200 and 400 elements per side, against the ka = 0.5
+    tearing rate.
+
+  Findings are reported, not gated; the one gate is that every solve returns a
+  finite number.
+
 - `validation/freegsnke_grid_convergence.py` repeats the MAST-U-like same-case
   comparison with FreeGSNKE on finer grids (65×129, then 129×257 by default;
   `--grid NRxNZ` adds others). It builds the case exactly as
