@@ -30,7 +30,10 @@ or ``unstable`` (positive target flux):
 
 The report gives, on the untouched holdout split and per true class, the set coverage, the
 set-size shares (empty, one label, both), and the flux coverage with Wilson intervals, plus
-the median interval width. It has no pass or fail status: it stops, instead of reporting,
+the median interval width. A robustness section repeats the experiment on
+:data:`RESPLIT_SEEDS` random halvings of the union of both splits and summarises the per-class
+coverages, so a single split's deviation can be judged. It has no pass or fail status: it
+stops, instead of reporting,
 when the inputs differ from the certificate's digests or a class has too few calibration
 rows for its rank.
 """
@@ -60,6 +63,7 @@ BoolArray = NDArray[np.bool_]
 REPORT_PATH = ROOT / "validation/reports/qlknn_conformal_stability_sets.json"
 MARKDOWN_PATH = ROOT / "validation/reports/qlknn_conformal_stability_sets.md"
 SCHEMA = "scpn-fusion-core.qlknn-conformal-stability-sets.v1"
+RESPLIT_SEEDS = tuple(range(20))
 DESIGN_NOTE = (
     "designed after the variant comparison (9bd8a7a7, report b2f13559) found the false-stable "
     "bias; the settings of this experiment were fixed before it was run"
@@ -107,6 +111,57 @@ def flux_intervals(
     lower = np.where(has_stable & has_unstable, 0.0, lower)
     empty = ~(has_stable | has_unstable)
     return np.where(empty, np.inf, lower), np.where(empty, -np.inf, upper)
+
+
+def score_channel(
+    calibration_predictions: FloatArray,
+    calibration_targets: FloatArray,
+    calibration_scores: FloatArray,
+    holdout_predictions: FloatArray,
+    holdout_targets: FloatArray,
+    alpha: float,
+) -> dict[str, Any]:
+    """Calibrate one channel's sets and intervals and return the holdout arrays they imply."""
+    cal_unstable = calibration_targets > 0.0
+    has_stable, has_unstable, set_quantiles = stability_sets(
+        calibration_predictions, cal_unstable, holdout_predictions, alpha
+    )
+    q_flux = variants.rank_quantile(calibration_scores[cal_unstable], alpha)
+    lower, upper = flux_intervals(holdout_predictions, has_stable, has_unstable, q_flux)
+    return {
+        "has_stable": has_stable,
+        "has_unstable": has_unstable,
+        "set_quantiles": set_quantiles,
+        "unstable_flux_quantile": q_flux,
+        "covered": (lower <= holdout_targets) & (holdout_targets <= upper),
+        "width": np.where(np.isfinite(upper - lower), upper - lower, np.nan),
+    }
+
+
+def resplit_summary(
+    predictions: FloatArray, targets: FloatArray, scores: FloatArray, alpha: float
+) -> dict[str, dict[str, float]]:
+    """Repeat one channel on random halvings of the pooled rows; summarise each coverage."""
+    values: dict[str, list[float]] = {"unstable_set": [], "stable_set": [], "unstable_flux": []}
+    for seed in RESPLIT_SEEDS:
+        order = np.random.default_rng(seed).permutation(targets.size)
+        cal, test = order[: targets.size // 2], order[targets.size // 2 :]
+        result = score_channel(
+            predictions[cal], targets[cal], scores[cal], predictions[test], targets[test], alpha
+        )
+        unstable = targets[test] > 0.0
+        values["unstable_set"].append(float(np.mean(result["has_unstable"][unstable])))
+        values["stable_set"].append(float(np.mean(result["has_stable"][~unstable])))
+        values["unstable_flux"].append(float(np.mean(result["covered"][unstable])))
+    return {
+        name: {
+            "mean": float(np.mean(series)),
+            "std": float(np.std(series, ddof=1)),
+            "min": float(np.min(series)),
+            "max": float(np.max(series)),
+        }
+        for name, series in values.items()
+    }
 
 
 def _class_summary(
@@ -157,21 +212,29 @@ def build_report(certificate_path: Path = regimes.CERTIFICATE_PATH) -> dict[str,
     )
     channels: dict[str, Any] = {}
     for index, channel in enumerate(entry["channels"]):
-        cal_pred = data.calibration_predictions[:, index]
-        test_pred = data.holdout_predictions[:, index]
-        cal_unstable = data.calibration_targets[:, index] > 0.0
         targets = data.holdout_targets[:, index]
-        test_unstable = targets > 0.0
-        has_stable, has_unstable, set_quantiles = stability_sets(
-            cal_pred, cal_unstable, test_pred, alpha
+        result = score_channel(
+            data.calibration_predictions[:, index],
+            data.calibration_targets[:, index],
+            data.calibration_scores[:, index],
+            data.holdout_predictions[:, index],
+            targets,
+            alpha,
         )
-        q_flux = variants.rank_quantile(data.calibration_scores[:, index][cal_unstable], alpha)
-        lower, upper = flux_intervals(test_pred, has_stable, has_unstable, q_flux)
-        covered = (lower <= targets) & (targets <= upper)
-        width = np.where(np.isfinite(upper - lower), upper - lower, np.nan)
+        has_stable, has_unstable = result["has_stable"], result["has_unstable"]
+        covered, width = result["covered"], result["width"]
+        test_unstable = targets > 0.0
+        pooled = (
+            np.concatenate(
+                [data.calibration_predictions[:, index], data.holdout_predictions[:, index]]
+            ),
+            np.concatenate([data.calibration_targets[:, index], targets]),
+            np.concatenate([data.calibration_scores[:, index], data.holdout_scores[:, index]]),
+        )
         channels[channel["name"]] = {
-            "set_quantiles": set_quantiles,
-            "unstable_flux_quantile": q_flux,
+            "set_quantiles": result["set_quantiles"],
+            "unstable_flux_quantile": result["unstable_flux_quantile"],
+            "resplits": resplit_summary(*pooled, alpha),
             "unstable": _class_summary(
                 test_unstable, has_unstable, has_stable, has_unstable, covered, width
             ),
@@ -221,6 +284,21 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines += ["", "Widths in m^2/s, on the rows of that true class. Abstention share:", ""]
     for name, channel in report["channels"].items():
         lines.append(f"- {name}: {channel['abstention_share']:.3f}.")
+    lines += [
+        "",
+        f"Random halvings of the pooled rows ({len(RESPLIT_SEEDS)} seeds): mean [min, max].",
+        "",
+        "| Channel | Unstable set | Stable set | Unstable flux |",
+        "|---|---:|---:|---:|",
+    ]
+    for name, channel in report["channels"].items():
+        cells = [
+            f"{s['mean']:.3f} [{s['min']:.3f}, {s['max']:.3f}]"
+            for s in (
+                channel["resplits"][k] for k in ("unstable_set", "stable_set", "unstable_flux")
+            )
+        ]
+        lines.append(f"| {name} | " + " | ".join(cells) + " |")
     lines += ["", f"Source revision: `{report['source_revision']}`", ""]
     return "\n".join(lines)
 

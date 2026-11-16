@@ -111,6 +111,10 @@ def test_report_covers_both_classes_when_every_set_holds_both_labels(tmp_path: P
             assert row["set_size_share"] == {"0": 0.0, "1": 0.0, "2": 1.0}
         assert channel["stable"]["flux_coverage"] == 1.0
         assert channel["stable"]["median_interval_width"] > 0.0
+        resplits = channel["resplits"]
+        assert resplits["unstable_set"]["mean"] == 1.0 and resplits["stable_set"]["std"] == 0.0
+        flux = resplits["unstable_flux"]
+        assert flux["min"] <= flux["mean"] <= flux["max"] <= 1.0
 
 
 def test_report_refuses_a_class_without_calibration_rows(tmp_path: Path) -> None:
@@ -137,6 +141,8 @@ def test_command_line_writes_both_reports(tmp_path: Path) -> None:
     text = markdown.read_text(encoding="utf-8")
     assert text.splitlines()[:7] == list(sets.MARKDOWN_HEADER)
     assert "| chi_e | unstable | 30 | 1.000 | 1.000 |" in text
+    assert f"Random halvings of the pooled rows ({len(sets.RESPLIT_SEEDS)} seeds)" in text
+    assert "| chi_e | 1.000 [1.000, 1.000] | 1.000 [1.000, 1.000] |" in text
     assert json.loads(output.read_text(encoding="utf-8"))["schema"] == sets.SCHEMA
 
 

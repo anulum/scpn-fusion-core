@@ -33,6 +33,9 @@
     certificate);
   - median unstable-row interval widths of 12.2, 14.4 and 2.36 m^2/s (chi_e,
     chi_i, D_e).
+  A robustness section repeats the experiment on 20 random halvings of the
+  pooled calibration and holdout rows. It reports the mean, standard deviation,
+  minimum and maximum of each per-class coverage.
 - `validation/qlknn_conformal_variants.py` compares four split-conformal
   variants for the QLKNN-10D surrogate on the same regimes:
   - the marginal absolute score, which reproduces the tracked certificate
