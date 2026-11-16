@@ -130,6 +130,10 @@ def _to_episode_result(
     total_us: float,
     shot_duration: int,
 ) -> EpisodeResult:
+    """Convert one shot result and its wall time into an episode record.
+
+    A mean radial or vertical error above 0.5 m counts as a disruption.
+    """
     per_step_us = total_us / max(int(run_result.get("steps", 0)), 1)
     r_err = float(run_result["mean_abs_r_error"])
     z_err = float(run_result["mean_abs_z_error"])
@@ -147,6 +151,7 @@ def _to_episode_result(
 
 
 def _run_pid_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    """Run one IsoFlux shot with the built-in PID loops and time it."""
     steps = int(shot_duration)
     ctrl = IsoFluxController(config_path, verbose=False)
     t0 = time.perf_counter_ns()
@@ -156,6 +161,10 @@ def _run_pid_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
 
 
 def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    """Run one shot with H-infinity controllers on both axes, scaled to the PID gains.
+
+    Requires the H-infinity research gate.
+    """
     if not _env_flag_enabled(HINF_RESEARCH_ENV):
         raise RuntimeError(
             "H-infinity research lane is disabled by default; set "
@@ -179,6 +188,7 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResul
     pid_r_id = id(ctrl.pid_R)
 
     def hinf_step(pid: Any, err: float) -> float:
+        """Send the radial loop's error to the radial controller, any other to the vertical one."""
         if id(pid) == pid_r_id:
             return scale_r * hinf_r.step(err, dt)
         return scale_z * hinf_z.step(err, dt)
@@ -191,6 +201,7 @@ def _run_hinf_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResul
 
 
 def _run_mpc_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    """Run one shot with the surrogate-model MPC in place of both PID loops."""
     if not _mpc_available:
         raise RuntimeError("MPC controller is unavailable in this environment.")
     if ModelPredictiveController is None or NeuralSurrogate is None:
@@ -213,6 +224,7 @@ def _run_mpc_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
     )
 
     def mpc_step(pid: Any, err: float) -> float:
+        """Plan from the axis and X-point state; every loop receives the first planned command."""
         idx_max = int(np.argmax(ctrl.kernel.Psi))
         iz, ir = np.unravel_index(idx_max, ctrl.kernel.Psi.shape)
         r_ax = float(ctrl.kernel.R[ir])
@@ -230,6 +242,7 @@ def _run_mpc_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
 
 
 def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    """Run one shot with the JAX NMPC in place of both PID loops."""
     if not _nmpc_jax_available:
         raise RuntimeError("NMPC-JAX controller is unavailable in this environment.")
     if get_nmpc_controller is None:
@@ -243,6 +256,7 @@ def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30) -> EpisodeR
     nmpc = get_nmpc_controller(state_dim=4, action_dim=n_coils, horizon=10)
 
     def nmpc_step(pid: Any, err: float) -> float:
+        """Plan toward the target from the axis and X-point state; return the first command."""
         idx_max = int(np.argmax(ctrl.kernel.Psi))
         iz, ir = np.unravel_index(idx_max, ctrl.kernel.Psi.shape)
         r_ax = float(ctrl.kernel.R[ir])
@@ -260,6 +274,7 @@ def _run_nmpc_jax_episode(config_path: Any, shot_duration: int = 30) -> EpisodeR
 
 
 def _run_snn_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult:
+    """Run one shot with the Nengo spiking controller in place of both PID loops."""
     if not _snn_available:
         raise RuntimeError("Nengo-SNN controller is unavailable in this environment.")
     if NengoSNNController is None or NengoSNNConfig is None:
@@ -269,6 +284,7 @@ def _run_snn_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
     snn = NengoSNNController(NengoSNNConfig(n_neurons=200, n_channels=2))
 
     def snn_step(pid: Any, err: float) -> float:
+        """Feed this loop's error on channel one and return the first output."""
         output = snn.step(np.array([float(err), 0.0], dtype=np.float64))
         return float(np.asarray(output, dtype=np.float64).reshape(-1)[0])
 
@@ -280,6 +296,7 @@ def _run_snn_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
 
 
 def _build_controller_registry() -> dict[str, Callable[[Any, int], EpisodeResult]]:
+    """Register PID and H-infinity, plus each optional controller whose dependencies imported."""
     controllers: dict[str, Callable[[Any, int], EpisodeResult]] = {
         "PID": _run_pid_episode,
         "H-infinity": _run_hinf_episode,

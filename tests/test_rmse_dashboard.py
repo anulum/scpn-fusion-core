@@ -24,6 +24,7 @@ SPEC.loader.exec_module(rmse_dashboard)
 
 
 def test_ipb98_regression_point() -> None:
+    """The IPB98(y,2) scaling reproduces its regression value at the ITER point."""
     tau = rmse_dashboard.ipb98_tau_e(
         ip_ma=15.0,
         b_t=5.3,
@@ -38,12 +39,14 @@ def test_ipb98_regression_point() -> None:
 
 
 def test_rmse_basic() -> None:
+    """RMSE is zero for equal series and matches a hand value otherwise."""
     assert rmse_dashboard.rmse([1.0, 2.0, 3.0], [1.0, 2.0, 3.0]) == 0.0
     val = rmse_dashboard.rmse([1.0, 3.0], [2.0, 5.0])
     assert val == pytest.approx(2.5**0.5)
 
 
 def test_rmse_raises_on_invalid_input() -> None:
+    """RMSE refuses empty or unequal-length series."""
     with pytest.raises(ValueError):
         rmse_dashboard.rmse([], [])
     with pytest.raises(ValueError):
@@ -51,6 +54,7 @@ def test_rmse_raises_on_invalid_input() -> None:
 
 
 def test_sparc_axis_rmse_smoke() -> None:
+    """The bundled SPARC files give a finite axis RMSE with one row each."""
     sparc_dir = ROOT / "validation" / "reference_data" / "sparc"
     result = rmse_dashboard.sparc_axis_rmse(sparc_dir)
     assert result["count"] >= 1
@@ -59,6 +63,7 @@ def test_sparc_axis_rmse_smoke() -> None:
 
 
 def test_forward_diagnostics_rmse_includes_thomson_metrics() -> None:
+    """Forward diagnostics report interferometer, Thomson and neutron errors."""
     result = rmse_dashboard.forward_diagnostics_rmse()
     assert result["count_interferometer_channels"] >= 1
     assert result["count_thomson_channels"] >= 1
@@ -68,6 +73,7 @@ def test_forward_diagnostics_rmse_includes_thomson_metrics() -> None:
 
 
 def test_render_markdown_contains_sections() -> None:
+    """The rendered report has its title and the confinement, beta_N and diagnostics sections."""
     report = {
         "generated_at_utc": "2026-02-12T00:00:00+00:00",
         "runtime_seconds": 1.23,

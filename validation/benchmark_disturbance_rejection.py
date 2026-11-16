@@ -175,6 +175,7 @@ class PIDController:
         kd: float = 1.5e2,
         u_max: float = 1.0e6,
     ) -> None:
+        """Set the PID gains and the actuator saturation limit."""
         self.kp = float(kp)
         self.ki = float(ki)
         self.kd = float(kd)
@@ -228,6 +229,7 @@ class LQRRobustController:
     """
 
     def __init__(self, gamma_growth: float = 100.0) -> None:
+        """Build the two-state vertical model at the growth rate and solve the Riccati gain."""
         self.gamma_growth = float(gamma_growth)
 
         self.A = np.array(
@@ -326,6 +328,7 @@ class MPCController:
         iterations: int = 15,
         learning_rate: float = 0.1,
     ) -> None:
+        """Build the MPC model and weights; the trailing legacy arguments are accepted, unused."""
         self.A = np.array(
             [
                 [0.0, 1.0],
@@ -411,6 +414,7 @@ class SNNControllerWrapper:
         tau_window: int = 10,
         seed: int = 42,
     ) -> None:
+        """Build a unit-gain spiking pool and keep the output gain applied to its command."""
         if not _snn_available:
             raise RuntimeError("SpikingControllerPool is not available")
         self._pool = SpikingControllerPool(
@@ -461,6 +465,7 @@ class LinearPlant:
     """
 
     def __init__(self, gamma_growth: float = 100.0) -> None:
+        """Build the two-state vertical plant at the given growth rate."""
         self.gamma_growth = float(gamma_growth)
         self.A = np.array(
             [
@@ -750,12 +755,15 @@ class _HInfMeasurementAdapter:
     """
 
     def __init__(self, inner: Any) -> None:
+        """Wrap the H-infinity controller whose step expects a raw measurement."""
         self._inner = inner
 
     def step(self, error: float, dt: float) -> float:
+        """Return the inner controller's command for the negated benchmark error."""
         return self._inner.step(-error, dt)
 
     def reset(self) -> None:
+        """Reset the inner controller."""
         self._inner.reset()
 
 

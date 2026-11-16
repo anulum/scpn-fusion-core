@@ -23,35 +23,45 @@ sys.path.insert(0, str(repo_root))
 
 
 def test_hinf_episode_uses_independent_axis_controllers(monkeypatch) -> None:
+    """The H-infinity episode runs one controller per axis, each primed and reset once."""
     import validation.controller_comparison as mod
 
     created: list[Any] = []
 
     class FakeHinf:
+        """H-infinity stand-in that records every step and reset."""
+
         def __init__(self) -> None:
+            """Start with a feed-through gain of 2 and empty records."""
             self._Fd = np.array([[2.0]], dtype=np.float64)
             self.steps: list[tuple[float, float]] = []
             self.reset_calls = 0
 
         def step(self, err: float, dt: float) -> float:
+            """Record the step and return ten times the error."""
             self.steps.append((float(err), float(dt)))
             return float(err) * 10.0
 
         def reset(self) -> None:
+            """Count the reset."""
             self.reset_calls += 1
 
     class FakeIsoFluxController:
+        """IsoFlux stand-in that drives one radial and one vertical step per shot."""
+
         def __init__(
             self,
             config_path: str,
             verbose: bool = False,
             control_dt_s: float = 0.05,
         ) -> None:
+            """Store the PID gains and an identity loop step."""
             self.pid_R = {"Kp": 2.0}
             self.pid_Z = {"Kp": 5.0}
             self.pid_step = lambda pid, err: float(err)
 
         def run_shot(self, shot_duration: int, save_plot: bool = False) -> dict[str, float]:
+            """Step each loop once and return fixed errors."""
             _ = self.pid_step(self.pid_R, 0.2)
             _ = self.pid_step(self.pid_Z, -0.1)
             return {
@@ -62,6 +72,7 @@ def test_hinf_episode_uses_independent_axis_controllers(monkeypatch) -> None:
             }
 
     def fake_get_hinf() -> FakeHinf:
+        """Build and remember one stand-in controller."""
         ctrl = FakeHinf()
         created.append(ctrl)
         return ctrl
@@ -82,6 +93,7 @@ def test_hinf_episode_uses_independent_axis_controllers(monkeypatch) -> None:
 
 
 def test_hinf_episode_requires_explicit_research_gate(monkeypatch) -> None:
+    """The H-infinity lane refuses to run without its research gate."""
     import validation.controller_comparison as mod
 
     monkeypatch.delenv(mod.HINF_RESEARCH_ENV, raising=False)
@@ -90,6 +102,7 @@ def test_hinf_episode_requires_explicit_research_gate(monkeypatch) -> None:
 
 
 def test_controller_registry_contains_baseline_controllers() -> None:
+    """The registry always offers PID and H-infinity."""
     import validation.controller_comparison as mod
 
     registry = mod._build_controller_registry()
@@ -98,9 +111,11 @@ def test_controller_registry_contains_baseline_controllers() -> None:
 
 
 def test_run_comparison_aggregates_metrics(monkeypatch) -> None:
+    """Aggregates over successful episodes match the per-episode values."""
     import validation.controller_comparison as mod
 
     def run_stable(config_path: Any, shot_duration: int) -> mod.EpisodeResult:
+        """Return a stable episode."""
         return mod.EpisodeResult(
             mean_abs_r_error=0.1,
             mean_abs_z_error=0.2,
@@ -112,6 +127,7 @@ def test_run_comparison_aggregates_metrics(monkeypatch) -> None:
         )
 
     def run_disrupted(config_path: Any, shot_duration: int) -> mod.EpisodeResult:
+        """Return a disrupted episode at half the shot."""
         return mod.EpisodeResult(
             mean_abs_r_error=0.8,
             mean_abs_z_error=0.8,

@@ -25,13 +25,18 @@ import validation.benchmark_disturbance_rejection as mod  # noqa: E402
 def test_build_hinf_controller_strict_rejects_lqr_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Strict mode refuses an infeasible H-infinity synthesis without building the LQR fallback."""
     monkeypatch.setattr(mod, "_hinf_available", True)
 
     def _raise_are(*_args: object, **_kwargs: object) -> None:
+        """Fail the synthesis the way an infeasible Riccati problem would."""
         raise ValueError("unit-test-infeasible")
 
     class _ShouldNotConstruct:
+        """Stand-in whose construction fails the test."""
+
         def __init__(self, *_args, **_kwargs) -> None:
+            """Fail if strict mode ever builds the fallback."""
             raise AssertionError("LQR fallback must not run in strict mode")
 
     monkeypatch.setattr(mod, "get_radial_robust_controller", _raise_are)
@@ -44,20 +49,27 @@ def test_build_hinf_controller_strict_rejects_lqr_fallback(
 def test_build_hinf_controller_reports_fallback_metadata(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Non-strict mode falls back to LQR and records the backend and the reason."""
     monkeypatch.setattr(mod, "_hinf_available", True)
 
     def _raise_are(*_args: object, **_kwargs: object) -> None:
+        """Fail the synthesis the way an infeasible Riccati problem would."""
         raise ValueError("unit-test-infeasible")
 
     class _DummyLQR:
+        """Minimal LQR stand-in with the controller interface."""
+
         def __init__(self, gamma_growth: float = 100.0) -> None:
+            """Record the growth rate and report a stable design."""
             self.gamma_growth = float(gamma_growth)
             self.is_stable = True
 
         def step(self, error: float, dt: float) -> float:
+            """Return zero command."""
             return 0.0
 
         def reset(self) -> None:
+            """Nothing to reset."""
             return None
 
     monkeypatch.setattr(mod, "get_radial_robust_controller", _raise_are)
@@ -74,12 +86,14 @@ def test_build_hinf_controller_reports_fallback_metadata(
 def test_build_controllers_strict_requires_hinf_module(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Strict mode refuses to build controllers when the H-infinity module is absent."""
     monkeypatch.setattr(mod, "_hinf_available", False)
     with pytest.raises(RuntimeError, match="strict mode requires"):
         mod.build_controllers(strict_hinf=True)
 
 
 def test_generate_json_results_includes_controller_build_metadata() -> None:
+    """The JSON results carry each controller's build metadata."""
     metrics = [
         mod.ScenarioMetrics(
             controller="H-infinity",
