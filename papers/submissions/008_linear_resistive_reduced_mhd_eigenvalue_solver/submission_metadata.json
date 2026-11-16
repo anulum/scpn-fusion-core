@@ -1,0 +1,35 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE linear reduced-MHD paper review metadata.",
+  "schema_version": "2.0",
+  "catalogue_id": "008",
+  "status": "preprint_prepared_not_deposited",
+  "title": "A Linear Resistive Reduced-MHD Eigenvalue Solver Checked Against Tearing and Resistive-Kink Asymptotics, with Two Recorded Misses",
+  "author": {
+    "name": "Miroslav Sotek",
+    "orcid": "0009-0009-3560-0851",
+    "affiliation": "ANULUM CH&LI, Marbach SG, Switzerland"
+  },
+  "repository_revision": "f7a367a1a60f80c82a442a3ff9b55526582717ae",
+  "companion_catalogue_ids": [],
+  "evidence_files": [
+    "evidence/evidence_manifest.json",
+    "evidence/linear_mhd_reduced_model_acceptance.json"
+  ],
+  "claim_status": {
+    "acceptance": "seven_of_nine_fixed_criteria_pass",
+    "misses": "reported_not_explained",
+    "geometry": "slab_and_periodic_cylinder_only"
+  },
+  "doi": null,
+  "manuscript_content_license": null,
+  "preprint": {
+    "date": "2026-11-16",
+    "software_described": "scpn-fusion main at f7a367a1 (2026-11-16), after release 4.1.0; the five sources the acceptance report records are byte-identical there"
+  }
+}

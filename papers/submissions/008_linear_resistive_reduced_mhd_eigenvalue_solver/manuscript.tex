@@ -1,0 +1,191 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — linear resistive reduced-MHD eigenvalue solver.
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[margin=1in]{geometry}
+\bibliographystyle{unsrtnat}
+
+\title{A Linear Resistive Reduced-MHD Eigenvalue Solver Checked Against
+Tearing and Resistive-Kink Asymptotics, with Two Recorded Misses}
+\author{Miroslav \v{S}otek\\
+\small ANULUM CH\&LI, Marbach SG, Switzerland, \url{https://www.anulum.li}\\
+\small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
+\small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
+\date{Preprint --- 16 November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+SCPN-Fusion-Core contains a linear resistive reduced-MHD eigenvalue solver for
+a Harris current sheet and a periodic cylinder, discretised with C1 cubic
+Hermite elements.  Its unstable roots are found by a dense QZ solve or by a
+verified shift-and-invert search.  We test it against nine acceptance criteria
+fixed before the run, built on the asymptotic growth rates of resistive
+tearing (scaling as $\eta^{3/5}$) and of the large-$\Delta'$ limit (scaling as
+$\eta^{1/3}$).  Seven criteria pass.  For the Harris sheet the growth rate
+follows $\eta^{0.598}$ and matches the asymptotic constant-$\psi$ rate to
+0.2\% at $\eta = 10^{-8}$.  The cylindrical resistive kink follows
+$\eta^{0.306}$ and matches its asymptotic rate to 3.1\%.  The cylindrical 2/1
+tearing mode matches the asymptotic rate to 4.9\% at $\eta = 10^{-8}$, using a
+stability index $\Delta' = 9.69$ from an independent shooting calculation.
+Two criteria are missed, and we report them as misses.  The cylindrical
+tearing slope over $\eta = 10^{-6}$ to $10^{-8}$ is 0.554, below its band of
+0.56--0.64.  A Harris sheet with $\Delta' < 0$ shows a root of $7.9 \times
+10^{-9}$, above the fixed limit of $10^{-9}$ though four orders of magnitude
+below the tearing rate at the same resistivity.  The solver has no toroidal
+terms and no nonlinear physics.
+\end{abstract}
+
+\noindent\textbf{Keywords:} tearing mode; resistive kink; reduced MHD; Hermite
+finite elements; eigenvalue problem; verification
+
+\section{Introduction}
+
+Linear resistive stability codes are verified against the asymptotic theory
+of the tearing instability.  In the constant-$\psi$ limit first treated by
+Furth, Killeen and Rosenbluth \citep{FKR1963}, the growth rate is $\lambda =
+C^{-4/5} \eta^{3/5} \Delta'^{4/5}$ with $C = \pi \Gamma(3/4) / (2 \Gamma(5/4))
+\approx 1.45$; when $\Delta'$ is large it becomes $\lambda^3 = \eta$, a growth
+rate that scales as $\eta^{1/3}$ \citep{BoldyrevLoureiro2018}.  We describe a
+linear reduced-MHD solver and test it against these limits with criteria fixed
+in advance, including the two that it misses.
+
+\section{The solver}
+
+The solver advances the linear resistive reduced-MHD system
+\begin{equation}
+\lambda \psi = i F \phi + \eta L \psi, \qquad
+\lambda L \phi = i F L \psi - i \kappa_b J_0' \psi,
+\end{equation}
+for the perturbed flux $\psi$ and stream function $\phi$, with $F$ the
+parallel wave number of the equilibrium field, $L$ the perpendicular
+Laplacian, and $\kappa_b J_0'$ the drive by the equilibrium current gradient, in a Harris slab ($B_y = \tanh
+x$) or a periodic cylinder.  The radial direction uses C1 cubic Hermite
+elements, clustered at the resonant surface.  For at most 2000 unknowns a
+dense QZ solve finds every root.  Larger problems use shift-and-invert Arnoldi
+iteration over a ladder of real shifts; every root is refined by inverse
+iteration and verified by its eigenvector residual.  That search is marked
+incomplete, and finding no root means none in the searched domain, not
+stability.  The stability index $\Delta'$ of the cylinder comes from a separate
+shooting calculation of the outer ideal solution.
+
+\section{Acceptance}
+
+The criteria and their bands were fixed in the acceptance module before the
+run.  Growth rates are in Alfv\'en units at resistivities $\eta = 10^{-6}$,
+$10^{-7}$ and $10^{-8}$ (Lundquist numbers $10^6$ to $10^8$); a slope is the
+least-squares exponent of the growth rate in $\eta$ over the three values.  The
+Harris sheet uses $ka = 0.5$ (unstable, $\Delta' > 0$) and $ka = 1.2$
+($\Delta' < 0$) on a domain of half-width 20.  The cylinder carries the current
+$J_0 = j_0 (1 - r^2)^\nu$ with $B_z = 1$ and major radius 10: $q(0) = 1.2$ and
+$\nu = 1.5$ for the 2/1 tearing mode, and $q(0) = 0.9$ and $\nu = 1$ for the
+1/1 resistive kink, whose reference rate is $\eta^{1/3} |F'|^{2/3}$ at the
+resonant surface.
+
+\begin{table}[ht]
+\centering
+\caption{The nine acceptance criteria.  Ratio: computed growth rate over the
+asymptotic rate at $\eta = 10^{-8}$.  Doubling: relative change of the growth
+rate when the elements per side double from 200 to 400 at $\eta = 10^{-7}$.
+Sparse/dense: relative difference of the most unstable root found iteratively
+and by the dense solve.}
+\label{tab:criteria}
+\small
+\begin{tabular}{llll}
+\toprule
+Criterion & Value & Band or limit & Result \\
+\midrule
+Harris tearing slope & 0.598 & 0.57--0.63 & pass \\
+Harris tearing ratio & 0.998 & 0.90--1.10 & pass \\
+Harris, $\Delta' < 0$, largest root at $\eta = 10^{-6}$ & $7.9 \times 10^{-9}$ & $\le 10^{-9}$ & \textbf{miss} \\
+Harris element doubling & $1.3 \times 10^{-7}$ & $\le 5 \times 10^{-3}$ & pass \\
+Sparse/dense agreement & 0 & $\le 10^{-8}$ & pass \\
+Cylinder 2/1 tearing slope & 0.554 & 0.56--0.64 & \textbf{miss} \\
+Cylinder 2/1 tearing ratio & 0.951 & 0.85--1.15 & pass \\
+Cylinder 1/1 resistive-kink slope & 0.306 & 0.303--0.363 & pass \\
+Cylinder 1/1 resistive-kink ratio & 0.969 & 0.75--1.25 & pass \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:criteria} lists the results.  The Harris sheet reproduces the
+constant-$\psi$ rate closely: slope 0.598 against $3/5$ and a ratio of 0.998.
+Doubling the elements changes its growth rate by $1.3 \times 10^{-7}$.  The
+cylindrical kink follows the $\eta^{1/3}$ scaling, with slope 0.306 and ratio
+0.969.  The cylindrical 2/1 tearing mode matches the asymptotic rate, with the
+shot $\Delta' = 9.69$, to 4.9\% at $\eta = 10^{-8}$.
+
+\section{The two misses}
+
+The cylindrical 2/1 slope of 0.554 lies below its band.  The growth rates at
+the three resistivities are $3.05 \times 10^{-4}$, $8.86 \times 10^{-5}$ and
+$2.37 \times 10^{-5}$.  The constant-$\psi$ rate is the limit of small
+$\Delta'$ times the resistive-layer width, and with $\Delta' = 9.69$ that
+product is not yet small at $\eta = 10^{-6}$.  This is a plausible reason for
+the shallower slope; we have not verified it, for example by extending the
+scan to smaller $\eta$.
+
+The Harris sheet with $ka = 1.2$, for which $\Delta' < 0$, should have no
+growing tearing root.  The solver finds one at $7.9 \times 10^{-9}$, above the
+fixed limit of $10^{-9}$.  That root is more than four orders of magnitude
+below the $ka = 0.5$ tearing rate at the same resistivity ($2.48 \times
+10^{-4}$).  Whether it is a numerical artefact of the discretisation or of the
+search is not established here.  The limit was not changed after the run.
+
+\section{Limitations}
+
+\begin{itemize}
+\item Slab and periodic-cylinder geometry only.  The solver has no toroidal
+$1/R$ terms and no Grad--Shafranov equilibrium, and it covers linear physics
+only.
+\item The acceptance covers three resistivities.  Both misses are open.
+\item The run times recorded with the report describe one host and are not a
+performance result.
+\end{itemize}
+
+\section*{Software version and date}
+
+This preprint describes \texttt{scpn-fusion} at commit \texttt{f7a367a1a60f}
+of 16 November 2026, on the main line after release 4.1.0.  The acceptance
+run was made at commit \texttt{c1bc7f63a93b} and tracked at
+\texttt{44852feeedf2}, on one host (Intel Xeon E5-2640, 24 CPUs) with NumPy
+2.5.4, SciPy 1.17.1, Python 3.12.3 and eight BLAS threads.  The five sources
+it records are byte-identical at the commit above.
+
+\section*{Data and code availability}
+
+Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  The
+acceptance report cited here, with its source revision, Git blob identity and
+SHA-256 digest, is in \texttt{evidence/} of this submission directory.  The
+generator in that directory checks every quoted value against it.  This is a
+venue-neutral preprint and has not been submitted.  No DOI has been reserved
+and the manuscript-content licence has not yet been selected by the author.
+
+\section*{Use of AI tools}
+
+Large language model coding agents were used substantively for generating and
+debugging the analysis code and for drafting and revising the manuscript text.
+The agents were commercially available models, which are not named because no
+vendor is involved in or sponsors this work.  They were coordinated through
+SYNAPSE CHANNEL (version 0.99.52 at the time of writing;
+\url{https://github.com/anulum/synapse-channel}), the open-source
+agent-coordination tool of the ANULUM Agentic Coordination, Assurance and
+Continuity Systems group.  The author specified the acceptance criteria,
+verified the code through its tests and every reported number against the
+committed report, and takes full responsibility for the content.
+
+\bibliography{references}
+\end{document}

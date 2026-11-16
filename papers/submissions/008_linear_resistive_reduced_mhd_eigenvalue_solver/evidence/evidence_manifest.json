@@ -1,0 +1,64 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE linear reduced-MHD paper evidence manifest.",
+  "schema_version": "2.0",
+  "repository_revision": "f7a367a1a60f80c82a442a3ff9b55526582717ae",
+  "claim_boundary": {
+    "scope": "linear resistive reduced MHD in a Harris slab and a periodic cylinder",
+    "misses": "cylinder tearing slope and the negative-Delta-prime Harris root",
+    "excluded": "toroidal 1/R physics, shaped equilibria, nonlinear MHD"
+  },
+  "source_custody": {
+    "linear_mhd_reduced_model_acceptance.json": {
+      "source_path": "validation/reports/linear_mhd_reduced_model_acceptance.json",
+      "source_revision": "44852feeedf2780f13d42ed5b90c8ee1b4f390a5",
+      "git_blob_oid_sha1": "ab2a84765c79ebb007502d62370c945a60bd4a26",
+      "source_sha256": "bcbbc302cfcc78747b7ed957a3d9de9842aae362587745b0a9c16e4c1ef60dd9",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    }
+  },
+  "implementation_sources": {
+    "src/scpn_fusion/core/linear_mhd_1d.py": {
+      "git_blob_oid_sha1": "33d8b7c3b11ffc911923851bd93fe21aeb648b4e",
+      "sha256": "bb16a5957a0339dc4528e68ea8e71b75a7e3c6a4f338427dfd8953369d2e0ff2",
+      "role": "Hermite-element slab and cylinder eigenproblem, growth rate"
+    },
+    "src/scpn_fusion/core/linear_mhd_delta_prime.py": {
+      "git_blob_oid_sha1": "1cd790ae9267ea471397e03029c3fd3e2a07166a",
+      "sha256": "8990e06a3752ffe98d0b2c41969ca3e4f7dc36cf0fdd375087e7e88ee6cf560d",
+      "role": "independent shooting of the stability index"
+    },
+    "src/scpn_fusion/core/linear_mhd_spectrum.py": {
+      "git_blob_oid_sha1": "954e1ac4c2f3cf59d4aeec2df060a8b8a712fdf7",
+      "sha256": "4060453623aa2671954c54b240f5f951bf81c346249a5ee322af6c0a149d0d24",
+      "role": "dense QZ and verified shift-and-invert search"
+    },
+    "src/scpn_fusion/core/tearing_mode_theory.py": {
+      "git_blob_oid_sha1": "f038ca6370f8aaa4da547ad8557177f726fb2043",
+      "sha256": "3ee63511991367468b5943bc6c18f76105a241773a04c9d9c786d3fd2bbdee4d",
+      "role": "asymptotic FKR reference rate"
+    },
+    "validation/linear_mhd_reduced_model_acceptance.py": {
+      "git_blob_oid_sha1": "db745213ebf8916c2d9466a2154d51c3be749d91",
+      "sha256": "016354218ec44c91df7be5882c61242b8e6e296a04bab1da9ff45cdce3a10499",
+      "role": "the nine fixed acceptance criteria"
+    }
+  },
+  "quoted_values": 36,
+  "generators": {
+    "papers/submissions/008_linear_resistive_reduced_mhd_eigenvalue_solver/generate_evidence_manifest.py": {
+      "sha256": "9aaf72e0fc14cfac3d21d25a58ad10bddca7c3264224b1c6f4a1b5ff367b667e"
+    }
+  },
+  "files": {
+    "linear_mhd_reduced_model_acceptance.json": {
+      "sha256": "ba7bb3a24883058bd2aaddbd69a2dd9a7ea41fc679256f8b8fa3005b0b23ff8b",
+      "role": "nine fixed acceptance criteria, seven passed"
+    }
+  }
+}
