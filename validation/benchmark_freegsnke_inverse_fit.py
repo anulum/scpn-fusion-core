@@ -32,7 +32,10 @@ machine descriptions: there is no facility, control, safety or speed claim and n
 with measured discharges.
 
 A run may select cases and starts. ``--merge`` joins such partial reports into one, provided
-they come from the same generator, settings, SCPN revision, FreeGSNKE source and host.
+they come from the same generator, settings, SCPN revision, FreeGSNKE source and host. Each
+partial run solves FreeGSNKE's case again, so its FreeGSNKE run time differs; every other
+field of a case must agree. The merged case keeps the run time of the first partial report
+that names it, and the merged report records the digest of the code that merged it.
 """
 
 from __future__ import annotations
@@ -455,6 +458,17 @@ def build_report(
     return sign_report(report)
 
 
+def _freegsnke_case(case: dict[str, Any]) -> dict[str, Any]:
+    """Return the FreeGSNKE part of a case: no starts, no derived gates, no run time."""
+    shared = {
+        key: copy.deepcopy(value)
+        for key, value in case.items()
+        if key not in ("starts", "checks", "passed")
+    }
+    shared.get("freegsnke_run", {}).pop("seconds_orientation_only", None)
+    return shared
+
+
 def merge_reports(reports: list[dict[str, Any]]) -> dict[str, Any]:
     """Join partial reports of one generator, revision and host into one signed report."""
     if not reports:
@@ -477,9 +491,7 @@ def merge_reports(reports: list[dict[str, Any]]) -> dict[str, Any]:
             raise ValueError("partial reports differ in generator, settings or provenance")
         for name, case in report["cases"].items():
             known = merged["cases"].setdefault(name, {**copy.deepcopy(case), "starts": {}})
-            if {k: v for k, v in case.items() if k not in ("starts", "checks", "passed")} != {
-                k: v for k, v in known.items() if k not in ("starts", "checks", "passed")
-            }:
+            if _freegsnke_case(case) != _freegsnke_case(known):
                 raise ValueError(f"{name}: partial reports disagree on the FreeGSNKE case")
             for start, entry in case["starts"].items():
                 if start in known["starts"]:
@@ -488,6 +500,10 @@ def merge_reports(reports: list[dict[str, Any]]) -> dict[str, Any]:
     for case in merged["cases"].values():
         case["checks"] = case_checks(case)
         case["passed"] = all(case["checks"].values())
+    merged["merged_by"] = {
+        "path": "validation/benchmark_freegsnke_inverse_fit.py",
+        "sha256": base._file_sha256(Path(__file__).resolve()),
+    }
     return sign_report(merged)
 
 

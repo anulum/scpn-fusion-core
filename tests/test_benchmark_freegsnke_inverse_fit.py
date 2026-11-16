@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import hashlib
 import json
 import os
 import subprocess
@@ -196,10 +197,15 @@ def test_a_freegsnke_controlled_passive_structure_is_refused() -> None:
         )
 
 
-def _case(*, refinement: float = 1e-10, scpn: bool = True, cross: bool = True) -> dict[str, Any]:
+def _case(
+    *, refinement: float = 1e-10, scpn: bool = True, cross: bool = True, seconds: float = 6.2
+) -> dict[str, Any]:
     return {
         "freegsnke_loss": {"total_l2": 1.0e-5},
-        "freegsnke_run": {"forward_refinement_relative_change": refinement},
+        "freegsnke_run": {
+            "forward_refinement_relative_change": refinement,
+            "seconds_orientation_only": seconds,
+        },
         "scpn_at_freegsnke_currents": {"converged": scpn, "loss": {"total_l2": 2.0e-3}},
         "scpn_evaluator_on_freegsnke_flux": {"total_l2": 1.1e-5},
         "starts": {
@@ -246,9 +252,17 @@ def _partial(start: str, **changes: Any) -> dict[str, Any]:
 
 
 def test_merge_joins_the_starts_of_partial_reports_and_signs_again() -> None:
-    merged = benchmark.merge_reports([_partial("freegsnke"), _partial("perturbed", cross=False)])
+    merged = benchmark.merge_reports(
+        [_partial("freegsnke"), _partial("perturbed", cross=False, seconds=6.6)]
+    )
     case = merged["cases"]["mastu_like"]
     assert list(case["starts"]) == ["freegsnke", "perturbed"]
+    # Each partial run solved FreeGSNKE again: only the first run time is kept.
+    assert case["freegsnke_run"]["seconds_orientation_only"] == 6.2
+    assert merged["merged_by"] == {
+        "path": "validation/benchmark_freegsnke_inverse_fit.py",
+        "sha256": hashlib.sha256(Path(benchmark.__file__).read_bytes()).hexdigest(),
+    }
     assert case["checks"]["freegsnke_refinements_at_scpn_currents_converged"] is False
     assert merged["status"] == "fail"
     assert benchmark.merge_reports([copy.deepcopy(merged)]) == merged

@@ -157,6 +157,15 @@
 
 ### Fixed
 
+- `validation/benchmark_freegsnke_inverse_fit.py --merge` now joins partial
+  reports whose FreeGSNKE runs differ only in run time. Each partial run solves
+  FreeGSNKE's case again, and the merge compared the whole case including
+  `freegsnke_run.seconds_orientation_only`. It therefore refused every real
+  pair of starts of one case. On the 2026-11-16 SPARC-like runs the only
+  difference was 6.19 s against 6.60 s. Every other field must still agree. The
+  merged case keeps the first partial's run time, and the merged report records
+  the digest of the merging code (`merged_by`). The test fixture had no run
+  time, so it could not catch the defect.
 - Importing the equilibrium solver no longer starts Julia. The backend
   dispatcher (`scpn_fusion.core._multi_compat`) probed every tier on its first
   dispatch, and `scpn_fusion.core` makes that dispatch at import time to
