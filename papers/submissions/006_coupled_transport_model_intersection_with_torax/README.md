@@ -33,8 +33,8 @@ submitted to any specific venue.
   three source scales.
 - No TORAX equivalence outside the intersection, no experimental data and no
   speed comparison.
-- `validation/reports/torax_runtime_contract.json` is not cited: code it
-  records changed after it was produced.
+- `validation/reports/torax_runtime_contract.json` (the real-TORAX runtime
+  contract, regenerated in 8b83a050) is not part of this preprint's evidence.
 
 ## Custody
 
