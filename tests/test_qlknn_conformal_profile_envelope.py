@@ -14,6 +14,7 @@ here; the tests check that the gates report what the runs did.
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import subprocess
@@ -148,3 +149,11 @@ def test_script_entry_point_runs_from_the_repository_root() -> None:
     )
     assert completed.returncode == 0, completed.stderr
     assert "--p-aux" in completed.stdout
+
+
+def test_import_puts_the_repository_on_the_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Imported from outside the repository, the module puts the root on the path itself."""
+    root = str(envelope.ROOT)
+    monkeypatch.setattr(sys, "path", [entry for entry in sys.path if entry != root])
+    importlib.reload(envelope)
+    assert sys.path[0] == root
