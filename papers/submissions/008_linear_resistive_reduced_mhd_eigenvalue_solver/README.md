@@ -8,12 +8,13 @@
 
 # Linear resistive reduced-MHD eigenvalue solver
 
-Status: dated preprint of 16 November 2026, describing commit f7a367a1 on main
+Status: dated preprint of 16 November 2026, describing commit 0acee588 on main
 after release 4.1.0. The preprint has not been deposited or submitted.
 
 The manuscript tests the repository's linear resistive reduced-MHD eigenvalue
 solver (Harris slab and periodic cylinder) against nine acceptance criteria
-fixed before the run. Seven pass. The two misses are reported as misses.
+fixed before the run. Seven pass. The two misses are reported as misses, and
+a follow-up study probes their causes.
 It is not named for, formatted for, or submitted to any specific venue.
 
 - Source: `manuscript.tex`
@@ -31,14 +32,17 @@ It is not named for, formatted for, or submitted to any specific venue.
   - the cylinder 2/1 tearing slope (0.554);
   - the root of the Δ′ < 0 Harris sheet (7.9e-9 against a 1e-9 limit).
 
-  Their causes are not established.
+  A follow-up study explains the first: the slope approaches 3/5 as η falls
+  to 1e-10. The second stays open: the stray root does not converge as the
+  grid is refined, which points to spurious eigenvalues.
 - The run time of the report describes one host.
 
 ## Custody
 
-The acceptance report was run at c1bc7f63 and tracked at 44852fee. The five
-sources it records are byte-identical at f7a367a1, where the manifest binds
-them.
+The acceptance report was run at c1bc7f63 and tracked at 44852fee. The
+follow-up study was run at 03fdaf1d and tracked at 0acee588. The sources the
+two reports record (six files) are byte-identical at 0acee588, where the
+manifest binds them.
 
 ## Statements still open before any deposit
 

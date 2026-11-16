@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_REVISION = "f7a367a1a60f80c82a442a3ff9b55526582717ae"
+PACKAGE_REVISION = "0acee5884d0a7de889ce3e088bc67ac2eeca513c"
 PACKAGING_TRANSFORM = "seven structured Tier-0 fields added first; scientific payload unchanged"
 TIER0_HEADER: dict[str, str] = {
     "SPDX-License-Identifier": "AGPL-3.0-or-later",
@@ -40,6 +40,13 @@ SOURCE_CUSTODY: dict[str, dict[str, str]] = {
         "source_revision": "44852feeedf2780f13d42ed5b90c8ee1b4f390a5",
         "git_blob_oid_sha1": "ab2a84765c79ebb007502d62370c945a60bd4a26",
         "source_sha256": "bcbbc302cfcc78747b7ed957a3d9de9842aae362587745b0a9c16e4c1ef60dd9",
+        "packaging_transform": PACKAGING_TRANSFORM,
+    },
+    "linear_mhd_miss_study.json": {
+        "source_path": "validation/reports/linear_mhd_miss_study.json",
+        "source_revision": "0acee5884d0a7de889ce3e088bc67ac2eeca513c",
+        "git_blob_oid_sha1": "f9d17e3b1705a1bf98ddb4f3e9a7039d3272c864",
+        "source_sha256": "fe2315e0a5fb14a2bd7df6491bcc3d483f88c2b77736c0080cbdf3e008ef3db3",
         "packaging_transform": PACKAGING_TRANSFORM,
     },
 }
@@ -68,6 +75,11 @@ IMPLEMENTATION_SOURCES: dict[str, dict[str, str]] = {
         "git_blob_oid_sha1": "db745213ebf8916c2d9466a2154d51c3be749d91",
         "sha256": "016354218ec44c91df7be5882c61242b8e6e296a04bab1da9ff45cdce3a10499",
         "role": "the nine fixed acceptance criteria",
+    },
+    "validation/linear_mhd_miss_study.py": {
+        "git_blob_oid_sha1": "acb418a033dca4228e9696fb43cc78347e3b13fb",
+        "sha256": "1dc3105b97f196b8e296af9467ef3affc500c67636df6d331fbcc0c9f44164fa",
+        "role": "follow-up study of the two misses, dense QZ at every solve",
     },
 }
 
@@ -103,7 +115,13 @@ def scientific_payload(packaged: dict[str, Any]) -> dict[str, Any]:
 
 
 def _at(payload: dict[str, Any], dotted: str) -> Any:
-    """Read one value by its dotted (or slash-separated) path; list items by index."""
+    """Read one value by its dotted (or slash-separated) path; list items by index.
+
+    ``ratio:<a>|<b>`` divides the values at two paths.
+    """
+    if dotted.startswith("ratio:"):
+        numerator, denominator = dotted.removeprefix("ratio:").split("|")
+        return float(_at(payload, numerator)) / float(_at(payload, denominator))
     value: Any = payload
     # Keys that themselves contain dots (``moments.density_m3``) use "/" as the separator.
     for part in dotted.split("/") if "/" in dotted else dotted.split("."):
@@ -148,6 +166,37 @@ def quoted() -> list[tuple[str, str, str, str]]:
         ("report", "provenance.threads.OPENBLAS_NUM_THREADS", "{}", "8"),
         ("report", "provenance.source_revision", "{}", "c1bc7f63a93b29e6f9cdf284b09a287775697292"),
     ]
+    slopes, roots = "slope_scan.", "root_scan."
+    rows += [
+        ("study", slopes + "etas.4", "{}", "1e-10"),
+        ("study", slopes + "local_slopes.0", "{:.3f}", "0.537"),
+        ("study", slopes + "local_slopes.1", "{:.3f}", "0.572"),
+        ("study", slopes + "local_slopes.2", "{:.3f}", "0.588"),
+        ("study", slopes + "local_slopes.3", "{:.3f}", "0.595"),
+        ("study", slopes + "ratio_to_asymptotic.0", "{:.3f}", "0.772"),
+        ("study", slopes + "ratio_to_asymptotic.2", "{:.3f}", "0.951"),
+        ("study", slopes + "ratio_to_asymptotic.4", "{:.3f}", "0.991"),
+        ("study", slopes + "growth_rates.4", "{:.2e}", "1.56e-06"),
+        ("study", slopes + "smallest_eta_doubling_change", "{:.1e}", "1.7e-04"),
+        ("study", roots + "roots_by_elements.200.0", "{:.2e}", "7.92e-09"),
+        ("study", roots + "roots_by_elements.200.1", "{:.2e}", "1.05e-08"),
+        ("study", roots + "roots_by_elements.200.2", "{:.2e}", "1.36e-08"),
+        ("study", roots + "roots_by_elements.400.0", "{:.2e}", "1.04e-09"),
+        ("study", roots + "roots_by_elements.400.1", "{:g}", "0"),
+        ("study", roots + "roots_by_elements.400.2", "{:.2e}", "1.86e-07"),
+        ("study", roots + "unstable_ka_0p5_growth.2", "{:.2e}", "1.58e-05"),
+        (
+            "study",
+            "ratio:" + roots + "roots_by_elements.400.2|" + roots + "unstable_ka_0p5_growth.2",
+            "{:.1%}",
+            "1.2%",
+        ),
+        ("study", "checks.every_solve_complete_dense", "{}", "True"),
+        ("study", "provenance.source_revision", "{}", "03fdaf1d158f43539656d4e2aea4b8c2272681ea"),
+        ("study", "provenance.numpy", "{}", "2.5.4"),
+        ("study", "provenance.scipy", "{}", "1.17.1"),
+        ("study", "provenance.threads.OPENBLAS_NUM_THREADS", "{}", "8"),
+    ]
     return rows
 
 
@@ -186,7 +235,8 @@ def main() -> None:
     loaded = {
         "report": scientific_payload(
             _load_json(evidence_dir / "linear_mhd_reduced_model_acceptance.json")
-        )
+        ),
+        "study": scientific_payload(_load_json(evidence_dir / "linear_mhd_miss_study.json")),
     }
     validate_quoted(loaded)
     for relative_path, custody in IMPLEMENTATION_SOURCES.items():
@@ -195,6 +245,7 @@ def main() -> None:
             raise ValueError(f"Implementation source drifted: {relative_path}")
     roles = {
         "linear_mhd_reduced_model_acceptance.json": "nine fixed acceptance criteria, seven passed",
+        "linear_mhd_miss_study.json": "follow-up study: slope to eta 1e-10, Harris root by grid",
     }
     generator = Path(__file__).resolve()
     manifest = {
@@ -204,7 +255,8 @@ def main() -> None:
         "repository_revision": PACKAGE_REVISION,
         "claim_boundary": {
             "scope": "linear resistive reduced MHD in a Harris slab and a periodic cylinder",
-            "misses": "cylinder tearing slope and the negative-Delta-prime Harris root",
+            "misses": "cylinder tearing slope (explained by the follow-up scan) and the "
+            "negative-Delta-prime Harris root (open; not convergent under refinement)",
             "excluded": "toroidal 1/R physics, shaped equilibria, nonlinear MHD",
         },
         "source_custody": SOURCE_CUSTODY,

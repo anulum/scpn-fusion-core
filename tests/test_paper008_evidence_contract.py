@@ -52,11 +52,12 @@ def _git(*arguments: str) -> bytes:
 
 
 def _evidence(generator: ModuleType) -> dict[str, dict[str, Any]]:
-    """Load the package-local evidence under the key the generator uses."""
+    """Load the package-local evidence under the keys the generator uses."""
     return {
         "report": generator.scientific_payload(
             _load_json(EVIDENCE / "linear_mhd_reduced_model_acceptance.json")
-        )
+        ),
+        "study": generator.scientific_payload(_load_json(EVIDENCE / "linear_mhd_miss_study.json")),
     }
 
 
@@ -79,7 +80,7 @@ def test_described_sources_match_the_bound_revision() -> None:
     """Bind every analysis module to the package revision and to the working tree."""
     manifest = _load_json(EVIDENCE / "evidence_manifest.json")
     revision = manifest["repository_revision"]
-    assert len(manifest["implementation_sources"]) == 5
+    assert len(manifest["implementation_sources"]) == 6
     for relative_path, custody in manifest["implementation_sources"].items():
         spec = f"{revision}:{relative_path}"
         source = _git("show", spec)
@@ -123,18 +124,27 @@ def test_manuscript_names_its_revision_and_quotes_the_key_results() -> None:
         "$7.9 \\times 10^{-9}$",
         "The limit was not changed after the run",
         "no toroidal $1/R$ terms",
+        "explains the first miss",
+        "$1.86 \\times 10^{-7}$",
+        "this miss remains open",
     ):
         assert phrase in text, phrase
 
 
-def test_the_report_records_exactly_the_bound_sources() -> None:
-    """The report's own source digests are the five the package binds."""
+def test_the_reports_record_exactly_the_bound_sources() -> None:
+    """Together the two reports record the six bound sources, each at its bound digest."""
     manifest = _load_json(EVIDENCE / "evidence_manifest.json")
     bound = {
         path: custody["sha256"] for path, custody in manifest["implementation_sources"].items()
     }
-    report = _load_json(EVIDENCE / "linear_mhd_reduced_model_acceptance.json")
-    assert report["provenance"]["source_sha256"] == bound
+    acceptance = _load_json(EVIDENCE / "linear_mhd_reduced_model_acceptance.json")
+    study = _load_json(EVIDENCE / "linear_mhd_miss_study.json")
+    recorded = {**acceptance["provenance"]["source_sha256"], **study["provenance"]["source_sha256"]}
+
+    assert recorded == bound
+    for report in (acceptance, study):
+        for path, digest in report["provenance"]["source_sha256"].items():
+            assert bound[path] == digest, path
 
 
 def test_evidence_generator_is_byte_deterministic(tmp_path: Path) -> None:

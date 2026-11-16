@@ -45,8 +45,12 @@ Two criteria are missed, and we report them as misses.  The cylindrical
 tearing slope over $\eta = 10^{-6}$ to $10^{-8}$ is 0.554, below its band of
 0.56--0.64.  A Harris sheet with $\Delta' < 0$ shows a root of $7.9 \times
 10^{-9}$, above the fixed limit of $10^{-9}$ though four orders of magnitude
-below the tearing rate at the same resistivity.  The solver has no toroidal
-terms and no nonlinear physics.
+below the tearing rate at the same resistivity.  A follow-up scan to $\eta =
+10^{-10}$ explains the first miss: the local slope rises to 0.595 and the
+growth rate approaches the asymptotic rate, as expected when $\Delta'$ times
+the layer width becomes small.  The second stays open: the stray root does
+not converge as the grid is refined, which points to spurious eigenvalues.
+The solver has no toroidal terms and no nonlinear physics.
 \end{abstract}
 
 \noindent\textbf{Keywords:} tearing mode; resistive kink; reduced MHD; Hermite
@@ -135,15 +139,33 @@ the three resistivities are $3.05 \times 10^{-4}$, $8.86 \times 10^{-5}$ and
 $2.37 \times 10^{-5}$.  The constant-$\psi$ rate is the limit of small
 $\Delta'$ times the resistive-layer width, and with $\Delta' = 9.69$ that
 product is not yet small at $\eta = 10^{-6}$.  This is a plausible reason for
-the shallower slope; we have not verified it, for example by extending the
-scan to smaller $\eta$.
+the shallower slope, and a follow-up study tests it by extending the scan to
+$\eta = 10^{-10}$.  The local slope between neighbouring resistivities rises
+from 0.537 to 0.572, 0.588 and 0.595.  The ratio of the growth rate to the
+asymptotic rate rises from 0.772 through 0.951 to 0.991.  Both approach their
+constant-$\psi$ values as $\eta$ falls, as the explanation predicts.  At $\eta
+= 10^{-10}$ the growth rate is $1.56 \times 10^{-6}$, and doubling the
+elements per side changes it by a relative $1.7 \times 10^{-4}$.  The
+acceptance criterion itself is unchanged and is still missed over its three
+resistivities.
 
 The Harris sheet with $ka = 1.2$, for which $\Delta' < 0$, should have no
 growing tearing root.  The solver finds one at $7.9 \times 10^{-9}$, above the
 fixed limit of $10^{-9}$.  That root is more than four orders of magnitude
 below the $ka = 0.5$ tearing rate at the same resistivity ($2.48 \times
-10^{-4}$).  Whether it is a numerical artefact of the discretisation or of the
-search is not established here.  The limit was not changed after the run.
+10^{-4}$).  The follow-up study repeats the search at $\eta = 10^{-6}$,
+$10^{-7}$ and $10^{-8}$ with 200 and 400 elements per side, each time as a
+dense QZ solve over all finite eigenvalues.  The acceptance's own search turns
+iterative above 2000 unknowns, which a 400-element problem exceeds, so the
+dense solve is forced to compare like with like.  With 200 elements the roots
+are $7.92 \times 10^{-9}$, $1.05 \times 10^{-8}$ and $1.36 \times 10^{-8}$.
+With 400 elements they are $1.04 \times 10^{-9}$, 0 and $1.86 \times
+10^{-7}$; the last is 1.2\% of the $ka = 0.5$ tearing rate of $1.58 \times
+10^{-5}$.  The root does not converge as the grid is refined, and at 200
+elements it grows rather than shrinks as $\eta$ falls.  Both point to spurious
+eigenvalues of the discretised problem rather than a physical mode.  We have
+not identified their origin, and this miss remains open.  The limit was not
+changed after the run.
 
 \section{Limitations}
 
@@ -151,26 +173,32 @@ search is not established here.  The limit was not changed after the run.
 \item Slab and periodic-cylinder geometry only.  The solver has no toroidal
 $1/R$ terms and no Grad--Shafranov equilibrium, and it covers linear physics
 only.
-\item The acceptance covers three resistivities.  Both misses are open.
+\item The acceptance covers three resistivities.  A follow-up scan explains
+the slope miss; the stray Harris root remains open.
 \item The run times recorded with the report describe one host and are not a
 performance result.
 \end{itemize}
 
 \section*{Software version and date}
 
-This preprint describes \texttt{scpn-fusion} at commit \texttt{f7a367a1a60f}
+This preprint describes \texttt{scpn-fusion} at commit \texttt{0acee5884d0a}
 of 16 November 2026, on the main line after release 4.1.0.  The acceptance
 run was made at commit \texttt{c1bc7f63a93b} and tracked at
 \texttt{44852feeedf2}, on one host (Intel Xeon E5-2640, 24 CPUs) with NumPy
 2.5.4, SciPy 1.17.1, Python 3.12.3 and eight BLAS threads.  The five sources
-it records are byte-identical at the commit above.
+it records are byte-identical at the commit above.  The follow-up study ran at
+commit \texttt{03fdaf1d158f} on a host with the same processor, with NumPy
+2.5.4, SciPy 1.17.1 and eight BLAS threads.  Its report records the digests of
+the four solver sources and of the study module, which are also
+byte-identical at the commit above.
 
 \section*{Data and code availability}
 
 Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  The
-acceptance report cited here, with its source revision, Git blob identity and
-SHA-256 digest, is in \texttt{evidence/} of this submission directory.  The
-generator in that directory checks every quoted value against it.  This is a
+acceptance report and the follow-up study's report cited here, with their
+source revisions, Git blob identities and SHA-256 digests, are in
+\texttt{evidence/} of this submission directory.  The generator in that
+directory checks every quoted value against them.  This is a
 venue-neutral preprint and has not been submitted.  No DOI has been reserved
 and the manuscript-content licence has not yet been selected by the author.
 
