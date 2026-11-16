@@ -16,6 +16,20 @@
 
 ### Added
 
+- `validation/freegsnke_grid_convergence.py` repeats the MAST-U-like same-case
+  comparison with FreeGSNKE on finer grids (65×129, then 129×257 by default;
+  `--grid NRxNZ` adds others). It builds the case exactly as
+  `validation/benchmark_freegsnke_inverse.py` does, changing only the grid. On
+  the base grid it first checks that the FreeGSNKE currents match that
+  benchmark's exactly. For every grid it reports:
+  - FreeGSNKE's refinement;
+  - the vacuum-flux and profile-source parity;
+  - SCPN's warm and frozen-support ψ_N differences, axis and X-point errors;
+  - the change of FreeGSNKE's own currents and of both RMSEs against the base
+    grid.
+
+  The cold start is not repeated. The gates concern completeness; the
+  differences are reported, not gated. The FreeGSNKE workflow runs its tests.
 - `validation/qlknn_conformal_profile_envelope.py` carries the QLKNN-10D
   conformal intervals into a steady transport profile as a frozen-coefficient
   sensitivity. It runs the integrated transport solver with the certified neural

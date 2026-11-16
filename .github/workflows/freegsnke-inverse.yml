@@ -22,9 +22,11 @@ on:
       - "tests/test_benchmark_freegsnke_inverse.py"
       - "tests/test_benchmark_freegsnke_inverse_fit.py"
       - "tests/test_benchmark_freegsnke_multimachine.py"
+      - "tests/test_freegsnke_grid_convergence.py"
       - "validation/benchmark_freegsnke_inverse.py"
       - "validation/benchmark_freegsnke_inverse_fit.py"
       - "validation/benchmark_freegsnke_multimachine.py"
+      - "validation/freegsnke_grid_convergence.py"
   push:
     paths:
       - ".github/workflows/freegsnke-inverse.yml"
@@ -39,9 +41,11 @@ on:
       - "tests/test_benchmark_freegsnke_inverse.py"
       - "tests/test_benchmark_freegsnke_inverse_fit.py"
       - "tests/test_benchmark_freegsnke_multimachine.py"
+      - "tests/test_freegsnke_grid_convergence.py"
       - "validation/benchmark_freegsnke_inverse.py"
       - "validation/benchmark_freegsnke_inverse_fit.py"
       - "validation/benchmark_freegsnke_multimachine.py"
+      - "validation/freegsnke_grid_convergence.py"
 
 concurrency:
   group: freegsnke-inverse-${{ github.workflow }}-${{ github.ref }}
@@ -97,6 +101,7 @@ jobs:
           tests/test_benchmark_freegsnke_inverse.py
           tests/test_benchmark_freegsnke_inverse_fit.py
           tests/test_benchmark_freegsnke_multimachine.py
+          tests/test_freegsnke_grid_convergence.py
 
       - name: Generate and enforce fresh comparison evidence
         run: |

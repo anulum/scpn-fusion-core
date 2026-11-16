@@ -110,6 +110,8 @@
     "validation/qlknn_conformal_stability_sets.py",
     "tests/test_qlknn_conformal_stability_sets.py",
     "validation/qlknn_conformal_profile_envelope.py",
-    "tests/test_qlknn_conformal_profile_envelope.py"
+    "tests/test_qlknn_conformal_profile_envelope.py",
+    "validation/freegsnke_grid_convergence.py",
+    "tests/test_freegsnke_grid_convergence.py"
   ]
 }
