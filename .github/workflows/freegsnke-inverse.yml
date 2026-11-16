@@ -13,28 +13,34 @@ on:
       - ".github/workflows/freegsnke-inverse.yml"
       - "requirements/ci-freegsnke.in"
       - "requirements/ci-freegsnke.txt"
+      - "src/scpn_fusion/core/free_boundary_coil_fit.py"
       - "src/scpn_fusion/core/jax_free_boundary_gs.py"
       - "src/scpn_fusion/core/jax_free_boundary_predictive.py"
       - "src/scpn_fusion/core/jax_o_point.py"
       - "src/scpn_fusion/core/jax_plasma_support.py"
       - "src/scpn_fusion/core/jax_x_point.py"
       - "tests/test_benchmark_freegsnke_inverse.py"
+      - "tests/test_benchmark_freegsnke_inverse_fit.py"
       - "tests/test_benchmark_freegsnke_multimachine.py"
       - "validation/benchmark_freegsnke_inverse.py"
+      - "validation/benchmark_freegsnke_inverse_fit.py"
       - "validation/benchmark_freegsnke_multimachine.py"
   push:
     paths:
       - ".github/workflows/freegsnke-inverse.yml"
       - "requirements/ci-freegsnke.in"
       - "requirements/ci-freegsnke.txt"
+      - "src/scpn_fusion/core/free_boundary_coil_fit.py"
       - "src/scpn_fusion/core/jax_free_boundary_gs.py"
       - "src/scpn_fusion/core/jax_free_boundary_predictive.py"
       - "src/scpn_fusion/core/jax_o_point.py"
       - "src/scpn_fusion/core/jax_plasma_support.py"
       - "src/scpn_fusion/core/jax_x_point.py"
       - "tests/test_benchmark_freegsnke_inverse.py"
+      - "tests/test_benchmark_freegsnke_inverse_fit.py"
       - "tests/test_benchmark_freegsnke_multimachine.py"
       - "validation/benchmark_freegsnke_inverse.py"
+      - "validation/benchmark_freegsnke_inverse_fit.py"
       - "validation/benchmark_freegsnke_multimachine.py"
 
 concurrency:
@@ -89,6 +95,7 @@ jobs:
         run: >-
           pytest -q
           tests/test_benchmark_freegsnke_inverse.py
+          tests/test_benchmark_freegsnke_inverse_fit.py
           tests/test_benchmark_freegsnke_multimachine.py
 
       - name: Generate and enforce fresh comparison evidence

@@ -43,6 +43,21 @@
     without float64 JAX.
   - Scope: tested on a synthetic diverted case. The same-case comparison with
     FreeGSNKE that uses it is not yet tracked evidence.
+- `validation/benchmark_freegsnke_inverse_fit.py` runs that fit on the targets
+  of FreeGSNKE's three public inverse problems (MAST-U-like, SPARC-like,
+  ITER-like). Both codes' currents are scored in both evaluators:
+  - FreeGSNKE's own constraint loss at its solution;
+  - SCPN's evaluator on FreeGSNKE's flux map, and on SCPN's equilibrium at the
+    same currents;
+  - SCPN's loss after the fit, and FreeGSNKE's, refined at SCPN's fitted
+    currents.
+
+  The fit starts from FreeGSNKE's currents, or from a seeded ±20 %
+  perturbation reached by continuation. The gates check only that every
+  reported number comes from a converged solve; agreement is reported, not
+  gated. Cases and starts can run separately, and `--merge` joins the
+  partial reports. The FreeGSNKE workflow runs its tests. No tracked report
+  yet.
 
 ### Fixed
 

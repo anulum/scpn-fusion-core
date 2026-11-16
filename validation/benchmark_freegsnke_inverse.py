@@ -100,6 +100,13 @@ VACUUM_LIMITER_MAX_ABS_WB = 1.0e-10
 GRADIENT_RELATIVE_ERROR_MAX = 1.0e-7
 FINITE_DIFFERENCE_STEP_A = 1.0
 PROFILE_SAMPLE_COUNT = 8193
+# Upstream regression case: [upper, lower] limits of the 11 controlled circuits (A), as
+# FreeGSNKE's ``coil_current_limits`` takes them, and the Tikhonov weights of its inverse solve.
+MASTU_COIL_LIMITS: tuple[tuple[float | None, ...], tuple[float | None, ...]] = (
+    (5e3, 9e3, 9e3, 7e3, 7e3, 5e3, 4e3, 5e3, 0.0, 0.0, None),
+    (-5e3, -9e3, -9e3, -7e3, -7e3, -5e3, -4e3, -5e3, -10e3, -10e3, None),
+)
+MASTU_L2_REG: tuple[float, ...] = (1.0e-12,) * 10 + (1.0e-6,)
 PROFILE_SOURCE_RELATIVE_L2_MAX = 1.0e-7
 PROFILE_TOTAL_CURRENT_RELATIVE_ERROR_MAX = 1.0e-7
 PSIN_MAX_ABS_ERROR = 1.0e-14
@@ -259,10 +266,7 @@ def build_inverse_case(source: Path) -> tuple[Any, Any, Any, list[list[float | N
         ],
         dtype=np.float64,
     )
-    coil_limits: list[list[float | None]] = [
-        [5e3, 9e3, 9e3, 7e3, 7e3, 5e3, 4e3, 5e3, 0.0, 0.0, None],
-        [-5e3, -9e3, -9e3, -7e3, -7e3, -5e3, -4e3, -5e3, -10e3, -10e3, None],
-    ]
+    coil_limits: list[list[float | None]] = [list(row) for row in MASTU_COIL_LIMITS]
     constrain = Inverse_optimizer(
         null_points=null_points,
         isoflux_set=isoflux_set,
@@ -287,7 +291,7 @@ def solve_inverse_case_with_profiles(
         target_relative_tolerance=1.0e-6,
         target_relative_psit_update=1.0e-3,
         verbose=False,
-        l2_reg=np.array([1.0e-12] * 10 + [1.0e-6], dtype=np.float64),
+        l2_reg=np.array(MASTU_L2_REG, dtype=np.float64),
     )
     return eq, profiles, solver, coil_limits
 
@@ -1126,7 +1130,7 @@ def build_report(source: Path = DEFAULT_SOURCE) -> dict[str, Any]:
                 "paxis_pa": 8000.0,
             },
             "solver": {
-                "l2_reg": [1.0e-12] * 10 + [1.0e-6],
+                "l2_reg": list(MASTU_L2_REG),
                 "target_relative_psit_update": 1.0e-3,
                 "target_relative_tolerance": 1.0e-6,
             },
