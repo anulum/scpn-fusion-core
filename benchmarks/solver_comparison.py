@@ -17,6 +17,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sys
 import tempfile
@@ -29,6 +30,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from scpn_fusion.core.fusion_kernel import FusionKernel
 from scpn_fusion.core.neural_equilibrium_kernel import NeuralEquilibriumKernel
 
+logger = logging.getLogger(__name__)
+
 
 class BenchmarkRow(TypedDict):
     """One rendered solver benchmark row."""
@@ -40,6 +43,7 @@ class BenchmarkRow(TypedDict):
 
 
 def _benchmark_sor(nr: int, nz: int, max_iter: int = 200) -> BenchmarkRow:
+    """Time one SOR equilibrium solve on a synthetic five-coil case at the given grid."""
     config = {
         "reactor_name": f"bench_sor_{nr}x{nz}",
         "grid_resolution": [nr, nz],
@@ -79,6 +83,7 @@ def _benchmark_sor(nr: int, nz: int, max_iter: int = 200) -> BenchmarkRow:
 
 
 def _benchmark_newton(nr: int, nz: int) -> BenchmarkRow:
+    """Time one Newton-Kantorovich equilibrium solve on the same synthetic case at the given grid."""
     config = {
         "reactor_name": f"bench_newton_{nr}x{nz}",
         "grid_resolution": [nr, nz],
@@ -119,6 +124,7 @@ def _benchmark_newton(nr: int, nz: int) -> BenchmarkRow:
 
 
 def _benchmark_neural(nr: int, nz: int) -> BenchmarkRow:
+    """Time one neural-surrogate solve; a missing runtime gives an N/A row and a logged warning."""
     config_path = Path(__file__).resolve().parents[1] / "iter_config.json"
     if not config_path.exists():
         config_path = Path("iter_config.json")
@@ -135,7 +141,7 @@ def _benchmark_neural(nr: int, nz: int) -> BenchmarkRow:
             "wall_time_ms": dt * 1000,
         }
     except (FileNotFoundError, KeyError, OSError, RuntimeError, ValueError) as exc:
-        print(f"  Neural Error: {exc}")
+        logger.warning("  Neural Error: %s", exc)
         return {
             "solver": "Neural (MLP)",
             "grid": "N/A",
@@ -145,6 +151,7 @@ def _benchmark_neural(nr: int, nz: int) -> BenchmarkRow:
 
 
 def main() -> None:
+    """Run the SOR, Newton and neural rows and print them as a Markdown table."""
     results: list[BenchmarkRow] = []
 
     for nr, nz in [(33, 33), (65, 65)]:
@@ -177,4 +184,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # The neural-row failure goes through the module logger; show it on stdout as before.
+    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     main()

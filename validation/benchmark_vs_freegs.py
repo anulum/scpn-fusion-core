@@ -28,6 +28,7 @@ import argparse
 import importlib
 import inspect
 import json
+import logging
 import sys
 import tempfile
 import time
@@ -42,6 +43,8 @@ from types import ModuleType
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
+
+logger = logging.getLogger(__name__)
 
 # ── FreeGS availability probe ────────────────────────────────────────
 
@@ -898,6 +901,7 @@ def compare_flux_surface_area(
         return float("nan")
 
     def _norm(psi: NDArray[np.float64]) -> NDArray[np.float64]:
+        """Scale a flux map to [0, 1]; a flat map maps to zeros."""
         rng = float(np.max(psi) - np.min(psi))
         if rng < 1e-12:
             return np.zeros_like(psi, dtype=np.float64)
@@ -934,17 +938,17 @@ def compare_case(
     dict with name, psi_nrmse, q_profile_nrmse, axis_error_m, passes, mode
     """
     if use_freegs:
-        print(f"  [{case.name}] Running our nonlinear solver...")
+        logger.info("  [%s] Running our nonlinear solver...", case.name)
         our = run_our_solver(case)
-        print(f"  [{case.name}] Running FreeGS...")
+        logger.info("  [%s] Running FreeGS...", case.name)
         ref = run_freegs_case(case, allow_runtime_fallback=allow_runtime_fallback)
         mode = "freegs"
         comparison_backend = "fusion_kernel_nonlinear"
         reference_backend = str(ref.get("reference_backend", "freegs"))
     else:
-        print(f"  [{case.name}] Running manufactured-source GS parity solve...")
+        logger.info("  [%s] Running manufactured-source GS parity solve...", case.name)
         our = run_manufactured_solovev_solver(case)
-        print(f"  [{case.name}] Computing Solov'ev analytic reference...")
+        logger.info("  [%s] Computing Solov'ev analytic reference...", case.name)
         ref = run_solovev_case(case)
         mode = "solovev_manufactured_source"
         comparison_backend = "fusion_kernel_fixed_source"
@@ -1104,9 +1108,9 @@ def run_benchmark(
     mode_label = "freegs" if use_freegs else "solovev_manufactured_source"
 
     if use_freegs:
-        print("FreeGS detected -- running numerical comparison.")
+        logger.info("FreeGS detected -- running numerical comparison.")
     else:
-        print("FreeGS not available -- using Solov'ev analytic reference.")
+        logger.info("FreeGS not available -- using Solov'ev analytic reference.")
 
     t0 = time.perf_counter()
     case_results: list[dict[str, Any]] = []
@@ -1228,6 +1232,7 @@ def generate_per_metric_report(report: dict[str, Any]) -> str:
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse the backend-selection flags of the command line."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--force-solovev",
@@ -1292,4 +1297,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # Run progress goes through the module logger; show it on stdout as before.
+    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     raise SystemExit(main())

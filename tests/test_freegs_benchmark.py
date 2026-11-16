@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import logging
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -135,10 +136,12 @@ class TestNRMSEUtility:
     """Verify the NRMSE helper."""
 
     def test_identical_arrays_give_zero(self) -> None:
+        """Equal arrays have zero NRMSE."""
         a = np.random.default_rng(42).standard_normal(100)
         assert nrmse(a, a) == pytest.approx(0.0, abs=1e-12)
 
     def test_nrmse_scales_with_noise(self) -> None:
+        """About 1 % noise on a range of 10 gives an NRMSE between 0 and 0.05."""
         rng = np.random.default_rng(7)
         base = np.linspace(0, 10, 200)
         noisy = base + rng.normal(0, 0.1, base.shape)
@@ -158,6 +161,7 @@ class TestBuildConfig:
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
     def test_config_has_required_keys(self, case: Any) -> None:
+        """Every case configuration carries the sections the kernel reads."""
         cfg = build_config(case)
         assert "reactor_name" in cfg
         assert "grid_resolution" in cfg
@@ -168,6 +172,7 @@ class TestBuildConfig:
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
     def test_config_R_range_positive(self, case: Any) -> None:
+        """Every case has a positive, increasing radial range."""
         cfg = build_config(case)
         assert cfg["dimensions"]["R_min"] > 0
         assert cfg["dimensions"]["R_max"] > cfg["dimensions"]["R_min"]
@@ -178,12 +183,14 @@ class TestSolovevReference:
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
     def test_returns_expected_keys(self, case: Any) -> None:
+        """The Solov'ev reference returns flux, grid, axis and q-proxy entries."""
         result = run_solovev_case(case)
         for key in ("psi", "R", "Z", "R_axis", "Z_axis", "q_proxy"):
             assert key in result, f"Missing key: {key}"
 
     @pytest.mark.parametrize("case", CASES, ids=[c.name for c in CASES])
     def test_psi_shape_matches_grid(self, case: Any) -> None:
+        """The Solov'ev flux map has the case grid shape (NZ, NR)."""
         result = run_solovev_case(case)
         assert result["psi"].shape == (case.NZ, case.NR)
 
@@ -194,9 +201,18 @@ class TestSolovevReference:
 class TestSolovevBenchmarkIntegration:
     """End-to-end test of the Solov'ev fallback benchmark."""
 
-    def test_run_solovev_benchmark_produces_valid_report(self) -> None:
-        """Full Solov'ev benchmark runs without error and returns a report."""
-        report = run_solovev_benchmark()
+    def test_run_solovev_benchmark_produces_valid_report(
+        self, caplog: pytest.LogCaptureFixture, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Full Solov'ev benchmark runs without error, returns a report and logs its progress."""
+        with caplog.at_level(logging.INFO, logger=benchmark_vs_freegs.logger.name):
+            report = run_solovev_benchmark()
+
+        messages = [record.getMessage() for record in caplog.records]
+        assert "FreeGS not available -- using Solov'ev analytic reference." in messages
+        for case in CASES:
+            assert f"  [{case.name}] Computing Solov'ev analytic reference..." in messages
+        assert "Running" not in capsys.readouterr().out
 
         assert "cases" in report
         assert "overall_psi_nrmse" in report
@@ -242,6 +258,7 @@ class TestStrictBackendControls:
     """Strict-backend mode should fail fast if FreeGS is unavailable."""
 
     def test_rejects_conflicting_force_and_strict_flags(self) -> None:
+        """Forcing Solov'ev and requiring FreeGS at once is refused."""
         with pytest.raises(ValueError):
             benchmark_vs_freegs.run_benchmark(
                 force_solovev=True,
@@ -249,6 +266,7 @@ class TestStrictBackendControls:
             )
 
     def test_strict_backend_requires_freegs_when_unavailable(self) -> None:
+        """Without FreeGS installed, a strict-backend run raises."""
         if HAS_FREEGS:
             pytest.skip("freegs installed")
         with pytest.raises(RuntimeError):
@@ -273,6 +291,7 @@ def test_run_freegs_case_builds_profiles_with_eq_and_fvac(
         alpha_n: float = 2.0,
         Raxis: float = 1.0,
     ) -> object:
+        """Stand-in for the current FreeGS profile constructor, recording each call."""
         calls.append((eq, paxis, ip, fvac, alpha_m, alpha_n, Raxis))
         kwargs_calls.append({"Raxis": Raxis})
         return SimpleNamespace(tag="profiles")
@@ -323,6 +342,7 @@ def test_run_freegs_case_retries_legacy_isoflux_shape_on_unpack_error(
         alpha_n: float = 2.0,
         Raxis: float = 1.0,
     ) -> object:
+        """Stand-in for the current FreeGS profile constructor."""
         return SimpleNamespace(tag="profiles")
 
     fake_eq = SimpleNamespace(
@@ -334,11 +354,13 @@ def test_run_freegs_case_retries_legacy_isoflux_shape_on_unpack_error(
     )
 
     def _control_constrain(*, xpoints: object, isoflux: object) -> SimpleNamespace:
+        """Return the X-point and isoflux constraints as given."""
         return SimpleNamespace(xpoints=xpoints, isoflux=isoflux)
 
     def _solve(
         _eq: object, _profiles: object, constrain: SimpleNamespace, **_kwargs: object
     ) -> None:
+        """Fail on the first, four-element isoflux shape and accept the legacy three-element one."""
         nonlocal solve_calls
         solve_calls += 1
         first_tuple = constrain.isoflux[0]
@@ -368,6 +390,7 @@ class TestFreeGSComparison:
     """These tests only run when FreeGS is available."""
 
     def test_freegs_case_returns_expected_keys(self) -> None:
+        """A FreeGS case returns flux, grid, axis, q-proxy and axis-pressure entries."""
         from benchmark_vs_freegs import run_freegs_case
 
         case = CASES[0]
@@ -379,9 +402,11 @@ class TestFreeGSComparison:
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
+        """A FreeGS runtime failure falls back to Solov'ev and records the error."""
         import benchmark_vs_freegs as b
 
         def _raise_runtime_issue(*_args: object, **_kwargs: object) -> None:
+            """Fail the way FreeGS fails on a ragged array."""
             raise ValueError("setting an array element with a sequence")
 
         monkeypatch.setattr(b.freegs, "solve", _raise_runtime_issue)
@@ -396,9 +421,11 @@ class TestFreeGSComparison:
         self,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
+        """With fallback disallowed, a FreeGS runtime failure raises."""
         import benchmark_vs_freegs as b
 
         def _raise_runtime_issue(*_args: object, **_kwargs: object) -> None:
+            """Fail the way FreeGS fails on a ragged array."""
             raise ValueError("setting an array element with a sequence")
 
         monkeypatch.setattr(b.freegs, "solve", _raise_runtime_issue)
@@ -406,6 +433,7 @@ class TestFreeGSComparison:
             b.run_freegs_case(CASES[0], allow_runtime_fallback=False)
 
     def test_full_freegs_benchmark(self) -> None:
+        """The full FreeGS benchmark runs every case in FreeGS mode with the declared thresholds."""
         from benchmark_vs_freegs import run_benchmark
 
         report = run_benchmark(force_solovev=False, require_freegs_backend=True)

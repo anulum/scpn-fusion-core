@@ -55,6 +55,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import sys
 import time
 import warnings
@@ -72,6 +73,8 @@ from scipy.integrate import trapezoid
 # ---------------------------------------------------------------------------
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT / "src"))
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Defensive imports for controller modules
@@ -781,7 +784,7 @@ def _build_hinf_controller(
         raise RuntimeError("H-infinity module not importable")
     try:
         ctrl = get_radial_robust_controller(gamma_growth=gamma_growth)
-        print("    [H-infinity] Riccati synthesis: OK")
+        logger.info("    [H-infinity] Riccati synthesis: OK")
         return (
             _HInfMeasurementAdapter(ctrl),
             {
@@ -795,7 +798,7 @@ def _build_hinf_controller(
             raise RuntimeError(
                 "H-infinity strict mode: ARE synthesis failed; fallback disallowed"
             ) from exc
-        print(f"    [H-infinity] ARE failed ({exc}); using LQR fallback")
+        logger.warning("    [H-infinity] ARE failed (%s); using LQR fallback", exc)
         ctrl = LQRRobustController(gamma_growth=gamma_growth)
         if not ctrl.is_stable:
             raise RuntimeError("LQR closed-loop must be stable")
@@ -831,7 +834,7 @@ def build_controllers(
         "fallback_used": False,
         "fallback_reason": None,
     }
-    print("    [PID] Initialised: Kp=1.5e4, Ki=3.0e3, Kd=1.5e2")
+    logger.info("    [PID] Initialised: Kp=1.5e4, Ki=3.0e3, Kd=1.5e2")
 
     # H-infinity
     if _hinf_available:
@@ -854,7 +857,7 @@ def build_controllers(
             "H-infinity strict mode requires scpn_fusion.control.h_infinity_controller"
         )
     else:
-        print("    [H-infinity] SKIPPED (import failed)")
+        logger.warning("    [H-infinity] SKIPPED (import failed)")
         controller_build["H-infinity"] = {
             "backend": "unavailable",
             "fallback_used": None,
@@ -872,7 +875,7 @@ def build_controllers(
         "fallback_used": False,
         "fallback_reason": None,
     }
-    print("    [MPC] Initialised: DARE-optimal, Q=1e4, R=1e-2")
+    logger.info("    [MPC] Initialised: DARE-optimal, Q=1e4, R=1e-2")
 
     # SNN
     if _snn_available:
@@ -883,7 +886,9 @@ def build_controllers(
                 tau_window=10,
                 seed=42,
             )
-            print(f"    [SNN] Initialised: 50 neurons, backend={controllers['SNN']._pool.backend}")
+            logger.info(
+                "    [SNN] Initialised: 50 neurons, backend=%s", controllers["SNN"]._pool.backend
+            )
             controller_build["SNN"] = {
                 "backend": str(controllers["SNN"]._pool.backend),
                 "fallback_used": False,
@@ -897,7 +902,7 @@ def build_controllers(
                 "fallback_reason": str(exc),
             }
     else:
-        print("    [SNN] SKIPPED (import failed)")
+        logger.warning("    [SNN] SKIPPED (import failed)")
         controller_build["SNN"] = {
             "backend": "unavailable",
             "fallback_used": None,
@@ -1351,4 +1356,6 @@ if __name__ == "__main__":
         ),
     )
     args = parser.parse_args()
+    # Controller-build progress goes through the module logger; show it on stdout as before.
+    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     main(output_dir=args.output_dir, strict_hinf=args.strict_hinf)

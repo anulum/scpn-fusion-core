@@ -198,3 +198,29 @@ def test_failed_episodes_are_counted_and_saved(monkeypatch, tmp_path: Path) -> N
     assert "| Failed |" in table
     assert "|        2 |      1 |" in table
     assert " & 2 & 1 & " in mod.generate_latex_table(results)
+
+
+def test_run_comparison_reports_progress_through_its_logger(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Progress is logged at INFO and a failed episode at WARNING; nothing is printed."""
+    import logging
+
+    import validation.controller_comparison as mod
+
+    def run_failing(config_path: Any, shot_duration: int) -> mod.EpisodeResult:
+        """Fail every episode."""
+        raise RuntimeError("plant unavailable")
+
+    monkeypatch.setattr(mod, "CONTROLLERS", {"FailingCtrl": run_failing})
+
+    with caplog.at_level(logging.INFO, logger=mod.logger.name):
+        mod.run_comparison(n_episodes=1, shot_duration=20, config_path="unused.json")
+
+    assert capsys.readouterr().out == ""
+    messages = [(record.levelno, record.getMessage()) for record in caplog.records]
+    assert (logging.INFO, "=== 4-Way Controller Comparison ===") in messages
+    assert (logging.INFO, "--- Running FailingCtrl (1 episodes) ---") in messages
+    assert (logging.WARNING, "  Episode 0 failed: plant unavailable") in messages

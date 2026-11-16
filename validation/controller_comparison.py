@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import sys
 import time
@@ -34,6 +35,8 @@ sys.path.insert(0, str(repo_root / "src"))
 
 from scpn_fusion._data_paths import default_iter_config_path
 from scpn_fusion.control.tokamak_flight_sim import IsoFluxController
+
+logger = logging.getLogger(__name__)
 from scpn_fusion.control.h_infinity_controller import get_radial_robust_controller
 
 # Optional controller imports
@@ -325,16 +328,16 @@ def run_comparison(
     if not CONTROLLERS:
         raise RuntimeError("No controllers are available for comparison.")
 
-    print("=== 4-Way Controller Comparison ===")
-    print(
-        "H-infinity research lane: "
-        + ("Enabled" if _env_flag_enabled(HINF_RESEARCH_ENV) else "Disabled")
+    logger.info("=== 4-Way Controller Comparison ===")
+    logger.info(
+        "H-infinity research lane: %s",
+        "Enabled" if _env_flag_enabled(HINF_RESEARCH_ENV) else "Disabled",
     )
-    print(f"Episodes: {n_episodes} | Controllers: {', '.join(CONTROLLERS.keys())}")
+    logger.info("Episodes: %d | Controllers: %s", n_episodes, ", ".join(CONTROLLERS.keys()))
 
     results: dict[str, ControllerMetrics] = {}
     for ctrl_name, run_fn in CONTROLLERS.items():
-        print(f"--- Running {ctrl_name} ({n_episodes} episodes) ---")
+        logger.info("--- Running %s (%d episodes) ---", ctrl_name, n_episodes)
         metrics = ControllerMetrics(name=ctrl_name)
         for ep in range(n_episodes):
             try:
@@ -345,10 +348,10 @@ def run_comparison(
                 # the aggregates below cover successful episodes only.
                 metrics.failed_episodes += 1
                 metrics.failures.append(f"episode {ep}: {type(e).__name__}: {e}")
-                print(f"  Episode {ep} failed: {e}")
+                logger.warning("  Episode %d failed: %s", ep, e)
                 continue
             if (ep + 1) % max(1, n_episodes // 10) == 0:
-                print(f"  Episode {ep + 1}/{n_episodes}")
+                logger.info("  Episode %d/%d", ep + 1, n_episodes)
 
         if metrics.episodes:
             rewards = [e.reward for e in metrics.episodes]
@@ -480,6 +483,8 @@ def save_results_json(results: dict[str, ControllerMetrics], output_path: Path) 
 
 
 if __name__ == "__main__":
+    # Progress goes through the module logger; the command line shows it on stdout as before.
+    logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     parser = argparse.ArgumentParser(description="4-Way Controller Comparison")
     parser.add_argument("--episodes", type=int, default=100)
     parser.add_argument("--quick", action="store_true", help="5 episodes for CI")

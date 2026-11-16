@@ -474,6 +474,19 @@
 
 ### Changed
 
+- Library functions of four validation and benchmark modules report progress
+  through module loggers instead of `print()`:
+  - `controller_comparison.run_comparison`;
+  - the controller build of `benchmark_disturbance_rejection`;
+  - `benchmark_vs_freegs.compare_case` and `run_benchmark`;
+  - the neural row of `benchmarks/solver_comparison.py`.
+
+  Progress goes at INFO; failures, skips and fallbacks at WARNING. Each module's
+  command line configures logging, so its console text is unchanged. Callers that
+  import these functions no longer get prints on stdout. Of the 669 `print()`
+  calls in `validation/` and `benchmarks/`, the other 638 belong to command-line
+  runners and stay. Eleven sit in `stress_test_campaign.py`, which a
+  pre-registered evidence protocol binds by digest, and were not edited.
 - An adaptive `run_to_steady_state` now stops when a step taken at the
   minimum timestep still exceeds the tolerance, instead of continuing at a
   step that cannot meet it. The result carries `stop_reason`

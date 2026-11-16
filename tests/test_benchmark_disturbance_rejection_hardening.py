@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -47,7 +48,7 @@ def test_build_hinf_controller_strict_rejects_lqr_fallback(
 
 
 def test_build_hinf_controller_reports_fallback_metadata(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
 ) -> None:
     """Non-strict mode falls back to LQR and records the backend and the reason."""
     monkeypatch.setattr(mod, "_hinf_available", True)
@@ -75,9 +76,12 @@ def test_build_hinf_controller_reports_fallback_metadata(
     monkeypatch.setattr(mod, "get_radial_robust_controller", _raise_are)
     monkeypatch.setattr(mod, "LQRRobustController", _DummyLQR)
 
-    ctrl, build = mod._build_hinf_controller(strict_hinf=False)
+    with caplog.at_level(logging.INFO, logger=mod.logger.name):
+        ctrl, build = mod._build_hinf_controller(strict_hinf=False)
 
     assert isinstance(ctrl, _DummyLQR)
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert warnings == ["    [H-infinity] ARE failed (unit-test-infeasible); using LQR fallback"]
     assert build["backend"] == "lqr_fallback"
     assert build["fallback_used"] is True
     assert "ValueError" in str(build["fallback_reason"])
@@ -159,3 +163,55 @@ def test_broken_snn_module_is_not_reported_as_absent(monkeypatch: pytest.MonkeyP
 
     with pytest.raises(RuntimeError, match="defect while resolving SpikingControllerPool"):
         _reload_with_snn_module(monkeypatch, BrokenModule(_SNN_MODULE))
+
+
+def test_unavailable_controllers_are_logged_as_skipped(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Without the optional H-infinity and SNN modules, the build logs both as skipped."""
+    monkeypatch.setattr(mod, "_hinf_available", False)
+    monkeypatch.setattr(mod, "_snn_available", False)
+
+    with caplog.at_level(logging.INFO, logger=mod.logger.name):
+        controllers, _ = mod.build_controllers(strict_hinf=False)
+
+    assert "H-infinity" not in controllers and "SNN" not in controllers
+    warnings = [r.getMessage() for r in caplog.records if r.levelno == logging.WARNING]
+    assert warnings == [
+        "    [H-infinity] SKIPPED (import failed)",
+        "    [SNN] SKIPPED (import failed)",
+    ]
+    infos = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
+    assert "    [PID] Initialised: Kp=1.5e4, Ki=3.0e3, Kd=1.5e2" in infos
+
+
+def test_available_controllers_are_logged_as_initialised(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A successful H-infinity synthesis and SNN build are logged at INFO with the SNN backend."""
+
+    class _Pool:
+        """Spiking-pool stand-in naming its backend."""
+
+        backend = "unit-test-backend"
+
+    class _SNN:
+        """SNN wrapper stand-in."""
+
+        def __init__(self, **_kwargs: object) -> None:
+            """Expose the pool stand-in."""
+            self._pool = _Pool()
+
+    monkeypatch.setattr(mod, "_hinf_available", True)
+    monkeypatch.setattr(mod, "_snn_available", True)
+    monkeypatch.setattr(mod, "get_radial_robust_controller", lambda **_kwargs: object())
+    monkeypatch.setattr(mod, "SNNControllerWrapper", _SNN)
+
+    with caplog.at_level(logging.INFO, logger=mod.logger.name):
+        controllers, build = mod.build_controllers(strict_hinf=False)
+
+    infos = [r.getMessage() for r in caplog.records if r.levelno == logging.INFO]
+    assert "    [H-infinity] Riccati synthesis: OK" in infos
+    assert "    [SNN] Initialised: 50 neurons, backend=unit-test-backend" in infos
+    assert build["SNN"]["backend"] == "unit-test-backend"
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]

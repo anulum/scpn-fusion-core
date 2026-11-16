@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 
 import pytest
@@ -54,18 +55,26 @@ def test_neural_benchmark_reports_successful_runtime(
     """The neural row reports grid shape and timing from the runtime kernel."""
 
     class _Config:
+        """Neural configuration stand-in with a fixed grid shape."""
+
         grid_shape = (7, 9)
 
     class _Accel:
+        """Accelerator stand-in carrying the configuration."""
+
         cfg = _Config()
 
     class _Kernel:
+        """Neural kernel stand-in that solves instantly."""
+
         accel = _Accel()
 
         def __init__(self, _config_path: Path) -> None:
+            """Accept and ignore the configuration path."""
             pass
 
         def solve_equilibrium(self) -> None:
+            """Solve nothing."""
             return None
 
     monkeypatch.setattr(solver, "NeuralEquilibriumKernel", _Kernel)
@@ -81,18 +90,21 @@ def test_neural_benchmark_reports_successful_runtime(
 
 def test_neural_benchmark_fails_closed_for_missing_config(
     monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     """The neural row reports an unavailable runtime without aborting the benchmark table."""
 
     class _MissingKernel:
+        """Neural kernel stand-in whose weights are missing."""
+
         def __init__(self, _config_path: Path) -> None:
+            """Fail the way a missing weights file does."""
             raise FileNotFoundError("weights unavailable")
 
     monkeypatch.setattr(solver, "NeuralEquilibriumKernel", _MissingKernel)
 
-    row = solver._benchmark_neural(129, 129)
-    out = capsys.readouterr().out
+    with caplog.at_level(logging.WARNING, logger=solver.logger.name):
+        row = solver._benchmark_neural(129, 129)
 
     assert row == {
         "solver": "Neural (MLP)",
@@ -100,7 +112,10 @@ def test_neural_benchmark_fails_closed_for_missing_config(
         "iterations": "N/A",
         "wall_time_ms": "N/A",
     }
-    assert "weights unavailable" in out
+    assert [record.getMessage() for record in caplog.records] == [
+        "  Neural Error: weights unavailable"
+    ]
+    assert caplog.records[0].levelno == logging.WARNING
 
 
 def test_main_renders_markdown_table(
@@ -109,6 +124,7 @@ def test_main_renders_markdown_table(
     """The CLI renders all benchmark rows as the documented Markdown table."""
 
     def _fake_sor(nr: int, nz: int, max_iter: int = 200) -> solver.BenchmarkRow:
+        """Return a fixed SOR row."""
         return {
             "solver": "SOR",
             "grid": f"{nr}x{nz}",
@@ -117,6 +133,7 @@ def test_main_renders_markdown_table(
         }
 
     def _fake_newton(nr: int, nz: int) -> solver.BenchmarkRow:
+        """Return a fixed Newton row."""
         return {
             "solver": "Newton-K",
             "grid": f"{nr}x{nz}",
@@ -125,6 +142,7 @@ def test_main_renders_markdown_table(
         }
 
     def _fake_neural(nr: int, nz: int) -> solver.BenchmarkRow:
+        """Return a fixed neural row."""
         return {
             "solver": "Neural (MLP)",
             "grid": f"{nr}x{nz}",
