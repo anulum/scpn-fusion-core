@@ -42,6 +42,10 @@
   comparison. The report now also records, per channel, the share of unstable
   rows the surrogate predicts at or below the certificate radius, and the
   median ratio of prediction to target there.
+  In the tracked run (bound to 9bd8a7a7), the surrogate predicts at most the
+  radius on 64.5-73.8 % of unstable rows (median prediction/target
+  0.30-0.60). The post-hoc variants keep unstable coverage at 0.666-0.735.
+  The QLKNN UQ card lists this false-stable bias as a gap.
 - `validation/qlknn_conformal_regime_coverage.py` measures how the QLKNN-10D
   split-conformal certificate covers each transport regime of the untouched
   holdout split. Two definitions are fixed in the module:
