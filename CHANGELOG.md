@@ -44,8 +44,10 @@
   The tracked run (`validation/reports/qlknn_conformal_stability_sets.json`,
   bound to 2af7ea79) gives:
   - set coverage 0.891-0.903 per class;
-  - unstable-row flux coverage 0.792-0.797 (against 0.665-0.711 under the
-    certificate);
+  - flux coverage 0.792-0.797 on all rows with nonzero flux. On the same rows
+    the certificate covers 0.697-0.738, derived from the regime-coverage
+    report's counts. Its 0.665-0.711 counts only the rows above the
+    near-threshold quantile;
   - median unstable-row interval widths of 12.2, 14.4 and 2.36 m^2/s (chi_e,
     chi_i, D_e).
   A robustness section repeats the experiment on 20 random halvings of the
