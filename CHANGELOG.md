@@ -67,6 +67,18 @@
   not gated. The gates require every solve to return a finite number and to be
   a complete dense search; each solve's method and completeness are recorded.
 
+  The tracked run (`validation/reports/linear_mhd_miss_study.json`, bound to
+  03fdaf1d, on ML350) passes both gates.
+  - The cylinder slope miss is explained. The local slope rises from 0.537 to
+    0.595 and the ratio to the constant-ψ rate from 0.77 to 0.99 between
+    η = 1e-6 and 1e-10, as the Δ′-times-layer-width explanation predicts.
+    Doubling the elements at 1e-10 changes the rate by 1.7e-4.
+  - The Harris root miss is not removed. With 200 elements the roots are
+    7.9e-9, 1.05e-8 and 1.36e-8 at η = 1e-6, 1e-7 and 1e-8. With 400 they are
+    1.0e-9, 0 and 1.86e-7, the last 1.2 % of the ka = 0.5 tearing rate. The
+    roots do not converge as the grid is refined, which points to spurious
+    eigenvalues rather than a physical mode.
+
 - `validation/freegsnke_grid_convergence.py` repeats the MAST-U-like same-case
   comparison with FreeGSNKE on finer grids (65×129, then 129×257 by default;
   `--grid NRxNZ` adds others). It builds the case exactly as

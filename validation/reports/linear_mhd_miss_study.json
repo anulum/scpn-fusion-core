@@ -1,0 +1,185 @@
+{
+  "checks": {
+    "every_solve_complete_dense": true,
+    "every_solve_finite": true
+  },
+  "provenance": {
+    "cpu_models": [
+      "Intel(R) Xeon(R) CPU E5-2640 0 @ 2.50GHz"
+    ],
+    "numpy": "2.5.4",
+    "python": "3.12.3",
+    "scipy": "1.17.1",
+    "source_revision": "03fdaf1d158f43539656d4e2aea4b8c2272681ea",
+    "source_sha256": {
+      "src/scpn_fusion/core/linear_mhd_1d.py": "bb16a5957a0339dc4528e68ea8e71b75a7e3c6a4f338427dfd8953369d2e0ff2",
+      "src/scpn_fusion/core/linear_mhd_delta_prime.py": "8990e06a3752ffe98d0b2c41969ca3e4f7dc36cf0fdd375087e7e88ee6cf560d",
+      "src/scpn_fusion/core/linear_mhd_spectrum.py": "4060453623aa2671954c54b240f5f951bf81c346249a5ee322af6c0a149d0d24",
+      "src/scpn_fusion/core/tearing_mode_theory.py": "3ee63511991367468b5943bc6c18f76105a241773a04c9d9c786d3fd2bbdee4d",
+      "validation/linear_mhd_miss_study.py": "1dc3105b97f196b8e296af9467ef3affc500c67636df6d331fbcc0c9f44164fa"
+    },
+    "started_at": "2026-11-16T08:28:20.891931+00:00",
+    "threads": {
+      "MKL_NUM_THREADS": null,
+      "OMP_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "8"
+    }
+  },
+  "root_scan": {
+    "etas": [
+      1e-06,
+      1e-07,
+      1e-08
+    ],
+    "root_over_tearing": [
+      3.193623475684326e-05,
+      0.00016734947780695423,
+      0.0008610113193597233
+    ],
+    "roots_by_elements": {
+      "200": [
+        7.92412474672222e-09,
+        1.050207560217296e-08,
+        1.360959033039309e-08
+      ],
+      "400": [
+        1.0354325164578255e-09,
+        0.0,
+        1.855396089475002e-07
+      ]
+    },
+    "solves": [
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 7.92412474672222e-09,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 1.050207560217296e-08,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 1.360959033039309e-08,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 1.0354325164578255e-09,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 0.0,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 1.855396089475002e-07,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 0.00024812332471423385,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 6.275535328701542e-05,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 1.5806517317929844e-05,
+        "rejected": 0
+      }
+    ],
+    "unstable_ka_0p5_growth": [
+      0.00024812332471423385,
+      6.275535328701542e-05,
+      1.5806517317929844e-05
+    ]
+  },
+  "schema": "scpn-fusion.linear-mhd-miss-study.v2",
+  "slope_scan": {
+    "delta_prime": 9.694741880950112,
+    "etas": [
+      1e-06,
+      1e-07,
+      1e-08,
+      1e-09,
+      1e-10
+    ],
+    "growth_rates": [
+      0.0003048698976419243,
+      8.861767138385733e-05,
+      2.3720961179758076e-05,
+      6.1276569718997934e-06,
+      1.5582496687268813e-06
+    ],
+    "local_slopes": [
+      0.5365942111087236,
+      0.5723880510638694,
+      0.5878378374106641,
+      0.5946574021318483
+    ],
+    "ratio_to_asymptotic": [
+      0.7715179923836178,
+      0.8927952016732914,
+      0.9514014224899989,
+      0.9784214360546082,
+      0.9905321060909021
+    ],
+    "smallest_eta_doubled_elements": 1.558518875468555e-06,
+    "smallest_eta_doubling_change": 0.00017276226465923195,
+    "solves": [
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 0.0003048698976419243,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 8.861767138385733e-05,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 2.3720961179758076e-05,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 6.1276569718997934e-06,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 1.5582496687268813e-06,
+        "rejected": 0
+      },
+      {
+        "complete": true,
+        "method": "dense-qz",
+        "rate": 1.558518875468555e-06,
+        "rejected": 0
+      }
+    ]
+  },
+  "status": "pass"
+}
