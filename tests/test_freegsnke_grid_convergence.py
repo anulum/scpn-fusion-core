@@ -15,6 +15,7 @@ FreeGSNKE on the base grid through both builders and requires identical currents
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import os
 import subprocess
@@ -232,3 +233,13 @@ def test_live_base_grid_record_matches_the_tracked_forward_report() -> None:
     )
     assert record["source_relative_l2"] < 1e-7
     assert record["vacuum_max_abs_error_wb"] < 1e-12
+
+
+def test_import_puts_the_repository_and_source_tree_on_the_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Imported from outside the repository, the module puts both roots on the path itself."""
+    root, source = str(study.ROOT), str(study.ROOT / "src")
+    monkeypatch.setattr(sys, "path", [entry for entry in sys.path if entry not in (root, source)])
+    importlib.reload(study)
+    assert sys.path[:2] == [source, root]

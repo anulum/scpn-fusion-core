@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import copy
 import dataclasses
+import importlib
 import hashlib
 import json
 import os
@@ -389,3 +390,13 @@ def test_live_mastu_like_case_with_one_fit_iteration(monkeypatch: pytest.MonkeyP
     assert entry["freegsnke_at_scpn_currents"]["converged"]
     assert np.isfinite(entry["freegsnke_at_scpn_currents"]["loss"]["total_l2"])
     assert len(entry["jacobian_singular_values"]) == 11
+
+
+def test_import_puts_the_repository_and_source_tree_on_the_path(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Imported from outside the repository, the module puts both roots on the path itself."""
+    root, source = str(benchmark.ROOT), str(benchmark.ROOT / "src")
+    monkeypatch.setattr(sys, "path", [entry for entry in sys.path if entry not in (root, source)])
+    importlib.reload(benchmark)
+    assert sys.path[:2] == [source, root]
