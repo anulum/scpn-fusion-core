@@ -296,34 +296,11 @@ reconstruction. The comparison is shown for completeness, not equivalence.
 
 ---
 
-## Table 7: GPU Offload Projected Timings
+## Table 7: GPU Offload Timings (withdrawn)
 
-| Component | CPU Rust (release) | GPU projected | Source |
-|-----------|-------------------|---------------|--------|
-| Equilibrium 65×65 | 100 ms | ~2 ms | Section 28 study |
-| Equilibrium 256×256 | ~10 s | ~50 ms | Extrapolated |
-| P-EFIT reference (65×65) | — | <1 ms | no traceable source |
-| Full inverse reconstruction | ~4 s | ~200 ms | 8× GPU fwd solve |
-| MLP 1000-pt profile | 0.3 ms | ~0.05 ms | Batch matmul |
-
-```latex
-\begin{table}[htbp]
-\centering
-\caption{Projected GPU timings for SCPN Fusion Core (RTX\,4090-class, \texttt{wgpu} backend).}
-\label{tab:gpu-projected}
-\begin{tabular}{lrrr}
-\toprule
-Component & CPU Rust (release) & GPU projected & Source \\
-\midrule
-Equilibrium $65\times65$ & 100\,ms & $\sim$2\,ms & Section~28 \\
-Equilibrium $256\times256$ & $\sim$10\,s & $\sim$50\,ms & Extrapolated \\
-P-EFIT reference ($65\times65$) & --- & $<$1\,ms & no traceable source \\
-Full inverse recon. & $\sim$4\,s & $\sim$200\,ms & 8$\times$ GPU fwd \\
-MLP 1000-pt profile & 0.3\,ms & $\sim$0.05\,ms & Batch matmul \\
-\bottomrule
-\end{tabular}
-\end{table}
-```
+This table projected GPU timings from CPU timings that were never measured,
+and credited a study section that estimates only a 1024×1024 solve. It is
+withdrawn; no GPU timing is projected.
 
 ---
 

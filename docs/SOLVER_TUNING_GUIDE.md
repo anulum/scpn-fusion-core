@@ -156,12 +156,17 @@ Levenberg-Marquardt step.
 
 ## 5. Grid Resolution vs Speed
 
-| Grid | Python (NumPy) | Rust (release) | Rust (GPU projected) | Use case |
-|------|---------------|----------------|---------------------|----------|
-| 33×33 | ~0.8 s | ~2 ms | <1 ms | Quick scoping, parameter sweeps |
-| 65×65 | ~5 s | ~15 ms | ~2 ms | Standard production, EFIT-comparable |
-| 128×128 | ~30 s | ~95 ms | ~10 ms | High-fidelity, publication figures |
-| 256×256 | ~5 min | ~10 s | ~50 ms | Research, pedestal/X-point resolution |
+| Grid | Use case |
+|------|----------|
+| 33×33 | Quick scoping, parameter sweeps |
+| 65×65 | Standard production |
+| 128×128 | High-fidelity, publication figures |
+| 256×256 | Research, pedestal/X-point resolution |
+
+Solve time grows with the grid and depends on the host and on the kernel in
+use. This guide states no timing; measured Rust timings, with their host and
+command, are in `docs/BENCHMARKS.md` ("Rust Full-Order Equilibrium
+Benchmarks").
 
 ### Recommendations
 
@@ -268,9 +273,8 @@ equilibria.
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| Python solve ~5s at 65×65 | Normal — Python uses SOR, not multigrid | Build Rust backend: `maturin develop --release` |
-| Rust solve slower than 100ms at 65×65 | Debug build (`cargo build` without `--release`) | Always use `--release` for benchmarks |
-| Parallel Jacobian no faster than serial | Too few cores or `RAYON_NUM_THREADS=1` | Check `nproc` / set `RAYON_NUM_THREADS` to core count |
+| Solve much slower than the measured Rust timings | The compiled extension is not installed, so the Python kernel runs | Build the Rust backend: `maturin develop --release` |
+| Rust solve slower than its benchmark | Debug build (`cargo build` without `--release`) | Always use `--release` for benchmarks |
 | Profile evaluation slow with MLP | Using point-by-point loop instead of `predict_profile()` | Use `predict_profile(rho, te, ti, ne, q, s)` for vectorised batch |
 
 ### Recommended starting configurations

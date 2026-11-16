@@ -2083,19 +2083,13 @@ See `SCPN_FUSION_CORE_COMPREHENSIVE_STUDY.md` Section 28 for full details.
 |--------|---------|-----------------|----------|--------|
 | SOR red-black sweep | wgpu compute shader | 20–50× (65×65), 100–200× (256×256) | P0 | Targeted |
 | Multigrid V-cycle | wgpu + host orchestration | target pending isolated evidence | P1 | Targeted |
-| Vacuum field (elliptic integrals) | rayon (CPU) → wgpu | 5–10× | P2 | rayon done |
+| Vacuum field (elliptic integrals) | wgpu | 5–10× | P2 | Targeted |
 | MLP batch inference | wgpu or cuBLAS | 2–5× (small H) | P3 | Targeted |
 | FNO turbulence (FFT) | cuFFT / wgpu FFT | 50–100× (64×64) | P3 | Targeted |
 
-### Projected Timings (GPU, RTX 4090-class)
-
-| Component | CPU Rust (release) | GPU projected | Source |
-|-----------|-------------------|---------------|--------|
-| Equilibrium 65×65 | 100 ms | ~2 ms | Section 28 study |
-| Equilibrium 256×256 | ~10 s | ~50 ms | Extrapolated |
-| P-EFIT reference (65×65) | — | <1 ms | no traceable source (an earlier "Sabbagh 2023" credit has no record) |
-| Full inverse reconstruction | ~4 s | ~200 ms | 8× GPU fwd solve |
-| MLP 1000-pt profile | 0.3 ms | ~0.05 ms | Batch matmul |
+No GPU timing is projected here. The CPU timings that earlier projections
+started from were never measured, and the study section they cited estimates
+only a 1024×1024 solve.
 
 Implementation path: `wgpu` crate targeting Vulkan/Metal/D3D12/WebGPU,
 with CPU SIMD alternate path for systems without GPU support.
@@ -2458,20 +2452,11 @@ until public same-case outputs with provenance and license terms are available.
 
 ## Benchmark Environment
 
-All timing numbers in this document were measured on the following hardware
-unless otherwise noted:
-
-| Parameter | Value |
-|-----------|-------|
-| **CPU** | AMD Ryzen 9 7950X (16C/32T, Zen 4, 4.5 GHz base / 5.7 GHz boost) |
-| **RAM** | 64 GB DDR5-5200 |
-| **OS** | Ubuntu 22.04 LTS (kernel 6.5) / Windows 11 23H2 |
-| **Rust** | stable 1.82+ (`opt-level = 3`, fat LTO, single codegen unit) |
-| **Python** | 3.12 with NumPy 1.26, SciPy 1.12 |
-
-> **Note:** CI benchmarks run on GitHub Actions `ubuntu-latest` shared runners
-> (2-core, ~7 GB RAM) which are ~3-5x slower than the reference hardware above.
-> For authoritative numbers, run benchmarks locally.
+There is no single reference machine. A timing number comes from the host
+named next to it, or recorded in the report it cites, and that record is
+authoritative (for example the local run of the Rust full-order equilibrium
+benchmarks above). CI benchmarks run on GitHub Actions `ubuntu-latest` shared
+runners; their timings are not comparable with local runs.
 
 If you publish results from this code, please include your hardware specs
 alongside the numbers.

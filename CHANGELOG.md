@@ -70,6 +70,24 @@
 
 ### Fixed
 
+- The benchmark pages no longer state Rust, Python or GPU timings that nothing
+  measured, or a reference machine that the repository never used:
+  - `docs/BENCHMARKS.md` named an AMD Ryzen 9 7950X as the host of "all timing
+    numbers". There is no single reference machine; each number's own host or
+    report decides.
+  - The "~" Rust-versus-Python tables of `docs/sphinx/userguide/hpc.rst` and
+    `docs/SOLVER_TUNING_GUIDE.md` are removed. Their 65×65 figures disagreed
+    with each other (100 ms and 15 ms).
+  - The GPU projection tables (`docs/BENCHMARKS.md`, `docs/BENCHMARK_FIGURES.md`
+    Table 7, notebook 06) are withdrawn. Their CPU starting values were never
+    measured, and the study they cited estimates only a 1024×1024 solve.
+  - Notebook 06 Part E computed "Rust" times as the measured time divided by
+    50, and the notebook said the Rust inverse solver builds its Jacobian
+    with `rayon`. It does not; the columns are built one after another. The
+    cell now names the kernel it timed, which is the Rust-accelerated one
+    when the extension is installed.
+  - The roadmap no longer marks the vacuum field "rayon done", and the
+    tuning guide no longer suggests `RAYON_NUM_THREADS` for the Jacobian.
 - Notebook 06, `docs/BENCHMARKS.md` and `docs/BENCHMARK_FIGURES.md` no longer
   state timings or a timing host that nothing in the repository measured or
   records:

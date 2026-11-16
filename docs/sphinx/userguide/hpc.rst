@@ -212,40 +212,10 @@ Results are written to ``artifacts/profiling/``.
 Performance Summary
 ^^^^^^^^^^^^^^^^^^^^
 
-.. list-table::
-   :header-rows: 1
-   :widths: 30 20 30 20
-
-   * - Metric
-     - Rust (release)
-     - Python (NumPy)
-     - Speedup
-   * - 65x65 equilibrium
-     - ~100 ms
-     - ~5 s
-     - ~50x
-   * - 128x128 equilibrium
-     - ~1 s
-     - ~30 s
-     - ~30x
-   * - SOR step (65x65)
-     - microseconds
-     - milliseconds
-     - ~100x
-   * - Neural transport MLP
-     - ~5 microseconds/point
-     - ~500 microseconds/point
-     - ~100x
-   * - Inverse reconstruction
-     - ~4 s (5 LM iters)
-     - ~60 s
-     - ~15x
-
-.. note::
-
-   These are internal measurements on specific hardware.  We encourage
-   independent reproduction using ``cargo bench`` and
-   ``benchmarks/collect_results.sh``.
+This guide states no Rust-versus-Python speed ratio. Measured Rust timings,
+with their host and command, are in ``docs/BENCHMARKS.md`` (section "Rust
+Full-Order Equilibrium Benchmarks"). Reproduce them with ``cargo bench`` and
+``benchmarks/collect_results.sh``.
 
 Related Modules
 -----------------
