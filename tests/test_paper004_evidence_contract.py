@@ -149,8 +149,14 @@ def test_evidence_generator_is_byte_deterministic(tmp_path: Path) -> None:
         capture_output=True,
         timeout=60,
     )
+    manifest = _load_json(EVIDENCE / "evidence_manifest.json")
+    paths = [
+        SUBMISSION.relative_to(ROOT).as_posix(),
+        *(custody["source_path"] for custody in manifest["source_custody"].values()),
+        *manifest["implementation_sources"],
+    ]
     subprocess.run(
-        ["git", "checkout", "HEAD", "--", "papers", "src/scpn_fusion", "validation/reports"],
+        ["git", "checkout", "HEAD", "--", *paths],
         cwd=checkout,
         check=True,
         capture_output=True,
