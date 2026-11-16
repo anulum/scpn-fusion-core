@@ -24,4 +24,12 @@ Widths in m^2/s, on the rows of that true class. Abstention share:
 - chi_i: 0.000.
 - D_e: 0.000.
 
-Source revision: `2af7ea7942a43af056300050a39819557ccc42bd`
+Random halvings of the pooled rows (20 seeds): mean [min, max].
+
+| Channel | Unstable set | Stable set | Unstable flux |
+|---|---:|---:|---:|
+| chi_e | 0.900 [0.892, 0.907] | 0.900 [0.895, 0.905] | 0.801 [0.793, 0.809] |
+| chi_i | 0.900 [0.895, 0.903] | 0.900 [0.895, 0.904] | 0.800 [0.791, 0.807] |
+| D_e | 0.901 [0.894, 0.909] | 0.900 [0.896, 0.905] | 0.803 [0.795, 0.810] |
+
+Source revision: `43e96cb33df93859d2682834c8b60645fa934d77`
