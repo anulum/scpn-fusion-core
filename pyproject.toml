@@ -620,6 +620,8 @@ files = [
     "tests/test_eped_pedestal_tiers_benchmark.py",
     "tools/generate_surrogate_conformal_certificates.py",
     "tests/test_surrogate_conformal_certificates.py",
+    "validation/qlknn_conformal_regime_coverage.py",
+    "tests/test_qlknn_conformal_regime_coverage.py",
     "tools/generate_surrogate_uq_cards.py",
     "tests/test_surrogate_uq_cards.py",
     "tests/test_free_boundary_plotting.py",

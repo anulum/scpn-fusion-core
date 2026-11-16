@@ -25,6 +25,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from dataclasses import dataclass
 from typing import Any, cast
 
 import numpy as np
@@ -208,19 +209,39 @@ def _targets_in_prediction_space(
     )
 
 
-def build_certificate(
-    *,
-    weights_path: Path,
-    calibration_path: Path,
-    holdout_path: Path,
-    alpha: float,
-) -> dict[str, Any]:
-    """Build a deterministic per-output split-conformal certificate."""
+@dataclass(frozen=True)
+class ResidualScores:
+    """Canonical absolute residuals of both splits, in the model's output space.
+
+    ``calibration_scores`` and ``holdout_scores`` are ``(rows, 3)`` in :data:`OUTPUT_NAMES`
+    order; ``calibration_targets`` and ``holdout_targets`` are the targets in the same space.
+    """
+
+    calibration_scores: FloatArray
+    holdout_scores: FloatArray
+    calibration_targets: FloatArray
+    holdout_targets: FloatArray
+    runtime_checksum: str
+    output_unit: str
+    holdout_unit: str
+    calibration_gb_normalized: bool
+    holdout_gb_normalized: bool
+
+
+def residual_scores(
+    *, weights_path: Path, calibration_path: Path, holdout_path: Path
+) -> ResidualScores:
+    """Predict both splits and return their canonical absolute residuals.
+
+    Raises
+    ------
+    ValueError
+        If the splits disagree on target units or the runtime weight checksum changes.
+    """
     x_cal, y_cal_raw, calibration_gb_normalized = _load_split(calibration_path)
     x_test, y_test_raw, holdout_gb_normalized = _load_split(holdout_path)
     if calibration_gb_normalized != holdout_gb_normalized:
         raise ValueError("Calibration and holdout target-unit metadata must match.")
-    rank = finite_sample_rank(int(x_cal.shape[0]), alpha)
     pred_cal, runtime_checksum, model_gb_scale = _predict(weights_path, x_cal)
     pred_test, holdout_runtime_checksum, holdout_model_gb_scale = _predict(weights_path, x_test)
     if holdout_runtime_checksum != runtime_checksum or holdout_model_gb_scale != model_gb_scale:
@@ -239,8 +260,38 @@ def build_certificate(
         gb_normalized=holdout_gb_normalized,
         model_gb_scale=holdout_model_gb_scale,
     )
-    cal_scores = _canonicalize_residuals(np.abs(pred_cal - y_cal))
-    test_scores = _canonicalize_residuals(np.abs(pred_test - y_test))
+    return ResidualScores(
+        calibration_scores=_canonicalize_residuals(np.abs(pred_cal - y_cal)),
+        holdout_scores=_canonicalize_residuals(np.abs(pred_test - y_test)),
+        calibration_targets=y_cal,
+        holdout_targets=y_test,
+        runtime_checksum=runtime_checksum,
+        output_unit=output_unit,
+        holdout_unit=holdout_unit,
+        calibration_gb_normalized=calibration_gb_normalized,
+        holdout_gb_normalized=holdout_gb_normalized,
+    )
+
+
+def build_certificate(
+    *,
+    weights_path: Path,
+    calibration_path: Path,
+    holdout_path: Path,
+    alpha: float,
+) -> dict[str, Any]:
+    """Build a deterministic per-output split-conformal certificate."""
+    scores_of = residual_scores(
+        weights_path=weights_path, calibration_path=calibration_path, holdout_path=holdout_path
+    )
+    cal_scores, test_scores = scores_of.calibration_scores, scores_of.holdout_scores
+    n_calibration, n_holdout = int(cal_scores.shape[0]), int(test_scores.shape[0])
+    rank = finite_sample_rank(n_calibration, alpha)
+    output_unit = scores_of.output_unit
+    runtime_checksum = scores_of.runtime_checksum
+    calibration_gb_normalized = scores_of.calibration_gb_normalized
+    holdout_gb_normalized = scores_of.holdout_gb_normalized
+    holdout_unit = scores_of.holdout_unit
     channels: list[dict[str, Any]] = []
     for index, name in enumerate(OUTPUT_NAMES):
         scores = np.asarray(cal_scores[:, index], dtype=np.float64)
@@ -291,7 +342,7 @@ def build_certificate(
                     "split_sha256": _sha256_file(calibration_path),
                     "source_targets_gb_normalized": calibration_gb_normalized,
                     "certificate_output_unit": output_unit,
-                    "n": int(x_cal.shape[0]),
+                    "n": n_calibration,
                     "quantile_rank_one_based": rank,
                 },
                 "holdout": {
@@ -299,7 +350,7 @@ def build_certificate(
                     "split_sha256": _sha256_file(holdout_path),
                     "source_targets_gb_normalized": holdout_gb_normalized,
                     "certificate_output_unit": holdout_unit,
-                    "n": int(x_test.shape[0]),
+                    "n": n_holdout,
                     "role": "independent_empirical_coverage_check_only",
                 },
                 "channels": channels,

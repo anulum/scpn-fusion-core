@@ -16,6 +16,20 @@
 
 ### Added
 
+- `validation/qlknn_conformal_regime_coverage.py` measures how the QLKNN-10D
+  split-conformal certificate covers each transport regime of the untouched
+  holdout split. Two definitions are fixed in the module:
+  - the split's input-gradient labels;
+  - per channel, zero-flux, near-threshold (positive, up to the 10 % quantile
+    of the calibration split's positive targets) and unstable rows.
+
+  Each group's coverage comes with a 95 % Wilson interval and its median
+  interval width relative to the target. The report gates only its own
+  completeness: the inputs must match the certificate's digests, the recomputed
+  marginal coverage must equal the certificate's, and every row must sit in
+  exactly one group. A group below the target is reported, not gated.
+  `tools/generate_surrogate_conformal_certificates.py` gains the public
+  `residual_scores`, which it uses itself; the certificate is unchanged.
 - `validation/benchmark_freegsnke_multimachine.py` compares SCPN with
   FreeGSNKE 3.0.1 on the three public machine descriptions FreeGSNKE ships
   (MAST-U-like, SPARC-like, ITER-like):

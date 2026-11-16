@@ -102,6 +102,8 @@
     "validation/linear_mhd_reduced_model_acceptance.py",
     "tests/test_linear_mhd_reduced_model_acceptance.py",
     "validation/benchmark_freegsnke_inverse_fit.py",
-    "tests/test_benchmark_freegsnke_inverse_fit.py"
+    "tests/test_benchmark_freegsnke_inverse_fit.py",
+    "validation/qlknn_conformal_regime_coverage.py",
+    "tests/test_qlknn_conformal_regime_coverage.py"
   ]
 }
