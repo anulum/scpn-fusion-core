@@ -224,7 +224,7 @@ def _run_mpc_episode(config_path: Any, shot_duration: int = 30) -> EpisodeResult
     )
 
     def mpc_step(pid: Any, err: float) -> float:
-        """Plan from the axis and X-point state; every loop receives the first planned command."""
+        """Plan from the axis and X-point state; every loop receives the plan's first command."""
         idx_max = int(np.argmax(ctrl.kernel.Psi))
         iz, ir = np.unravel_index(idx_max, ctrl.kernel.Psi.shape)
         r_ax = float(ctrl.kernel.R[ir])
