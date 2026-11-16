@@ -33,42 +33,62 @@ from benchmark_vs_freegs import (
     solovev_psi,
 )
 
+# Patch the globals the imported functions actually read. tests/test_freegs_benchmark.py re-executes the
+# benchmark under the same module name, so a string target such as "benchmark_vs_freegs.compare_case"
+# can resolve to a different module object when that file is collected first.
+_BENCHMARK_GLOBALS = compare_case.__globals__
+assert run_benchmark.__globals__ is _BENCHMARK_GLOBALS
+
 
 # ── Threshold constants ────────────────────────────────────────────────
 
 
 class TestThresholds:
+    """The FreeGS acceptance thresholds and their declared values."""
+
     def test_freegs_psi_tighter_than_solovev(self):
+        """The FreeGS flux tolerance is tighter than the Solov'ev one."""
         assert FREEGS_PSI_NRMSE_THRESHOLD < PSI_NRMSE_THRESHOLD
 
     def test_freegs_psi_threshold_value(self):
+        """The FreeGS flux NRMSE threshold is 0.005."""
         assert pytest.approx(0.005) == FREEGS_PSI_NRMSE_THRESHOLD
 
     def test_freegs_q_threshold_value(self):
+        """The FreeGS q-profile NRMSE threshold is 0.10."""
         assert pytest.approx(0.10) == FREEGS_Q_NRMSE_THRESHOLD
 
     def test_freegs_axis_error_value(self):
+        """The FreeGS axis-error threshold is 0.10 m."""
         assert pytest.approx(0.10) == FREEGS_AXIS_ERROR_M
 
     def test_freegs_separatrix_value(self):
+        """The FreeGS separatrix NRMSE threshold is 0.05."""
         assert pytest.approx(0.05) == FREEGS_SEPARATRIX_NRMSE
 
 
 class TestFreeGSAxisPressureEstimate:
+    """The axis-pressure estimate passed to FreeGS."""
+
     def test_pressure_is_positive_and_finite(self):
+        """Every case gets a finite, positive axis pressure."""
         for case in CASES:
             p_axis = estimate_axis_pressure_pa(case)
             assert np.isfinite(p_axis)
             assert p_axis > 0.0
 
     def test_pressure_scales_up_with_higher_field(self):
+        """A higher toroidal field gives a higher axis pressure."""
         low_field = TokamakCase("lowB", R0=1.8, a=0.5, B0=2.0, Ip=2.0, kappa=1.8)
         high_field = TokamakCase("highB", R0=1.8, a=0.5, B0=8.0, Ip=2.0, kappa=1.8)
         assert estimate_axis_pressure_pa(high_field) > estimate_axis_pressure_pa(low_field)
 
 
 class TestFreeGSPassContract:
+    """Pass or fail contract of the FreeGS comparison and its report."""
+
     def test_freegs_pass_contract_enforces_separatrix_gate(self, monkeypatch):
+        """A case within the flux, q and axis tolerances still fails on the separatrix gate."""
         R = np.linspace(4.0, 8.0, 8)
         Z = np.linspace(-2.0, 2.0, 8)
         RR, ZZ = np.meshgrid(R, Z)
@@ -76,6 +96,7 @@ class TestFreeGSPassContract:
         q_proxy = np.linspace(1.0, 3.0, len(R))
 
         def _our_stub(_case: TokamakCase) -> dict[str, object]:
+            """Return the same flux map for our solver."""
             return {
                 "psi": psi,
                 "R": R,
@@ -90,6 +111,7 @@ class TestFreeGSPassContract:
             }
 
         def _freegs_stub(_case: TokamakCase, **_kwargs: object) -> dict[str, object]:
+            """Return a copy of the same flux map as the FreeGS reference."""
             return {
                 "psi": psi.copy(),
                 "R": R.copy(),
@@ -100,10 +122,11 @@ class TestFreeGSPassContract:
                 "axis_pressure_pa": 1.0e5,
             }
 
-        monkeypatch.setattr("benchmark_vs_freegs.run_our_solver", _our_stub)
-        monkeypatch.setattr("benchmark_vs_freegs.run_freegs_case", _freegs_stub)
-        monkeypatch.setattr(
-            "benchmark_vs_freegs.compare_separatrix",
+        monkeypatch.setitem(_BENCHMARK_GLOBALS, "run_our_solver", _our_stub)
+        monkeypatch.setitem(_BENCHMARK_GLOBALS, "run_freegs_case", _freegs_stub)
+        monkeypatch.setitem(
+            _BENCHMARK_GLOBALS,
+            "compare_separatrix",
             lambda *_args, **_kwargs: FREEGS_SEPARATRIX_NRMSE + 0.01,
         )
 
@@ -115,7 +138,8 @@ class TestFreeGSPassContract:
         assert result["passes"] is False
 
     def test_freegs_report_includes_mode_specific_thresholds(self, monkeypatch):
-        monkeypatch.setattr("benchmark_vs_freegs.HAS_FREEGS", True)
+        """A FreeGS-mode report carries the FreeGS thresholds."""
+        monkeypatch.setitem(_BENCHMARK_GLOBALS, "HAS_FREEGS", True)
 
         def _compare_case_stub(
             case: TokamakCase,
@@ -123,6 +147,7 @@ class TestFreeGSPassContract:
             use_freegs: bool = False,
             allow_runtime_fallback: bool = True,
         ) -> dict[str, object]:
+            """Return a passing case result in the requested mode."""
             assert isinstance(allow_runtime_fallback, bool)
             return {
                 "name": case.name,
@@ -138,7 +163,7 @@ class TestFreeGSPassContract:
                 "passes": True,
             }
 
-        monkeypatch.setattr("benchmark_vs_freegs.compare_case", _compare_case_stub)
+        monkeypatch.setitem(_BENCHMARK_GLOBALS, "compare_case", _compare_case_stub)
         report = run_benchmark(force_solovev=False)
         thresholds = cast(dict[str, Any], report["thresholds"])
 
@@ -149,6 +174,7 @@ class TestFreeGSPassContract:
         assert thresholds["separatrix_nrmse"] == pytest.approx(FREEGS_SEPARATRIX_NRMSE)
 
     def test_report_fails_when_any_case_is_unconverged(self, monkeypatch):
+        """One unconverged case makes the report count it and fail."""
         results = iter(
             [
                 {
@@ -179,10 +205,11 @@ class TestFreeGSPassContract:
         )
 
         def _compare_case_stub(*_args: object, **_kwargs: object) -> dict[str, object]:
+            """Return the next prepared case result."""
             return next(results)
 
-        monkeypatch.setattr("benchmark_vs_freegs.CASES", CASES[:2])
-        monkeypatch.setattr("benchmark_vs_freegs.compare_case", _compare_case_stub)
+        monkeypatch.setitem(_BENCHMARK_GLOBALS, "CASES", CASES[:2])
+        monkeypatch.setitem(_BENCHMARK_GLOBALS, "compare_case", _compare_case_stub)
 
         report = run_benchmark(force_solovev=True)
 
@@ -195,7 +222,10 @@ class TestFreeGSPassContract:
 
 
 class TestCompareSeparatrix:
+    """The separatrix comparison metric."""
+
     def test_identical_psi_gives_zero(self):
+        """Identical flux maps give a separatrix NRMSE of zero."""
         R = np.linspace(4.0, 8.0, 65)
         Z = np.linspace(-3.0, 3.0, 65)
         RR, ZZ = np.meshgrid(R, Z)
@@ -204,6 +234,7 @@ class TestCompareSeparatrix:
         assert result < 1e-10
 
     def test_different_psi_nonzero(self):
+        """Different flux maps give a positive separatrix NRMSE."""
         R = np.linspace(4.0, 8.0, 65)
         Z = np.linspace(-3.0, 3.0, 65)
         RR, ZZ = np.meshgrid(R, Z)
@@ -213,6 +244,7 @@ class TestCompareSeparatrix:
         assert result > 0.0
 
     def test_degenerate_returns_one(self):
+        """A flat flux map, with no separatrix, gives the worst value 1.0."""
         R = np.linspace(4.0, 8.0, 10)
         Z = np.linspace(-3.0, 3.0, 10)
         # Flat psi
@@ -221,6 +253,7 @@ class TestCompareSeparatrix:
         assert result == 1.0
 
     def test_result_bounded(self):
+        """The separatrix NRMSE stays within [0, 1]."""
         R = np.linspace(4.0, 8.0, 65)
         Z = np.linspace(-3.0, 3.0, 65)
         RR, ZZ = np.meshgrid(R, Z)
@@ -234,7 +267,10 @@ class TestCompareSeparatrix:
 
 
 class TestPerMetricReport:
+    """The per-metric Markdown report."""
+
     def test_generates_markdown(self):
+        """A report renders as a Markdown table."""
         report: dict[str, object] = {
             "cases": [
                 {
@@ -255,11 +291,13 @@ class TestPerMetricReport:
         assert "0.0500" in md
 
     def test_empty_cases(self):
+        """An empty report still renders its title."""
         report: dict[str, list[dict[str, object]]] = {"cases": []}
         md = generate_per_metric_report(report)
         assert "Per-Metric Report" in md
 
     def test_fail_status(self):
+        """A failing case renders as FAIL."""
         report: dict[str, object] = {
             "cases": [
                 {
@@ -281,7 +319,10 @@ class TestPerMetricReport:
 
 
 class TestSolovevAnalytic:
+    """The Solov'ev analytic flux used as the fallback reference."""
+
     def test_psi_nonnegative(self):
+        """The Solov'ev flux is non-negative."""
         R = np.linspace(4.0, 8.0, 65)
         Z = np.linspace(-3.0, 3.0, 65)
         RR, ZZ = np.meshgrid(R, Z)
@@ -289,6 +330,7 @@ class TestSolovevAnalytic:
         assert np.all(psi >= 0.0)
 
     def test_psi_max_near_axis(self):
+        """The flux maximum lies within 0.5 m of R0 = 6.2 m and of the midplane."""
         R = np.linspace(4.0, 8.0, 65)
         Z = np.linspace(-3.0, 3.0, 65)
         RR, ZZ = np.meshgrid(R, Z)
@@ -300,6 +342,7 @@ class TestSolovevAnalytic:
         assert abs(Z_ax) < 0.5  # near midplane
 
     def test_psi_zero_outside_plasma(self):
+        """The flux is zero at the grid corners, outside the plasma."""
         R = np.linspace(4.0, 8.0, 65)
         Z = np.linspace(-3.0, 3.0, 65)
         RR, ZZ = np.meshgrid(R, Z)
