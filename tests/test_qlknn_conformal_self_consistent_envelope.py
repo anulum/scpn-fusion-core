@@ -135,6 +135,13 @@ def test_residual_and_relaxation() -> None:
     assert study.relax(applied, target, 0.2).tolist() == pytest.approx([3.0, 5.0])
 
 
+def test_relaxation_difference_is_the_largest_relative_change() -> None:
+    first = {"T_core_keV": 2.0, "T_avg_keV": 1.0, "tau_e_s": 1.0, "steps": 9}
+    second = {"T_core_keV": 2.0, "T_avg_keV": 1.1, "tau_e_s": 0.5, "steps": 3}
+
+    assert study.relaxation_difference(first, second) == pytest.approx(1.0)
+
+
 def test_widths_match_checks_the_digest_and_every_width() -> None:
     intervals = _intervals()
     report = _frozen_report(intervals)
@@ -209,11 +216,20 @@ def test_report_runs_every_end_and_records_its_gates(
     report = study.build_report(certificate, frozen_report_path=frozen_report)
 
     assert set(report["envelopes"]) == set(study.VARIANTS)
+    ends = [end for pair in report["envelopes"].values() for end in pair.values()]
     runs = [
         report["nominal"],
         report["nominal_at_check_relaxation"],
-        *(run for ends in report["envelopes"].values() for run in ends.values()),
+        *ends,
+        *(end["at_check_relaxation"] for end in ends),
     ]
+    for end in ends:
+        assert end["relaxation_relative_difference"] == study.relaxation_difference(
+            end, end["at_check_relaxation"]
+        )
+    assert report["largest_end_relaxation_difference"] == max(
+        end["relaxation_relative_difference"] for end in ends
+    )
     assert all(run["steps"] <= study.MAX_STEPS for run in runs)
     expected = {
         "widths_match_frozen_report": True,

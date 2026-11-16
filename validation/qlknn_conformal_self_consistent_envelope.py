@@ -25,8 +25,13 @@ every transport step:
 A run stops when the relative difference between the target and the applied coefficients
 falls below ``RESIDUAL_TOLERANCE``. At that point the profiles are steady and the applied
 diffusivity equals the bounded closure of the profiles it produced: a self-consistent steady
-state. The relaxation sets only the path to that state. It is needed because the closure is
-stiff: applied without relaxation, the lagged closure oscillates from step to step.
+state. The relaxation is needed because the closure is stiff: applied without relaxation,
+the lagged closure oscillates from step to step.
+
+For the nominal closure the relaxation only sets the path, and the fixed point does not
+depend on it. The bounded closure clips the turbulent part at zero, so its fixed point need
+not be unique: every interval end is therefore run at two relaxations, and their relative
+difference is reported as a finding.
 
 The solver is not modified and no private member is used. The report gates that the nominal
 run (zero half-width) reproduces the neural steady state, that the nominal fixed point does
@@ -65,7 +70,7 @@ REPORT_PATH = ROOT / "validation/reports/qlknn_conformal_self_consistent_envelop
 MARKDOWN_PATH = ROOT / "validation/reports/qlknn_conformal_self_consistent_envelope.md"
 SCHEMA = "scpn-fusion-core.qlknn-conformal-self-consistent-envelope.v1"
 RELAXATION = 0.005
-CHECK_RELAXATION = 0.02
+CHECK_RELAXATION = 0.0025
 MAX_STEPS = 40_000
 RESIDUAL_TOLERANCE = 1.0e-10
 RELAXATION_INDEPENDENCE_TOLERANCE = 1.0e-8
@@ -263,8 +268,27 @@ def widths_match(intervals: Intervals, frozen_report: dict[str, Any]) -> bool:
     )
 
 
-def _relative_difference(first: dict[str, float], second: dict[str, float]) -> float:
-    return max(abs(first[key] / second[key] - 1.0) for key in first)
+SUMMARY_KEYS = ("T_core_keV", "T_avg_keV", "tau_e_s")
+
+
+def relaxation_difference(first: dict[str, Any], second: dict[str, Any]) -> float:
+    """Return the largest relative difference of the summary quantities of two runs."""
+    return max(abs(float(first[key]) / float(second[key]) - 1.0) for key in SUMMARY_KEYS)
+
+
+def interval_end(
+    config_path: Path, p_aux_mw: float, intervals: Intervals, variant: str, sign: int
+) -> dict[str, Any]:
+    """Run one interval end at both relaxations; return the first with the second attached."""
+    primary = self_consistent_run(config_path, p_aux_mw, intervals, variant, sign)
+    check = self_consistent_run(
+        config_path, p_aux_mw, intervals, variant, sign, relaxation=CHECK_RELAXATION
+    )
+    return {
+        **primary,
+        "at_check_relaxation": check,
+        "relaxation_relative_difference": relaxation_difference(primary, check),
+    }
 
 
 def build_report(
@@ -289,17 +313,15 @@ def build_report(
     )
     envelopes = {
         variant: {
-            "lower_turbulence": self_consistent_run(config_path, p_aux_mw, intervals, variant, -1),
-            "upper_turbulence": self_consistent_run(config_path, p_aux_mw, intervals, variant, 1),
+            "lower_turbulence": interval_end(config_path, p_aux_mw, intervals, variant, -1),
+            "upper_turbulence": interval_end(config_path, p_aux_mw, intervals, variant, 1),
         }
         for variant in VARIANTS
     }
-    keys = ("T_core_keV", "T_avg_keV", "tau_e_s")
     reproduction = abs(nominal["T_core_keV"] / neural["T_core_keV"] - 1.0)
-    independence = _relative_difference(
-        {key: nominal[key] for key in keys}, {key: check[key] for key in keys}
-    )
-    runs = [nominal, check, *(run for ends in envelopes.values() for run in ends.values())]
+    independence = relaxation_difference(nominal, check)
+    ends = [end for pair in envelopes.values() for end in pair.values()]
+    runs = [nominal, check, *ends, *(end["at_check_relaxation"] for end in ends)]
     checks = {
         "widths_match_frozen_report": widths_match(intervals, frozen_report),
         "neural_run_reached_steady_state": neural_change < frozen.STEADY_TOLERANCE,
@@ -335,6 +357,9 @@ def build_report(
         "nominal_at_check_relaxation": check,
         "nominal_reproduction_relative_error": reproduction,
         "relaxation_independence_relative_difference": independence,
+        "largest_end_relaxation_difference": max(
+            end["relaxation_relative_difference"] for end in ends
+        ),
         "envelopes": envelopes,
         "frozen_counterpart": {
             "report": frozen_report_path.relative_to(ROOT).as_posix()
@@ -369,8 +394,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"T_core {nominal['T_core_keV']:.4f} keV after {nominal['steps']} steps.",
         "",
         "| Interval | Turbulence | Steps | T_core (keV) | T_avg (keV) | tau_E (s) "
+        f"| Change at relaxation {report['iteration']['check_relaxation']} "
         "| Frozen T_core (keV) |",
-        "|---|---|---:|---:|---:|---:|---:|",
+        "|---|---|---:|---:|---:|---:|---:|---:|",
     ]
     for variant, envelope in report["envelopes"].items():
         for end in ("lower_turbulence", "upper_turbulence"):
@@ -379,6 +405,7 @@ def render_markdown(report: dict[str, Any]) -> str:
             lines.append(
                 f"| {variant} | {end.split('_')[0]} | {row['steps']} "
                 f"| {row['T_core_keV']:.4f} | {row['T_avg_keV']:.4f} | {row['tau_e_s']:.4f} "
+                f"| {row['relaxation_relative_difference']:.2e} "
                 f"| {counterpart['T_core_keV']:.4f} |"
             )
     failed = [name for name, ok in report["checks"].items() if not ok]

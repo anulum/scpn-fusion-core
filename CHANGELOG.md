@@ -35,6 +35,10 @@
   - every run converges;
   - the widths equal the frozen report's.
 
+  The bound clips the turbulent part at zero, so the fixed point of a bounded
+  run need not be unique. Each interval end is therefore run at relaxations
+  0.005 and 0.0025, and the difference is reported, not gated.
+
 - `validation/linear_mhd_miss_study.py` probes the two criteria that the linear
   reduced-MHD acceptance misses, without changing the acceptance or its bands:
   - the cylinder 2/1 tearing slope: the scan extends to η = 1e-10 and reports
