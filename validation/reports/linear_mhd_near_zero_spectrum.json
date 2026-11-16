@@ -1,0 +1,151 @@
+{
+  "case": {
+    "elements": 200,
+    "eta": 1e-06,
+    "half_width": 20.0,
+    "ka": 1.2
+  },
+  "checks": {
+    "every_listed_residual_at_rounding_level": true,
+    "every_value_finite": true
+  },
+  "largest_real_part": 6.052406656865248e-10,
+  "near_zero_count": 158,
+  "near_zero_limit": 0.0001,
+  "norm_1": {
+    "a": 132.96067295129717,
+    "b": 24000.20013988215
+  },
+  "perturbation": {
+    "relative_scale": 1e-15,
+    "seed": 20261116,
+    "trials": [
+      {
+        "largest_real_part": -8.866022333414541e-12,
+        "unstable_count": 0
+      },
+      {
+        "largest_real_part": 3.830825119167895e-11,
+        "unstable_count": 1
+      },
+      {
+        "largest_real_part": 6.224489079047748e-10,
+        "unstable_count": 1
+      }
+    ]
+  },
+  "positive_listed_inside_error_bound": true,
+  "provenance": {
+    "cpu_models": [
+      "11th Gen Intel(R) Core(TM) i5-11600K @ 3.90GHz"
+    ],
+    "numpy": "2.5.4",
+    "python": "3.12.3",
+    "scipy": "1.17.1",
+    "source_revision": "d9c74c6c27b25cf4df9c6964d2c6d7eaafae4d2d",
+    "source_sha256": {
+      "src/scpn_fusion/core/linear_mhd_1d.py": "bb16a5957a0339dc4528e68ea8e71b75a7e3c6a4f338427dfd8953369d2e0ff2",
+      "validation/linear_mhd_near_zero_spectrum.py": "c31f4abab673667a05df02d1a4d39a6aae5f5085647aff5573ade1d706d0856c"
+    },
+    "started_at": "2026-11-16T10:48:50.048511+00:00",
+    "threads": {
+      "MKL_NUM_THREADS": null,
+      "OMP_NUM_THREADS": "4",
+      "OPENBLAS_NUM_THREADS": "4"
+    }
+  },
+  "schema": "scpn-fusion.linear-mhd-near-zero-spectrum.v1",
+  "singular_values_a": {
+    "largest": 132.38054855523055,
+    "smallest": 1.4540100701498583e-17
+  },
+  "smallest_eigenvalues": [
+    {
+      "condition": 15688072167.61321,
+      "error_bound": 0.0004631620950905063,
+      "imag": 0.0,
+      "real": -1.6326956096151704e-11,
+      "relative_residual": 1.4341588128174902e-14
+    },
+    {
+      "condition": 45558566412.48772,
+      "error_bound": 0.0013450346786294926,
+      "imag": 0.0,
+      "real": -2.6134133886138656e-11,
+      "relative_residual": 1.4316281637289186e-14
+    },
+    {
+      "condition": 57833480160.9414,
+      "error_bound": 0.0017074295065024633,
+      "imag": 0.0,
+      "real": -3.2271379571405153e-10,
+      "relative_residual": 1.4512385933794213e-14
+    },
+    {
+      "condition": 22922705531.46402,
+      "error_bound": 0.0006767516880835376,
+      "imag": 0.0,
+      "real": -5.397578019665348e-10,
+      "relative_residual": 1.3694083909106869e-14
+    },
+    {
+      "condition": 239476988579.4466,
+      "error_bound": 0.007070127824635768,
+      "imag": 0.0,
+      "real": 6.052406656865248e-10,
+      "relative_residual": 1.407918434853851e-14
+    },
+    {
+      "condition": 1902173053579.1755,
+      "error_bound": 0.05615824956803591,
+      "imag": -1.3664808850608029e-09,
+      "real": 1.0135305006325154e-10,
+      "relative_residual": 1.3732986817561742e-14
+    },
+    {
+      "condition": 27994632664.919373,
+      "error_bound": 0.0008264913768842761,
+      "imag": 0.0,
+      "real": -1.5758974407831633e-09,
+      "relative_residual": 1.4633625495053268e-14
+    },
+    {
+      "condition": 333977967934.2076,
+      "error_bound": 0.009860101974754835,
+      "imag": 6.485029134675677e-10,
+      "real": -1.915774138838972e-09,
+      "relative_residual": 1.5311073058443255e-14
+    },
+    {
+      "condition": 799666128471.614,
+      "error_bound": 0.023608714158181124,
+      "imag": 1.7594672709399458e-09,
+      "real": -1.900616054675621e-09,
+      "relative_residual": 1.318573590908727e-14
+    },
+    {
+      "condition": 116255145590.41145,
+      "error_bound": 0.0034322257495681633,
+      "imag": 0.0,
+      "real": -2.944309088071845e-09,
+      "relative_residual": 1.4197700843559613e-14
+    },
+    {
+      "condition": 1058282576648.5856,
+      "error_bound": 0.031243905177112022,
+      "imag": -2.9970432585023716e-09,
+      "real": -8.061046830998476e-11,
+      "relative_residual": 1.3939939057478802e-14
+    },
+    {
+      "condition": 138750481894.67853,
+      "error_bound": 0.00409636048281029,
+      "imag": 1.463944258390722e-10,
+      "real": -3.0291393491853763e-09,
+      "relative_residual": 1.5206579125994143e-14
+    }
+  ],
+  "status": "pass",
+  "unknowns": 1600,
+  "unstable_count": 2
+}

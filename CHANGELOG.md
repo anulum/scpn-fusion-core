@@ -29,6 +29,19 @@
 
   Findings are reported, not gated; the gates concern completeness.
 
+  The tracked run (`validation/reports/linear_mhd_near_zero_spectrum.json`,
+  bound to d9c74c6c, on WS) passes both gates.
+  - A is numerically singular: singular values 1.454e-17 to 1.324e2.
+  - 158 finite eigenvalues lie below 1e-4. The twelve smallest have
+    condition numbers of 1.6e10 to 1.9e12 and error bounds of 4.6e-4 to
+    5.6e-2.
+  - The largest real part, 6.05e-10, moves to -8.9e-12, 3.8e-11 and
+    6.2e-10 under the perturbations.
+
+  The sign of the Harris stray root is therefore not determined in double
+  precision. The acceptance's limit of 1e-9 lies below the attainable
+  accuracy of this pencil. The limit is unchanged.
+
 - `validation/qlknn_conformal_self_consistent_envelope.py` carries the QLKNN-10D
   conformal intervals self-consistently into a steady transport profile. The
   frozen-coefficient study (`validation/qlknn_conformal_profile_envelope.py`)
