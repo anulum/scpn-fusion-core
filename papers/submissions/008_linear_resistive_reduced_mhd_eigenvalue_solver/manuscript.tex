@@ -48,8 +48,10 @@ tearing slope over $\eta = 10^{-6}$ to $10^{-8}$ is 0.554, below its band of
 below the tearing rate at the same resistivity.  A follow-up scan to $\eta =
 10^{-10}$ explains the first miss: the local slope rises to 0.595 and the
 growth rate approaches the asymptotic rate, as expected when $\Delta'$ times
-the layer width becomes small.  The second stays open: the stray root does
-not converge as the grid is refined, which points to spurious eigenvalues.
+the layer width becomes small.  The second is not removed: the stray root
+does not converge as the grid is refined, and a diagnostic shows that its sign
+is not determined in double precision, because the near-zero eigenvalues of
+the discretised problem have condition numbers up to $1.9 \times 10^{12}$.
 The solver has no toroidal terms and no nonlinear physics.
 \end{abstract}
 
@@ -163,9 +165,25 @@ With 400 elements they are $1.04 \times 10^{-9}$, 0 and $1.86 \times
 10^{-7}$; the last is 1.2\% of the $ka = 0.5$ tearing rate of $1.58 \times
 10^{-5}$.  The root does not converge as the grid is refined, and at 200
 elements it grows rather than shrinks as $\eta$ falls.  Both point to spurious
-eigenvalues of the discretised problem rather than a physical mode.  We have
-not identified their origin, and this miss remains open.  The limit was not
-changed after the run.
+eigenvalues of the discretised problem rather than a physical mode.
+
+A diagnostic of the 200-element pencil at $\eta = 10^{-6}$ shows why.  The
+matrix $A$ is numerically singular: its singular values run from $1.5 \times
+10^{-17}$ to $1.3 \times 10^{2}$, and 158 finite eigenvalues have modulus
+below $10^{-4}$.  For the twelve smallest, the condition numbers computed from
+their left and right eigenvectors range from $1.6 \times 10^{10}$ to $1.9
+\times 10^{12}$.  Their first-order error bounds, $4.6 \times 10^{-4}$ to
+$5.6 \times 10^{-2}$, therefore lie far above the stray root, while their
+residuals are at most $1.5 \times 10^{-14}$; a residual check cannot detect
+the problem.  On the host of the diagnostic the largest real part is $6.05
+\times 10^{-10}$ rather than the acceptance's $7.9 \times 10^{-9}$, itself a
+sign of the same sensitivity.  Relative perturbations of $10^{-15}$ to $A$
+move it to $-8.9 \times 10^{-12}$, $3.8 \times 10^{-11}$ and $6.2 \times
+10^{-10}$.  The sign of the stray root is therefore not determined in double
+precision, and the limit of $10^{-9}$ lies below the accuracy this pencil
+attains.  The limit was not changed after the run, and the criterion stays a
+miss.  A criterion that is well posed in finite precision is left for future
+work.
 
 \section{Limitations}
 
@@ -174,14 +192,16 @@ changed after the run.
 $1/R$ terms and no Grad--Shafranov equilibrium, and it covers linear physics
 only.
 \item The acceptance covers three resistivities.  A follow-up scan explains
-the slope miss; the stray Harris root remains open.
+the slope miss.  The stray Harris root lies below the accuracy the pencil
+attains in double precision, so this solver cannot decide that criterion as it
+was fixed.
 \item The run times recorded with the report describe one host and are not a
 performance result.
 \end{itemize}
 
 \section*{Software version and date}
 
-This preprint describes \texttt{scpn-fusion} at commit \texttt{0acee5884d0a}
+This preprint describes \texttt{scpn-fusion} at commit \texttt{576ce6f684cb}
 of 16 November 2026, on the main line after release 4.1.0.  The acceptance
 run was made at commit \texttt{c1bc7f63a93b} and tracked at
 \texttt{44852feeedf2}, on one host (Intel Xeon E5-2640, 24 CPUs) with NumPy
@@ -190,12 +210,15 @@ it records are byte-identical at the commit above.  The follow-up study ran at
 commit \texttt{03fdaf1d158f} on a host with the same processor, with NumPy
 2.5.4, SciPy 1.17.1 and eight BLAS threads.  Its report records the digests of
 the four solver sources and of the study module, which are also
-byte-identical at the commit above.
+byte-identical at the commit above.  The near-zero diagnostic ran at commit
+\texttt{d9c74c6c27b2} on a workstation with four BLAS threads; its report
+records the digests of the discretisation source and of the diagnostic
+module.
 
 \section*{Data and code availability}
 
 Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  The
-acceptance report and the follow-up study's report cited here, with their
+acceptance report and the two follow-up reports cited here, with their
 source revisions, Git blob identities and SHA-256 digests, are in
 \texttt{evidence/} of this submission directory.  The generator in that
 directory checks every quoted value against them.  This is a

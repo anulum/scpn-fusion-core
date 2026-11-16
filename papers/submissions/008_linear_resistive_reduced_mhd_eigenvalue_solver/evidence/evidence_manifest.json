@@ -7,10 +7,10 @@
   "contact": "www.anulum.li | protoscience@anulum.li",
   "projectDescription": "SCPN-FUSION-CORE linear reduced-MHD paper evidence manifest.",
   "schema_version": "2.0",
-  "repository_revision": "0acee5884d0a7de889ce3e088bc67ac2eeca513c",
+  "repository_revision": "576ce6f684cb2c5bb44a3877ef6887da006b3dc6",
   "claim_boundary": {
     "scope": "linear resistive reduced MHD in a Harris slab and a periodic cylinder",
-    "misses": "cylinder tearing slope (explained by the follow-up scan) and the negative-Delta-prime Harris root (open; not convergent under refinement)",
+    "misses": "cylinder tearing slope (explained by the follow-up scan) and the negative-Delta-prime Harris root (sign undetermined in double precision)",
     "excluded": "toroidal 1/R physics, shaped equilibria, nonlinear MHD"
   },
   "source_custody": {
@@ -26,6 +26,13 @@
       "source_revision": "0acee5884d0a7de889ce3e088bc67ac2eeca513c",
       "git_blob_oid_sha1": "f9d17e3b1705a1bf98ddb4f3e9a7039d3272c864",
       "source_sha256": "fe2315e0a5fb14a2bd7df6491bcc3d483f88c2b77736c0080cbdf3e008ef3db3",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "linear_mhd_near_zero_spectrum.json": {
+      "source_path": "validation/reports/linear_mhd_near_zero_spectrum.json",
+      "source_revision": "576ce6f684cb2c5bb44a3877ef6887da006b3dc6",
+      "git_blob_oid_sha1": "b236cd39ee6e6d92e6142e4c5f0cd83c2b1e2063",
+      "source_sha256": "af6ffbcfefbbd97c38673f3a6243f3d8d291c397762e52716e0ec2944eeda7ed",
       "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
     }
   },
@@ -59,12 +66,17 @@
       "git_blob_oid_sha1": "acb418a033dca4228e9696fb43cc78347e3b13fb",
       "sha256": "1dc3105b97f196b8e296af9467ef3affc500c67636df6d331fbcc0c9f44164fa",
       "role": "follow-up study of the two misses, dense QZ at every solve"
+    },
+    "validation/linear_mhd_near_zero_spectrum.py": {
+      "git_blob_oid_sha1": "c4f0dbba14ba7f554e176b000bd6acd9713f8857",
+      "sha256": "c31f4abab673667a05df02d1a4d39a6aae5f5085647aff5573ade1d706d0856c",
+      "role": "conditioning of the near-zero eigenvalues of the Harris pencil"
     }
   },
-  "quoted_values": 59,
+  "quoted_values": 77,
   "generators": {
     "papers/submissions/008_linear_resistive_reduced_mhd_eigenvalue_solver/generate_evidence_manifest.py": {
-      "sha256": "568fec49a435e569564c49891e54aa7ad2f64ecc14978c4b37a84f9fcd483ea3"
+      "sha256": "4e5d8bcae133605e3d668ec8bffdea89a516c666aae1db22549e2a78ed8569b9"
     }
   },
   "files": {
@@ -75,6 +87,10 @@
     "linear_mhd_miss_study.json": {
       "sha256": "0a56701d3cdbd5c728f6e4a5e584647023812c41b1eba3277fdbd116dce71ac3",
       "role": "follow-up study: slope to eta 1e-10, Harris root by grid"
+    },
+    "linear_mhd_near_zero_spectrum.json": {
+      "sha256": "15b2ddb91820f44da462c5ec58e7a9fe56d9e8a0adb612f5b2416e5769cf04a7",
+      "role": "conditioning of the near-zero Harris eigenvalues"
     }
   }
 }

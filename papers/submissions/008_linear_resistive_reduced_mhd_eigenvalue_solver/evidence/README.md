@@ -11,11 +11,14 @@
 `linear_mhd_reduced_model_acceptance.json` is the tracked report
 `validation/reports/linear_mhd_reduced_model_acceptance.json`, and
 `linear_mhd_miss_study.json` is the tracked report
-`validation/reports/linear_mhd_miss_study.json` of the follow-up study. Each
+`validation/reports/linear_mhd_miss_study.json` of the follow-up study, and
+`linear_mhd_near_zero_spectrum.json` is the tracked report
+`validation/reports/linear_mhd_near_zero_spectrum.json` of the near-zero
+diagnostic. Each
 copy has the seven structured public header fields placed first; the
 scientific payload is unchanged. The generated `evidence_manifest.json`
 records each report's source commit, Git blob identity, SHA-256 digest and
-role, and binds the six sources the two reports record.
+role, and binds the seven sources the three reports record.
 
 `../generate_evidence_manifest.py` rebuilds the copies from the tracked reports,
 recomputes every number the manuscript quotes, including each criterion's pass

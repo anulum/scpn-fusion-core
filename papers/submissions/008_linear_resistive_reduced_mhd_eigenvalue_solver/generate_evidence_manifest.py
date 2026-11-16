@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_REVISION = "0acee5884d0a7de889ce3e088bc67ac2eeca513c"
+PACKAGE_REVISION = "576ce6f684cb2c5bb44a3877ef6887da006b3dc6"
 PACKAGING_TRANSFORM = "seven structured Tier-0 fields added first; scientific payload unchanged"
 TIER0_HEADER: dict[str, str] = {
     "SPDX-License-Identifier": "AGPL-3.0-or-later",
@@ -47,6 +47,13 @@ SOURCE_CUSTODY: dict[str, dict[str, str]] = {
         "source_revision": "0acee5884d0a7de889ce3e088bc67ac2eeca513c",
         "git_blob_oid_sha1": "f9d17e3b1705a1bf98ddb4f3e9a7039d3272c864",
         "source_sha256": "fe2315e0a5fb14a2bd7df6491bcc3d483f88c2b77736c0080cbdf3e008ef3db3",
+        "packaging_transform": PACKAGING_TRANSFORM,
+    },
+    "linear_mhd_near_zero_spectrum.json": {
+        "source_path": "validation/reports/linear_mhd_near_zero_spectrum.json",
+        "source_revision": "576ce6f684cb2c5bb44a3877ef6887da006b3dc6",
+        "git_blob_oid_sha1": "b236cd39ee6e6d92e6142e4c5f0cd83c2b1e2063",
+        "source_sha256": "af6ffbcfefbbd97c38673f3a6243f3d8d291c397762e52716e0ec2944eeda7ed",
         "packaging_transform": PACKAGING_TRANSFORM,
     },
 }
@@ -80,6 +87,11 @@ IMPLEMENTATION_SOURCES: dict[str, dict[str, str]] = {
         "git_blob_oid_sha1": "acb418a033dca4228e9696fb43cc78347e3b13fb",
         "sha256": "1dc3105b97f196b8e296af9467ef3affc500c67636df6d331fbcc0c9f44164fa",
         "role": "follow-up study of the two misses, dense QZ at every solve",
+    },
+    "validation/linear_mhd_near_zero_spectrum.py": {
+        "git_blob_oid_sha1": "c4f0dbba14ba7f554e176b000bd6acd9713f8857",
+        "sha256": "c31f4abab673667a05df02d1a4d39a6aae5f5085647aff5573ade1d706d0856c",
+        "role": "conditioning of the near-zero eigenvalues of the Harris pencil",
     },
 }
 
@@ -117,8 +129,14 @@ def scientific_payload(packaged: dict[str, Any]) -> dict[str, Any]:
 def _at(payload: dict[str, Any], dotted: str) -> Any:
     """Read one value by its dotted (or slash-separated) path; list items by index.
 
-    ``ratio:<a>|<b>`` divides the values at two paths.
+    ``ratio:<a>|<b>`` divides the values at two paths; ``min:<list>|<field>`` and
+    ``max:<list>|<field>`` take the extreme of one field over a list of records.
     """
+    if dotted.startswith(("min:", "max:")):
+        operation, rest = dotted.split(":", 1)
+        records, field = rest.split("|")
+        values = [float(record[field]) for record in _at(payload, records)]
+        return min(values) if operation == "min" else max(values)
     if dotted.startswith("ratio:"):
         numerator, denominator = dotted.removeprefix("ratio:").split("|")
         return float(_at(payload, numerator)) / float(_at(payload, denominator))
@@ -197,6 +215,32 @@ def quoted() -> list[tuple[str, str, str, str]]:
         ("study", "provenance.scipy", "{}", "1.17.1"),
         ("study", "provenance.threads.OPENBLAS_NUM_THREADS", "{}", "8"),
     ]
+    listed = "smallest_eigenvalues|"
+    rows += [
+        ("spectrum", "unknowns", "{:d}", "1600"),
+        ("spectrum", "singular_values_a.smallest", "{:.1e}", "1.5e-17"),
+        ("spectrum", "singular_values_a.largest", "{:.1e}", "1.3e+02"),
+        ("spectrum", "near_zero_count", "{:d}", "158"),
+        ("spectrum", "near_zero_limit", "{:.0e}", "1e-04"),
+        ("spectrum", "min:" + listed + "condition", "{:.1e}", "1.6e+10"),
+        ("spectrum", "max:" + listed + "condition", "{:.1e}", "1.9e+12"),
+        ("spectrum", "min:" + listed + "error_bound", "{:.1e}", "4.6e-04"),
+        ("spectrum", "max:" + listed + "error_bound", "{:.1e}", "5.6e-02"),
+        ("spectrum", "max:" + listed + "relative_residual", "{:.1e}", "1.5e-14"),
+        ("spectrum", "largest_real_part", "{:.2e}", "6.05e-10"),
+        ("spectrum", "perturbation.relative_scale", "{:.0e}", "1e-15"),
+        ("spectrum", "perturbation.trials.0.largest_real_part", "{:.1e}", "-8.9e-12"),
+        ("spectrum", "perturbation.trials.1.largest_real_part", "{:.1e}", "3.8e-11"),
+        ("spectrum", "perturbation.trials.2.largest_real_part", "{:.1e}", "6.2e-10"),
+        ("spectrum", "positive_listed_inside_error_bound", "{}", "True"),
+        (
+            "spectrum",
+            "provenance.source_revision",
+            "{}",
+            "d9c74c6c27b25cf4df9c6964d2c6d7eaafae4d2d",
+        ),
+        ("spectrum", "provenance.threads.OPENBLAS_NUM_THREADS", "{}", "4"),
+    ]
     return rows
 
 
@@ -237,6 +281,9 @@ def main() -> None:
             _load_json(evidence_dir / "linear_mhd_reduced_model_acceptance.json")
         ),
         "study": scientific_payload(_load_json(evidence_dir / "linear_mhd_miss_study.json")),
+        "spectrum": scientific_payload(
+            _load_json(evidence_dir / "linear_mhd_near_zero_spectrum.json")
+        ),
     }
     validate_quoted(loaded)
     for relative_path, custody in IMPLEMENTATION_SOURCES.items():
@@ -246,6 +293,7 @@ def main() -> None:
     roles = {
         "linear_mhd_reduced_model_acceptance.json": "nine fixed acceptance criteria, seven passed",
         "linear_mhd_miss_study.json": "follow-up study: slope to eta 1e-10, Harris root by grid",
+        "linear_mhd_near_zero_spectrum.json": "conditioning of the near-zero Harris eigenvalues",
     }
     generator = Path(__file__).resolve()
     manifest = {
@@ -256,7 +304,7 @@ def main() -> None:
         "claim_boundary": {
             "scope": "linear resistive reduced MHD in a Harris slab and a periodic cylinder",
             "misses": "cylinder tearing slope (explained by the follow-up scan) and the "
-            "negative-Delta-prime Harris root (open; not convergent under refinement)",
+            "negative-Delta-prime Harris root (sign undetermined in double precision)",
             "excluded": "toroidal 1/R physics, shaped equilibria, nonlinear MHD",
         },
         "source_custody": SOURCE_CUSTODY,

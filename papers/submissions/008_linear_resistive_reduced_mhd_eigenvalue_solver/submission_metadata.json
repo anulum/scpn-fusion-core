@@ -15,22 +15,23 @@
     "orcid": "0009-0009-3560-0851",
     "affiliation": "ANULUM CH&LI, Marbach SG, Switzerland"
   },
-  "repository_revision": "0acee5884d0a7de889ce3e088bc67ac2eeca513c",
+  "repository_revision": "576ce6f684cb2c5bb44a3877ef6887da006b3dc6",
   "companion_catalogue_ids": [],
   "evidence_files": [
     "evidence/evidence_manifest.json",
     "evidence/linear_mhd_reduced_model_acceptance.json",
-    "evidence/linear_mhd_miss_study.json"
+    "evidence/linear_mhd_miss_study.json",
+    "evidence/linear_mhd_near_zero_spectrum.json"
   ],
   "claim_status": {
     "acceptance": "seven_of_nine_fixed_criteria_pass",
-    "misses": "reported_slope_miss_explained_by_follow_up_harris_root_open",
+    "misses": "reported_slope_miss_explained_harris_root_sign_undetermined_in_double_precision",
     "geometry": "slab_and_periodic_cylinder_only"
   },
   "doi": null,
   "manuscript_content_license": null,
   "preprint": {
     "date": "2026-11-16",
-    "software_described": "scpn-fusion main at 0acee588 (2026-11-16), after release 4.1.0; the sources both reports record are byte-identical there"
+    "software_described": "scpn-fusion main at 576ce6f6 (2026-11-16), after release 4.1.0; the sources the three reports record are byte-identical there"
   }
 }

@@ -28,8 +28,10 @@ the final PDF are intentional records.
 
 The evidence generator packages and checks the tracked reports; it runs no
 solver. To reproduce the reports themselves, run from the repository root
-`python validation/linear_mhd_reduced_model_acceptance.py` and
-`python validation/linear_mhd_miss_study.py`; both commands take `--help`.
+`python validation/linear_mhd_reduced_model_acceptance.py`,
+`python validation/linear_mhd_miss_study.py` and
+`python validation/linear_mhd_near_zero_spectrum.py`; all take `--help`.
 The acceptance run took 2962 s on the recording host. The follow-up study
 does dense QZ solves with up to 3200 unknowns and took close to two hours on
-a host with the same processor.
+a host with the same processor. The near-zero diagnostic took under ten
+minutes on a workstation.

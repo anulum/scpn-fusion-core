@@ -58,6 +58,9 @@ def _evidence(generator: ModuleType) -> dict[str, dict[str, Any]]:
             _load_json(EVIDENCE / "linear_mhd_reduced_model_acceptance.json")
         ),
         "study": generator.scientific_payload(_load_json(EVIDENCE / "linear_mhd_miss_study.json")),
+        "spectrum": generator.scientific_payload(
+            _load_json(EVIDENCE / "linear_mhd_near_zero_spectrum.json")
+        ),
     }
 
 
@@ -80,7 +83,7 @@ def test_described_sources_match_the_bound_revision() -> None:
     """Bind every analysis module to the package revision and to the working tree."""
     manifest = _load_json(EVIDENCE / "evidence_manifest.json")
     revision = manifest["repository_revision"]
-    assert len(manifest["implementation_sources"]) == 6
+    assert len(manifest["implementation_sources"]) == 7
     for relative_path, custody in manifest["implementation_sources"].items():
         spec = f"{revision}:{relative_path}"
         source = _git("show", spec)
@@ -126,23 +129,30 @@ def test_manuscript_names_its_revision_and_quotes_the_key_results() -> None:
         "no toroidal $1/R$ terms",
         "explains the first miss",
         "$1.86 \\times 10^{-7}$",
-        "this miss remains open",
+        "not determined in double precision",
+        "$1.9 \\times 10^{12}$",
     ):
         assert phrase in text, phrase
 
 
 def test_the_reports_record_exactly_the_bound_sources() -> None:
-    """Together the two reports record the six bound sources, each at its bound digest."""
+    """Together the three reports record the seven bound sources, each at its bound digest."""
     manifest = _load_json(EVIDENCE / "evidence_manifest.json")
     bound = {
         path: custody["sha256"] for path, custody in manifest["implementation_sources"].items()
     }
     acceptance = _load_json(EVIDENCE / "linear_mhd_reduced_model_acceptance.json")
     study = _load_json(EVIDENCE / "linear_mhd_miss_study.json")
-    recorded = {**acceptance["provenance"]["source_sha256"], **study["provenance"]["source_sha256"]}
+    spectrum = _load_json(EVIDENCE / "linear_mhd_near_zero_spectrum.json")
+    reports = (acceptance, study, spectrum)
+    recorded = {
+        path: digest
+        for report in reports
+        for path, digest in report["provenance"]["source_sha256"].items()
+    }
 
     assert recorded == bound
-    for report in (acceptance, study):
+    for report in reports:
         for path, digest in report["provenance"]["source_sha256"].items():
             assert bound[path] == digest, path
 
