@@ -536,7 +536,7 @@
       "license_redistributable": true,
       "source": "Primary NetCDF-DataTree output from a really-executed TORAX run; the companion manifest records the exact TORAX version, producer revision, request/config digests, runtime environment, and file checksum.",
       "source_type": "official_solver_output_artifact",
-      "total_bytes": 173582
+      "total_bytes": 173631
     },
     {
       "file_count": 1,
@@ -559,7 +559,7 @@
       "license_redistributable": true,
       "source": "Repository-normalized result from a really-executed TORAX 1.4.3 run, binding the request, deck, runner, platform, precision, primary artifact, projected profiles, budgets, and numerical status.",
       "source_type": "derived_execution_result",
-      "total_bytes": 6702
+      "total_bytes": 6708
     },
     {
       "citation": "Citrin, J. et al., TORAX: A Fast and Differentiable Tokamak Transport Simulator in JAX, arXiv:2406.06718; https://github.com/google-deepmind/torax (Apache-2.0).",
@@ -571,7 +571,7 @@
       "license_redistributable": true,
       "source": "Repository-generated review-only envelope for the TORAX runtime evidence, binding event/clock identity, producer revision, artifact and projection digests, observation operators, quality, validity, provenance, and non-actuating governance.",
       "source_type": "derived_review_envelope",
-      "total_bytes": 12073
+      "total_bytes": 12075
     }
   ],
   "file_count": 350,
@@ -4846,8 +4846,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "torax/torax_runtime_primary_v1.nc",
-      "sha256": "8e1b555890fdbc7bc79f0d4a891e3a06218316c894639835db2bcafbbc22aa40",
-      "size_bytes": 173582,
+      "sha256": "4ef9980cb4b74d8e3037dd7d77ab82adae64f901295d0a8db5e89bb0e3fc35fc",
+      "size_bytes": 173631,
       "source": "Primary NetCDF-DataTree output from a really-executed TORAX run; the companion manifest records the exact TORAX version, producer revision, request/config digests, runtime environment, and file checksum.",
       "source_type": "official_solver_output_artifact"
     },
@@ -4859,7 +4859,7 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "torax/torax_runtime_primary_v1.nc.manifest.json",
-      "sha256": "1997e988c36b7799b0b525f7453be8fd09aaaecad0a88f1396fbcbee7810c5b4",
+      "sha256": "4ac02c070eeca1f86316712ea49385f59a9f6b3e5219d60b058e1f4163420f3b",
       "size_bytes": 70659,
       "source": "Repository-generated structural inventory and checksums for the primary TORAX NetCDF-DataTree output, bound to the runtime request and producer evidence.",
       "source_type": "derived_artifact_manifest"
@@ -4884,8 +4884,8 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "torax/torax_runtime_result_v1.json",
-      "sha256": "4266fbbd8a1197689da5933af23849e79104b4d0c7f2f8a2f82b618467cdfd0e",
-      "size_bytes": 6702,
+      "sha256": "cf1e06839ffa87236a3522c5f972a02f8570dad6fbb762815fafb94a04c2e9a7",
+      "size_bytes": 6708,
       "source": "Repository-normalized result from a really-executed TORAX 1.4.3 run, binding the request, deck, runner, platform, precision, primary artifact, projected profiles, budgets, and numerical status.",
       "source_type": "derived_execution_result"
     },
@@ -4897,13 +4897,13 @@
       "license_citation_required": true,
       "license_redistributable": true,
       "path": "torax/torax_runtime_review_envelope_v1.json",
-      "sha256": "b594e2f8b72056426d628b638f6a849ef39e75daddc827305002b109365596c4",
-      "size_bytes": 12073,
+      "sha256": "8ec3c51bb5904d59e6c6353ac971aa773aa660382cf5b1d3d2142476569d9360",
+      "size_bytes": 12075,
       "source": "Repository-generated review-only envelope for the TORAX runtime evidence, binding event/clock identity, producer revision, artifact and projection digests, observation operators, quality, validity, provenance, and non-actuating governance.",
       "source_type": "derived_review_envelope"
     }
   ],
-  "generated_at_utc": "2026-11-15T16:40:17.331948+00:00",
+  "generated_at_utc": "2026-11-16T06:23:07.053001+00:00",
   "license_registry": [
     {
       "attribution_required": true,

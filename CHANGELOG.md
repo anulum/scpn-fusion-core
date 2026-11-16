@@ -363,6 +363,15 @@
 
 ### Changed
 
+- The real-TORAX runtime-contract evidence was regenerated at 9a02a20d:
+  `validation/reports/torax_runtime_contract.json`, its result, NetCDF sidecar,
+  sidecar manifest and review envelope, and the reference-data provenance
+  manifest. The report of 2026-08-30 recorded digests of
+  `src/scpn_fusion/integrations/torax/projection.py` and of its benchmark that
+  later changes had overtaken: the NumPy 2 migration and the naming cleanup.
+  TORAX 1.4.3 on the CPU in float64 reproduces every gate. The profiles and
+  the refinement differences agree with the old record to the last one or two
+  bits (about 1e-16 relative); the request is unchanged.
 - The PyPI publish workflow publishes only from a pushed `v*` tag, or from a
   manual run that sets `publish_pypi` and names a `v*` tag as `ref` (so the
   release-readiness check ran against that version). Any other manual run
