@@ -70,6 +70,17 @@
 
 ### Fixed
 
+- Notebook 06, `docs/BENCHMARKS.md` and `docs/BENCHMARK_FIGURES.md` no longer
+  state timings or a timing host that nothing in the repository measured or
+  records:
+  - the QuaLiKiz and QLKNN timings, and the "~200,000x" and "~2x" ratios
+    derived from them; neither code runs here;
+  - the "~" MLP and critical-gradient latencies and the "~100x" vectorisation
+    gain; the notebook measures these on the host that runs it;
+  - the "AMD Ryzen 9 5950X" host.
+
+  The notebook's introduction no longer promises an EFIT comparison. A printed
+  line no longer says that trained weights reproduce gyrokinetic results.
 - `CompiledNet.dense_forward` and `neurocore_compat.vec_popcount` tested
   `hasattr(np, "bit_count")`, which no NumPy release provides, so their
   vectorised popcount never ran and the per-stream loop always did. Both now

@@ -13092,12 +13092,13 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h1 id="06-%E2%80%94-Inverse-Reconstruction-&amp;-Transport-Surrogate-Benchmarks">06 — Inverse Reconstruction &amp; Transport Surrogate Benchmarks<a class="anchor-link" href="#06-%E2%80%94-Inverse-Reconstruction-&amp;-Transport-Surrogate-Benchmarks">¶</a></h1><p>This notebook benchmarks two key subsystems of SCPN Fusion Core:</p>
-<p><strong>Part A — Inverse Reconstruction:</strong>  Measures the forward-solve overhead
-that dominates each Levenberg-Marquardt iteration, and compares against
-EFIT (the community-standard equilibrium reconstruction code).</p>
-<p><strong>Part B — Neural Transport Surrogate:</strong>  Compares the MLP surrogate
-against the analytic critical-gradient fallback and community baselines
-(QuaLiKiz gyrokinetic, QLKNN neural surrogate).</p>
+<p><strong>Part A — Inverse Reconstruction:</strong>  Measures the forward-solve cost
+that dominates each Levenberg-Marquardt iteration, on the host that runs
+the notebook.</p>
+<p><strong>Part B — Neural Transport Surrogate:</strong>  Times the MLP surrogate and the
+analytic critical-gradient fallback on the same host. It places them next
+to QLKNN, the published neural surrogate of QuaLiKiz, without running
+either.</p>
 <p><strong>License:</strong> © 1998–2026 Miroslav Šotek. GNU AGPL v3.</p>
 </div>
 </div>
@@ -13611,7 +13612,7 @@ available, it falls back to an analytic critical-gradient model.</p>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">"Note: MLP curve uses random (untrained) weights — shape is not physical."</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"With trained QLKNN weights, the MLP reproduces gyrokinetic results."</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Physical output needs trained weights: see docs/NEURAL_TRANSPORT_TRAINING.md."</span><span class="p">)</span>
 
 <span class="n">os</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">wp2</span><span class="p">)</span>
 </pre></div>
@@ -13622,51 +13623,13 @@ available, it falls back to an analytic critical-gradient model.</p>
 <div class="cell border-box-sizing text_cell rendered" id="cell-id=cell-12"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="QuaLiKiz-/-QLKNN-Comparison">QuaLiKiz / QLKNN Comparison<a class="anchor-link" href="#QuaLiKiz-/-QLKNN-Comparison">¶</a></h3><p>The neural transport surrogate targets the same use case as QLKNN
+<h3 id="Relation-to-QuaLiKiz-and-QLKNN">Relation to QuaLiKiz and QLKNN<a class="anchor-link" href="#Relation-to-QuaLiKiz-and-QLKNN">¶</a></h3><p>The neural transport surrogate targets the same use case as QLKNN
 (van de Plassche et al., <em>Phys. Plasmas</em> 27, 022310, 2020): replacing
 expensive gyrokinetic solvers with fast neural network inference.</p>
-<table>
-<thead>
-<tr>
-<th>Method</th>
-<th>Single-point</th>
-<th>100-pt profile</th>
-<th>1000-pt profile</th>
-<th>Framework</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>QuaLiKiz</strong> (gyrokinetic)</td>
-<td>~1 s</td>
-<td>~100 s</td>
-<td>~1000 s</td>
-<td>Fortran</td>
-</tr>
-<tr>
-<td><strong>QLKNN</strong> (TensorFlow)</td>
-<td>~10 µs</td>
-<td>~0.1 ms</td>
-<td>~1 ms</td>
-<td>TensorFlow</td>
-</tr>
-<tr>
-<td><strong>SCPN MLP</strong> (numpy, H=64/32)</td>
-<td>~5 µs</td>
-<td>~0.05 ms</td>
-<td>~0.3 ms</td>
-<td>NumPy only</td>
-</tr>
-<tr>
-<td><strong>SCPN fallback</strong> (analytic)</td>
-<td>~2 µs</td>
-<td>~0.2 ms</td>
-<td>~2 ms</td>
-<td>NumPy only</td>
-</tr>
-</tbody>
-</table>
-<p>Key advantages of the SCPN approach:</p>
+<p>QuaLiKiz and QLKNN do not run in this notebook, so it states no speed ratio
+against either. The SCPN timings are the outputs of the cells above, from the
+host that runs the notebook; this page records no host and no timing.</p>
+<p>Properties of the SCPN implementation:</p>
 <ul>
 <li><strong>No framework overhead</strong>: pure NumPy inference — no TensorFlow/PyTorch
 import, no GPU context, no session management.</li>
@@ -13700,15 +13663,15 @@ Plasmas 27, 022310. doi:10.1063/1.5134126</em></p>
 </tr>
 <tr>
 <td><strong>Neural transport</strong></td>
-<td>MLP surrogate with H=64/32 achieves ~5 µs single-point inference (no framework overhead). Vectorised profile evaluation gives ~100x speedup over point-by-point loop.</td>
+<td>The MLP surrogate (H=64/32, synthetic weights) is timed above for single points and for 100- and 1000-point profiles; the vectorised profile path is compared there with a point-by-point loop, on the executing host.</td>
 </tr>
 <tr>
-<td><strong>vs QuaLiKiz</strong></td>
-<td>~200,000x faster than gyrokinetic at single-point; ~2x faster than QLKNN due to zero framework overhead.</td>
+<td><strong>QuaLiKiz / QLKNN</strong></td>
+<td>Not run here; no speed ratio is stated.</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Next:</strong> See <code>docs/BENCHMARKS.md</code> for the complete comparison tables, and
+<p><strong>Next:</strong> See <code>docs/BENCHMARKS.md</code> for the tracked benchmark reports, and
 <code>docs/NEURAL_TRANSPORT_TRAINING.md</code> for instructions on training the MLP
 from the QLKNN-10D dataset.</p>
 </div>
@@ -14432,9 +14395,9 @@ to compute all 8 Jacobian columns concurrently.  Each column clones the
 </ol>
 <p>We compare convergence speed, final residual, and transport profile quality.</p>
 <blockquote>
-<p><strong>Hardware:</strong> Timings measured on AMD Ryzen 9 5950X (16 cores / 32 threads),
-64 GB DDR4-3200, Python 3.11 + NumPy (OpenBLAS). Your results will vary
-with CPU model and memory bandwidth — use relative speedups for comparison.</p>
+<p><strong>Hosts:</strong> the timings come from the host that runs the notebook; this page
+records no host and no timing. Compare the configurations by their relative
+times on one host.</p>
 </blockquote>
 </div>
 </div>

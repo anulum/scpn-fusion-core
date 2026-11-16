@@ -351,15 +351,14 @@ Four-panel comparison of three solver configurations from
 | **Conservative** | 65×65 | 0.05 | 1000 | 1e-8 | Publication-quality convergence |
 | **Speed-optimised** | 33×33 | 0.20 | 200 | 1e-4 | Parameter sweeps, design scans |
 
-Hardware: AMD Ryzen 9 5950X, 16 cores / 32 threads, 64 GB DDR4-3200,
-Python 3.11 + NumPy (OpenBLAS). Use relative speedups for cross-machine
-comparison.
+The table lists configurations, not measurements. Notebook 06 times them on
+the host that runs it, and this page records no host. Compare the
+configurations by their relative times on one host.
 
 ```latex
 \begin{table}[htbp]
 \centering
-\caption{Solver configuration comparison: defaults vs tuned parameters.
-Measured on AMD Ryzen\,9 5950X, Python\,3.11 + NumPy (OpenBLAS).}
+\caption{Solver configuration comparison: defaults vs tuned parameters.}
 \label{tab:tuned-vs-defaults}
 \begin{tabular}{lrrrrl}
 \toprule

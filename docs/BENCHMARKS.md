@@ -1658,19 +1658,12 @@ Two weight sets are shipped:
 - `weights/fno_turbulence_jax.npz` — 4-layer JAX FNO (modes=24, width=128) trained
   on 2000 QLKNN-oracle spatial equilibria. val_rel_L2 = 0.356.
 
-**Latency measurements (synthetic weights, Criterion benchmark):**
-
-| Method | Single-point | 100-pt profile | 1000-pt profile |
-|--------|-------------|----------------|-----------------|
-| Critical-gradient (numpy) | ~2 µs | ~0.2 ms | ~2 ms |
-| MLP surrogate (numpy, H=64) | ~5 µs | ~0.05 ms | ~0.3 ms |
-
-**Literature reference (not direct comparison):**
-
-| Method | Single-point | Source |
-|--------|-------------|--------|
-| QuaLiKiz (gyrokinetic) | ~1 s | van de Plassche 2020 |
-| QLKNN (TensorFlow) | ~10 µs | van de Plassche 2020 |
+**Latency.** Notebook 06 (`examples/06_inverse_and_transport_benchmarks.ipynb`)
+times the critical-gradient model and an H=64/32 MLP with synthetic weights:
+single points, and 100- and 1000-point profiles, on the host that runs it. This
+page records no host and no latency figure. QLKNN (van de Plassche 2020) serves
+the same purpose as a published surrogate of QuaLiKiz. Neither runs in this
+repository's benchmarks, so no speed ratio against them is stated.
 
 The latency gap between an MLP surrogate and a first-principles gyrokinetic
 solver is expected to be very large (orders of magnitude), but this is
@@ -1679,7 +1672,7 @@ accuracy of the surrogate depends entirely on training data quality and
 has not been validated against gyrokinetic output in this repository.
 
 Key properties:
-- Vectorised `predict_profile()` gives ~100× speedup over point-by-point loop
+- Vectorised `predict_profile()`; notebook 06 times it against a point-by-point loop
 - SHA-256 weight checksums for reproducibility tracking
 - Transparent degradation to analytic model when no weights are available
 
