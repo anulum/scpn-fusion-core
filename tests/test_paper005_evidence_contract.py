@@ -64,6 +64,7 @@ def _evidence(generator: ModuleType) -> dict[str, dict[str, Any]]:
         "variants": "qlknn_conformal_variants",
         "sets": "qlknn_conformal_stability_sets",
         "envelope": "qlknn_conformal_profile_envelope",
+        "self_consistent": "qlknn_conformal_self_consistent_envelope",
         "metrics": "neural_transport_qlknn.metrics",
     }
     return {
@@ -91,7 +92,7 @@ def test_described_sources_match_the_bound_revision() -> None:
     """Bind every analysis module to the package revision and to the working tree."""
     manifest = _load_json(EVIDENCE / "evidence_manifest.json")
     revision = manifest["repository_revision"]
-    assert len(manifest["implementation_sources"]) == 5
+    assert len(manifest["implementation_sources"]) == 6
     for relative_path, custody in manifest["implementation_sources"].items():
         spec = f"{revision}:{relative_path}"
         source = _git("show", spec)
@@ -145,6 +146,8 @@ def test_manuscript_names_its_revision_and_quotes_the_key_results() -> None:
         "0.792--0.797",
         "0.891--0.903",
         "0.262--7.224",
+        "0.281--4.707",
+        "change of 3.7\\%",
         "64.5--73.8\\%",
         "0.737 / 0.738 / 0.697",
         "0.797 (0.737)",

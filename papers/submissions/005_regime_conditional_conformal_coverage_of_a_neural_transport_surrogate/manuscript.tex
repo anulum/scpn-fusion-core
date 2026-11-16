@@ -51,8 +51,11 @@ median interval on those rows is 12.2, 14.4 and 2.36\,m$^2$\,s$^{-1}$.  Over 20
 random re-splits the per-class coverage averages 0.900--0.901.  Propagated
 with frozen coefficients through one L-mode transport case, the certificate
 interval spans a core temperature of 0.262--7.224\,keV around 1.702\,keV, so
-it carries little information as a profile prediction.  All guarantees are
-marginal within each class and assume exchangeability.
+it carries little information as a profile prediction.  Carried
+self-consistently, so that the diffusivity responds to the profiles, it spans
+0.281--4.707\,keV, and that lower end changes by 3.7\% with the iteration's
+relaxation.  All guarantees are marginal within each class and assume
+exchangeability.
 \end{abstract}
 
 \noindent\textbf{Keywords:} conformal prediction; uncertainty quantification;
@@ -263,6 +266,30 @@ upward and 6.5 downward in core temperature.  This is a frozen-coefficient sensi
 for one case, not a self-consistent propagation: the diffusivity depends on the
 evolving gradients.
 
+We therefore also carried the bound self-consistently, through the solver's
+public interface only.  At every step the neural closure is evaluated on the
+current profiles, and its turbulent part is moved to the interval bound and
+clipped at zero as before.  The applied coefficients then move a fraction
+0.005 of the way to that target, and the solver advances one step with them
+held fixed.  A run ends when the target and the applied coefficients agree to
+a relative $10^{-10}$; the diffusivity then equals the bounded closure of the
+profile it produced.  The relaxation is needed because the closure is stiff:
+applied with a lag of one step and no relaxation, it oscillates.  With zero
+half-width the iteration reaches a core temperature of 1.702\,keV, within a
+relative $1.4 \times 10^{-4}$ of the neural steady state, and it reaches the
+same state at a relaxation of 0.0025.
+
+Carried self-consistently, the certificate interval spans a core temperature
+of 0.281--4.707\,keV, with a confinement time of 0.257--3.270\,s.  The
+$|\hat{y}| + r_0$ interval spans 0.593--3.523\,keV.  The upper ends stay
+near their frozen values.  The lower ends fall far below 7.224\,keV: with less
+transport the gradients steepen, and the closure predicts turbulence again.
+Because the bound clips at zero, its fixed point need not be unique.  At a
+relaxation of 0.0025 the certificate's lower end settles at 4.607\,keV, a
+change of 3.7\%, while the other ends agree to better than $10^{-10}$.  For
+this case the certificate interval still spans a factor of 2.8 upward and 6.1
+downward in core temperature.
+
 \section{Limitations}
 
 \begin{itemize}
@@ -275,12 +302,14 @@ experimental fluxes.
 its weights, so the bias is not attributed to any training choice.
 \item The two post hoc variants and the stability sets were designed after
 earlier results.  Their settings were fixed before their own runs.
-\item The profile propagation covers one case, with frozen coefficients.
+\item The profile propagation covers one case.  The self-consistent bound is
+clipped at zero, and its lower certificate end depends on the iteration's
+relaxation by 3.7\%.
 \end{itemize}
 
 \section*{Software version and date}
 
-This preprint describes \texttt{scpn-fusion} at commit \texttt{8191a1d31e39}
+This preprint describes \texttt{scpn-fusion} at commit \texttt{94877d0fb1da}
 of 16 November 2026, on the main line after release 4.1.0.  The analysis
 modules are not part of that release.  Each report records the commit that
 produced it, and the evidence manifest lists those commits.  Since then the
@@ -291,10 +320,11 @@ certificate coverage exactly.
 \section*{Data and code availability}
 
 Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  The
-certificate and the four reports cited here, with their source revisions, Git
+certificate and the five reports cited here, with their source revisions, Git
 blob identities and SHA-256 digests, are in \texttt{evidence/} of this
 submission directory.  The generator in that directory checks every quoted
-value against them, including the derived nonzero-flux coverages.  This is a
+value against them, including the derived nonzero-flux coverages and
+temperature ratios.  This is a
 venue-neutral preprint and has not been submitted.  No DOI has been reserved
 and the manuscript-content licence has not yet been selected by the author.
 

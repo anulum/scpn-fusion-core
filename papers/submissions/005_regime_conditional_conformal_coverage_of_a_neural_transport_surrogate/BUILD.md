@@ -34,7 +34,9 @@ processed QLKNN-10D splits that the certificate names under
 1. `python validation/qlknn_conformal_regime_coverage.py`;
 2. `python validation/qlknn_conformal_variants.py`;
 3. `python validation/qlknn_conformal_stability_sets.py`;
-4. `python validation/qlknn_conformal_profile_envelope.py`.
+4. `python validation/qlknn_conformal_profile_envelope.py`;
+5. `python validation/qlknn_conformal_self_consistent_envelope.py`, which takes about
+   twenty minutes on one workstation.
 
 Each command takes `--help`. The certificate itself comes from
 `tools/generate_surrogate_conformal_certificates.py`.

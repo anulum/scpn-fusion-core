@@ -15,7 +15,7 @@
     "orcid": "0009-0009-3560-0851",
     "affiliation": "ANULUM CH&LI, Marbach SG, Switzerland"
   },
-  "repository_revision": "8191a1d31e39ddb4762ef745730fce7e939cd36f",
+  "repository_revision": "94877d0fb1dafbf45105bc63a978d2852973f5c2",
   "companion_catalogue_ids": [],
   "evidence_files": [
     "evidence/evidence_manifest.json",
@@ -24,18 +24,19 @@
     "evidence/qlknn_conformal_variants.json",
     "evidence/qlknn_conformal_stability_sets.json",
     "evidence/qlknn_conformal_profile_envelope.json",
+    "evidence/qlknn_conformal_self_consistent_envelope.json",
     "evidence/neural_transport_qlknn.metrics.json"
   ],
   "claim_status": {
     "regime_coverage": "measured_on_the_test_split",
     "variants": "four_declared_two_post_hoc",
     "stability_sets": "designed_after_the_bias_finding_settings_fixed_before_the_run",
-    "profile": "frozen_coefficient_sensitivity_one_case"
+    "profile": "frozen_coefficient_sensitivity_and_self_consistent_bounded_closure_one_case"
   },
   "doi": null,
   "manuscript_content_license": null,
   "preprint": {
     "date": "2026-11-16",
-    "software_described": "scpn-fusion main at 8191a1d3 (2026-11-16), after release 4.1.0; the analysis modules are not in that release"
+    "software_described": "scpn-fusion main at 94877d0f (2026-11-16), after release 4.1.0; the analysis modules are not in that release"
   }
 }

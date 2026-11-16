@@ -8,7 +8,7 @@
 # SCPN-FUSION-CORE — conformal-coverage paper evidence custody generator.
 """Assemble and validate the exact evidence cited by submission 005.
 
-The certificate and the four reports are tracked files. Each package-local copy is the
+The certificate and the five reports are tracked files. Each package-local copy is the
 tracked file with the seven structured public header fields placed first; the scientific
 payload is unchanged. Every number the manuscript quotes is listed in ``QUOTED`` with the
 format the manuscript prints it in. The generator recomputes each one from the evidence,
@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_REVISION = "8191a1d31e39ddb4762ef745730fce7e939cd36f"
+PACKAGE_REVISION = "94877d0fb1dafbf45105bc63a978d2852973f5c2"
 PACKAGING_TRANSFORM = "seven structured Tier-0 fields added first; scientific payload unchanged"
 TIER0_HEADER: dict[str, str] = {
     "SPDX-License-Identifier": "AGPL-3.0-or-later",
@@ -70,6 +70,13 @@ SOURCE_CUSTODY: dict[str, dict[str, str]] = {
         "source_sha256": "7b9e2ec452032f16c2b9641dcaa3fea77456a0a7bdee4b4538500d05e46b1cc7",
         "packaging_transform": PACKAGING_TRANSFORM,
     },
+    "qlknn_conformal_self_consistent_envelope.json": {
+        "source_path": "validation/reports/qlknn_conformal_self_consistent_envelope.json",
+        "source_revision": "94877d0fb1dafbf45105bc63a978d2852973f5c2",
+        "git_blob_oid_sha1": "6541b9d8a729ce265587fbf3dc59b1a517d7db61",
+        "source_sha256": "2179c16b77b86fcb271c2d71bce820416b01508134e70c947853cb536220c0f2",
+        "packaging_transform": PACKAGING_TRANSFORM,
+    },
     "neural_transport_qlknn.metrics.json": {
         "source_path": "weights/neural_transport_qlknn.metrics.json",
         "source_revision": "54af9b7c5c27b96781c7a760577384d1ed42373a",
@@ -103,6 +110,11 @@ IMPLEMENTATION_SOURCES: dict[str, dict[str, str]] = {
         "git_blob_oid_sha1": "e3e14dd45c40a3bbaac0c66dfa078dbd7e66dcce",
         "sha256": "3f1933afa3521c2fdc914763b4c5dba3756fcceb6c8d37690ac37b192c6c2baf",
         "role": "frozen-coefficient propagation through the transport solver",
+    },
+    "validation/qlknn_conformal_self_consistent_envelope.py": {
+        "git_blob_oid_sha1": "699957b2293c8ddcfc4ac26aae769e0120eef3f3",
+        "sha256": "a7021707ac16c8464cecb14e7246b0b14085376d4fd1dda03a98791c159487e8",
+        "role": "self-consistent bounded-closure propagation through the transport solver",
     },
 }
 CHANNELS = ("chi_e", "chi_i", "D_e")
@@ -153,9 +165,15 @@ def nonzero_coverage(target_regimes: dict[str, Any]) -> float:
 
 
 def _at(payload: dict[str, Any], dotted: str) -> Any:
-    """Read one value by its dotted path; ``nonzero:<path>`` derives the nonzero coverage."""
+    """Read one value by its dotted path.
+
+    ``nonzero:<path>`` derives the nonzero coverage; ``ratio:<a>|<b>`` divides two values.
+    """
     if dotted.startswith("nonzero:"):
         return nonzero_coverage(_at(payload, dotted.removeprefix("nonzero:")))
+    if dotted.startswith("ratio:"):
+        numerator, denominator = dotted.removeprefix("ratio:").split("|")
+        return float(_at(payload, numerator)) / float(_at(payload, denominator))
     value: Any = payload
     for part in dotted.split("."):
         value = value[int(part)] if isinstance(value, list) else value[part]
@@ -295,8 +313,43 @@ def quoted() -> list[tuple[str, str, str, str]]:
         ("envelopes.normalised_prediction.lower_turbulence.T_core_keV", "{:.3f}", "7.224"),
         ("case.p_aux_mw", "{:.0f}", "20"),
         ("case.steps", "{:d}", "1200"),
+        (
+            "ratio:envelopes.certificate.lower_turbulence.T_core_keV"
+            "|neural_steady_state.T_core_keV",
+            "{:.1f}",
+            "4.2",
+        ),
+        (
+            "ratio:neural_steady_state.T_core_keV"
+            "|envelopes.certificate.upper_turbulence.T_core_keV",
+            "{:.1f}",
+            "6.5",
+        ),
     ]
     rows += [("envelope", path, fmt, text) for path, fmt, text in envelope]
+    lower, upper = (
+        "envelopes.certificate.lower_turbulence.",
+        "envelopes.certificate.upper_turbulence.",
+    )
+    scaled = "envelopes.normalised_prediction."
+    self_consistent = [
+        ("iteration.relaxation", "{:.3f}", "0.005"),
+        ("iteration.check_relaxation", "{:.4f}", "0.0025"),
+        ("iteration.residual_tolerance", "{:.0e}", "1e-10"),
+        ("nominal.T_core_keV", "{:.3f}", "1.702"),
+        ("nominal_reproduction_relative_error", "{:.1e}", "1.4e-04"),
+        (upper + "T_core_keV", "{:.3f}", "0.281"),
+        (lower + "T_core_keV", "{:.3f}", "4.707"),
+        (lower + "at_check_relaxation.T_core_keV", "{:.3f}", "4.607"),
+        (lower + "relaxation_relative_difference", "{:.1%}", "3.7%"),
+        (upper + "tau_e_s", "{:.3f}", "0.257"),
+        (lower + "tau_e_s", "{:.3f}", "3.270"),
+        (scaled + "upper_turbulence.T_core_keV", "{:.3f}", "0.593"),
+        (scaled + "lower_turbulence.T_core_keV", "{:.3f}", "3.523"),
+        ("ratio:" + lower + "T_core_keV|nominal.T_core_keV", "{:.1f}", "2.8"),
+        ("ratio:nominal.T_core_keV|" + upper + "T_core_keV", "{:.1f}", "6.1"),
+    ]
+    rows += [("self_consistent", path, fmt, text) for path, fmt, text in self_consistent]
     certificate = "certificates.0."
     rows += [
         ("certificate", certificate + "calibration.n", "{:d}", "47826"),
@@ -353,6 +406,7 @@ def main() -> None:
             ("variants", "qlknn_conformal_variants"),
             ("sets", "qlknn_conformal_stability_sets"),
             ("envelope", "qlknn_conformal_profile_envelope"),
+            ("self_consistent", "qlknn_conformal_self_consistent_envelope"),
             ("metrics", "neural_transport_qlknn.metrics"),
         )
     }
@@ -368,6 +422,7 @@ def main() -> None:
         "qlknn_conformal_variants.json": "conformal variants and surrogate false-stable diagnostics",
         "qlknn_conformal_stability_sets.json": "stability sets, conditional flux intervals, re-splits",
         "qlknn_conformal_profile_envelope.json": "frozen-coefficient transport-profile envelope",
+        "qlknn_conformal_self_consistent_envelope.json": "self-consistent bounded-closure envelope",
         "neural_transport_qlknn.metrics.json": "surrogate training record: errors and hidden sizes",
     }
     generator = Path(__file__).resolve()
@@ -380,7 +435,7 @@ def main() -> None:
             "coverage": "marginal within each class; exchangeability of the split assumed",
             "data": "QuaLiKiz-derived QLKNN-10D database values, not gyrokinetic or measured",
             "post_hoc": "two Mondrian-by-prediction variants and the stability sets came later",
-            "profile": "frozen-coefficient sensitivity on one L-mode case",
+            "profile": "frozen-coefficient sensitivity and self-consistent bounded closure, one L-mode case",
         },
         "source_custody": SOURCE_CUSTODY,
         "implementation_sources": IMPLEMENTATION_SOURCES,

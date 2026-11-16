@@ -8,7 +8,7 @@
 
 # Regime-conditional conformal coverage of a neural transport surrogate
 
-Status: dated preprint of 16 November 2026, describing commit 8191a1d3 on main
+Status: dated preprint of 16 November 2026, describing commit 94877d0f on main
 after release 4.1.0. The analysis modules are not in that release. The preprint
 has not been deposited or submitted.
 
@@ -39,15 +39,16 @@ submitted to any specific venue.
   choice.
 - Two Mondrian-by-prediction variants and the stability sets were designed
   after earlier results. Their settings were fixed before their own runs.
-- The profile propagation is a frozen-coefficient sensitivity on one L-mode
-  case.
+- The profile propagation covers one L-mode case: a frozen-coefficient
+  sensitivity, and a self-consistent bounded closure whose lower certificate
+  end depends on the iteration's relaxation by 3.7 %.
 
 ## Custody
 
 Each report records the commit that produced it. Since then the analysis code
 changed only by making private helpers public. The variant report, produced
 after the first such change, reproduces the regime report's certificate
-coverage exactly. The manifest binds the five analysis modules at the package
+coverage exactly. The manifest binds the six analysis modules at the package
 commit.
 
 ## Statements still open before any deposit
