@@ -82,6 +82,30 @@ def test_gpu_lane_timeout_is_reported_as_a_blocked_row(monkeypatch: pytest.Monke
     assert out["cpu"]["status"] == "measured"
 
 
+def test_rust_lane_timeout_is_reported_as_a_blocked_row(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A Rust command that outlives its limit yields a blocked row; the campaign completes.
+
+    A stand-in ``cargo`` that only sleeps makes the timeout certain on any host.
+    """
+    cargo = tmp_path / "cargo"
+    cargo.write_text("#!/bin/sh\nsleep 30\n", encoding="utf-8")
+    cargo.chmod(0o755)
+    monkeypatch.setattr(scpn_end_to_end_latency, "shutil_which", lambda _name: str(cargo))
+    monkeypatch.setattr(scpn_end_to_end_latency, "RUST_SUBPROCESS_TIMEOUT_S", 0.5)
+
+    out = scpn_end_to_end_latency.run_digital_twin_latency_campaign(steps=32)
+
+    rust = out["rust"]
+    assert rust["status"] == "blocked_rust_command_timeout"
+    assert rust["timeout_s"] == 0.5
+    assert rust["command"].startswith(f"{cargo} run")
+    assert rust["runtime_seconds"] >= 0.5
+    assert isinstance(rust["stderr_tail"], str)
+    assert out["cpu"]["status"] == "measured"
+
+
 def test_host_snapshot_records_taskset_isolation_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify host snapshot records benchmark isolation metadata."""
     monkeypatch.setenv(

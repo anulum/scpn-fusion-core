@@ -88,8 +88,10 @@ _PIPELINE_STAGE_KEYS = (
 _ACTUATOR_SCALING_COUNTS = (2, 16, 64, 128, 256)
 _PREDICTIVE_HORIZON_MS = (50, 100)
 ACCELERATOR_ISOLATION_ENV = "SCPN_BENCHMARK_ACCELERATOR_ISOLATION"
-# Wall-clock limit of the GPU lane's subprocess; past it the lane is reported blocked.
+# Wall-clock limits of the GPU and Rust lanes' subprocesses; past them a lane is reported
+# blocked. The Rust limit covers `cargo run --release`, including a build when one is due.
 GPU_SUBPROCESS_TIMEOUT_S = 120.0
+RUST_SUBPROCESS_TIMEOUT_S = 120.0
 DEFAULT_ACCELERATOR_ISOLATION = "shared_local_device_not_reserved"
 REPORT_SCHEMA = "scpn-fusion-core.end_to_end_latency_report.v1"
 REPORT_CLAIM_BOUNDARY = (
@@ -1212,14 +1214,26 @@ def _run_rust_digital_twin_latency(*, steps: int, actuator_count: int = 2) -> di
         "--json",
     ]
     started = time.perf_counter()
-    proc = subprocess.run(
-        cmd,
-        cwd=ROOT / "scpn-fusion-rs",
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=120,
-    )
+    try:
+        proc = subprocess.run(
+            cmd,
+            cwd=ROOT / "scpn-fusion-rs",
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=RUST_SUBPROCESS_TIMEOUT_S,
+        )
+    except subprocess.TimeoutExpired as exc:
+        # The captured output of a timed-out child is bytes even with text=True.
+        stderr = exc.stderr if isinstance(exc.stderr, bytes) else b""
+        return {
+            "status": "blocked_rust_command_timeout",
+            "backend": "rust_release",
+            "command": " ".join(cmd),
+            "timeout_s": RUST_SUBPROCESS_TIMEOUT_S,
+            "runtime_seconds": float(time.perf_counter() - started),
+            "stderr_tail": stderr.decode("utf-8", errors="replace")[-2000:],
+        }
     elapsed = float(time.perf_counter() - started)
     if proc.returncode != 0:
         return {
