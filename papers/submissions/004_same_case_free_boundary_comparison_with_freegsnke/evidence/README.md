@@ -8,9 +8,10 @@
 
 # Evidence
 
-The two JSON reports here are the tracked reports
-`validation/reports/freegsnke_multimachine_parity.json` and
-`validation/reports/freegsnke_inverse_fit.json`. Each copy has the seven
+The three JSON reports here are the tracked reports
+`validation/reports/freegsnke_multimachine_parity.json`,
+`validation/reports/freegsnke_inverse_fit.json` and
+`validation/reports/freegsnke_grid_convergence.json`. Each copy has the seven
 structured public header fields placed first; the scientific payload is
 unchanged. The generated `evidence_manifest.json` records:
 
@@ -19,7 +20,7 @@ unchanged. The generated `evidence_manifest.json` records:
 - its role in the paper;
 - the solver and benchmark sources the manuscript describes.
 
-`../generate_evidence_manifest.py` rebuilds both copies from the tracked
+`../generate_evidence_manifest.py` rebuilds the copies from the tracked
 reports. It checks every value that the manuscript quotes, and it fails closed
 when a report, a quoted value or a bound source differs from the record.
 

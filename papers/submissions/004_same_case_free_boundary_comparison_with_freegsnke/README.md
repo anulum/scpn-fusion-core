@@ -9,7 +9,7 @@
 # Same-case free-boundary comparison with FreeGSNKE
 
 Status: dated preprint of 16 November 2026, describing commit
-86649a05 on main after release 4.1.0. The comparison code is not in
+9e2ea47c on main after release 4.1.0. The comparison code is not in
 that release. The preprint has not been deposited or submitted.
 
 The manuscript compares SCPN-Fusion-Core's predictive free-boundary solver with
@@ -40,6 +40,8 @@ venue.
 - Coil currents are compared through target residuals under both codes. Where
   the targets leave current combinations free, as on the SPARC-like case,
   current sets 12.7 % apart both meet them.
+- Grid convergence is checked on the MAST-U-like case only, at 65×129 and
+  129×257: the frozen-support difference converges, the warm one barely moves.
 - Run times are recorded only to describe the runs. No speed comparison is made.
 
 ## Custody
@@ -47,6 +49,7 @@ venue.
 The two reports were produced at different commits:
 
 - the forward report at 422e4c0b;
+- the grid-convergence report at 220cd790;
 - the inverse report from six runs at 44852fee, merged and tracked at
   86649a05. Its status is fail: on the MAST-U-like perturbed start,
   FreeGSNKE's refinement at SCPN's fitted currents did not converge.

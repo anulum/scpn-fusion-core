@@ -7,7 +7,7 @@
   "contact": "www.anulum.li | protoscience@anulum.li",
   "projectDescription": "SCPN-FUSION-CORE same-case FreeGSNKE evidence manifest.",
   "schema_version": "2.0",
-  "repository_revision": "86649a05a15a0d3d919c35d560e02ebda6c8cc00",
+  "repository_revision": "9e2ea47ce506156b39291a478b1285ead8608314",
   "claim_boundary": {
     "forward": "same-case parity on three synthetic public machine descriptions shipped with FreeGSNKE 3.0.1; warm-started fixed points; no experimental comparison",
     "inverse": "coil-current fits to FreeGSNKE's isoflux and null-point targets; each solution scored by both codes; agreement is reported, not gated",
@@ -26,6 +26,13 @@
       "source_revision": "86649a05a15a0d3d919c35d560e02ebda6c8cc00",
       "git_blob_oid_sha1": "7ad702997128536c5626f867b68aa591492c95bb",
       "source_sha256": "abc4745331b4ed9d03cab47e022eb2f8a594f6f711c355951d25ef72f1ee5bb8",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "freegsnke_grid_convergence.json": {
+      "source_path": "validation/reports/freegsnke_grid_convergence.json",
+      "source_revision": "9e2ea47ce506156b39291a478b1285ead8608314",
+      "git_blob_oid_sha1": "fd1d05319a42806fb4ce7a8c7d32e820c551d284",
+      "source_sha256": "2e6fa4b2394a18eb97065db00bc46d1bd39e0a6dc123c570e76c4517219c7649",
       "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
     }
   },
@@ -54,11 +61,16 @@
       "git_blob_oid_sha1": "5e435bce5aeee5ad6ef0575056d0b4a509e39df8",
       "sha256": "699d5e220bab2ec84c49d44c9c6ec2e4a2b1ce3821307d3c776021e823190106",
       "role": "inverse fits scored by both codes, and the merge of partial runs"
+    },
+    "validation/freegsnke_grid_convergence.py": {
+      "git_blob_oid_sha1": "5c4cf6b35a48ddde7b1b526fa2f6adc19f1a36e4",
+      "sha256": "2d2b26efb0747426d265035f6b932856e8a9b17307e2d7af427867d982a773ce",
+      "role": "MAST-U-like grid-convergence study of the forward comparison"
     }
   },
   "generators": {
     "papers/submissions/004_same_case_free_boundary_comparison_with_freegsnke/generate_evidence_manifest.py": {
-      "sha256": "9afb145132db2d004a72e33ee22a715ef6b1309837c7ff99c1a7997a1cd431c7"
+      "sha256": "a9b086b61f4921a2492874e0bbfc9398d7bf7f2b60329f900c7cbe249d8af0ca"
     }
   },
   "files": {
@@ -69,6 +81,10 @@
     "freegsnke_inverse_fit.json": {
       "sha256": "58460c482c375770de6f7f893e80e142f691ed6d37ad674a6383e6f6bf585ef1",
       "role": "inverse coil-current fits to FreeGSNKE's targets, each solution scored by both codes"
+    },
+    "freegsnke_grid_convergence.json": {
+      "sha256": "263990efa84d816872c8dcbe454c020efb28e3494c37f1fc7f240fd85e304dcc",
+      "role": "MAST-U-like forward comparison at 65x129 and 129x257"
     }
   }
 }

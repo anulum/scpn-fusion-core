@@ -60,6 +60,7 @@ def test_packaged_reports_are_the_tracked_reports_plus_the_public_header() -> No
     assert set(manifest["source_custody"]) == {
         "freegsnke_multimachine_parity.json",
         "freegsnke_inverse_fit.json",
+        "freegsnke_grid_convergence.json",
     }
     for name, custody in manifest["source_custody"].items():
         spec = f"{custody['source_revision']}:{custody['source_path']}"
@@ -138,6 +139,8 @@ def test_manuscript_names_its_revision_and_quotes_the_reports() -> None:
     assert "no magnetic axis inside the limiter" in manuscript
     assert "$3.54 \\times 10^{-3}$ & $3.78 \\times 10^{-4}$" in manuscript
     assert "does not validate either code against experiment" in manuscript
+    assert "lowers the frozen-support difference fourfold" in manuscript
+    assert "Grid convergence is checked on the MAST-U-like case only, at two grids." in manuscript
 
 
 def test_evidence_generator_is_byte_deterministic(tmp_path: Path) -> None:
@@ -177,3 +180,13 @@ def test_evidence_generator_is_byte_deterministic(tmp_path: Path) -> None:
     )
 
     assert {path: path.read_bytes() for path in tracked} == before
+
+
+def test_generator_rejects_a_changed_grid_value() -> None:
+    """A changed grid-study ratio must fail the generator's check."""
+    generator = _generator()
+    report = generator.scientific_payload(_load_json(EVIDENCE / "freegsnke_grid_convergence.json"))
+    generator.validate_grid(report)
+    report["changes_against_base_grid"][0]["warm_rmse_ratio"] = 0.83
+    with pytest.raises(ValueError, match="warm_rmse_ratio"):
+        generator.validate_grid(report)

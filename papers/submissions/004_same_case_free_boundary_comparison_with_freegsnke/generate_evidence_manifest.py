@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_REVISION = "86649a05a15a0d3d919c35d560e02ebda6c8cc00"
+PACKAGE_REVISION = "9e2ea47ce506156b39291a478b1285ead8608314"
 PACKAGING_TRANSFORM = "seven structured Tier-0 fields added first; scientific payload unchanged"
 TIER0_HEADER: dict[str, str] = {
     "SPDX-License-Identifier": "AGPL-3.0-or-later",
@@ -47,6 +47,13 @@ SOURCE_CUSTODY: dict[str, dict[str, str]] = {
         "source_revision": "86649a05a15a0d3d919c35d560e02ebda6c8cc00",
         "git_blob_oid_sha1": "7ad702997128536c5626f867b68aa591492c95bb",
         "source_sha256": "abc4745331b4ed9d03cab47e022eb2f8a594f6f711c355951d25ef72f1ee5bb8",
+        "packaging_transform": PACKAGING_TRANSFORM,
+    },
+    "freegsnke_grid_convergence.json": {
+        "source_path": "validation/reports/freegsnke_grid_convergence.json",
+        "source_revision": "9e2ea47ce506156b39291a478b1285ead8608314",
+        "git_blob_oid_sha1": "fd1d05319a42806fb4ce7a8c7d32e820c551d284",
+        "source_sha256": "2e6fa4b2394a18eb97065db00bc46d1bd39e0a6dc123c570e76c4517219c7649",
         "packaging_transform": PACKAGING_TRANSFORM,
     },
 }
@@ -76,7 +83,29 @@ IMPLEMENTATION_SOURCES: dict[str, dict[str, str]] = {
         "sha256": "699d5e220bab2ec84c49d44c9c6ec2e4a2b1ce3821307d3c776021e823190106",
         "role": "inverse fits scored by both codes, and the merge of partial runs",
     },
+    "validation/freegsnke_grid_convergence.py": {
+        "git_blob_oid_sha1": "5c4cf6b35a48ddde7b1b526fa2f6adc19f1a36e4",
+        "sha256": "2d2b26efb0747426d265035f6b932856e8a9b17307e2d7af427867d982a773ce",
+        "role": "MAST-U-like grid-convergence study of the forward comparison",
+    },
 }
+# Every grid-study value the manuscript quotes: (dotted path, format, printed text).
+GRID_QUOTED: tuple[tuple[str, str, str], ...] = (
+    ("status", "{}", "pass"),
+    ("grids.0.grid_shape_r_z.0", "{:d}", "65"),
+    ("grids.1.grid_shape_r_z.0", "{:d}", "129"),
+    ("grids.1.grid_shape_r_z.1", "{:d}", "257"),
+    ("grids.0.warm.psi_n_rmse_inside_limiter", "{:.2e}", "3.54e-03"),
+    ("grids.1.warm.psi_n_rmse_inside_limiter", "{:.2e}", "2.90e-03"),
+    ("grids.0.frozen.psi_n_rmse_inside_limiter", "{:.2e}", "3.78e-04"),
+    ("grids.1.frozen.psi_n_rmse_inside_limiter", "{:.2e}", "9.43e-05"),
+    ("grids.1.warm.axis_position_error_m", "{:.2e}", "1.06e-03"),
+    ("grids.1.warm.worst_xpoint_error_m", "{:.2e}", "6.59e-04"),
+    ("changes_against_base_grid.0.warm_rmse_ratio", "{:.2f}", "0.82"),
+    ("changes_against_base_grid.0.frozen_rmse_ratio", "{:.3f}", "0.250"),
+    ("changes_against_base_grid.0.freegsnke_current_relative_l2", "{:.1e}", "4.9e-04"),
+    ("checks.base_grid_reproduces_base_benchmark_currents", "{}", "True"),
+)
 FREEGSNKE_COMMIT = "00b79a08fbb6e642ac5ed2e440383cc5962e0358"
 CASES = ("mastu_like", "sparc_like", "iter_like")
 # Every forward-parity value the manuscript quotes, as the tracked report stores it.
@@ -301,11 +330,21 @@ def validate_inverse(report: dict[str, Any]) -> None:
 
 
 def _inverse_value(row: dict[str, Any], key: str) -> Any:
-    """Read one quoted inverse-fit value by its dotted path inside a case row."""
+    """Read one quoted value by its dotted path; list items by their index."""
     value: Any = row
     for part in key.split("."):
-        value = value[part]
+        value = value[int(part)] if isinstance(value, list) else value[part]
     return value
+
+
+def validate_grid(report: dict[str, Any]) -> None:
+    """Check every quoted grid-study value, and that the base grid repeats the forward report."""
+    for dotted, fmt, text in GRID_QUOTED:
+        if fmt.format(_inverse_value(report, dotted)) != text:
+            raise ValueError(f"Grid-study value drifted: {dotted}")
+    base_grid = report["grids"][0]["warm"]["psi_n_rmse_inside_limiter"]
+    if base_grid != FORWARD_VALUES["mastu_like"]["warm_psi_n_rmse"]:
+        raise ValueError("The grid study's base grid no longer repeats the forward report.")
 
 
 def _validate_implementation(repository: Path) -> None:
@@ -328,6 +367,7 @@ def main() -> None:
     _materialise_evidence(repository, evidence)
     validate_forward(_load_json(evidence / "freegsnke_multimachine_parity.json"))
     validate_inverse(_load_json(evidence / "freegsnke_inverse_fit.json"))
+    validate_grid(_load_json(evidence / "freegsnke_grid_convergence.json"))
     _validate_implementation(repository)
 
     roles = {
@@ -338,6 +378,7 @@ def main() -> None:
         "freegsnke_inverse_fit.json": (
             "inverse coil-current fits to FreeGSNKE's targets, each solution scored by both codes"
         ),
+        "freegsnke_grid_convergence.json": ("MAST-U-like forward comparison at 65x129 and 129x257"),
     }
     files = {
         name: {"sha256": _sha256(evidence / name), "role": role} for name, role in roles.items()

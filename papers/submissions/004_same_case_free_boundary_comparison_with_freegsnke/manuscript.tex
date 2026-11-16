@@ -39,7 +39,9 @@ reproduces FreeGSNKE's current density to a relative $L_2$ error below
 $10^{-7}$.  In the forward direction, started from FreeGSNKE's flux, SCPN reaches
 its own fixed point within a root-mean-square normalised-flux difference of
 $3.5 \times 10^{-3}$, $4.6 \times 10^{-4}$ and $6.4 \times 10^{-4}$ inside the
-limiter; imposing FreeGSNKE's plasma support lowers these by factors of 3 to 9.
+limiter; imposing FreeGSNKE's plasma support lowers these by factors of 3 to 9, and
+doubling the MAST-U-like grid lowers the frozen-support difference fourfold
+but the warm one only to 0.82 of its value.
 From the vacuum field SCPN reaches the same solution on the SPARC- and ITER-like
 cases but finds no magnetic axis on the MAST-U-like case.
 
@@ -191,6 +193,17 @@ SCPN is given FreeGSNKE's plasma support instead of finding its own, the
 $\psi_N$ difference falls by a factor of 9.4 on MAST-U-like, 3.0 on SPARC-like
 and 5.3 on ITER-like.  Most of the warm difference therefore comes from where
 each code places the plasma boundary, not from the source or the field solve.
+
+A grid study on the MAST-U-like case supports this reading.  Doubling the
+resolution from $65 \times 129$ to $129 \times 257$ lowers the frozen-support
+difference fourfold, from $3.78 \times 10^{-4}$ to $9.43 \times 10^{-5}$, as a
+discretisation difference of second order would.  The warm difference falls
+only to 0.82 of its value, from $3.54 \times 10^{-3}$ to $2.90 \times 10^{-3}$,
+and the X-point difference falls to 0.66\,mm.  FreeGSNKE's own currents move by
+$4.9 \times 10^{-4}$ in relative $L_2$ between the two grids.  The study builds
+the case exactly as the comparison does; on the coarser grid it reproduces the
+comparison's FreeGSNKE currents bit for bit.
+
 The thresholds of the comparison were fixed before the runs: a $\psi_N$ RMSE of
 at most 0.05; axis and X-point differences of at most 35~mm; a relative
 support-current difference of at most 0.1; a relative nonlinear residual of at
@@ -338,8 +351,7 @@ before the runs and is kept.
 \begin{itemize}
 \item All three machine descriptions are synthetic configurations shipped with
 FreeGSNKE.  No measured discharge enters the comparison.
-\item Each case uses one grid.  Grid convergence of the differences above is not
-shown.
+\item Grid convergence is checked on the MAST-U-like case only, at two grids.
 \item The forward agreement is a warm-start result.  SCPN's cold start fails on
 the MAST-U-like case.
 \item The inverse comparison uses one perturbation seed per case.  On the
@@ -358,12 +370,12 @@ reports how its solutions score under a second code, not a defect of it.
 
 \section*{Software version and date}
 
-This preprint describes \texttt{scpn-fusion} at commit \texttt{86649a05a15a}
+This preprint describes \texttt{scpn-fusion} at commit \texttt{9e2ea47ce506}
 of 16 November 2026, on the main line after release 4.1.0; the comparison code
 is not part of that release.  The forward report was produced at commit
 \texttt{422e4c0b3d15}.  The six inverse runs ran at commit
 \texttt{44852feeedf2}; commit \texttt{86649a05a15a} merged them and tracks the
-report.  The solver and benchmark sources named in the
+report.  The grid study ran at commit \texttt{220cd790a6b3}.  The solver and benchmark sources named in the
 evidence manifest are byte-identical between the inverse run and the commit
 above.  Between the two runs no solver source changed; the shared benchmark
 helper changed only by naming two constant tables, with the same values.  All runs used one host (Intel Xeon E5-2640, 24 logical CPUs, Python

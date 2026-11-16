@@ -1,0 +1,138 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE same-case FreeGSNKE comparison evidence.",
+  "benchmark_id": "freegsnke-mastu-like-grid-convergence",
+  "changes_against_base_grid": [
+    {
+      "freegsnke_current_relative_l2": 0.0004861782009448245,
+      "frozen_rmse_ratio": 0.249778352387961,
+      "warm_rmse_ratio": 0.8197741338629378
+    }
+  ],
+  "checks": {
+    "base_grid_reproduces_base_benchmark_currents": true,
+    "freegsnke_refinements_converged": true,
+    "scpn_solves_converged": true
+  },
+  "claim_boundary": {
+    "control_admission": false,
+    "experimental_validation": false,
+    "facility_validation": false,
+    "same_case_grid_study": true,
+    "speed_comparison": false
+  },
+  "grids": [
+    {
+      "freegsnke_currents_a": [
+        5000.0,
+        3696.8092224980783,
+        6941.23607795344,
+        4390.861651672075,
+        2924.3553625651143,
+        -2488.20042970495,
+        249.2075647513061,
+        -314.99584474141585,
+        511.0756239995471,
+        -3564.3804944559943,
+        -3954.2365660226087,
+        1.9555167641513577e-05
+      ],
+      "freegsnke_run": {
+        "forward_refinement_relative_change": 1.4301211042541097e-10,
+        "forward_refinement_tolerance": 1e-09,
+        "inverse_relative_change": 7.783983575185629e-07,
+        "seconds_orientation_only": 10.024736211984418
+      },
+      "frozen": {
+        "converged": true,
+        "psi_n_rmse_inside_limiter": 0.00037768119984973175
+      },
+      "grid_shape_r_z": [
+        65,
+        129
+      ],
+      "source_relative_l2": 3.5121218106294314e-08,
+      "vacuum_max_abs_error_wb": 1.1102230246251565e-16,
+      "warm": {
+        "axis_position_error_m": 0.0013535296988508403,
+        "converged": true,
+        "psi_n_rmse_inside_limiter": 0.0035428935838590766,
+        "support_current_relative_l2": 0.007474760325785115,
+        "worst_xpoint_error_m": 0.0021072270142722268
+      }
+    },
+    {
+      "freegsnke_currents_a": [
+        5000.0,
+        3693.9812088966933,
+        6945.497808056634,
+        4389.068621622826,
+        2924.765813880095,
+        -2488.1264255442193,
+        249.65048529843747,
+        -314.9447726804761,
+        510.7913202966974,
+        -3566.5559478334812,
+        -3953.3379277741865,
+        5.254604897233737e-05
+      ],
+      "freegsnke_run": {
+        "forward_refinement_relative_change": 5.912241015060887e-10,
+        "forward_refinement_tolerance": 1e-09,
+        "inverse_relative_change": 1.1350016318130583e-07,
+        "seconds_orientation_only": 33.21722035203129
+      },
+      "frozen": {
+        "converged": true,
+        "psi_n_rmse_inside_limiter": 9.433658782637422e-05
+      },
+      "grid_shape_r_z": [
+        129,
+        257
+      ],
+      "source_relative_l2": 5.2738621279612486e-08,
+      "vacuum_max_abs_error_wb": 1.6653345369377348e-16,
+      "warm": {
+        "axis_position_error_m": 0.0010599469243991056,
+        "converged": true,
+        "psi_n_rmse_inside_limiter": 0.0029043725190766342,
+        "support_current_relative_l2": 0.005100544764102074,
+        "worst_xpoint_error_m": 0.0006588499485724465
+      }
+    }
+  ],
+  "payload_sha256": "7867292cfc24f6594888ee8365c8f22f384a2ed7c97a6d7daa94a9646a302680",
+  "provenance": {
+    "freegsnke_source_commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) CPU E5-2640 0 @ 2.50GHz",
+      "logical_cpus": 24,
+      "machine": "x86_64",
+      "python": "3.12.3",
+      "system": "Linux"
+    },
+    "scpn_source_revision": "220cd790a6b38630632fcc154071cc38925ba02d",
+    "scpn_source_sha256": {
+      "src/scpn_fusion/core/jax_free_boundary_predictive.py": "6864163d4c4ccd43ee7b3bf289262400400d12587f35ce3858067d0dbfa600d9",
+      "validation/benchmark_freegsnke_inverse.py": "35c1046f8570dd81dd76f72ba2d2b6ab71e30a6be5742516d3fd44fe310ca208",
+      "validation/benchmark_freegsnke_multimachine.py": "c6b1ae377b36eea618276d483e8a6174c414879c5474ca3c856559a772fd5b0f",
+      "validation/freegsnke_grid_convergence.py": "2d2b26efb0747426d265035f6b932856e8a9b17307e2d7af427867d982a773ce"
+    },
+    "versions": {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "freegs4e": "0.13.1",
+      "freegsnke": "3.0.1",
+      "jax": "0.7.1",
+      "jaxlib": "0.7.1",
+      "numpy": "1.26.4",
+      "scipy": "1.15.3"
+    }
+  },
+  "schema_version": "scpn-fusion.freegsnke-grid-convergence.v1",
+  "status": "pass"
+}

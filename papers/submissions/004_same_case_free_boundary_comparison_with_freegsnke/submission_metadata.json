@@ -15,23 +15,25 @@
     "orcid": "0009-0009-3560-0851",
     "affiliation": "ANULUM CH&LI, Marbach SG, Switzerland"
   },
-  "repository_revision": "86649a05a15a0d3d919c35d560e02ebda6c8cc00",
+  "repository_revision": "9e2ea47ce506156b39291a478b1285ead8608314",
   "companion_catalogue_ids": [],
   "evidence_files": [
     "evidence/evidence_manifest.json",
     "evidence/freegsnke_multimachine_parity.json",
-    "evidence/freegsnke_inverse_fit.json"
+    "evidence/freegsnke_inverse_fit.json",
+    "evidence/freegsnke_grid_convergence.json"
   ],
   "claim_status": {
     "forward": "same_case_warm_start_parity_three_synthetic_cases",
     "cold_start": "fails_on_mastu_like",
     "inverse": "scored_by_both_codes_one_start_incomplete",
-    "inverse_report_status": "fail_on_one_completeness_gate"
+    "inverse_report_status": "fail_on_one_completeness_gate",
+    "grid": "mastu_like_two_grids_frozen_converges_warm_does_not"
   },
   "doi": null,
   "manuscript_content_license": null,
   "preprint": {
     "date": "2026-11-16",
-    "software_described": "scpn-fusion main at 86649a05 (2026-11-16), after release 4.1.0; the comparison code is not in that release"
+    "software_described": "scpn-fusion main at 9e2ea47c (2026-11-16), after release 4.1.0; the comparison code is not in that release"
   }
 }
