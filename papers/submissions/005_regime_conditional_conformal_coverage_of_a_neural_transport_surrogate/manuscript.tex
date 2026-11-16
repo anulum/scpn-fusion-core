@@ -1,0 +1,315 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — regime-conditional conformal coverage of a transport surrogate.
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[margin=1in]{geometry}
+\bibliographystyle{unsrtnat}
+
+\title{A Marginal Conformal Certificate for a Neural Transport Surrogate\\
+Hides a False-Stable Bias:\\
+Regime-Conditional Coverage and Class-Conditional Stability Sets}
+\author{Miroslav \v{S}otek\\
+\small ANULUM CH\&LI, Marbach SG, Switzerland, \url{https://www.anulum.li}\\
+\small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
+\small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
+\date{Preprint --- 16 November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A split-conformal certificate gives a neural surrogate of turbulent transport
+fluxes, trained on the QLKNN-10D database, 90\% marginal coverage per channel:
+0.901, 0.900 and 0.903 on 47,828 held-out rows for $\chi_e$, $\chi_i$ and
+$D_e$.  We ask whether that coverage holds across transport regimes.  It does
+not.  Rows with zero flux are covered at 0.995--0.997, while rows with nonzero
+flux are covered at only 0.697--0.738, and those above a near-threshold band at
+0.665--0.711.  Three alternatives to the certificate, declared in advance, do not repair
+this: Mondrian groups by an input-gradient label, and scores normalised by the
+gyro-Bohm scale or by the prediction.  Two further variants, chosen after
+seeing those results and reported as such, do not repair it either.  The
+cause is the point model: it predicts a flux no larger than the certificate
+radius on 64.5--73.8\% of the rows above the band, a false-stable bias that no
+score built from the prediction can separate from true stability.
+Class-conditional conformal stability sets, which use the prediction only to
+rank rows, cover each true class at 0.891--0.903.  Flux intervals conditioned
+on those sets cover the nonzero-flux rows at 0.792--0.797, against
+0.697--0.738 for the certificate on the same rows.  The cost is width: the
+median interval on those rows is 12.2, 14.4 and 2.36\,m$^2$\,s$^{-1}$.  Over 20
+random re-splits the per-class coverage averages 0.900--0.901.  Propagated
+with frozen coefficients through one L-mode transport case, the certificate
+interval spans a core temperature of 0.262--7.224\,keV around 1.702\,keV, so
+it carries little information as a profile prediction.  All guarantees are
+marginal within each class and assume exchangeability.
+\end{abstract}
+
+\noindent\textbf{Keywords:} conformal prediction; uncertainty quantification;
+neural surrogate; turbulent transport; QLKNN; label-conditional validity
+
+\section{Introduction}
+
+Neural surrogates of quasilinear transport models replace the transport code
+inside integrated modelling at a fraction of the cost.  QLKNN fits the
+QuaLiKiz model with networks whose training is shaped by the physics of the
+critical gradient \citep{vandePlassche2020}.  Its cost function fits the fluxes
+only on unstable points and adds an explicit penalty only for positive
+predictions where QuaLiKiz is stable (their Appendix~E).  False-stable
+predictions are penalised only through the squared error on unstable points,
+and no term controls their rate.  Recent work estimates the uncertainty of
+such surrogates with model-based methods, for example a classifier for mode
+presence and a Bayesian regressor for each flux \citep{Ho2025}.
+
+Split conformal prediction gives distribution-free intervals around any
+trained model.  The guarantee is marginal, not conditional on the input, and
+it assumes that calibration and test rows are exchangeable
+\citep{Gopakumar2026}.  For a transport surrogate the regimes matter: in the
+database used here most points have zero flux, and an interval that is right
+on average can be wrong where the flux is not zero.  Precise conditional
+validity on the input is not achievable in a useful way, but validity
+conditional on the label is: a label-conditional inductive conformal predictor
+controls the set-valued analogues of the false-positive and false-negative
+rates \citep{Vovk2012}.
+
+We measure the coverage of an existing 90\% certificate per regime, try the
+standard remedies, identify why they fail, and give a label-conditional
+remedy with its cost.  The surrogate is not QLKNN itself, and nothing here is
+attributed to QLKNN.
+
+\section{Surrogate, data and certificate}
+
+The surrogate is a fully connected network with hidden layers of 1024, 512 and
+256 units and three outputs, $\chi_e$, $\chi_i$ and $D_e$, trained on the
+QLKNN-10D database \citep{QLKNN10D2019}.  It has no gate and no log transform,
+and it converts gyro-Bohm-normalised outputs to physical units.  Its metrics
+record gives relative $L_2$ errors of 0.0917, 0.0954 and 0.0943 on the
+training, validation and test splits.  The cost function that produced these
+weights is not recorded with them.  The certificate uses the processed validation and
+test splits, of 47,826 and 47,828 rows; it records each file's SHA-256 digest.  Negative fluxes were clipped to zero in preprocessing, so the
+zero-flux class includes clipped rows.
+
+The certificate uses the absolute residual $|y - \hat{y}|$ as the score on the
+47,826 validation rows.  The radius $r$ of each channel is the calibration
+score of rank $\lceil (n+1)(1-\alpha) \rceil = 43{,}045$ for $\alpha = 0.1$, and
+the interval is $[\max(0, \hat{y} - r), \hat{y} + r]$.  The radii are 2.92,
+3.30 and 0.394\,m$^2$\,s$^{-1}$.  The 47,828 test rows serve only to check
+coverage.
+
+We use three target-defined regimes per channel: zero flux; a near-threshold
+band $(0, q]$, with $q$ the 10th percentile of the positive calibration
+targets; and the rows above the band.  These regimes are not known at
+prediction time.  They serve for evaluation only, never for calibration.  The
+database also carries an input-gradient label (ITG for $R/L_{T_i} > 4$, TEM for
+$R/L_{T_e} > 5$ with $R/L_{T_i} \le 4$, neither otherwise).  That label is
+known at prediction time, but it is not a stability label.
+
+\section{Coverage per regime}
+
+Table~\ref{tab:regimes} lists the coverage on the test rows.  The certificate
+reproduces its marginal coverage exactly.  The constant radius is set mainly by
+the zero-flux rows, 63--68\% of the data, and it over-covers them.  It
+falls short of 0.90 on the rows with nonzero flux by 16.2 to 20.3 points, and
+on the rows above the band by 18.9 to 23.5 points.  In the near-threshold band the intervals are so
+wide relative to the target that they carry no information: their median
+relative width $2r/y$ is 216, 12,214 and 296.  Under the input labels the
+coverage ranges from 0.862 to 0.981.
+
+\begin{table}[ht]
+\centering
+\caption{Coverage of the 90\% certificate on the 47,828 test rows, with the
+row count in parentheses.  Nonzero: the near-threshold band and the rows
+above it together.  Labels: the range over the three input-gradient labels.}
+\label{tab:regimes}
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Channel & Marginal & Zero flux & Near threshold & Above band & Nonzero & Labels \\
+\midrule
+$\chi_e$ & 0.901 & 0.997 (30,105) & 0.999 (1,748) & 0.709 (15,975) & 0.737 (17,723) & 0.862--0.969 \\
+$\chi_i$ & 0.900 & 0.995 (30,105) & 0.991 (1,763) & 0.711 (15,960) & 0.738 (17,723) & 0.862--0.981 \\
+$D_e$ & 0.903 & 0.997 (32,758) & 0.993 (1,452) & 0.665 (13,618) & 0.697 (15,070) & 0.882--0.956 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Standard conformal variants}
+
+Four variants were declared in the code before any result was seen: the
+marginal absolute score (the certificate); Mondrian groups by the input label;
+the absolute score divided by the gyro-Bohm scale; and the absolute score
+divided by $|\hat{y}| + r_0$, with $r_0$ the certificate radius.  After seeing
+their results we added two Mondrian variants grouped by the predicted flux
+($\hat{y} \le r_0$ or $\hat{y} > r_0$), one with each score.  They are marked
+post hoc in the code, in the report and here.
+
+\begin{table}[ht]
+\centering
+\caption{Conformal variants at the 90\% level.  Coverage of the rows above the
+near-threshold band and of all nonzero-flux rows, and the median half-width in
+m$^2$\,s$^{-1}$, for $\chi_e$ / $\chi_i$ / $D_e$.  The last two rows are post
+hoc.}
+\label{tab:variants}
+\small
+\begin{tabular}{lccc}
+\toprule
+Variant & Above band & Nonzero & Median half-width \\
+\midrule
+Marginal absolute (certificate) & 0.709 / 0.711 / 0.665 & 0.737 / 0.738 / 0.697 & 2.92 / 3.30 / 0.394 \\
+Mondrian, input label & 0.713 / 0.716 / 0.671 & 0.741 / 0.743 / 0.702 & 3.28 / 5.73 / 0.548 \\
+Gyro-Bohm normalised & 0.701 / 0.709 / 0.659 & 0.730 / 0.737 / 0.691 & 2.46 / 2.68 / 0.326 \\
+$|\hat{y}| + r_0$ normalised & 0.706 / 0.723 / 0.664 & 0.735 / 0.749 / 0.696 & 1.24 / 1.14 / 0.196 \\
+Mondrian, predicted flux & 0.724 / 0.733 / 0.669 & 0.751 / 0.758 / 0.700 & 0.893 / 0.658 / 0.131 \\
+\quad with $|\hat{y}| + r_0$ score & 0.719 / 0.735 / 0.666 & 0.747 / 0.760 / 0.698 & 0.716 / 0.541 / 0.110 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No variant lifts the coverage above the band beyond 0.735
+(Table~\ref{tab:variants}).  The $|\hat{y}| + r_0$ score is the efficient
+choice: it cuts the median width by half or more at about the same coverage.  The reason none of
+them helps lies in the point model.  On the rows above the band the surrogate
+predicts at most $r_0$ for 68.3\%, 64.5\% and 73.8\% of them, with a median
+ratio of prediction to target of 0.493, 0.602 and 0.305.  Such rows look
+stable to any score or group built from the prediction, so no such score or
+group can separate them from the truly stable rows.
+
+\section{Class-conditional stability sets}
+
+The prediction still ranks the rows even where its magnitude is wrong.  We
+therefore build, per channel, a label-conditional conformal predictor
+\citep{Vovk2012} for the stability class.  The score is $\hat{y}$ for the label
+``stable'' and $-\hat{y}$ for ``unstable''.  For each class $c$ the threshold
+$q_c$ is the calibration score of rank $\lceil (n_c+1)(1-\alpha) \rceil$ among
+the calibration rows of that class.  A label enters a test row's set when the
+row's score does not exceed the threshold of that label.  Under exchangeability
+the set contains the true label with probability at least $1-\alpha$ in each
+class.  The flux interval then follows the set:
+\begin{itemize}
+\item $[0, 0]$ when the set is \{stable\};
+\item $[\max(0, \hat{y} - q_f), \hat{y} + q_f]$ when it is \{unstable\};
+\item $[0, \hat{y} + q_f]$ when it holds both labels;
+\item an abstention when it is empty.
+\end{itemize}
+Here $q_f$ is the absolute-residual quantile of the unstable calibration rows.
+A union bound then covers an unstable row's flux with probability at least
+$1-2\alpha = 0.80$.  This experiment was designed after the variant comparison
+had shown the bias; its settings were fixed before it was run.
+
+\begin{table}[ht]
+\centering
+\caption{Stability sets on the test rows (original split).  Set coverage and
+the share of rows whose set holds both labels, per true class.  Flux coverage
+of the nonzero-flux rows, with the certificate on the same rows for
+comparison, and the median full width of their intervals in
+m$^2$\,s$^{-1}$.  No set was empty.}
+\label{tab:sets}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{2}{c}{Set coverage} & \multicolumn{2}{c}{Both labels} & \multicolumn{2}{c}{Nonzero-flux rows} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+Channel & stable & unstable & stable & unstable & flux coverage (cert.) & median width \\
+\midrule
+$\chi_e$ & 0.901 & 0.900 & 0.113 & 0.101 & 0.797 (0.737) & 12.2 \\
+$\chi_i$ & 0.902 & 0.894 & 0.205 & 0.156 & 0.792 (0.738) & 14.4 \\
+$D_e$ & 0.903 & 0.891 & 0.081 & 0.071 & 0.793 (0.697) & 2.36 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:sets} shows the result.  The flux coverage of the nonzero-flux
+rows rises to 0.792--0.797, close to the 0.80 bound, from 0.737, 0.738 and
+0.697: by 5 to 10 points.
+The price is width: the unstable residual quantile $q_f$ is 11.6, 13.8 and
+2.32\,m$^2$\,s$^{-1}$, against certificate radii of 2.92, 3.30 and 0.394.  Two
+unstable set coverages of the original split lie below 0.90 (0.894 and 0.891).
+Over 20 random halvings of the pooled calibration and test rows, the
+per-class set coverage has a mean of 0.900--0.901 and a range of 0.892--0.909,
+and the nonzero-flux coverage has a mean of 0.800--0.803 and a range of
+0.791--0.810.  The guarantee therefore holds on average; the original split's
+$D_e$ value of 0.891 lies just below the re-split minimum of 0.894.
+
+\section{Propagation to a transport profile}
+
+To see what the intervals mean for a profile, we ran one L-mode case of the
+integrated transport solver: the ITER-like test configuration at 20\,MW of
+auxiliary power, with neoclassical diffusivity and 1200 steps of 10\,ms.  The
+power lies below the threshold where the solver's pedestal modifier acts.  The
+neural closure reaches a steady state with a core temperature of 1.702\,keV, a
+mean temperature of 0.957\,keV and an energy confinement time of 1.242\,s.
+We then froze the turbulent diffusivity at its lower and upper interval bounds
+and ran the solver to steady state with those fixed coefficients.  The
+neoclassical part stays unchanged.  The lower bound is clipped at zero.
+
+At the certificate's bounds the core temperature spans 0.262--7.224\,keV and
+the confinement time 0.246--4.533\,s.  The certificate radii exceed the median
+turbulent diffusivities of the case (0.181, 0.368 and 0.0152\,m$^2$\,s$^{-1}$)
+many times over.  The lower ends of both intervals give the same steady state,
+consistent with the turbulent part being clipped to zero.  The narrower
+$|\hat{y}| + r_0$ interval moves only the upper end, to 0.455\,keV.  As a
+profile prediction, a 90\% flux interval of this kind spans a factor of 4.2
+upward and 6.5 downward in core temperature.  This is a frozen-coefficient sensitivity
+for one case, not a self-consistent propagation: the diffusivity depends on the
+evolving gradients.
+
+\section{Limitations}
+
+\begin{itemize}
+\item All guarantees are marginal within a class and assume that calibration
+and test rows are exchangeable.  Nothing is claimed for data outside the
+database's distribution.
+\item The targets are QuaLiKiz-derived database values, not gyrokinetic or
+experimental fluxes.
+\item The surrogate is one network.  Its training cost is not recorded with
+its weights, so the bias is not attributed to any training choice.
+\item The two post hoc variants and the stability sets were designed after
+earlier results.  Their settings were fixed before their own runs.
+\item The profile propagation covers one case, with frozen coefficients.
+\end{itemize}
+
+\section*{Software version and date}
+
+This preprint describes \texttt{scpn-fusion} at commit \texttt{8191a1d31e39}
+of 16 November 2026, on the main line after release 4.1.0.  The analysis
+modules are not part of that release.  Each report records the commit that
+produced it, and the evidence manifest lists those commits.  Since then the
+analysis code changed only by making private helpers public.  The variant
+report, produced after the first such change, reproduces the regime report's
+certificate coverage exactly.
+
+\section*{Data and code availability}
+
+Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  The
+certificate and the four reports cited here, with their source revisions, Git
+blob identities and SHA-256 digests, are in \texttt{evidence/} of this
+submission directory.  The generator in that directory checks every quoted
+value against them, including the derived nonzero-flux coverages.  This is a
+venue-neutral preprint and has not been submitted.  No DOI has been reserved
+and the manuscript-content licence has not yet been selected by the author.
+
+\section*{Use of AI tools}
+
+Large language model coding agents were used substantively for generating and
+debugging the analysis code and for drafting and revising the manuscript text.
+The agents were commercially available models, which are not named because no
+vendor is involved in or sponsors this work.  They were coordinated through
+SYNAPSE CHANNEL (version 0.99.52 at the time of writing;
+\url{https://github.com/anulum/synapse-channel}), the open-source
+agent-coordination tool of the ANULUM Agentic Coordination, Assurance and
+Continuity Systems group.  The author specified the analyses, verified the
+code through its tests and every reported number against the committed
+reports, and takes full responsibility for the content.
+
+\bibliography{references}
+\end{document}

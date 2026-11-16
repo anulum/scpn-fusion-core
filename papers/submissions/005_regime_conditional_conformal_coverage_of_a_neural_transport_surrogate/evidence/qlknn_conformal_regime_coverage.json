@@ -1,0 +1,239 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE conformal-coverage paper evidence.",
+  "certificate": {
+    "path": "validation/surrogate_conformal_certificates.json",
+    "sha256": "bcc8ceef6837f0fb4cac328b85b5d9ba606c55bc3ae03df753ac4d9f4c53d744",
+    "target_marginal_coverage": 0.9
+  },
+  "channels": {
+    "D_e": {
+      "input_labels": {
+        "itg_label": {
+          "coverage": 0.8819448784450972,
+          "covered": 28224,
+          "median_relative_width": 4.1514578146257595,
+          "n": 32002,
+          "wilson95": [
+            0.8783636802977863,
+            0.8854343917339291
+          ]
+        },
+        "neither_label": {
+          "coverage": 0.9557479557479558,
+          "covered": 7948,
+          "median_relative_width": 2.9258825511421835,
+          "n": 8316,
+          "wilson95": [
+            0.9511134691973578,
+            0.959961584037423
+          ]
+        },
+        "tem_label": {
+          "coverage": 0.9327563249001332,
+          "covered": 7005,
+          "median_relative_width": 5.121000928085276,
+          "n": 7510,
+          "wilson95": [
+            0.9268680137005737,
+            0.9382021419079775
+          ]
+        }
+      },
+      "marginal_coverage": 0.9027557079535,
+      "near_threshold_upper_value": 0.007297630821108093,
+      "radius": 0.393531312934,
+      "target_regimes": {
+        "near_threshold": {
+          "coverage": 0.9931129476584022,
+          "covered": 1442,
+          "median_relative_width": 295.5131290375797,
+          "n": 1452,
+          "wilson95": [
+            0.9873687796488799,
+            0.9962548088426808
+          ]
+        },
+        "stable": {
+          "coverage": 0.9974052139935283,
+          "covered": 32673,
+          "median_relative_width": null,
+          "n": 32758,
+          "wilson95": [
+            0.9967929406109479,
+            0.9979008418176374
+          ]
+        },
+        "unstable": {
+          "coverage": 0.665442796299016,
+          "covered": 9062,
+          "median_relative_width": 3.0706866518320997,
+          "n": 13618,
+          "wilson95": [
+            0.6574724358144345,
+            0.6733198446288372
+          ]
+        }
+      }
+    },
+    "chi_e": {
+      "input_labels": {
+        "itg_label": {
+          "coverage": 0.8919442534841573,
+          "covered": 28544,
+          "median_relative_width": 3.997777872442653,
+          "n": 32002,
+          "wilson95": [
+            0.8884957318946293,
+            0.8952986898916596
+          ]
+        },
+        "neither_label": {
+          "coverage": 0.9693362193362194,
+          "covered": 8061,
+          "median_relative_width": 7.671363164710214,
+          "n": 8316,
+          "wilson95": [
+            0.9654085893559002,
+            0.9728304430386511
+          ]
+        },
+        "tem_label": {
+          "coverage": 0.8623169107856192,
+          "covered": 6476,
+          "median_relative_width": 1.7632670537269428,
+          "n": 7510,
+          "wilson95": [
+            0.8543385167809269,
+            0.8699248350378016
+          ]
+        }
+      },
+      "marginal_coverage": 0.9007485155139249,
+      "near_threshold_upper_value": 0.06605219126325629,
+      "radius": 2.915758581324,
+      "target_regimes": {
+        "near_threshold": {
+          "coverage": 0.9988558352402745,
+          "covered": 1746,
+          "median_relative_width": 216.07867885873952,
+          "n": 1748,
+          "wilson95": [
+            0.9958377037860524,
+            0.999686172657668
+          ]
+        },
+        "stable": {
+          "coverage": 0.9968775950838731,
+          "covered": 30011,
+          "median_relative_width": null,
+          "n": 30105,
+          "wilson95": [
+            0.996180837092099,
+            0.9974475640842442
+          ]
+        },
+        "unstable": {
+          "coverage": 0.7088575899843506,
+          "covered": 11324,
+          "median_relative_width": 2.7412563182377223,
+          "n": 15975,
+          "wilson95": [
+            0.701763388985918,
+            0.715851368454231
+          ]
+        }
+      }
+    },
+    "chi_i": {
+      "input_labels": {
+        "itg_label": {
+          "coverage": 0.8622273607899507,
+          "covered": 27593,
+          "median_relative_width": 2.63813582052099,
+          "n": 32002,
+          "wilson95": [
+            0.8584076879505784,
+            0.865960081908838
+          ]
+        },
+        "neither_label": {
+          "coverage": 0.9811207311207312,
+          "covered": 8159,
+          "median_relative_width": 28.083790949764975,
+          "n": 8316,
+          "wilson95": [
+            0.9779657105929928,
+            0.9838314630197668
+          ]
+        },
+        "tem_label": {
+          "coverage": 0.9723035952063914,
+          "covered": 7302,
+          "median_relative_width": 197.44022848340913,
+          "n": 7510,
+          "wilson95": [
+            0.9683438041185449,
+            0.9757804549410029
+          ]
+        }
+      },
+      "marginal_coverage": 0.9001839926402944,
+      "near_threshold_upper_value": 0.004071341344472331,
+      "radius": 3.302462278593,
+      "target_regimes": {
+        "near_threshold": {
+          "coverage": 0.9914917753828701,
+          "covered": 1748,
+          "median_relative_width": 12214.429273143392,
+          "n": 1763,
+          "wilson95": [
+            0.9860092143806346,
+            0.9948371379325595
+          ]
+        },
+        "stable": {
+          "coverage": 0.9953828267729613,
+          "covered": 29966,
+          "median_relative_width": null,
+          "n": 30105,
+          "wilson95": [
+            0.9945512739322622,
+            0.9960879720444997
+          ]
+        },
+        "unstable": {
+          "coverage": 0.7105263157894737,
+          "covered": 11340,
+          "median_relative_width": 3.168697046648672,
+          "n": 15960,
+          "wilson95": [
+            0.7034403127934289,
+            0.7175109987899694
+          ]
+        }
+      }
+    }
+  },
+  "checks": {
+    "every_row_in_exactly_one_group": true,
+    "marginal_coverage_reproduces_certificate": true
+  },
+  "definitions": {
+    "coverage": "holdout canonical absolute residual <= certificate radius",
+    "input_labels": "split 'regimes': R/L_Ti > 4 itg; R/L_Te > 5 and R/L_Ti <= 4 tem; else neither",
+    "near_threshold_quantile_of_positive_calibration_targets": 0.1,
+    "relative_width": "2 * radius / target, positive targets only",
+    "target_regimes": "per channel: 0 stable; (0, q] near_threshold; > q unstable"
+  },
+  "holdout_rows": 47828,
+  "output_unit": "physical transport coefficient (m^2/s)",
+  "schema": "scpn-fusion-core.qlknn-conformal-regime-coverage.v1",
+  "source_revision": "50f11e83d60e02dd6f8b60601cff11681613eb08",
+  "status": "pass"
+}

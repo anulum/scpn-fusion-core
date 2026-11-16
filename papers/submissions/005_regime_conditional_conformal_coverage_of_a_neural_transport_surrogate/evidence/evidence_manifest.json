@@ -1,0 +1,120 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE conformal-coverage paper evidence manifest.",
+  "schema_version": "2.0",
+  "repository_revision": "8191a1d31e39ddb4762ef745730fce7e939cd36f",
+  "claim_boundary": {
+    "coverage": "marginal within each class; exchangeability of the split assumed",
+    "data": "QuaLiKiz-derived QLKNN-10D database values, not gyrokinetic or measured",
+    "post_hoc": "two Mondrian-by-prediction variants and the stability sets came later",
+    "profile": "frozen-coefficient sensitivity on one L-mode case"
+  },
+  "source_custody": {
+    "surrogate_conformal_certificates.json": {
+      "source_path": "validation/surrogate_conformal_certificates.json",
+      "source_revision": "019faf9c581ca0b5f78d55078971b4d2ae39f355",
+      "git_blob_oid_sha1": "5d6217fdfa4ecac412261cdaf58cce58b109487f",
+      "source_sha256": "bcc8ceef6837f0fb4cac328b85b5d9ba606c55bc3ae03df753ac4d9f4c53d744",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "qlknn_conformal_regime_coverage.json": {
+      "source_path": "validation/reports/qlknn_conformal_regime_coverage.json",
+      "source_revision": "d73d1bbd97fd09ea53723283829a4c953a100c6e",
+      "git_blob_oid_sha1": "ee814b7e2043dd2318d168d418e489ee44c0820b",
+      "source_sha256": "78339264eacab2aeaa859270ed6fd3acc7fb388b73ff7e36640610fc28694b1c",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "qlknn_conformal_variants.json": {
+      "source_path": "validation/reports/qlknn_conformal_variants.json",
+      "source_revision": "b2f1355972b4b3c6d5a905a8e99d52e52e21f1d7",
+      "git_blob_oid_sha1": "995657db627e4e4a97f7d6e12f5939438b2dac13",
+      "source_sha256": "f4db3e20ea8acd063c0bd7ac80cfae93707964fb1751dd50f2bb796aeda76080",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "qlknn_conformal_stability_sets.json": {
+      "source_path": "validation/reports/qlknn_conformal_stability_sets.json",
+      "source_revision": "390ffc4be65ac307aba9393422c0cec4b79369c3",
+      "git_blob_oid_sha1": "2ddb7ce00be38c0f9ff73123fdfcf7d1e4f513b2",
+      "source_sha256": "58c44f109dc15f97df0cb9f4678eb1b0fb076f0b0cc1f5b8611b7001c3ee2023",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "qlknn_conformal_profile_envelope.json": {
+      "source_path": "validation/reports/qlknn_conformal_profile_envelope.json",
+      "source_revision": "ac143e89331bb7b67df7a27505ec8368985ece36",
+      "git_blob_oid_sha1": "4ec7b150c7b1250db45ddfdc099316ac14730038",
+      "source_sha256": "7b9e2ec452032f16c2b9641dcaa3fea77456a0a7bdee4b4538500d05e46b1cc7",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "neural_transport_qlknn.metrics.json": {
+      "source_path": "weights/neural_transport_qlknn.metrics.json",
+      "source_revision": "54af9b7c5c27b96781c7a760577384d1ed42373a",
+      "git_blob_oid_sha1": "826d91ca032fe54dcda845eef971ff29022ea3a9",
+      "source_sha256": "e761e2dc61bed856454a2b83a9a4006197e22b6ed072ccf438d6346bf47bcce8",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    }
+  },
+  "implementation_sources": {
+    "tools/generate_surrogate_conformal_certificates.py": {
+      "git_blob_oid_sha1": "f71257aec9e0d54618606aa3ff6519cd77c61abd",
+      "sha256": "f79c844d31c26c9978325be09f111c6ad0b6ede2916068dd7102a2572b27036e",
+      "role": "split-conformal certificate and the public residual scores"
+    },
+    "validation/qlknn_conformal_regime_coverage.py": {
+      "git_blob_oid_sha1": "b96c2ab272df492861b4b0740b12616a23b05bb2",
+      "sha256": "12fca8dd6e37f1da486eef6c35b3f28adbe5e0466bee79df4d16bba95d2b918a",
+      "role": "coverage per target-defined regime and per input label"
+    },
+    "validation/qlknn_conformal_variants.py": {
+      "git_blob_oid_sha1": "2829118054605332d16e022641cff4a2e8f7abd4",
+      "sha256": "283df9b697627f53f42c5acaa1b73863cbf97b4455e53855b3fefc0574553d89",
+      "role": "four declared and two post hoc conformal variants, surrogate diagnostics"
+    },
+    "validation/qlknn_conformal_stability_sets.py": {
+      "git_blob_oid_sha1": "90a7bf4b2a5596104a473b1496c3ae7185967091",
+      "sha256": "2e6e5578a3822552af460ce1b1df43dbf3b5778958ce504f93c1292e4c381063",
+      "role": "class-conditional stability sets, conditional flux intervals, re-splits"
+    },
+    "validation/qlknn_conformal_profile_envelope.py": {
+      "git_blob_oid_sha1": "e3e14dd45c40a3bbaac0c66dfa078dbd7e66dcce",
+      "sha256": "3f1933afa3521c2fdc914763b4c5dba3756fcceb6c8d37690ac37b192c6c2baf",
+      "role": "frozen-coefficient propagation through the transport solver"
+    }
+  },
+  "quoted_values": 156,
+  "generators": {
+    "papers/submissions/005_regime_conditional_conformal_coverage_of_a_neural_transport_surrogate/generate_evidence_manifest.py": {
+      "sha256": "4558a065bb02d791d71fd88603f8bc992ab55c2a17671ddc819223ee10bab491"
+    }
+  },
+  "files": {
+    "surrogate_conformal_certificates.json": {
+      "sha256": "93e506c651cec9b649746c753ffb788afe1977097df34ab7ddd1d8683b0038a0",
+      "role": "90 % split-conformal certificate per channel"
+    },
+    "qlknn_conformal_regime_coverage.json": {
+      "sha256": "59d634c5f463d08c55a06b8c5ac3f4e84f2dfd9e9136028d3543edcf9e731f0b",
+      "role": "certificate coverage per regime and input label"
+    },
+    "qlknn_conformal_variants.json": {
+      "sha256": "6ee184ae5b85e815c8aa0a365b318b190ce47c6c4a73095efbcfc727773295fb",
+      "role": "conformal variants and surrogate false-stable diagnostics"
+    },
+    "qlknn_conformal_stability_sets.json": {
+      "sha256": "7b282233a982983e8ff7ad73e422bd9530f81ac6dee8968f89b22548c968221b",
+      "role": "stability sets, conditional flux intervals, re-splits"
+    },
+    "qlknn_conformal_profile_envelope.json": {
+      "sha256": "cfe83c24797065d8e92e3e944f2613e561e2154ebb3ed960412763f9dd9d56e7",
+      "role": "frozen-coefficient transport-profile envelope"
+    },
+    "neural_transport_qlknn.metrics.json": {
+      "sha256": "e48ca096e5803f95814d5978616727e0beec10331f2def200fbce2f1e41673ae",
+      "role": "surrogate training record: errors and hidden sizes"
+    }
+  }
+}

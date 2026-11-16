@@ -1,0 +1,22 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE conformal-coverage paper evidence.",
+  "test_relative_l2": 0.09430918020180648,
+  "val_relative_l2": 0.09540667882993831,
+  "train_relative_l2": 0.09173176131406788,
+  "best_val_mse": 0.0025658053291303887,
+  "epochs_run": 911,
+  "training_time_s": 13126.700219258666,
+  "platform": "GPU",
+  "hidden_dims": [
+    1024,
+    512,
+    256
+  ],
+  "data_source": "QLKNN-10D (Zenodo DOI 10.5281/zenodo.3497066)"
+}

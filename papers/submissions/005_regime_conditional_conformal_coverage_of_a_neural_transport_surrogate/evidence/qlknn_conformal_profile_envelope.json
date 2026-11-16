@@ -1,0 +1,96 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE conformal-coverage paper evidence.",
+  "alpha": 0.1,
+  "case": {
+    "config": "validation/iter_config.json",
+    "dt_s": 0.01,
+    "neoclassical": {
+      "A_ion": 2.5,
+      "B0": 5.3,
+      "R0": 6.2,
+      "Z_eff": 1.7,
+      "a": 2.0,
+      "q0": 1.0,
+      "q_edge": 3.0
+    },
+    "p_aux_mw": 20.0,
+    "steps": 1200
+  },
+  "certificate_radius_m2_s": {
+    "D_e": 0.393531312934,
+    "chi_e": 2.915758581324,
+    "chi_i": 3.302462278593
+  },
+  "checks": {
+    "neural_run_reached_steady_state": true,
+    "nominal_frozen_run_reproduces_neural_steady_state": true
+  },
+  "envelopes": {
+    "certificate": {
+      "lower_turbulence": {
+        "T_avg_keV": 3.77105243225872,
+        "T_core_keV": 7.223738279010957,
+        "tau_e_s": 4.532737907304694
+      },
+      "median_half_width_m2_s": {
+        "D_e": 0.393531312934,
+        "chi_e": 2.915758581324,
+        "chi_i": 3.302462278593
+      },
+      "upper_turbulence": {
+        "T_avg_keV": 0.17968709294643845,
+        "T_core_keV": 0.2619022267224748,
+        "tau_e_s": 0.2461915449976329
+      }
+    },
+    "normalised_prediction": {
+      "lower_turbulence": {
+        "T_avg_keV": 3.77105243225872,
+        "T_core_keV": 7.223738279010957,
+        "tau_e_s": 4.532737907304694
+      },
+      "median_half_width_m2_s": {
+        "D_e": 0.20311490833560752,
+        "chi_e": 1.3128203226214525,
+        "chi_i": 1.263886144659748
+      },
+      "upper_turbulence": {
+        "T_avg_keV": 0.2728980010496959,
+        "T_core_keV": 0.45468305224952354,
+        "tau_e_s": 0.35706213455468894
+      }
+    }
+  },
+  "median_turbulent_diffusivity_m2_s": {
+    "D_e": 0.01517690046497741,
+    "chi_e": 0.18113936255050733,
+    "chi_i": 0.36817171938709004
+  },
+  "neural_steady_state": {
+    "T_avg_keV": 0.9570848842962247,
+    "T_core_keV": 1.7017534066412965,
+    "tau_e_s": 1.242267966720441
+  },
+  "nominal_frozen": {
+    "T_avg_keV": 0.9577248780440948,
+    "T_core_keV": 1.702631703586847,
+    "tau_e_s": 1.2431818735334537
+  },
+  "nominal_reproduction_relative_error": 0.0005161129351189953,
+  "normalised_prediction_quantile": {
+    "D_e": 0.49696801208476943,
+    "chi_e": 0.4239146224428023,
+    "chi_i": 0.344323663256879
+  },
+  "schema": "scpn-fusion-core.qlknn-conformal-profile-envelope.v1",
+  "source_revision": "18379b8a3f2e093daedac4c3f55b122effef20be",
+  "status": "pass",
+  "steady_state_relative_change": 0.00023310705092239274,
+  "weights_sha256": "0f44681e10686c09826e4a738bec0fe3bd49d82c1af9288489a12a4b2af6faad"
+}

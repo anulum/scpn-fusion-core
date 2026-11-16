@@ -1,0 +1,83 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE conformal-coverage paper evidence.",
+  "schema": "scpn-fusion-core.surrogate-conformal-certificates.v1",
+  "method": {
+    "name": "split_conformal_absolute_residual",
+    "blas_threads": 1,
+    "alpha": 0.1,
+    "target_marginal_coverage": 0.9,
+    "quantile_rank_formula": "ceil((n_calibration + 1) * (1 - alpha))",
+    "residual_canonical_decimal_places": 12,
+    "reference": {
+      "title": "Distribution-Free Predictive Inference for Regression",
+      "doi": "10.1080/01621459.2017.1307116"
+    },
+    "assumptions": [
+      "Calibration and future examples are exchangeable.",
+      "Coverage is marginal per output channel, not conditional on an input or OOD state.",
+      "The z-score OOD trigger remains a separate escalation mechanism and is not an error bound."
+    ]
+  },
+  "certificates": [
+    {
+      "id": "qlknn10d_neural_transport",
+      "status": "certified_split_conformal",
+      "model": {
+        "weights": "weights/neural_transport_qlknn.npz",
+        "weights_file_sha256": "0f44681e10686c09826e4a738bec0fe3bd49d82c1af9288489a12a4b2af6faad",
+        "runtime_weights_checksum": "65ce0a395f4afbf6"
+      },
+      "calibration": {
+        "split": "data/qlknn10d_processed/val.npz",
+        "split_sha256": "3f31161e8e37221139686429386e884d633ca82f2834ebc9ce1d7efa3713a502",
+        "source_targets_gb_normalized": true,
+        "certificate_output_unit": "physical transport coefficient (m^2/s)",
+        "n": 47826,
+        "quantile_rank_one_based": 43045
+      },
+      "holdout": {
+        "split": "data/qlknn10d_processed/test.npz",
+        "split_sha256": "c6547e1cfd186dfe082bd0e452fe645eee0bb86ae2eb2cbe3c535e25d28a4690",
+        "source_targets_gb_normalized": true,
+        "certificate_output_unit": "physical transport coefficient (m^2/s)",
+        "n": 47828,
+        "role": "independent_empirical_coverage_check_only"
+      },
+      "channels": [
+        {
+          "name": "chi_e",
+          "unit": "physical transport coefficient (m^2/s)",
+          "nonconformity": "absolute_error",
+          "interval": "[max(0, prediction - radius), prediction + radius]",
+          "radius": 2.915758581324,
+          "calibration_score_sha256": "a1d14fb1b5da862a2acd51bf386b2e8934724ff6adeee1ccd3ae5b0ea7db0e2e",
+          "holdout_empirical_coverage": 0.9007485155139249
+        },
+        {
+          "name": "chi_i",
+          "unit": "physical transport coefficient (m^2/s)",
+          "nonconformity": "absolute_error",
+          "interval": "[max(0, prediction - radius), prediction + radius]",
+          "radius": 3.302462278593,
+          "calibration_score_sha256": "8d30b70af229e9c1cf353816fad83c2c7b1b0c52d828abac063e010b3318f443",
+          "holdout_empirical_coverage": 0.9001839926402944
+        },
+        {
+          "name": "D_e",
+          "unit": "physical transport coefficient (m^2/s)",
+          "nonconformity": "absolute_error",
+          "interval": "[max(0, prediction - radius), prediction + radius]",
+          "radius": 0.393531312934,
+          "calibration_score_sha256": "3bde418067dcfbc2b80ef93b154c0cd061fbce92cdaefbfc8fc2a3b56f138422",
+          "holdout_empirical_coverage": 0.9027557079535
+        }
+      ]
+    }
+  ]
+}

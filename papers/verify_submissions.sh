@@ -298,6 +298,8 @@ main() {
     ln -s -- "${REPO_ROOT}/src" "${PAPER_VERIFY_ROOT}/src"
     ln -s -- "${REPO_ROOT}/.venv" "${PAPER_VERIFY_ROOT}/.venv"
     ln -s -- "${REPO_ROOT}/validation" "${PAPER_VERIFY_ROOT}/validation"
+    ln -s -- "${REPO_ROOT}/tools" "${PAPER_VERIFY_ROOT}/tools"
+    ln -s -- "${REPO_ROOT}/weights" "${PAPER_VERIFY_ROOT}/weights"
 
     if [[ "$#" -gt 0 ]]; then
         for package_name in "$@"; do

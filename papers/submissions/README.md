@@ -22,6 +22,7 @@ Packages prepared on 16 November 2026 (dated preprints; not deposited or
 submitted):
 
 - [`004_same_case_free_boundary_comparison_with_freegsnke/`](004_same_case_free_boundary_comparison_with_freegsnke/)
+- [`005_regime_conditional_conformal_coverage_of_a_neural_transport_surrogate/`](005_regime_conditional_conformal_coverage_of_a_neural_transport_surrogate/)
 
 The presence of a workspace does not authorize external upload or submission.
 Historical files from the superseded shared layout remain retrievable through
