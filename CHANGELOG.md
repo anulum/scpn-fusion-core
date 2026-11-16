@@ -58,6 +58,15 @@
   gated. Cases and starts can run separately, and `--merge` joins the
   partial reports. The FreeGSNKE workflow runs its tests. No tracked report
   yet.
+- `validation/reports/linear_mhd_reduced_model_acceptance.json` is the tracked
+  run of the fixed linear-MHD acceptance at c1bc7f63, on a Xeon E5-2640 host
+  with OpenBLAS at 8 threads. It passes 7 of 9 criteria and misses two:
+  - the cylindrical tearing slope, 0.554 (the miss the 4.1.0 notes state);
+  - the Δ' < 0 Harris sheet, whose root at 7.9e-9 exceeds the fixed 1e-9
+    limit.
+
+  The 4.1.0 "8 of 9" was the first run, before the eigenvalue-search fix. The
+  cylindrical FKR comparison now uses the corrected Δ' = 9.6947: ratio 0.951.
 
 ### Fixed
 

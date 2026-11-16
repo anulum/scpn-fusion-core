@@ -914,18 +914,27 @@ Arnoldi from a fixed start vector over real shifts lowered and raised
 geometrically, each root refined by inverse iteration next to itself and
 verified by its eigenvector residual; the iterative result is marked
 incomplete, and "no root" means none in the searched domain, not stability.
-The reference $\Delta'$ comes from `core/linear_mhd_delta_prime.py`. It
-reproduces the Harris-sheet FKR contract above to 0.2 % at $S=10^8$ (slope 0.598), the
-resistive internal kink $\gamma=\eta^{1/3}|F'(r_s)|^{2/3}$ (Coppi et al.
-1976) to 3 % at $S=10^8$, and the cylindrical FKR law with an independently
-shot $\Delta'$ to 5 % at $S=10^8$. That comparison used the earlier
-$\Delta'=9.6846$; the extrapolation now includes the
-$\epsilon\ln^2\epsilon$ term of the singular solution, is stable to
-$3\times10^{-7}$ between excision windows and gives $\Delta'=9.6947$
-(0.1 % higher); the comparison has not been re-run with it. The cylindrical tearing slope over
-$S=10^6$–$10^8$ is 0.554, below the asymptotic 3/5 because of the finite
-$\Delta'\delta$ correction at $\Delta'=9.7$; this run is recorded as a miss
-against its fixed criterion (`validation/linear_mhd_reduced_model_acceptance.py`).
+The reference $\Delta'$ comes from `core/linear_mhd_delta_prime.py`. Its
+extrapolation includes the $\epsilon\ln^2\epsilon$ term of the singular solution
+and is stable to $3\times10^{-7}$ between excision windows.
+
+The fixed acceptance (`validation/linear_mhd_reduced_model_acceptance.py`) passes
+7 of 9 criteria. The tracked run
+(`validation/reports/linear_mhd_reduced_model_acceptance.json`) records its source
+revision, source digests and host. It reproduces:
+- the Harris-sheet FKR contract above to 0.2 % at $S=10^8$ (slope 0.598);
+- the resistive internal kink $\gamma=\eta^{1/3}|F'(r_s)|^{2/3}$ (Coppi et al.
+  1976) to 3.1 % at $S=10^8$ (slope 0.306);
+- the cylindrical FKR law with the independently shot $\Delta'=9.6947$ to 4.9 % at
+  $S=10^8$.
+
+Two criteria are missed, and each is recorded as a miss:
+- The cylindrical tearing slope over $S=10^6$–$10^8$ is 0.554, below the asymptotic
+  3/5, because of the finite $\Delta'\delta$ correction at $\Delta'=9.7$.
+- The $\Delta'<0$ Harris sheet ($ka=1.2$) at $S=10^6$ has a root at
+  $7.9\times10^{-9}$, above the fixed $10^{-9}$ limit. That is more than four orders
+  of magnitude below the $ka=0.5$ tearing rate at the same $S$
+  ($2.5\times10^{-4}$).
 
 `core/linear_mhd_2d.py` extends the same model to a shaped periodic cylinder
 (elongation, triangularity, radial shift) in straight-field-line coordinates,

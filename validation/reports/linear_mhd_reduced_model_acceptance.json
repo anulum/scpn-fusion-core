@@ -1,0 +1,122 @@
+{
+  "criteria": {
+    "cylinder_resistive_kink_ratio": {
+      "band": [
+        0.75,
+        1.25
+      ],
+      "pass": true,
+      "value": 0.9688609699825854
+    },
+    "cylinder_resistive_kink_slope": {
+      "band": [
+        0.30333333333333334,
+        0.3633333333333333
+      ],
+      "pass": true,
+      "value": 0.3055976436362233
+    },
+    "cylinder_tearing_fkr_ratio": {
+      "band": [
+        0.85,
+        1.15
+      ],
+      "pass": true,
+      "value": 0.9514014224899989
+    },
+    "cylinder_tearing_slope": {
+      "band": [
+        0.56,
+        0.64
+      ],
+      "pass": false,
+      "value": 0.5544911310862968
+    },
+    "harris_element_doubling_change": {
+      "limit": 0.005,
+      "pass": true,
+      "value": 1.333364778588475e-07
+    },
+    "harris_negative_delta_prime_stable": {
+      "limit": 1e-09,
+      "pass": false,
+      "value": 7.92412474672222e-09
+    },
+    "harris_tearing_fkr_ratio": {
+      "band": [
+        0.9,
+        1.1
+      ],
+      "pass": true,
+      "value": 0.9981992908957649
+    },
+    "harris_tearing_slope": {
+      "band": [
+        0.57,
+        0.63
+      ],
+      "pass": true,
+      "value": 0.597915700174484
+    },
+    "sparse_dense_agreement": {
+      "limit": 1e-08,
+      "pass": true,
+      "value": 0.0
+    }
+  },
+  "inputs": {
+    "cylinder_delta_prime": 9.694741880950112,
+    "cylinder_kink_growth": [
+      0.001152493294282934,
+      0.0005850062937382804,
+      0.00028212600547408327
+    ],
+    "cylinder_tearing_growth": [
+      0.0003048698976419243,
+      8.861767138385733e-05,
+      2.3720961179758076e-05
+    ],
+    "etas": [
+      1e-06,
+      1e-07,
+      1e-08
+    ],
+    "slab_growth": [
+      0.00024812332471423385,
+      6.275535328701542e-05,
+      1.5806517317929844e-05
+    ]
+  },
+  "passed": 7,
+  "provenance": {
+    "blas": {
+      "name": "scipy-openblas",
+      "version": "0.3.34.106.0"
+    },
+    "cpu_count": 24,
+    "cpu_models": [
+      "Intel(R) Xeon(R) CPU E5-2640 0 @ 2.50GHz"
+    ],
+    "elapsed_s": 2962.2891492089257,
+    "machine": "x86_64",
+    "numpy": "2.5.4",
+    "python": "3.12.3",
+    "scipy": "1.17.1",
+    "source_revision": "c1bc7f63a93b29e6f9cdf284b09a287775697292",
+    "source_sha256": {
+      "src/scpn_fusion/core/linear_mhd_1d.py": "bb16a5957a0339dc4528e68ea8e71b75a7e3c6a4f338427dfd8953369d2e0ff2",
+      "src/scpn_fusion/core/linear_mhd_delta_prime.py": "8990e06a3752ffe98d0b2c41969ca3e4f7dc36cf0fdd375087e7e88ee6cf560d",
+      "src/scpn_fusion/core/linear_mhd_spectrum.py": "4060453623aa2671954c54b240f5f951bf81c346249a5ee322af6c0a149d0d24",
+      "src/scpn_fusion/core/tearing_mode_theory.py": "3ee63511991367468b5943bc6c18f76105a241773a04c9d9c786d3fd2bbdee4d",
+      "validation/linear_mhd_reduced_model_acceptance.py": "016354218ec44c91df7be5882c61242b8e6e296a04bab1da9ff45cdce3a10499"
+    },
+    "started_at": "2026-11-15T23:18:17.721220+00:00",
+    "threads": {
+      "MKL_NUM_THREADS": null,
+      "OMP_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "8"
+    }
+  },
+  "schema": "scpn-fusion.linear-mhd-reduced-model-acceptance.v1",
+  "total": 9
+}
