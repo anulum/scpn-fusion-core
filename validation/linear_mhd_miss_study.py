@@ -22,9 +22,16 @@ study asks what lies behind the two misses, without touching the acceptance or i
    7.9e-9 at eta = 1e-6, above its 1e-9 limit. The study repeats the search at three
    resistivities and two element counts and reports the root at each.
 
+Every solve uses the acceptance's grid (smallest spacing ``0.02 eta^(1/3)`` at the resonant
+surface) but is a dense QZ solve over all finite eigenvalues: the problems have at most 3200
+unknowns, and ``DENSE_LIMIT`` lifts the 2000-unknown limit above which the acceptance's
+``growth_rate`` switches to the iterative shift-and-invert search. So a zero root means that
+the discrete spectrum has no eigenvalue with real part above 1e-12, at either element count;
+the method and completeness of each solve are recorded.
+
 Findings are reported, not gated; the gates concern completeness only: every solve returned
-a finite number. The record carries the source revision, source digests, library versions,
-thread settings and host.
+a finite number and was a complete dense search. The record carries the source revision,
+source digests, library versions, thread settings and host.
 
 Usage: python validation/linear_mhd_miss_study.py [--output study.json] [--markdown study.md]
 """
@@ -40,6 +47,7 @@ import platform
 import subprocess
 import sys
 from collections.abc import Callable
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -51,16 +59,26 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from scpn_fusion.core.linear_mhd_1d import Geometry1D, WessonCylinder, growth_rate, harris_slab
+from scpn_fusion.core.linear_mhd_1d import (
+    Geometry1D,
+    WessonCylinder,
+    assemble,
+    clustered_grid,
+    harris_slab,
+)
 from scpn_fusion.core.linear_mhd_delta_prime import cylinder_delta_prime
+from scpn_fusion.core.linear_mhd_spectrum import unstable_search
 from scpn_fusion.core.tearing_mode_theory import FKR_MATCHING_COEFFICIENT
 
 REPORT_PATH = ROOT / "validation/reports/linear_mhd_miss_study.json"
 MARKDOWN_PATH = ROOT / "validation/reports/linear_mhd_miss_study.md"
-SCHEMA = "scpn-fusion.linear-mhd-miss-study.v1"
+SCHEMA = "scpn-fusion.linear-mhd-miss-study.v2"
 SLOPE_ETAS = (1e-6, 1e-7, 1e-8, 1e-9, 1e-10)
 ROOT_ETAS = (1e-6, 1e-7, 1e-8)
 ELEMENTS = (200, 400)
+SPACING_FACTOR = 0.02
+SIGMA_MIN = 1e-12
+DENSE_LIMIT = 4000
 SOURCE_PATHS = (
     "src/scpn_fusion/core/linear_mhd_1d.py",
     "src/scpn_fusion/core/linear_mhd_delta_prime.py",
@@ -78,12 +96,33 @@ MARKDOWN_HEADER = (
     "<!-- Contact: www.anulum.li | protoscience@anulum.li -->",
     "<!-- SCPN Fusion Core — study of the two misses of the linear reduced-MHD acceptance -->",
 )
-GrowthRate = Callable[[Geometry1D, float, int], float]
 
 
-def solver_growth_rate(geom: Geometry1D, eta: float, elements: int) -> float:
-    """Return the acceptance's growth rate with ``elements`` per side."""
-    return growth_rate(geom, eta, n_side=elements)
+@dataclass(frozen=True)
+class Solve:
+    """One root search: the largest unstable growth rate (0.0 when none) and how it was found."""
+
+    rate: float
+    method: str
+    complete: bool
+    rejected: int
+
+
+Solver = Callable[[Geometry1D, float, int], Solve]
+
+
+def solver_solve(geom: Geometry1D, eta: float, elements: int) -> Solve:
+    """Search the acceptance's grid with ``elements`` per side by a dense QZ solve."""
+    nodes = clustered_grid(
+        geom.x_min, geom.x_max, geom.resonant_x, SPACING_FACTOR * eta ** (1.0 / 3.0), elements
+    )
+    search = unstable_search(
+        assemble(geom, nodes, eta), sigma_min=SIGMA_MIN, dense_limit=DENSE_LIMIT
+    )
+    root = search.most_unstable
+    return Solve(
+        0.0 if root is None else root.real, search.method, search.complete, search.rejected
+    )
 
 
 def provenance() -> dict[str, object]:
@@ -122,17 +161,19 @@ def local_slopes(etas: tuple[float, ...], rates: list[float]) -> list[float]:
     ]
 
 
-def slope_scan(grow: GrowthRate = solver_growth_rate) -> dict[str, Any]:
+def slope_scan(solve: Solver = solver_solve) -> dict[str, Any]:
     """Scan the cylinder 2/1 tearing mode to small resistivity against its asymptotic rate."""
     cylinder = WessonCylinder(1.2, 1.5, 10.0)
     geom = cylinder.geometry(2, 1)
     f_prime = abs(float(geom.f_parallel_prime(np.array([geom.resonant_x]))[0]))
     delta_prime = cylinder_delta_prime(cylinder, 2, 1)
-    rates = [grow(geom, eta, ELEMENTS[0]) for eta in SLOPE_ETAS]
+    solves = [solve(geom, eta, ELEMENTS[0]) for eta in SLOPE_ETAS]
+    rates = [result.rate for result in solves]
     asymptotic = [
         FKR_MATCHING_COEFFICIENT * delta_prime**0.8 * eta**0.6 * f_prime**0.4 for eta in SLOPE_ETAS
     ]
-    refined = grow(geom, SLOPE_ETAS[-1], ELEMENTS[1])
+    refined_solve = solve(geom, SLOPE_ETAS[-1], ELEMENTS[1])
+    refined = refined_solve.rate
     return {
         "etas": list(SLOPE_ETAS),
         "delta_prime": delta_prime,
@@ -141,37 +182,47 @@ def slope_scan(grow: GrowthRate = solver_growth_rate) -> dict[str, Any]:
         "ratio_to_asymptotic": [rate / reference for rate, reference in zip(rates, asymptotic)],
         "smallest_eta_doubled_elements": refined,
         "smallest_eta_doubling_change": abs(refined / rates[-1] - 1.0),
+        "solves": [asdict(result) for result in [*solves, refined_solve]],
     }
 
 
-def root_scan(grow: GrowthRate = solver_growth_rate) -> dict[str, Any]:
+def root_scan(solve: Solver = solver_solve) -> dict[str, Any]:
     """Repeat the root search of the negative-index Harris sheet over resistivity and elements."""
     stable = harris_slab(1.2, 20.0)
     unstable = harris_slab(0.5, 20.0)
-    roots = {
-        str(elements): [grow(stable, eta, elements) for eta in ROOT_ETAS] for elements in ELEMENTS
+    stable_solves = {
+        str(elements): [solve(stable, eta, elements) for eta in ROOT_ETAS] for elements in ELEMENTS
     }
-    tearing = [grow(unstable, eta, ELEMENTS[0]) for eta in ROOT_ETAS]
+    tearing_solves = [solve(unstable, eta, ELEMENTS[0]) for eta in ROOT_ETAS]
+    roots = {key: [result.rate for result in series] for key, series in stable_solves.items()}
+    tearing = [result.rate for result in tearing_solves]
     return {
         "etas": list(ROOT_ETAS),
         "roots_by_elements": roots,
         "unstable_ka_0p5_growth": tearing,
         "root_over_tearing": [root / rate for root, rate in zip(roots[str(ELEMENTS[0])], tearing)],
+        "solves": [
+            asdict(result)
+            for result in [
+                *(r for series in stable_solves.values() for r in series),
+                *tearing_solves,
+            ]
+        ],
     }
 
 
-def build_report(grow: GrowthRate = solver_growth_rate) -> dict[str, Any]:
+def build_report(solve: Solver = solver_solve) -> dict[str, Any]:
     """Run both probes and return the record with its completeness gates."""
     record_provenance = provenance()
-    slopes = slope_scan(grow)
-    roots = root_scan(grow)
-    values = [
-        *slopes["growth_rates"],
-        slopes["smallest_eta_doubled_elements"],
-        *(value for series in roots["roots_by_elements"].values() for value in series),
-        *roots["unstable_ka_0p5_growth"],
-    ]
-    checks = {"every_solve_finite": all(math.isfinite(value) for value in values)}
+    slopes = slope_scan(solve)
+    roots = root_scan(solve)
+    solves = [*slopes["solves"], *roots["solves"]]
+    checks = {
+        "every_solve_finite": all(math.isfinite(result["rate"]) for result in solves),
+        "every_solve_complete_dense": all(
+            result["complete"] and result["method"] == "dense-qz" for result in solves
+        ),
+    }
     return {
         "schema": SCHEMA,
         "slope_scan": slopes,
@@ -210,6 +261,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"{slopes['smallest_eta_doubling_change']:.3g}.",
         "",
         "## Harris sheet, ka = 1.2 (Δ′ < 0)",
+        "",
+        "Every solve is a dense QZ search over all finite eigenvalues; 0 means no eigenvalue with",
+        "real part above 1e-12.",
         "",
         "| η | Root, 200 elements | Root, 400 elements | ka = 0.5 tearing rate |",
         "|---|---:|---:|---:|",

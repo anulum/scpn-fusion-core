@@ -16,12 +16,18 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
 
-from scpn_fusion.core.linear_mhd_1d import Geometry1D, harris_slab
+from scpn_fusion.core.linear_mhd_1d import Geometry1D, growth_rate, harris_slab
+from scpn_fusion.core.linear_mhd_spectrum import SpectralSearch
 from validation import linear_mhd_miss_study as study
+
+
+def _solve(rate: float, *, complete: bool = True) -> study.Solve:
+    return study.Solve(rate, "dense-qz" if complete else "shift-invert", complete, 0)
 
 
 def test_local_slopes_are_log_derivatives_between_neighbours() -> None:
@@ -30,7 +36,9 @@ def test_local_slopes_are_log_derivatives_between_neighbours() -> None:
 
 
 def test_slope_scan_reports_every_resistivity_and_the_refinement() -> None:
-    scan = study.slope_scan(lambda geom, eta, elements: eta**0.6 * (1.0 + 1e-3 * (elements == 400)))
+    scan = study.slope_scan(
+        lambda geom, eta, elements: _solve(eta**0.6 * (1.0 + 1e-3 * (elements == 400)))
+    )
 
     assert scan["etas"] == list(study.SLOPE_ETAS)
     assert len(scan["growth_rates"]) == len(study.SLOPE_ETAS)
@@ -39,14 +47,21 @@ def test_slope_scan_reports_every_resistivity_and_the_refinement() -> None:
     assert scan["delta_prime"] == pytest.approx(9.6947, rel=1e-4)
     ratios = scan["ratio_to_asymptotic"]
     assert max(ratios) / min(ratios) == pytest.approx(1.0)
+    assert len(scan["solves"]) == len(study.SLOPE_ETAS) + 1
+    assert scan["solves"][0] == {
+        "rate": 1e-6**0.6,
+        "method": "dense-qz",
+        "complete": True,
+        "rejected": 0,
+    }
 
 
 def test_root_scan_reports_roots_by_element_count_against_the_tearing_rate() -> None:
     calls: list[tuple[float, float, int]] = []
 
-    def grow(geom: Geometry1D, eta: float, elements: int) -> float:
+    def grow(geom: Geometry1D, eta: float, elements: int) -> study.Solve:
         calls.append((float(geom.kappa_sq(np.array([0.0]))[0]), eta, elements))
-        return eta if elements == 200 else eta / 2.0
+        return _solve(eta if elements == 200 else eta / 2.0)
 
     scan = study.root_scan(grow)
 
@@ -55,23 +70,28 @@ def test_root_scan_reports_roots_by_element_count_against_the_tearing_rate() -> 
     assert scan["root_over_tearing"] == [1.0, 1.0, 1.0]
     assert len(calls) == 3 * len(study.ROOT_ETAS)
     assert [call[0] for call in calls] == pytest.approx([1.44] * 6 + [0.25] * 3)
+    assert len(scan["solves"]) == 3 * len(study.ROOT_ETAS)
 
 
-def test_report_gates_on_finite_solves_only() -> None:
-    report = study.build_report(lambda geom, eta, elements: eta**0.6)
+def test_report_gates_on_finite_and_complete_dense_solves() -> None:
+    report = study.build_report(lambda geom, eta, elements: _solve(eta**0.6))
     assert report["status"] == "pass"
     assert len(report["provenance"]["source_revision"]) == 40
     assert set(report["provenance"]["source_sha256"]) == set(study.SOURCE_PATHS)
 
-    failed = study.build_report(lambda geom, eta, elements: math.nan)
+    failed = study.build_report(lambda geom, eta, elements: _solve(math.nan))
     assert failed["status"] == "fail"
-    assert failed["checks"] == {"every_solve_finite": False}
+    assert failed["checks"] == {"every_solve_finite": False, "every_solve_complete_dense": True}
+
+    iterative = study.build_report(lambda geom, eta, elements: _solve(eta, complete=elements < 400))
+    assert iterative["status"] == "fail"
+    assert iterative["checks"] == {"every_solve_finite": True, "every_solve_complete_dense": False}
 
 
 def test_command_line_writes_both_records(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     output, markdown = tmp_path / "study.json", tmp_path / "study.md"
     original = study.build_report
-    monkeypatch.setattr(study, "build_report", lambda: original(lambda g, e, n: e**0.6))
+    monkeypatch.setattr(study, "build_report", lambda: original(lambda g, e, n: _solve(e**0.6)))
 
     assert study.main(["--output", str(output), "--markdown", str(markdown)]) == 0
 
@@ -86,15 +106,35 @@ def test_command_line_exits_nonzero_on_a_failed_gate(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     original = study.build_report
-    monkeypatch.setattr(study, "build_report", lambda: original(lambda g, e, n: math.inf))
+    monkeypatch.setattr(study, "build_report", lambda: original(lambda g, e, n: _solve(math.inf)))
     arguments = ["--output", str(tmp_path / "s.json"), "--markdown", str(tmp_path / "s.md")]
     assert study.main(arguments) == 1
 
 
-def test_live_growth_rate_wiring_on_a_coarse_unstable_sheet() -> None:
-    """The real solver path returns a positive tearing rate for the unstable sheet."""
-    rate = study.solver_growth_rate(harris_slab(0.5, 20.0), 1e-4, 40)
-    assert math.isfinite(rate) and rate > 0.0
+def test_live_solve_is_the_acceptance_growth_rate_on_a_dense_size_problem() -> None:
+    """Below the acceptance's dense limit the study's solve is exactly its growth rate."""
+    geom = harris_slab(0.5, 20.0)
+    result = study.solver_solve(geom, 1e-4, 40)
+
+    assert result.rate > 0.0 and result.rate == growth_rate(geom, 1e-4, n_side=40)
+    assert (result.method, result.complete, result.rejected) == ("dense-qz", True, 0)
+
+
+def test_solve_passes_its_floor_and_dense_limit_to_the_search(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The search gets the acceptance's floor and the study's dense limit; its record is kept."""
+    seen: dict[str, float] = {}
+
+    def search(problem: Any, *, sigma_min: float, dense_limit: int) -> SpectralSearch:
+        seen.update(size=problem.a.shape[0], sigma_min=sigma_min, dense_limit=dense_limit)
+        return SpectralSearch((), (), "shift-invert", "stand-in", False, 2)
+
+    monkeypatch.setattr(study, "unstable_search", search)
+    result = study.solver_solve(harris_slab(1.2, 20.0), 1e-6, 40)
+
+    assert result == study.Solve(0.0, "shift-invert", False, 2)
+    assert seen == {"size": 320, "sigma_min": 1e-12, "dense_limit": study.DENSE_LIMIT}
 
 
 def test_script_entry_point_runs_from_the_repository_root() -> None:

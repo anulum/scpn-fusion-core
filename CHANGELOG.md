@@ -45,8 +45,12 @@
     three resistivities with 200 and 400 elements per side, against the ka = 0.5
     tearing rate.
 
-  Findings are reported, not gated; the one gate is that every solve returns a
-  finite number.
+  Every solve uses the acceptance's grid but is a dense QZ search over all
+  finite eigenvalues (at most 3200 unknowns; the acceptance's `growth_rate`
+  turns iterative above 2000). A zero root therefore means that no eigenvalue
+  has real part above 1e-12, at either element count. Findings are reported,
+  not gated. The gates require every solve to return a finite number and to be
+  a complete dense search; each solve's method and completeness are recorded.
 
 - `validation/freegsnke_grid_convergence.py` repeats the MAST-U-like same-case
   comparison with FreeGSNKE on finer grids (65×129, then 129×257 by default;
