@@ -1,0 +1,153 @@
+{
+  "alpha": 0.1,
+  "certificate_sha256": "bcc8ceef6837f0fb4cac328b85b5d9ba606c55bc3ae03df753ac4d9f4c53d744",
+  "channels": {
+    "D_e": {
+      "abstention_share": 0.0,
+      "set_quantiles": {
+        "stable": 0.0003407840862638711,
+        "unstable": -2.4222215572848014e-05
+      },
+      "stable": {
+        "flux_coverage": 0.999725257952256,
+        "flux_coverage_wilson95": [
+          0.9994778798733662,
+          0.999855446403542
+        ],
+        "median_interval_width": 0.0,
+        "n": 32758,
+        "set_coverage": 0.902588680627633,
+        "set_coverage_wilson95": [
+          0.8993303259815367,
+          0.9057526249616438
+        ],
+        "set_size_share": {
+          "0": 0.0,
+          "1": 0.9188595152329202,
+          "2": 0.0811404847670798
+        }
+      },
+      "unstable": {
+        "flux_coverage": 0.7932315859323159,
+        "flux_coverage_wilson95": [
+          0.7866912819146447,
+          0.7996224340776587
+        ],
+        "median_interval_width": 2.3629701685081717,
+        "n": 15070,
+        "set_coverage": 0.8909754479097545,
+        "set_coverage_wilson95": [
+          0.8858993771126471,
+          0.8958522442104238
+        ],
+        "set_size_share": {
+          "0": 0.0,
+          "1": 0.9285998672859986,
+          "2": 0.07140013271400132
+        }
+      },
+      "unstable_flux_quantile": 2.324832791476
+    },
+    "chi_e": {
+      "abstention_share": 0.0,
+      "set_quantiles": {
+        "stable": 0.03647838049923255,
+        "unstable": -0.005225765302161192
+      },
+      "stable": {
+        "flux_coverage": 0.9994685268227869,
+        "flux_coverage_wilson95": [
+          0.9991367845158239,
+          0.9996728190064599
+        ],
+        "median_interval_width": 0.0,
+        "n": 30105,
+        "set_coverage": 0.9008802524497592,
+        "set_coverage_wilson95": [
+          0.8974534003500798,
+          0.9042048113420484
+        ],
+        "set_size_share": {
+          "0": 0.0,
+          "1": 0.8873609035044012,
+          "2": 0.11263909649559874
+        }
+      },
+      "unstable": {
+        "flux_coverage": 0.796535575241212,
+        "flux_coverage_wilson95": [
+          0.7905447266350757,
+          0.8023979035800682
+        ],
+        "median_interval_width": 12.21878695016525,
+        "n": 17723,
+        "set_coverage": 0.899847655588783,
+        "set_coverage_wilson95": [
+          0.8953409192931823,
+          0.904181095552145
+        ],
+        "set_size_share": {
+          "0": 0.0,
+          "1": 0.8992269931727134,
+          "2": 0.10077300682728657
+        }
+      },
+      "unstable_flux_quantile": 11.605061442592
+    },
+    "chi_i": {
+      "abstention_share": 0.0,
+      "set_quantiles": {
+        "stable": 0.006324086494642502,
+        "unstable": -1.0728453232770231e-05
+      },
+      "stable": {
+        "flux_coverage": 0.9990034877927254,
+        "flux_coverage_wilson95": [
+          0.9985777897786106,
+          0.9993018543482479
+        ],
+        "median_interval_width": 0.0,
+        "n": 30105,
+        "set_coverage": 0.9020428500249128,
+        "set_coverage_wilson95": [
+          0.8986335341691953,
+          0.9053495760114958
+        ],
+        "set_size_share": {
+          "0": 0.0,
+          "1": 0.7949177877428999,
+          "2": 0.20508221225710016
+        }
+      },
+      "unstable": {
+        "flux_coverage": 0.7916266997686622,
+        "flux_coverage_wilson95": [
+          0.7855843744175542,
+          0.7975426323880724
+        ],
+        "median_interval_width": 14.357788376540313,
+        "n": 17723,
+        "set_coverage": 0.8936410314280878,
+        "set_coverage_wilson95": [
+          0.8890165449447367,
+          0.8980949115667183
+        ],
+        "set_size_share": {
+          "0": 0.0,
+          "1": 0.8435930711504824,
+          "2": 0.15640692884951757
+        }
+      },
+      "unstable_flux_quantile": 13.813941123714
+    }
+  },
+  "design_note": "designed after the variant comparison (9bd8a7a7, report b2f13559) found the false-stable bias; the settings of this experiment were fixed before it was run",
+  "guarantees": {
+    "set": "true label in the set with probability >= 1 - alpha, per class",
+    "unstable_flux": "unstable rows covered with probability >= 1 - 2 alpha"
+  },
+  "holdout_rows": 47828,
+  "output_unit": "physical transport coefficient (m^2/s)",
+  "schema": "scpn-fusion-core.qlknn-conformal-stability-sets.v1",
+  "source_revision": "2af7ea7942a43af056300050a39819557ccc42bd"
+}

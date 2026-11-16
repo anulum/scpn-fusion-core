@@ -26,6 +26,13 @@
   unstable rows at 0.80 or more (a union bound). The report gives set coverage,
   set sizes, flux coverage and widths per true class; it stops when the inputs
   differ from the certificate or a class is too small.
+  The tracked run (`validation/reports/qlknn_conformal_stability_sets.json`,
+  bound to 2af7ea79) gives:
+  - set coverage 0.891-0.903 per class;
+  - unstable-row flux coverage 0.792-0.797 (against 0.665-0.711 under the
+    certificate);
+  - median unstable-row interval widths of 12.2, 14.4 and 2.36 m^2/s (chi_e,
+    chi_i, D_e).
 - `validation/qlknn_conformal_variants.py` compares four split-conformal
   variants for the QLKNN-10D surrogate on the same regimes:
   - the marginal absolute score, which reproduces the tracked certificate
