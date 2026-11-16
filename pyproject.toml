@@ -634,6 +634,8 @@ files = [
     "tests/test_linear_mhd_miss_study.py",
     "validation/qlknn_conformal_self_consistent_envelope.py",
     "tests/test_qlknn_conformal_self_consistent_envelope.py",
+    "validation/linear_mhd_near_zero_spectrum.py",
+    "tests/test_linear_mhd_near_zero_spectrum.py",
     "tools/generate_surrogate_uq_cards.py",
     "tests/test_surrogate_uq_cards.py",
     "tests/test_free_boundary_plotting.py",

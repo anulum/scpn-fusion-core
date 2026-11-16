@@ -16,6 +16,19 @@
 
 ### Added
 
+- `validation/linear_mhd_near_zero_spectrum.py` measures how well the
+  near-zero eigenvalues of the acceptance's Harris pencil are determined
+  (ka = 1.2, Δ′ < 0, η = 1e-6, 200 elements per side). This is where the
+  acceptance finds its stray root. It reports:
+  - the extreme singular values of A;
+  - every finite eigenvalue below 1e-4 in modulus;
+  - for the smallest twelve, the condition number from left and right
+    eigenvectors, the first-order error bound and the residual;
+  - the largest real part before and after three seeded relative
+    perturbations of 1e-15 to A.
+
+  Findings are reported, not gated; the gates concern completeness.
+
 - `validation/qlknn_conformal_self_consistent_envelope.py` carries the QLKNN-10D
   conformal intervals self-consistently into a steady transport profile. The
   frozen-coefficient study (`validation/qlknn_conformal_profile_envelope.py`)

@@ -3117,7 +3117,7 @@
     "python_capability_classes": 650,
     "python_capability_source_modules": 375,
     "rust_workspace_crates": 13,
-    "test_files": 702
+    "test_files": 703
   },
   "documentation": {
     "public_pages": [
@@ -3680,6 +3680,7 @@
       "tests/test_linear_mhd_benchmark.py",
       "tests/test_linear_mhd_delta_prime.py",
       "tests/test_linear_mhd_miss_study.py",
+      "tests/test_linear_mhd_near_zero_spectrum.py",
       "tests/test_linear_mhd_reduced_model_acceptance.py",
       "tests/test_linear_mhd_spectrum.py",
       "tests/test_liquid_metal_temhd_divertor_validation.py",
