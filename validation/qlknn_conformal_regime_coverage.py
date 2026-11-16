@@ -118,7 +118,8 @@ def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _input_labels(path: Path, rows: int) -> NDArray[np.int64]:
+def input_labels(path: Path, rows: int) -> NDArray[np.int64]:
+    """Return a split's input-gradient labels, refusing a missing row or an unknown label."""
     with np.load(path, allow_pickle=False) as payload:
         labels = np.asarray(payload["regimes"], dtype=np.int64)
     if labels.shape != (rows,) or not np.isin(labels, list(INPUT_LABELS)).all():
@@ -144,7 +145,7 @@ def build_report(certificate_path: Path = CERTIFICATE_PATH) -> dict[str, Any]:
         weights_path=weights, calibration_path=calibration, holdout_path=holdout
     )
     calibration_targets = scores.calibration_targets
-    labels = _input_labels(holdout, scores.holdout_scores.shape[0])
+    labels = input_labels(holdout, scores.holdout_scores.shape[0])
     channels: dict[str, Any] = {}
     reproduced = True
     partitions = True

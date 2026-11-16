@@ -3117,7 +3117,7 @@
     "python_capability_classes": 650,
     "python_capability_source_modules": 375,
     "rust_workspace_crates": 13,
-    "test_files": 691
+    "test_files": 692
   },
   "documentation": {
     "public_pages": [
@@ -3790,6 +3790,7 @@
       "tests/test_pyo3_transport_bridge.py",
       "tests/test_pyproject_dependency_tiers.py",
       "tests/test_qlknn_conformal_regime_coverage.py",
+      "tests/test_qlknn_conformal_variants.py",
       "tests/test_quality_delta_report_tool.py",
       "tests/test_quality_gate_tool.py",
       "tests/test_quantum_bridge.py",

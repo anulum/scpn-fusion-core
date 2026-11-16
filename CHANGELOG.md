@@ -16,6 +16,19 @@
 
 ### Added
 
+- `validation/qlknn_conformal_variants.py` compares four split-conformal
+  variants for the QLKNN-10D surrogate on the same regimes:
+  - the marginal absolute score, which reproduces the tracked certificate
+    exactly;
+  - Mondrian groups by input label;
+  - a score normalised by the gyro-Bohm diffusivity;
+  - a score normalised by `|y_hat| + r0`.
+
+  All four are calibrated on the certificate's calibration split at the
+  certificate's level. Each is reported per target regime and per input
+  label, with Wilson intervals and widths. The certificate generator gains
+  the public `gyro_bohm_scale`, and `residual_scores` now also returns the
+  predictions; the certificate is unchanged.
 - `validation/qlknn_conformal_regime_coverage.py` measures how the QLKNN-10D
   split-conformal certificate covers each transport regime of the untouched
   holdout split. Two definitions are fixed in the module:

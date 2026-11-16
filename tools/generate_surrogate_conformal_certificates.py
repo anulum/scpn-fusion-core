@@ -184,6 +184,14 @@ def _predict(weights_path: Path, features: FloatArray) -> tuple[FloatArray, str,
     return predictions, model.weights_checksum, bool(model._weights.gb_scale)
 
 
+def gyro_bohm_scale(features: FloatArray) -> FloatArray:
+    """Return the gyro-Bohm diffusivity (m^2/s) of each row, from its Te in keV (column 1)."""
+    te_j = features[:, 1] * 1e3 * ELEMENTARY_CHARGE_C
+    sound_speed = np.sqrt(te_j / DEUTERIUM_MASS_KG)
+    rho_s = np.sqrt(DEUTERIUM_MASS_KG * te_j) / (ELEMENTARY_CHARGE_C * REFERENCE_FIELD_T)
+    return np.asarray(rho_s**2 * sound_speed / REFERENCE_MAJOR_RADIUS_M, dtype=np.float64)
+
+
 def _targets_in_prediction_space(
     features: FloatArray,
     targets: FloatArray,
@@ -199,10 +207,7 @@ def _targets_in_prediction_space(
             else "physical transport coefficient (m^2/s)"
         )
         return targets, unit
-    te_j = features[:, 1] * 1e3 * ELEMENTARY_CHARGE_C
-    sound_speed = np.sqrt(te_j / DEUTERIUM_MASS_KG)
-    rho_s = np.sqrt(DEUTERIUM_MASS_KG * te_j) / (ELEMENTARY_CHARGE_C * REFERENCE_FIELD_T)
-    chi_gb = rho_s**2 * sound_speed / REFERENCE_MAJOR_RADIUS_M
+    chi_gb = gyro_bohm_scale(features)
     return (
         np.asarray(targets * chi_gb[:, np.newaxis], dtype=np.float64),
         "physical transport coefficient (m^2/s)",
@@ -214,13 +219,15 @@ class ResidualScores:
     """Canonical absolute residuals of both splits, in the model's output space.
 
     ``calibration_scores`` and ``holdout_scores`` are ``(rows, 3)`` in :data:`OUTPUT_NAMES`
-    order; ``calibration_targets`` and ``holdout_targets`` are the targets in the same space.
+    order; the targets and predictions are in the same space and order.
     """
 
     calibration_scores: FloatArray
     holdout_scores: FloatArray
     calibration_targets: FloatArray
     holdout_targets: FloatArray
+    calibration_predictions: FloatArray
+    holdout_predictions: FloatArray
     runtime_checksum: str
     output_unit: str
     holdout_unit: str
@@ -265,6 +272,8 @@ def residual_scores(
         holdout_scores=_canonicalize_residuals(np.abs(pred_test - y_test)),
         calibration_targets=y_cal,
         holdout_targets=y_test,
+        calibration_predictions=pred_cal,
+        holdout_predictions=pred_test,
         runtime_checksum=runtime_checksum,
         output_unit=output_unit,
         holdout_unit=holdout_unit,

@@ -104,6 +104,8 @@
     "validation/benchmark_freegsnke_inverse_fit.py",
     "tests/test_benchmark_freegsnke_inverse_fit.py",
     "validation/qlknn_conformal_regime_coverage.py",
-    "tests/test_qlknn_conformal_regime_coverage.py"
+    "tests/test_qlknn_conformal_regime_coverage.py",
+    "validation/qlknn_conformal_variants.py",
+    "tests/test_qlknn_conformal_variants.py"
   ]
 }
