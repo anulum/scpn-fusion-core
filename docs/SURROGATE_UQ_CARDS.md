@@ -15,7 +15,7 @@ run `tools/generate_surrogate_uq_cards.py` to refresh.
 
 | Surrogate | Status | Conformal | OOD mechanism | Gaps |
 |---|---|---|---|---:|
-| `qlknn10d_neural_transport` | `promoted` | `certified` | Per-input z-score against training-domain statistics | 1 |
+| `qlknn10d_neural_transport` | `promoted` | `certified` | Per-input z-score against training-domain statistics | 2 |
 | `disruption_risk_predictor` | `promoted` | `unavailable` | No explicit feature-space OOD detector | 2 |
 | `itpa_pretrained_mlp` | `promoted` | `unavailable` | Coverage-manifest domain bounds | 1 |
 | `fno_turbulence_suppressor` | `deprecated_scoped` | `not_applicable` | None | 1 |
@@ -61,6 +61,8 @@ Conformal anchors:
 
 - `validation/surrogate_conformal_certificates.json`
 - `tools/generate_surrogate_conformal_certificates.py`
+- `validation/qlknn_conformal_regime_coverage.py`
+- `validation/reports/qlknn_conformal_regime_coverage.json`
 
 OOD mechanism: Per-input z-score against training-domain statistics; batch masks at 3-sigma (soft, reported fraction) and 5-sigma (hard flag) exposed in the runtime diagnostics.
 
@@ -88,6 +90,7 @@ Retraining anchors:
 Declared gaps:
 
 - OOD thresholds are z-score heuristics, not validated against a held-out OOD set; the conformal certificate provides a marginal error bound and does not convert z-score into an OOD guarantee.
+- Coverage is not uniform across transport regimes. On the untouched holdout split, zero-flux rows are covered at 99.5-99.7 % and unstable rows at 66.5-71.1 % per channel; near-threshold rows are covered by intervals whose median width is two to four orders of magnitude above the target (validation/reports/qlknn_conformal_regime_coverage.json).
 
 ### `disruption_risk_predictor`
 

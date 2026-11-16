@@ -32,7 +32,9 @@
         "certificate_id": "qlknn10d_neural_transport",
         "anchors": [
           "validation/surrogate_conformal_certificates.json",
-          "tools/generate_surrogate_conformal_certificates.py"
+          "tools/generate_surrogate_conformal_certificates.py",
+          "validation/qlknn_conformal_regime_coverage.py",
+          "validation/reports/qlknn_conformal_regime_coverage.json"
         ]
       },
       "ood": {
@@ -55,7 +57,8 @@
         ]
       },
       "gaps": [
-        "OOD thresholds are z-score heuristics, not validated against a held-out OOD set; the conformal certificate provides a marginal error bound and does not convert z-score into an OOD guarantee."
+        "OOD thresholds are z-score heuristics, not validated against a held-out OOD set; the conformal certificate provides a marginal error bound and does not convert z-score into an OOD guarantee.",
+        "Coverage is not uniform across transport regimes. On the untouched holdout split, zero-flux rows are covered at 99.5-99.7 % and unstable rows at 66.5-71.1 % per channel; near-threshold rows are covered by intervals whose median width is two to four orders of magnitude above the target (validation/reports/qlknn_conformal_regime_coverage.json)."
       ]
     },
     {

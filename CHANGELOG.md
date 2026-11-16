@@ -30,6 +30,14 @@
   exactly one group. A group below the target is reported, not gated.
   `tools/generate_surrogate_conformal_certificates.py` gains the public
   `residual_scores`, which it uses itself; the certificate is unchanged.
+  The tracked run (`validation/reports/qlknn_conformal_regime_coverage.json`,
+  bound to 50f11e83) shows coverage that the marginal 90 % hides:
+  - zero-flux rows: 99.5-99.7 % per channel;
+  - unstable rows: 66.5-71.1 %;
+  - near-threshold rows: covered, but by intervals with a median width two to
+    four orders of magnitude above the target.
+
+  The QLKNN UQ card in `docs/SURROGATE_UQ_CARDS.md` lists this as a gap.
 - `validation/benchmark_freegsnke_multimachine.py` compares SCPN with
   FreeGSNKE 3.0.1 on the three public machine descriptions FreeGSNKE ships
   (MAST-U-like, SPARC-like, ITER-like):
