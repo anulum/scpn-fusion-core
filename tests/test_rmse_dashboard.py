@@ -102,3 +102,39 @@ def test_render_markdown_contains_sections() -> None:
     assert "Confinement RMSE (ITPA H-mode)" in text
     assert "Beta_N RMSE (ITER + SPARC references)" in text
     assert "Forward Diagnostics RMSE" in text
+
+
+def test_beta_rmse_rows_name_the_dynamic_model() -> None:
+    """The maintained ITER and SPARC rows record the model that produced beta_N."""
+    result = rmse_dashboard.beta_rmse_iter_sparc(
+        ROOT / "validation" / "reference_data", ROOT / "validation"
+    )
+
+    assert [row["beta_n_model"] for row in result["rows"]] == ["dynamic_burn_model"] * 2
+
+
+def test_beta_fallback_records_the_legacy_model_and_reason(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A failing dynamic model leaves a record of the fallback instead of a silent switch."""
+    import scpn_fusion.core.fusion_ignition_sim as ignition
+
+    class FailingModel:
+        """Stand-in for the dynamic burn model that refuses to build."""
+
+        def __init__(self, **_: object) -> None:
+            """Refuse every construction."""
+            raise RuntimeError("dynamic model unavailable")
+
+    monkeypatch.setattr(ignition, "DynamicBurnModel", FailingModel)
+    reference = rmse_dashboard.load_json(
+        ROOT / "validation" / "reference_data" / "iter_reference.json"
+    )
+
+    beta_n, metrics = rmse_dashboard.estimate_beta_n_from_burn(
+        reference, ROOT / "validation" / "iter_validated_config.json"
+    )
+
+    assert metrics["beta_n_model"] == "legacy_fusion_burn_physics"
+    assert metrics["fallback_reason"] == "RuntimeError: dynamic model unavailable"
+    assert beta_n >= 0.0

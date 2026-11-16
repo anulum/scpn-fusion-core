@@ -112,6 +112,8 @@ class ControllerMetrics:
     mean_def: float = 0.0
     mean_energy_efficiency: float = 0.0
     episodes: list = field(default_factory=list)
+    failed_episodes: int = 0
+    failures: list[str] = field(default_factory=list)
 
 
 HINF_RESEARCH_ENV = "SCPN_ENABLE_HINF_RESEARCH"
@@ -322,6 +324,10 @@ def run_comparison(
                 episode = run_fn(config_path, shot_duration)
                 metrics.episodes.append(episode)
             except Exception as e:
+                # One failed episode must not end the comparison, but it is counted and kept:
+                # the aggregates below cover successful episodes only.
+                metrics.failed_episodes += 1
+                metrics.failures.append(f"episode {ep}: {type(e).__name__}: {e}")
                 print(f"  Episode {ep} failed: {e}")
                 continue
             if (ep + 1) % max(1, n_episodes // 10) == 0:
@@ -350,12 +356,14 @@ def run_comparison(
 def generate_comparison_table(results: dict[str, ControllerMetrics]) -> str:
     """Generate markdown comparison table."""
     lines = [
-        "| Controller | Episodes | Mean Reward | P95 Latency (us) | Disruption Rate | DEF | Energy Eff |",
-        "|------------|----------|-------------|-------------------|-----------------|-----|------------|",
+        "| Controller | Episodes | Failed | Mean Reward | P95 Latency (us) | Disruption Rate "
+        "| DEF | Energy Eff |",
+        "|------------|----------|--------|-------------|-------------------|-----------------"
+        "|-----|------------|",
     ]
     for name, m in results.items():
         lines.append(
-            f"| {name:<10} | {m.n_episodes:>8} | {m.mean_reward:>11.4f} "
+            f"| {name:<10} | {m.n_episodes:>8} | {m.failed_episodes:>6} | {m.mean_reward:>11.4f} "
             f"| {m.p95_latency_us:>17.0f} | {m.disruption_rate:>15.2%} "
             f"| {m.mean_def:>3.2f} | {m.mean_energy_efficiency:>10.3f} |"
         )
@@ -368,14 +376,14 @@ def generate_latex_table(results: dict[str, ControllerMetrics]) -> str:
         r"\begin{table}[htbp]",
         r"\centering",
         r"\caption{4-Way Controller Comparison}",
-        r"\begin{tabular}{lrrrrrr}",
+        r"\begin{tabular}{lrrrrrrr}",
         r"\toprule",
-        r"Controller & Episodes & Mean Reward & P95 Lat. & Disrupt. & DEF & Eff. \\",
+        r"Controller & Episodes & Failed & Mean Reward & P95 Lat. & Disrupt. & DEF & Eff. \\",
         r"\midrule",
     ]
     for name, m in results.items():
         lines.append(
-            f"  {name} & {m.n_episodes} & {m.mean_reward:.4f} "
+            f"  {name} & {m.n_episodes} & {m.failed_episodes} & {m.mean_reward:.4f} "
             f"& {m.p95_latency_us:.0f} & {m.disruption_rate:.2%} "
             f"& {m.mean_def:.2f} & {m.mean_energy_efficiency:.3f} \\\\"
         )
@@ -440,6 +448,8 @@ def save_results_json(results: dict[str, ControllerMetrics], output_path: Path) 
     for name, metrics in results.items():
         payload["controllers"][name] = {
             "n_episodes": metrics.n_episodes,
+            "failed_episodes": metrics.failed_episodes,
+            "failures": list(metrics.failures),
             "mean_reward": metrics.mean_reward,
             "std_reward": metrics.std_reward,
             "mean_r_error": metrics.mean_r_error,

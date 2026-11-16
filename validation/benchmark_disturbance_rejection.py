@@ -106,7 +106,7 @@ try:
     )
 
     _snn_available = True
-except Exception:
+except ImportError:
     warnings.warn(
         "SNN controller not available (scpn_fusion.control."
         "neuro_cybernetic_controller could not be imported). "

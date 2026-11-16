@@ -111,13 +111,13 @@ class TestFullPulseScenario(unittest.TestCase):
             summary = OptimalController(config_path, verbose=False).run_optimal_shot(
                 shot_steps=10, target_r=6.2, target_z=0.0, save_plot=False, identify_first=True
             )
+        except Exception as exc:
+            # A configuration or solver failure is reported as a skip, never as a pass.
+            self.skipTest(f"Config/Solver issue: {type(exc).__name__}: {exc}")
 
-            err = summary["mean_error_norm"]
-            print(f"  Mean Position Error: {err:.4f} m")
-            self.assertLess(err, 1.0, "Controller tracking error too high (>1m)")
-
-        except Exception as e:
-            print(f"  Skipping control test (Config/Solver issue): {e}")
+        err = summary["mean_error_norm"]
+        print(f"  Mean Position Error: {err:.4f} m")
+        self.assertLess(err, 1.0, "Controller tracking error too high (>1m)")
 
 
 if __name__ == "__main__":

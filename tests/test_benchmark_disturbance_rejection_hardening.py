@@ -107,3 +107,41 @@ def test_generate_json_results_includes_controller_build_metadata() -> None:
     assert payload["strict_hinf"] is True
     assert payload["controller_build"]["H-infinity"]["backend"] == "lqr_fallback"
     assert payload["controller_build"]["H-infinity"]["fallback_used"] is True
+
+
+_SNN_MODULE = "scpn_fusion.control.neuro_cybernetic_controller"
+
+
+def _reload_with_snn_module(monkeypatch: pytest.MonkeyPatch, replacement: object) -> None:
+    """Reload the benchmark with the SNN controller module replaced in ``sys.modules``."""
+    import importlib
+
+    monkeypatch.setitem(sys.modules, _SNN_MODULE, replacement)
+    try:
+        importlib.reload(mod)
+    finally:
+        monkeypatch.undo()
+        importlib.reload(mod)
+
+
+def test_missing_snn_module_is_skipped_with_a_warning(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An absent optional SNN controller is skipped, not an error."""
+    with pytest.warns(UserWarning, match="SNN controller not available"):
+        _reload_with_snn_module(monkeypatch, None)
+
+
+def test_broken_snn_module_is_not_reported_as_absent(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A defect inside the SNN module surfaces instead of becoming an 'unavailable' warning."""
+    import types
+
+    class BrokenModule(types.ModuleType):
+        """Module whose attributes fail the way a defective import would."""
+
+        def __getattr__(self, name: str) -> object:
+            """Fail every public attribute lookup with a non-import error."""
+            if name.startswith("__"):
+                raise AttributeError(name)
+            raise RuntimeError(f"defect while resolving {name}")
+
+    with pytest.raises(RuntimeError, match="defect while resolving SpikingControllerPool"):
+        _reload_with_snn_module(monkeypatch, BrokenModule(_SNN_MODULE))

@@ -140,3 +140,45 @@ def test_run_comparison_aggregates_metrics(monkeypatch) -> None:
     assert results["DisruptedCtrl"].n_episodes == 4
     assert results["DisruptedCtrl"].disruption_rate == 1.0
     assert results["DisruptedCtrl"].mean_def == 0.5
+
+
+def test_failed_episodes_are_counted_and_saved(monkeypatch, tmp_path: Path) -> None:
+    """A failed episode is counted, named and written out instead of silently dropped."""
+    import json
+
+    import validation.controller_comparison as mod
+
+    calls: list[int] = []
+
+    def run_flaky(config_path: Any, shot_duration: int) -> mod.EpisodeResult:
+        """Fail on the second of three episodes."""
+        calls.append(len(calls))
+        if len(calls) == 2:
+            raise FloatingPointError("state became nonfinite")
+        return mod.EpisodeResult(
+            mean_abs_r_error=0.1,
+            mean_abs_z_error=0.2,
+            reward=-0.3,
+            latency_us=12.0,
+            disrupted=False,
+            t_disruption=float(shot_duration),
+            energy_efficiency=0.9,
+        )
+
+    monkeypatch.setattr(mod, "CONTROLLERS", {"FlakyCtrl": run_flaky})
+
+    results = mod.run_comparison(n_episodes=3, shot_duration=20, config_path="unused.json")
+    output = tmp_path / "comparison.json"
+    mod.save_results_json(results, output)
+
+    metrics = results["FlakyCtrl"]
+    assert metrics.n_episodes == 2
+    assert metrics.failed_episodes == 1
+    assert metrics.failures == ["episode 1: FloatingPointError: state became nonfinite"]
+    saved = json.loads(output.read_text(encoding="utf-8"))["controllers"]["FlakyCtrl"]
+    assert saved["failed_episodes"] == 1
+    assert saved["failures"] == metrics.failures
+    table = mod.generate_comparison_table(results)
+    assert "| Failed |" in table
+    assert "|        2 |      1 |" in table
+    assert " & 2 & 1 & " in mod.generate_latex_table(results)

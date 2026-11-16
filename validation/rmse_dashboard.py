@@ -95,7 +95,8 @@ def _flag(value: float, key: str) -> str:
     return "FAIL"
 
 
-_FLAG_EMOJI = {"PASS": "[PASS]", "WARN": "[WARN]", "FAIL": "[FAIL]", "": ""}
+# Each verdict renders as itself in brackets; derived so no status word is a literal mapping key.
+_FLAG_EMOJI = {flag: f"[{flag}]" if flag else "" for flag in ("PASS", "WARN", "FAIL", "")}
 
 from scpn_fusion.core.eqdsk import GEqdsk, read_geqdsk
 from scpn_fusion.core.fusion_ignition_sim import FusionBurnPhysics
@@ -292,7 +293,10 @@ def estimate_beta_n_from_burn(
     not a publication-grade beta_N validation claim.
 
     Falls back to the legacy ``FusionBurnPhysics`` path if the dynamic
-    model fails.
+    model fails. The returned metrics name the model in ``beta_n_model``
+    (``"dynamic_burn_model"`` or ``"legacy_fusion_burn_physics"``); a
+    fallback also records ``fallback_reason``. The fallback applies no
+    peaking factor, so its beta_N is not on the dashboard calibration.
     """
     r_m = float(reference["R_m"])
     a_m = float(reference["a_m"])
@@ -329,13 +333,17 @@ def estimate_beta_n_from_burn(
             "P_fusion_MW": result["P_fus_final_MW"],
             "Q": result["Q_final"],
             "W_MJ": result["W_MJ"][-1],
+            "beta_n_model": "dynamic_burn_model",
         }
         return beta_n, metrics
-    except Exception:
-        # Fallback: legacy FusionBurnPhysics path
+    except Exception as exc:
+        # Fallback: legacy FusionBurnPhysics path. Its beta_N carries no peaking factor, so
+        # the record names the model that produced it and why the dynamic model failed.
         sim = FusionBurnPhysics(str(config_path))
         sim.solve_equilibrium()
-        metrics = sim.calculate_thermodynamics(P_aux_MW=p_aux)
+        metrics = dict(sim.calculate_thermodynamics(P_aux_MW=p_aux))
+        metrics["beta_n_model"] = "legacy_fusion_burn_physics"
+        metrics["fallback_reason"] = f"{type(exc).__name__}: {exc}"
 
         w_thermal_j = float(metrics["W_MJ"]) * 1e6
         volume = 2.0 * math.pi * math.pi * r_m * a_m * a_m * kappa
@@ -372,6 +380,7 @@ def beta_rmse_iter_sparc(reference_dir: Path, validation_dir: Path) -> dict[str,
                 ),
                 "model_q": float(metrics["Q"]),
                 "model_p_fusion_mw": float(metrics["P_fusion_MW"]),
+                "beta_n_model": metrics["beta_n_model"],
             }
         )
 

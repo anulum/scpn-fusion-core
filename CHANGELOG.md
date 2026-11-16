@@ -277,6 +277,28 @@
 
 ### Fixed
 
+- Four broad exception handlers in `validation/` no longer hide what happened:
+  - `test_full_pulse_scenario.py`: the handler around the optimal-control
+    check also caught the test's own assertion, so the test could not fail. A
+    setup or solver failure now skips the test, and the assertion runs outside
+    the handler. The test now fails: the mean position error is 5.4417 m
+    against its 1 m bound. It is outside the CI test paths, and the v4.0 physics
+    report already says the tracking needs gain calibration.
+  - `controller_comparison.py`: failed episodes are counted and kept
+    (`failed_episodes`, `failures`) in the metrics, the JSON and both tables,
+    instead of being dropped from the aggregates without a trace.
+  - `rmse_dashboard.py`: the beta_N rows name the model that produced them
+    (`beta_n_model`). A fallback to the legacy burn model, which applies no
+    peaking factor, records its reason. The current rows use the dynamic
+    model and are unchanged.
+  - `benchmark_disturbance_rejection.py`: the optional SNN controller import
+    catches only `ImportError`, as the H-infinity import already did. A defect
+    inside the module now surfaces instead of reading as "not available".
+
+  The other 27 broad handlers were reviewed and kept. Each is an isolation
+  boundary that records the failure, or a probe of an optional back end; six of
+  them sit in digest-bound files. The status-label map in `rmse_dashboard.py` is
+  now derived, which removes a bandit B105 finding without a marker.
 - `validation/benchmark_freegsnke_inverse_fit.py --merge` now joins partial
   reports whose FreeGSNKE runs differ only in run time. Each partial run solves
   FreeGSNKE's case again, and the merge compared the whole case including
