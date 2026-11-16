@@ -42,7 +42,7 @@ Training provenance anchors:
 - `validation/reference_data/qlknn10d_published_benchmarks.json`
 - `validation/validate_transport_qlknn.py`
 
-Calibration: A held-out QLKNN validation split supplies absolute-residual split-conformal radii for each output channel; an untouched test split checks empirical coverage. No propagation of these intervals through the transport lane is measured yet. The transport uncertainty-envelope benchmark checks the IPB98(y,2) confinement-time envelope against ITPA shots and does not use this surrogate.
+Calibration: A held-out QLKNN validation split supplies absolute-residual split-conformal radii for each output channel; an untouched test split checks empirical coverage. Their propagation through the transport lane is measured only as a frozen-coefficient sensitivity (validation/qlknn_conformal_profile_envelope.py). The transport uncertainty-envelope benchmark checks the IPB98(y,2) confinement-time envelope against ITPA shots and does not use this surrogate.
 
 Calibration anchors:
 
@@ -92,7 +92,7 @@ Declared gaps:
 - OOD thresholds are z-score heuristics, not validated against a held-out OOD set; the conformal certificate provides a marginal error bound and does not convert z-score into an OOD guarantee.
 - Coverage is not uniform across transport regimes. On the untouched holdout split, zero-flux rows are covered at 99.5-99.7 % and unstable rows at 66.5-71.1 % per channel; near-threshold rows are covered by intervals whose median width is two to four orders of magnitude above the target (validation/reports/qlknn_conformal_regime_coverage.json).
 - The surrogate predicts at most the certificate radius on 64.5-73.8 % of the unstable holdout rows (median prediction/target 0.30-0.60). This false-stable bias, not the calibration, is why no conformal variant tried so far restores unstable-row coverage (validation/reports/qlknn_conformal_variants.json).
-- No propagation of the surrogate's intervals through the transport lane is measured.
+- Propagation of the surrogate's intervals through the transport lane is measured only as a frozen-coefficient sensitivity on one L-mode case: the certificate interval spans T_core 0.262-7.224 keV around a 1.702 keV steady state (validation/reports/qlknn_conformal_profile_envelope.json). No self-consistent propagation is measured.
 
 ### `disruption_risk_predictor`
 

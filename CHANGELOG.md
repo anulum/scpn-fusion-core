@@ -25,6 +25,12 @@
   each frozen case is run again to steady state. The module refuses auxiliary
   power where the pedestal modifier would act. Its gates require that the neural
   run reached steady state and that the nominal frozen run reproduces it.
+  The tracked run (`validation/reports/qlknn_conformal_profile_envelope.json`,
+  bound to 18379b8a) starts from a neural steady state of T_core 1.702 keV and
+  tau_E 1.242 s.
+  - The certificate interval spans T_core 0.262-7.224 keV and tau_E 0.246-4.533 s.
+  - The normalised interval's upper end gives 0.455 keV.
+  - Both lower ends remove all turbulent transport.
 - `validation/qlknn_conformal_stability_sets.py` bounds the QLKNN-10D
   surrogate's false-stable rate. It was designed after the variant comparison
   found the false-stable bias, and its own settings were fixed before it was
