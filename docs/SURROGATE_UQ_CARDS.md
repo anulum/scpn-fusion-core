@@ -15,7 +15,7 @@ run `tools/generate_surrogate_uq_cards.py` to refresh.
 
 | Surrogate | Status | Conformal | OOD mechanism | Gaps |
 |---|---|---|---|---:|
-| `qlknn10d_neural_transport` | `promoted` | `certified` | Per-input z-score against training-domain statistics | 3 |
+| `qlknn10d_neural_transport` | `promoted` | `certified` | Per-input z-score against training-domain statistics | 4 |
 | `disruption_risk_predictor` | `promoted` | `unavailable` | No explicit feature-space OOD detector | 2 |
 | `itpa_pretrained_mlp` | `promoted` | `unavailable` | Coverage-manifest domain bounds | 1 |
 | `fno_turbulence_suppressor` | `deprecated_scoped` | `not_applicable` | None | 1 |
@@ -42,14 +42,12 @@ Training provenance anchors:
 - `validation/reference_data/qlknn10d_published_benchmarks.json`
 - `validation/validate_transport_qlknn.py`
 
-Calibration: A held-out QLKNN validation split supplies absolute-residual split-conformal radii for each output channel; an untouched test split checks empirical coverage. The separate uncertainty-envelope benchmark propagates surrogate spread through the transport lane.
+Calibration: A held-out QLKNN validation split supplies absolute-residual split-conformal radii for each output channel; an untouched test split checks empirical coverage. No propagation of these intervals through the transport lane is measured yet. The transport uncertainty-envelope benchmark checks the IPB98(y,2) confinement-time envelope against ITPA shots and does not use this surrogate.
 
 Calibration anchors:
 
 - `validation/surrogate_conformal_certificates.json`
 - `tools/generate_surrogate_conformal_certificates.py`
-- `validation/benchmark_transport_uncertainty_envelope.py`
-- `validation/reports/transport_uncertainty_envelope_benchmark.json`
 
 Conformal status: `certified`
 
@@ -94,6 +92,7 @@ Declared gaps:
 - OOD thresholds are z-score heuristics, not validated against a held-out OOD set; the conformal certificate provides a marginal error bound and does not convert z-score into an OOD guarantee.
 - Coverage is not uniform across transport regimes. On the untouched holdout split, zero-flux rows are covered at 99.5-99.7 % and unstable rows at 66.5-71.1 % per channel; near-threshold rows are covered by intervals whose median width is two to four orders of magnitude above the target (validation/reports/qlknn_conformal_regime_coverage.json).
 - The surrogate predicts at most the certificate radius on 64.5-73.8 % of the unstable holdout rows (median prediction/target 0.30-0.60). This false-stable bias, not the calibration, is why no conformal variant tried so far restores unstable-row coverage (validation/reports/qlknn_conformal_variants.json).
+- No propagation of the surrogate's intervals through the transport lane is measured.
 
 ### `disruption_risk_predictor`
 

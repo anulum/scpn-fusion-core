@@ -142,6 +142,12 @@
 
 ### Fixed
 
+- The QLKNN-10D UQ card (`docs/SURROGATE_UQ_CARDS.md`) no longer says that the
+  transport uncertainty-envelope benchmark propagates the surrogate's spread
+  through the transport lane. That benchmark checks the IPB98(y,2)
+  confinement-time envelope against ITPA shots and does not use the surrogate.
+  The card now lists the missing propagation as a gap and no longer cites that
+  benchmark as calibration evidence.
 - The end-to-end latency benchmark (`validation/scpn_end_to_end_latency.py`)
   now reports its GPU lane as `blocked_gpu_subprocess_timeout` when the lane's
   subprocess outlives its 120 s limit, as its docstring promised. Before, the
