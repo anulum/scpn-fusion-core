@@ -18,6 +18,11 @@ or submitted; each names the software version it describes):
 - [`002_neuromorphic_vertical_stability_control/`](002_neuromorphic_vertical_stability_control/)
 - [`003_stochastic_petri_net_tokamak_control_conference_abstract/`](003_stochastic_petri_net_tokamak_control_conference_abstract/)
 
+Packages prepared on 16 November 2026 (dated preprints; not deposited or
+submitted):
+
+- [`004_same_case_free_boundary_comparison_with_freegsnke/`](004_same_case_free_boundary_comparison_with_freegsnke/)
+
 The presence of a workspace does not authorize external upload or submission.
 Historical files from the superseded shared layout remain retrievable through
 [`../legacy_layout_manifest.json`](../legacy_layout_manifest.json); the

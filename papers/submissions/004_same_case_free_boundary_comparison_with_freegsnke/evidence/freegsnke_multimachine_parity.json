@@ -1,0 +1,943 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE same-case FreeGSNKE comparison evidence.",
+  "benchmark_id": "freegsnke-public-machines-same-case-parity",
+  "cases": {
+    "iter_like": {
+      "checks": {
+        "profile_source_bridge": true,
+        "same_case_total_psi": true,
+        "vacuum_parity_inside_limiter": true
+      },
+      "circuits": [
+        {
+          "circuit": "CS1",
+          "current_a": 229932789.76756734,
+          "filament_count": 2,
+          "signed_turns": 2.0
+        },
+        {
+          "circuit": "CS2",
+          "current_a": 242220457.89548564,
+          "filament_count": 2,
+          "signed_turns": 2.0
+        },
+        {
+          "circuit": "CS3",
+          "current_a": 297169139.73125833,
+          "filament_count": 2,
+          "signed_turns": 2.0
+        },
+        {
+          "circuit": "VS3",
+          "current_a": 8093.790765735292,
+          "filament_count": 8,
+          "signed_turns": 8.0
+        },
+        {
+          "circuit": "PF1",
+          "current_a": 85997897.7041797,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF2",
+          "current_a": 6557190.447223027,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF3",
+          "current_a": -1228870.486705857,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF4",
+          "current_a": 644424.0174404108,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF5",
+          "current_a": -1908437.533955461,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF6",
+          "current_a": 95727722.31781808,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        }
+      ],
+      "cold_start": {
+        "continuation": {
+          "ip_ramp": 100,
+          "n_iter_max": 600
+        },
+        "converged": true,
+        "iteration_count": 270,
+        "outcome": "same_fixed_point_as_warm_start",
+        "psi_n_rmse_inside_limiter": 0.0006417799186314818,
+        "seconds_orientation_only": 563.7856014259742
+      },
+      "freegsnke_run": {
+        "forward_refinement_relative_change": 1.0222140323901473e-10,
+        "forward_refinement_tolerance": 1e-09,
+        "inverse_relative_change": 9.758677894303431e-05,
+        "passive_current_max_abs_a": 0.0,
+        "seconds_orientation_only": 77.42270870198263,
+        "upstream_reference": "examples/example08 - static_inverse_solve_ITER.ipynb"
+      },
+      "grid_shape_r_z": [
+        129,
+        129
+      ],
+      "ip_target_a": 15000000.0,
+      "machine_files": {
+        "active_coils": {
+          "path": "machine_configs/ITER/ITER_active_coils.pickle",
+          "sha256": "a871d1474e546715244feab0ef11dd39f90a52e1f2612bb828b676c4619f5d43"
+        },
+        "limiter": {
+          "path": "machine_configs/ITER/ITER_limiter.pickle",
+          "sha256": "8c182b5cfd19142ba5e573960b52172cf8d67a870332a82bd5d0ee67439a3d64"
+        },
+        "passive_coils": {
+          "path": "machine_configs/ITER/ITER_passive_coils.pickle",
+          "sha256": "a169949b5535ab8e6151c504e1f15c5b69982078ae1cca65d74120aa5dd43234"
+        },
+        "wall": {
+          "path": "machine_configs/ITER/ITER_wall.pickle",
+          "sha256": "8c182b5cfd19142ba5e573960b52172cf8d67a870332a82bd5d0ee67439a3d64"
+        }
+      },
+      "passed": true,
+      "profile": {
+        "Beta0": 0.5978,
+        "Raxis": 6.2,
+        "alpha_m": 2.0,
+        "alpha_n": 1.395,
+        "class": "Fiesta_Topeol",
+        "fvac": 0.5
+      },
+      "profile_source_bridge": {
+        "checks": {
+          "anchor_values_match_equilibrium": true,
+          "gauge_invariant_source": true,
+          "identity_cocos_scale_selected": true,
+          "normalised_flux_orientation": true,
+          "sampled_profile_source_parity": true,
+          "total_current_preserved": true
+        },
+        "convention": {
+          "freegsnke_grid_orientation": "R,Z",
+          "profile_derivative_variable": "psi = poloidal flux per radian, Phi_p/(2*pi)",
+          "psi_axis_wb_per_radian": 219.41622569056207,
+          "psi_boundary_wb_per_radian": 206.5860243781181,
+          "psi_span_wb_per_radian": -12.830201312443961,
+          "scpn_grid_orientation": "Z,R",
+          "solver_cocos": 3,
+          "source_equation": "J_phi = R*pprime + FFprime/(mu0*R)",
+          "support": "exact converged FreeGSNKE limiter_core_mask"
+        },
+        "digests": {
+          "ffprime_samples_sha256": "0a4dd47162b0510732e991f37e9d81925689985ede12e9ba7e480f7a7c659e9a",
+          "freegsnke_jtor_sha256": "8739a1c654c4fed336b1fa3db154d413ad6cc27f0d0859a5b155063f834c0631",
+          "pprime_samples_sha256": "6180a111f72d3b9b2ef4a1fed36f377fe82d84eced15473921869d01a9c94ad9",
+          "psin_knots_sha256": "793ca6f76b17b90c9c997cc97fde9cafbbccfb4d4f56f1fd2c1bc4a950d14535",
+          "scpn_translated_jtor_sha256": "4701bbcb317e0777f0508ebddb97c7143fdc42159ee43f27b9168d9b1541676d",
+          "support_mask_sha256": "8cfe2e4690716163d9012913cd15876cdc9c5a1aea8365d9d09e452abade08de"
+        },
+        "gauge_audit": {
+          "offset_wb_per_radian": 17.25,
+          "relative_l2_error": 0.0,
+          "threshold_relative_l2_error_max": 1e-12
+        },
+        "normalised_flux_audit": {
+          "definition": "(psi - psi_axis)/(psi_boundary - psi_axis)",
+          "max_abs_error": 0.0,
+          "threshold_max_abs_error": 1e-14
+        },
+        "passed": true,
+        "profile_sampling": {
+          "ffprime_max": 4.48992009761744,
+          "ffprime_min": 0.0,
+          "interpolation": "linear on monotonic psi_N knots",
+          "knot_count": 8193,
+          "pprime_max": 138152.64808618443,
+          "pprime_min": 0.0
+        },
+        "scale_audit": {
+          "adapter": "identity",
+          "candidate_relative_l2_errors": {
+            "identity": 2.985138085728447e-08,
+            "scaled_by_2pi": 5.283185288233218,
+            "scaled_by_inv_2pi": 0.840845057388022,
+            "scaled_by_minus_1": 1.9999999969845916,
+            "scaled_by_minus_2pi": 7.283185288233218
+          }
+        },
+        "source_parity": {
+          "freegsnke_total_current_a": 15000000.000000002,
+          "max_abs_current_density_error_a_per_m2": 1.5790282065306833,
+          "relative_l2_error": 2.985138085728447e-08,
+          "scpn_total_current_a": 15000000.05554266,
+          "support_point_count": 6047,
+          "threshold_relative_l2_error_max": 1e-07,
+          "total_current_relative_error": 3.7028439342975614e-09,
+          "total_current_threshold_relative_error_max": 1e-07
+        }
+      },
+      "reference_xpoints_m": [
+        [
+          5.2466017353584276,
+          -3.095778195301301
+        ]
+      ],
+      "total_psi_comparison": {
+        "checks": {
+          "coil_domain_decomposition_exercised": true,
+          "finite_difference_gradients": true,
+          "frozen_topology_control": true,
+          "production_smooth_converged": true,
+          "production_smooth_current": true,
+          "production_smooth_residual": true,
+          "production_smooth_shape": true,
+          "production_smooth_support": true,
+          "production_smooth_topology": true
+        },
+        "coil_domain_contract": {
+          "decompose_coil_field": true,
+          "filament_count": 20,
+          "filaments_inside_rectangular_domain": 8,
+          "formulation": "psi_total = psi_coil + psi_plasma"
+        },
+        "digests": {
+          "frozen_candidate_psi_sha256": "c4ee0a6f13c3ea53abd013d9748cb32a93c7ebd0a356742b03e06c3826a143ef",
+          "production_candidate_jtor_sha256": "69434a4458a7a9b6ab39ddc16986ee507b6e99a44474d292a230894fe9da42f6",
+          "production_candidate_psi_sha256": "ee7a16734d0881c0dd3ec188ea7cc184f5af29167c3f5082db856c2a8168a294",
+          "reference_psi_sha256": "793f27a4872da171d25b6e057f0c95c744e81849f6b2858795ebc841b7171a7f"
+        },
+        "frozen_topology_control": {
+          "converged": true,
+          "iteration_count": 10,
+          "psi_n_rmse_inside_limiter": 0.00012160933317396045,
+          "support": "exact FreeGSNKE limiter_core_mask"
+        },
+        "gradient_audit": {
+          "circuit_index": 2,
+          "circuit_step_a": 29716.913973125836,
+          "objective": "exact-support mean total psi",
+          "rows": [
+            {
+              "autodiff": 1.71587251387816e-07,
+              "finite_difference": 1.7158868023094112e-07,
+              "name": "circuit_current_a",
+              "passed": true,
+              "relative_error": 8.327140946612488e-06,
+              "threshold_relative_error_max": 0.05
+            },
+            {
+              "autodiff": 0.9175033035154451,
+              "finite_difference": 0.917536829376786,
+              "name": "pprime_scale",
+              "passed": true,
+              "relative_error": 3.6538981616409706e-05,
+              "threshold_relative_error_max": 0.01
+            },
+            {
+              "autodiff": -0.9175033035154351,
+              "finite_difference": -0.9177837793572508,
+              "name": "ffprime_scale",
+              "passed": true,
+              "relative_error": 0.0003056012190715551,
+              "threshold_relative_error_max": 0.01
+            }
+          ]
+        },
+        "passed": true,
+        "production_smooth": {
+          "axis_flux_wb_per_radian": 219.4259558517948,
+          "axis_position_error_m": 0.0012571865803061378,
+          "boundary_flux_wb_per_radian": 206.58363594660943,
+          "converged": true,
+          "iteration_count": 13,
+          "max_abs_total_psi_error_wb": 0.023554877530500562,
+          "plasma_current_a": 15000000.000000007,
+          "plasma_current_relative_error": 4.967053731282552e-16,
+          "psi_n_rmse_inside_limiter": 0.0006417804152384333,
+          "relative_nonlinear_residual_rms": 5.512555398962639e-08,
+          "support_current_relative_l2": 0.0018870887165963537,
+          "xpoint_position_errors_m": [
+            0.0014961681466249765
+          ]
+        },
+        "thresholds_predeclared": {
+          "circuit_gradient_relative_error_max": 0.05,
+          "plasma_current_relative_error_max": 1e-06,
+          "profile_gradient_relative_error_max": 0.01,
+          "psi_n_rmse_inside_limiter_max": 0.05,
+          "relative_nonlinear_residual_rms_max": 0.05,
+          "support_current_relative_l2_max": 0.1,
+          "topology_position_error_m_max": 0.035
+        }
+      },
+      "vacuum_bridge": {
+        "active_filament_count": 20,
+        "freegsnke_vacuum_max_abs_wb": 200.26308765614488,
+        "max_abs_error_wb": 7.673861546209082e-13,
+        "relative_threshold": 1e-10,
+        "rmse_wb": 2.000520581842609e-13
+      }
+    },
+    "mastu_like": {
+      "checks": {
+        "profile_source_bridge": true,
+        "same_case_total_psi": true,
+        "vacuum_parity_inside_limiter": true
+      },
+      "circuits": [
+        {
+          "circuit": "Solenoid",
+          "current_a": 5000.0,
+          "filament_count": 324,
+          "signed_turns": 324.0
+        },
+        {
+          "circuit": "PX",
+          "current_a": 3696.8092224980783,
+          "filament_count": 84,
+          "signed_turns": 84.0
+        },
+        {
+          "circuit": "D1",
+          "current_a": 6941.23607795344,
+          "filament_count": 70,
+          "signed_turns": 70.0
+        },
+        {
+          "circuit": "D2",
+          "current_a": 4390.861651672075,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "D3",
+          "current_a": 2924.3553625651143,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "Dp",
+          "current_a": -2488.20042970495,
+          "filament_count": 48,
+          "signed_turns": 48.0
+        },
+        {
+          "circuit": "D5",
+          "current_a": 249.2075647513061,
+          "filament_count": 54,
+          "signed_turns": 54.0
+        },
+        {
+          "circuit": "D6",
+          "current_a": -314.99584474141585,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "D7",
+          "current_a": 511.0756239995471,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "P4",
+          "current_a": -3564.3804944559943,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "P5",
+          "current_a": -3954.2365660226087,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "P6",
+          "current_a": 1.9555167641513577e-05,
+          "filament_count": 20,
+          "signed_turns": 0.0
+        }
+      ],
+      "cold_start": {
+        "continuation": {
+          "ip_ramp": 100,
+          "n_iter_max": 600
+        },
+        "converged": false,
+        "iteration_count": 600,
+        "outcome": "no_magnetic_axis_inside_limiter",
+        "seconds_orientation_only": 543.3811054960242
+      },
+      "freegsnke_run": {
+        "forward_refinement_relative_change": 1.4301211042541097e-10,
+        "forward_refinement_tolerance": 1e-09,
+        "inverse_relative_change": 7.783983575185629e-07,
+        "passive_current_max_abs_a": 0.0,
+        "seconds_orientation_only": 36.677062859002035,
+        "upstream_reference": "freegsnke/tests/test_inverse_static_solver.py"
+      },
+      "grid_shape_r_z": [
+        65,
+        129
+      ],
+      "ip_target_a": 600000.0,
+      "machine_files": {
+        "active_coils": {
+          "path": "machine_configs/MAST-U/MAST-U_like_active_coils.pickle",
+          "sha256": "205601d38fe734866fcc14399c07f7c126f2a7af49f4b0172ca364ad9d3048d7"
+        },
+        "limiter": {
+          "path": "machine_configs/MAST-U/MAST-U_like_limiter.pickle",
+          "sha256": "a27a01a2d335ec9c9572db9645a62466a3ecf9ec7fc3d82eb11b243c2b955701"
+        },
+        "passive_coils": {
+          "path": "machine_configs/MAST-U/MAST-U_like_passive_coils.pickle",
+          "sha256": "7f0f3f133d19a0fa78bc30639a6016a67fd369e23330d421c5bdca9c9e12af3d"
+        },
+        "wall": {
+          "path": "machine_configs/MAST-U/MAST-U_like_wall.pickle",
+          "sha256": "46a29b7831b43621f7839d9fcbb79b870f1731024b7378f4d043ba83cf52fcd7"
+        }
+      },
+      "passed": true,
+      "profile": {
+        "alpha_m": 1.8,
+        "alpha_n": 1.2,
+        "class": "ConstrainPaxisIp",
+        "fvac": 0.5,
+        "paxis": 8000.0
+      },
+      "profile_source_bridge": {
+        "checks": {
+          "anchor_values_match_equilibrium": true,
+          "gauge_invariant_source": true,
+          "identity_cocos_scale_selected": true,
+          "normalised_flux_orientation": true,
+          "sampled_profile_source_parity": true,
+          "total_current_preserved": true
+        },
+        "convention": {
+          "freegsnke_grid_orientation": "R,Z",
+          "profile_derivative_variable": "psi = poloidal flux per radian, Phi_p/(2*pi)",
+          "psi_axis_wb_per_radian": 0.09187210233233685,
+          "psi_boundary_wb_per_radian": 0.02867695786264306,
+          "psi_span_wb_per_radian": -0.06319514446969379,
+          "scpn_grid_orientation": "Z,R",
+          "solver_cocos": 3,
+          "source_equation": "J_phi = R*pprime + FFprime/(mu0*R)",
+          "support": "exact converged FreeGSNKE limiter_core_mask"
+        },
+        "digests": {
+          "ffprime_samples_sha256": "3855b9e710e5adb0519854a6e02174f9568fa54ac86bc302835d99ca842a8500",
+          "freegsnke_jtor_sha256": "1faa2022c70ab66137796c4a1805aef82bf7a9565671cf03cc82a5bd74b96d50",
+          "pprime_samples_sha256": "462584fea9fd0e96198ffc7958a00fcacbf4def8f41f559d3addf84d42b52817",
+          "psin_knots_sha256": "793ca6f76b17b90c9c997cc97fde9cafbbccfb4d4f56f1fd2c1bc4a950d14535",
+          "scpn_translated_jtor_sha256": "2e1b3e26026dc9f0423c735c40a5b5126e3221695a1cf7580c6bdff1453833c2",
+          "support_mask_sha256": "9c1c89240c02b847bd07bded8c83c423808e9ce11527d70e9990c9c1640bc4fd"
+        },
+        "gauge_audit": {
+          "offset_wb_per_radian": 17.25,
+          "relative_l2_error": 4.4100570964199404e-14,
+          "threshold_relative_l2_error_max": 1e-12
+        },
+        "normalised_flux_audit": {
+          "definition": "(psi - psi_axis)/(psi_boundary - psi_axis)",
+          "max_abs_error": 0.0,
+          "threshold_max_abs_error": 1e-14
+        },
+        "passed": true,
+        "profile_sampling": {
+          "ffprime_max": 0.5706709686838924,
+          "ffprime_min": 0.0,
+          "interpolation": "linear on monotonic psi_N knots",
+          "knot_count": 8193,
+          "pprime_max": 208748.10999419945,
+          "pprime_min": 0.0
+        },
+        "scale_audit": {
+          "adapter": "identity",
+          "candidate_relative_l2_errors": {
+            "identity": 3.5121218106294314e-08,
+            "scaled_by_2pi": 5.28318528945611,
+            "scaled_by_inv_2pi": 0.8408450573570457,
+            "scaled_by_minus_1": 1.9999999971792208,
+            "scaled_by_minus_2pi": 7.283185289456109
+          }
+        },
+        "source_parity": {
+          "freegsnke_total_current_a": 600000.0,
+          "max_abs_current_density_error_a_per_m2": 0.21367096616501158,
+          "relative_l2_error": 3.5121218106294314e-08,
+          "scpn_total_current_a": 600000.0029685431,
+          "support_point_count": 1623,
+          "threshold_relative_l2_error_max": 1e-07,
+          "total_current_relative_error": 4.947571821200351e-09,
+          "total_current_threshold_relative_error_max": 1e-07
+        }
+      },
+      "reference_xpoints_m": [
+        [
+          0.5984804108355555,
+          1.0971696691188424
+        ],
+        [
+          0.5984804107422503,
+          -1.0971696712420285
+        ]
+      ],
+      "total_psi_comparison": {
+        "checks": {
+          "coil_domain_decomposition_exercised": true,
+          "finite_difference_gradients": true,
+          "frozen_topology_control": true,
+          "production_smooth_converged": true,
+          "production_smooth_current": true,
+          "production_smooth_residual": true,
+          "production_smooth_shape": true,
+          "production_smooth_support": true,
+          "production_smooth_topology": true
+        },
+        "coil_domain_contract": {
+          "decompose_coil_field": true,
+          "filament_count": 876,
+          "filaments_inside_rectangular_domain": 876,
+          "formulation": "psi_total = psi_coil + psi_plasma"
+        },
+        "digests": {
+          "frozen_candidate_psi_sha256": "bf260a416894878ee7c5cfc5e70372e7b1ebd6a03e767c973a8b2cbc12e10c1e",
+          "production_candidate_jtor_sha256": "78e1f9913ff5a8d57b6044fe423d96d69acf26ea545c54f90d0df400749711c4",
+          "production_candidate_psi_sha256": "11471ab4d7315dca3abd226dc4f8b97946703b506a8b57726dd641c75cf23519",
+          "reference_psi_sha256": "d9a6955d192b69a66dbcfe0b6584e3192bd7f0962ca5459320de1ff7e88cc537"
+        },
+        "frozen_topology_control": {
+          "converged": true,
+          "iteration_count": 11,
+          "psi_n_rmse_inside_limiter": 0.00037768119984973175,
+          "support": "exact FreeGSNKE limiter_core_mask"
+        },
+        "gradient_audit": {
+          "circuit_index": 2,
+          "circuit_step_a": 1.0,
+          "objective": "exact-support mean total psi",
+          "rows": [
+            {
+              "autodiff": 2.358618515899226e-06,
+              "finite_difference": 2.3584976467476426e-06,
+              "name": "circuit_current_a",
+              "passed": true,
+              "relative_error": 5.1245740151940925e-05,
+              "threshold_relative_error_max": 0.05
+            },
+            {
+              "autodiff": 0.011843696751588625,
+              "finite_difference": 0.011843040432120422,
+              "name": "pprime_scale",
+              "passed": true,
+              "relative_error": 5.541508550660198e-05,
+              "threshold_relative_error_max": 0.01
+            },
+            {
+              "autodiff": -0.01184369675158861,
+              "finite_difference": -0.011842839693250451,
+              "name": "ffprime_scale",
+              "passed": true,
+              "relative_error": 7.236409004172951e-05,
+              "threshold_relative_error_max": 0.01
+            }
+          ]
+        },
+        "passed": true,
+        "production_smooth": {
+          "axis_flux_wb_per_radian": 0.09165475576345124,
+          "axis_position_error_m": 0.0013535296988508403,
+          "boundary_flux_wb_per_radian": 0.028621207320287202,
+          "converged": true,
+          "iteration_count": 13,
+          "max_abs_total_psi_error_wb": 0.0005523092372280713,
+          "plasma_current_a": 600000.0000000002,
+          "plasma_current_relative_error": 3.880510727564494e-16,
+          "psi_n_rmse_inside_limiter": 0.0035428935838590766,
+          "relative_nonlinear_residual_rms": 1.5475768564896736e-08,
+          "support_current_relative_l2": 0.007474760325785115,
+          "xpoint_position_errors_m": [
+            0.0021072270142722268,
+            0.002107224734293356
+          ]
+        },
+        "thresholds_predeclared": {
+          "circuit_gradient_relative_error_max": 0.05,
+          "plasma_current_relative_error_max": 1e-06,
+          "profile_gradient_relative_error_max": 0.01,
+          "psi_n_rmse_inside_limiter_max": 0.05,
+          "relative_nonlinear_residual_rms_max": 0.05,
+          "support_current_relative_l2_max": 0.1,
+          "topology_position_error_m_max": 0.035
+        }
+      },
+      "vacuum_bridge": {
+        "active_filament_count": 876,
+        "freegsnke_vacuum_max_abs_wb": 0.13241472731226603,
+        "max_abs_error_wb": 1.1102230246251565e-16,
+        "relative_threshold": 1e-10,
+        "rmse_wb": 2.8972519192473464e-17
+      }
+    },
+    "sparc_like": {
+      "checks": {
+        "profile_source_bridge": true,
+        "same_case_total_psi": true,
+        "vacuum_parity_inside_limiter": true
+      },
+      "circuits": [
+        {
+          "circuit": "CS1I",
+          "current_a": -67722.09514711946,
+          "filament_count": 560,
+          "signed_turns": 560.0
+        },
+        {
+          "circuit": "CS1O",
+          "current_a": -61605.97242536781,
+          "filament_count": 270,
+          "signed_turns": 270.0
+        },
+        {
+          "circuit": "CS2",
+          "current_a": -162900.944995425,
+          "filament_count": 80,
+          "signed_turns": 80.0
+        },
+        {
+          "circuit": "CS3",
+          "current_a": 57984.27971924257,
+          "filament_count": 80,
+          "signed_turns": 80.0
+        },
+        {
+          "circuit": "PF1",
+          "current_a": 100443.20732977672,
+          "filament_count": 50,
+          "signed_turns": 50.0
+        },
+        {
+          "circuit": "PF2",
+          "current_a": 88281.72267827709,
+          "filament_count": 60,
+          "signed_turns": 60.0
+        },
+        {
+          "circuit": "PF3",
+          "current_a": -97577.97381456377,
+          "filament_count": 70,
+          "signed_turns": 70.0
+        },
+        {
+          "circuit": "PF4",
+          "current_a": -140267.04187904886,
+          "filament_count": 60,
+          "signed_turns": 60.0
+        },
+        {
+          "circuit": "DV1",
+          "current_a": 20000.211975797767,
+          "filament_count": 50,
+          "signed_turns": 50.0
+        },
+        {
+          "circuit": "DV2",
+          "current_a": -8229.270999150876,
+          "filament_count": 50,
+          "signed_turns": 50.0
+        },
+        {
+          "circuit": "VS1",
+          "current_a": 0.0014683732911131865,
+          "filament_count": 50,
+          "signed_turns": 0.0
+        }
+      ],
+      "cold_start": {
+        "continuation": {
+          "ip_ramp": 100,
+          "n_iter_max": 600
+        },
+        "converged": true,
+        "iteration_count": 153,
+        "outcome": "same_fixed_point_as_warm_start",
+        "psi_n_rmse_inside_limiter": 0.0004590537964641204,
+        "seconds_orientation_only": 246.6431824999745
+      },
+      "freegsnke_run": {
+        "forward_refinement_relative_change": 1.9614962899181417e-10,
+        "forward_refinement_tolerance": 1e-09,
+        "inverse_relative_change": 6.254677797653302e-07,
+        "passive_current_max_abs_a": 0.0,
+        "seconds_orientation_only": 15.155700065020937,
+        "upstream_reference": "examples/example07 - static_inverse_solve_SPARC.ipynb"
+      },
+      "grid_shape_r_z": [
+        129,
+        129
+      ],
+      "ip_target_a": 8700000.0,
+      "machine_files": {
+        "active_coils": {
+          "path": "machine_configs/SPARC/SPARC_active_coils.pickle",
+          "sha256": "f71345906e0c1c7e20d4165147b9abc1b795ef0c87fdf1d089e47745a0e68a53"
+        },
+        "limiter": {
+          "path": "machine_configs/SPARC/SPARC_limiter.pickle",
+          "sha256": "2d345bc8b67dbf77b4e0715461ccf1c185d9fd8319d931836d9f57faa1d9126c"
+        },
+        "passive_coils": {
+          "path": "machine_configs/SPARC/SPARC_passive_coils.pickle",
+          "sha256": "2f88dbb507f3f167a31b0d5905b1672d1b9c417d6c64a054619c97a5c565d59f"
+        },
+        "wall": {
+          "path": "machine_configs/SPARC/SPARC_wall.pickle",
+          "sha256": "2d345bc8b67dbf77b4e0715461ccf1c185d9fd8319d931836d9f57faa1d9126c"
+        }
+      },
+      "passed": true,
+      "profile": {
+        "alpha_m": 1.8,
+        "alpha_n": 1.2,
+        "class": "ConstrainPaxisIp",
+        "fvac": 0.5,
+        "paxis": 50000.0
+      },
+      "profile_source_bridge": {
+        "checks": {
+          "anchor_values_match_equilibrium": true,
+          "gauge_invariant_source": true,
+          "identity_cocos_scale_selected": true,
+          "normalised_flux_orientation": true,
+          "sampled_profile_source_parity": true,
+          "total_current_preserved": true
+        },
+        "convention": {
+          "freegsnke_grid_orientation": "R,Z",
+          "profile_derivative_variable": "psi = poloidal flux per radian, Phi_p/(2*pi)",
+          "psi_axis_wb_per_radian": 0.4520480724337586,
+          "psi_boundary_wb_per_radian": -1.56313594600477,
+          "psi_span_wb_per_radian": -2.0151840184385286,
+          "scpn_grid_orientation": "Z,R",
+          "solver_cocos": 3,
+          "source_equation": "J_phi = R*pprime + FFprime/(mu0*R)",
+          "support": "exact converged FreeGSNKE limiter_core_mask"
+        },
+        "digests": {
+          "ffprime_samples_sha256": "44aeb4dc4df2377befe914266a44cacd41ea91761086c3e3c46ced7df462d765",
+          "freegsnke_jtor_sha256": "98d227fc3c4df95ccff95c075463058b0b0188713fd5308e5c9ebff2c6a2a573",
+          "pprime_samples_sha256": "ad112cce39ae45ff1ec55b8cbc48efa2041cc89d03e977c4d4923e49fe84e50c",
+          "psin_knots_sha256": "793ca6f76b17b90c9c997cc97fde9cafbbccfb4d4f56f1fd2c1bc4a950d14535",
+          "scpn_translated_jtor_sha256": "c39c770ccf1e05fbe0f076ed2c13f518d51f77a1751ccdc8736a07531f4a61d2",
+          "support_mask_sha256": "aa7654587908117595003f6c1d78e1bd822c2a5c868f0f9d2be35a5629a32d2c"
+        },
+        "gauge_audit": {
+          "offset_wb_per_radian": 17.25,
+          "relative_l2_error": 9.880655895005182e-16,
+          "threshold_relative_l2_error_max": 1e-12
+        },
+        "normalised_flux_audit": {
+          "definition": "(psi - psi_axis)/(psi_boundary - psi_axis)",
+          "max_abs_error": 0.0,
+          "threshold_max_abs_error": 1e-14
+        },
+        "passed": true,
+        "profile_sampling": {
+          "ffprime_max": 21.713172689628948,
+          "ffprime_min": 0.0,
+          "interpolation": "linear on monotonic psi_N knots",
+          "knot_count": 8193,
+          "pprime_max": 40913.96507761832,
+          "pprime_min": 0.0
+        },
+        "scale_audit": {
+          "adapter": "identity",
+          "candidate_relative_l2_errors": {
+            "identity": 9.1698813473659e-08,
+            "scaled_by_2pi": 5.283185288559076,
+            "scaled_by_inv_2pi": 0.8408450573797686,
+            "scaled_by_minus_1": 1.999999997036451,
+            "scaled_by_minus_2pi": 7.283185288559066
+          }
+        },
+        "source_parity": {
+          "freegsnke_total_current_a": 8700000.000000004,
+          "max_abs_current_density_error_a_per_m2": 25.338176416402916,
+          "relative_l2_error": 9.1698813473659e-08,
+          "scpn_total_current_a": 8700000.051184267,
+          "support_point_count": 5037,
+          "threshold_relative_l2_error_max": 1e-07,
+          "total_current_relative_error": 5.8832486299262625e-09,
+          "total_current_threshold_relative_error_max": 1e-07
+        }
+      },
+      "reference_xpoints_m": [
+        [
+          1.551197362870306,
+          1.1511107125753177
+        ],
+        [
+          1.5511973562160861,
+          -1.151110726949584
+        ]
+      ],
+      "total_psi_comparison": {
+        "checks": {
+          "coil_domain_decomposition_exercised": true,
+          "finite_difference_gradients": true,
+          "frozen_topology_control": true,
+          "production_smooth_converged": true,
+          "production_smooth_current": true,
+          "production_smooth_residual": true,
+          "production_smooth_shape": true,
+          "production_smooth_support": true,
+          "production_smooth_topology": true
+        },
+        "coil_domain_contract": {
+          "decompose_coil_field": true,
+          "filament_count": 1380,
+          "filaments_inside_rectangular_domain": 150,
+          "formulation": "psi_total = psi_coil + psi_plasma"
+        },
+        "digests": {
+          "frozen_candidate_psi_sha256": "127fa215f4054a39a854b8ff81a790a43bb0ce0942ea17afae0d48f994c7d85a",
+          "production_candidate_jtor_sha256": "2a473bf92e3631ef2d03e84ce25c9916434e2fabe6c4944dbb52157fc3af335e",
+          "production_candidate_psi_sha256": "be3a1e9ccd877bad97207a37192775429b40ebd8f73f023d9b1a89f7b516840e",
+          "reference_psi_sha256": "2f2e9c84fd5a3039101fded3794a786697f21b99259772c1db25dace913c8192"
+        },
+        "frozen_topology_control": {
+          "converged": true,
+          "iteration_count": 12,
+          "psi_n_rmse_inside_limiter": 0.00015184570236820223,
+          "support": "exact FreeGSNKE limiter_core_mask"
+        },
+        "gradient_audit": {
+          "circuit_index": 2,
+          "circuit_step_a": 16.2900944995425,
+          "objective": "exact-support mean total psi",
+          "rows": [
+            {
+              "autodiff": 2.8821145210136046e-06,
+              "finite_difference": 2.8821151620876214e-06,
+              "name": "circuit_current_a",
+              "passed": true,
+              "relative_error": 2.22431783864235e-07,
+              "threshold_relative_error_max": 0.05
+            },
+            {
+              "autodiff": 0.004564933322781522,
+              "finite_difference": 0.004562973212052235,
+              "name": "pprime_scale",
+              "passed": true,
+              "relative_error": 0.0004293843065582854,
+              "threshold_relative_error_max": 0.01
+            },
+            {
+              "autodiff": -0.004564933322783328,
+              "finite_difference": -0.00456493599754193,
+              "name": "ffprime_scale",
+              "passed": true,
+              "relative_error": 5.85935619589439e-07,
+              "threshold_relative_error_max": 0.01
+            }
+          ]
+        },
+        "passed": true,
+        "production_smooth": {
+          "axis_flux_wb_per_radian": 0.45305892690772775,
+          "axis_position_error_m": 0.00012028400981143047,
+          "boundary_flux_wb_per_radian": -1.5645318728570576,
+          "converged": true,
+          "iteration_count": 15,
+          "max_abs_total_psi_error_wb": 0.00231211427274447,
+          "plasma_current_a": 8700000.000000007,
+          "plasma_current_relative_error": 8.563885743590607e-16,
+          "psi_n_rmse_inside_limiter": 0.0004590541328966581,
+          "relative_nonlinear_residual_rms": 9.366768474909712e-09,
+          "support_current_relative_l2": 0.0029133102347655617,
+          "xpoint_position_errors_m": [
+            0.0011898189955605815,
+            0.0011898216782683538
+          ]
+        },
+        "thresholds_predeclared": {
+          "circuit_gradient_relative_error_max": 0.05,
+          "plasma_current_relative_error_max": 1e-06,
+          "profile_gradient_relative_error_max": 0.01,
+          "psi_n_rmse_inside_limiter_max": 0.05,
+          "relative_nonlinear_residual_rms_max": 0.05,
+          "support_current_relative_l2_max": 0.1,
+          "topology_position_error_m_max": 0.035
+        }
+      },
+      "vacuum_bridge": {
+        "active_filament_count": 1380,
+        "freegsnke_vacuum_max_abs_wb": 6.406964008304787,
+        "max_abs_error_wb": 1.7763568394002505e-14,
+        "relative_threshold": 1e-10,
+        "rmse_wb": 4.400643651108331e-15
+      }
+    }
+  },
+  "claim_boundary": {
+    "control_admission": false,
+    "experimental_validation": false,
+    "facility_validation": false,
+    "same_case_cross_solver_parity": true,
+    "speed_comparison": false
+  },
+  "generator": {
+    "path": "validation/benchmark_freegsnke_multimachine.py",
+    "sha256": "c6b1ae377b36eea618276d483e8a6174c414879c5474ca3c856559a772fd5b0f"
+  },
+  "payload_sha256": "2365bc8bebf2c0840b8f630a9c7ce06dfb1e201c5d74dd7272cd8d26845df21b",
+  "provenance": {
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) CPU E5-2640 0 @ 2.50GHz",
+      "logical_cpus": 24,
+      "machine": "x86_64",
+      "python": "3.12.3",
+      "system": "Linux"
+    },
+    "machine_sources_per_upstream_readme": {
+      "ITER": "FUSE.jl",
+      "MAST-U": "UKAEA",
+      "SPARC": "SPARCPublic"
+    },
+    "source_commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+    "source_url": "https://github.com/FusionComputingLab/freegsnke",
+    "versions": {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "freegs4e": "0.13.1",
+      "freegsnke": "3.0.1",
+      "jax": "0.7.1",
+      "jaxlib": "0.7.1",
+      "numpy": "1.26.4",
+      "scipy": "1.15.3"
+    }
+  },
+  "schema_version": "scpn-fusion.freegsnke-multimachine-parity.v1",
+  "status": "pass"
+}

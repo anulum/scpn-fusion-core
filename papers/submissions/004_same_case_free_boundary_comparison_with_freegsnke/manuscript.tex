@@ -1,0 +1,395 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — same-case free-boundary comparison with FreeGSNKE.
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[margin=1in]{geometry}
+\bibliographystyle{unsrtnat}
+
+\title{Same-Case Comparison of Two Free-Boundary Grad--Shafranov Codes on
+FreeGSNKE's Public Machine Descriptions:\\
+Forward Parity and Inverse Coil-Current Fits}
+\author{Miroslav \v{S}otek\\
+\small ANULUM CH\&LI, Marbach SG, Switzerland, \url{https://www.anulum.li}\\
+\small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
+\small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
+\date{Preprint --- 16 November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We compare the predictive free-boundary Grad--Shafranov solver of
+SCPN-Fusion-Core with FreeGSNKE 3.0.1 on the three static inverse problems that
+FreeGSNKE ships, for synthetic MAST-U-like, SPARC-like and ITER-like machine
+descriptions.  A bridge maps FreeGSNKE's coils, profiles and flux convention
+onto SCPN's: the vacuum fluxes agree to rounding, and the sampled profile
+reproduces FreeGSNKE's current density to a relative $L_2$ error below
+$10^{-7}$.  In the forward direction, started from FreeGSNKE's flux, SCPN reaches
+its own fixed point within a root-mean-square normalised-flux difference of
+$3.5 \times 10^{-3}$, $4.6 \times 10^{-4}$ and $6.4 \times 10^{-4}$ inside the
+limiter; imposing FreeGSNKE's plasma support lowers these by factors of 3 to 9.
+From the vacuum field SCPN reaches the same solution on the SPARC- and ITER-like
+cases but finds no magnetic axis on the MAST-U-like case.
+
+In the inverse direction SCPN fits its coil currents to FreeGSNKE's isoflux and
+null-point targets, and each code's currents are scored by both codes.  On
+FreeGSNKE's flux the two evaluators agree to 0.3\%.  Started from FreeGSNKE's
+currents, SCPN meets the MAST-U- and SPARC-like targets to below $5 \times 10^{-8}$ with current changes of 1.4\% and
+1.0\%.  FreeGSNKE scores those currents above its own solution on the
+MAST-U-like case and 4.5 times below it on the SPARC-like case.  From a
+perturbed start SCPN stops early on the MAST-U-like case, and FreeGSNKE does
+not converge at its currents, so that comparison is incomplete.  Neither code
+meets the overdetermined ITER-like targets.  The SPARC-like Jacobian is
+rank-deficient, and two current sets 12.7\% apart both meet the targets.  Codes
+should therefore be compared by their target residuals under both evaluators,
+not by their coil currents.  All cases are synthetic: no measured discharge
+enters, and no speed, control or facility claim is made.
+\end{abstract}
+
+\noindent\textbf{Keywords:} free-boundary equilibrium; Grad--Shafranov;
+code comparison; inverse equilibrium; coil-current fit; FreeGSNKE
+
+\section{Introduction}
+
+Free-boundary equilibrium codes solve the Grad--Shafranov equation
+\citep{GradRubin1958,Shafranov1958} for the poloidal flux of a plasma and its
+external coils.  When two such codes are compared on configurations that each
+code set up for itself, the differences mix the numerical methods with the
+inputs: the machine description, the profile parametrisation, the grid and the
+conventions for flux and current.  A same-case comparison fixes every input and
+leaves only the methods.
+
+FreeGSNKE \citep{Amorisco2024} is an open-source free-boundary solver.  It
+ships machine descriptions and static inverse problems for three
+configurations, and its static forward solver has been validated against
+EFIT++ reconstructions of MAST-U discharges together with the Fiesta code
+\citep{Pentland2025}.  That study treats the static forward solvers only; it
+omits inverse and reconstruction solvers and describes a review of them as
+beyond its scope \citep{Pentland2025}.
+
+This paper compares the predictive free-boundary solver of SCPN-Fusion-Core
+with FreeGSNKE 3.0.1 on those three shipped problems, in two directions.  In
+the forward direction, SCPN solves the equilibrium from FreeGSNKE's coil
+currents and profile; the comparison is the normalised flux inside the limiter.
+In the inverse direction, SCPN fits its own coil currents to FreeGSNKE's
+isoflux and null-point targets, and each code's currents are scored by both
+codes.  The contribution is the bridge that makes the two codes solve the same
+problem, the measured agreement and disagreement in both directions, and the
+failures that the comparison exposed.
+
+\section{Codes and cases}
+
+\subsection{FreeGSNKE and its public problems}
+
+FreeGSNKE inherits the Picard-based static inverse solver of FreeGS
+\citep{Dudson2024} and adds a Newton--Krylov static forward solver
+\citep{Amorisco2024,Pentland2025}.  We use version 3.0.1 at source commit
+\texttt{00b79a08fbb6}, with FreeGS4E 0.13.1.  Its repository ships three
+synthetic machine descriptions; according to its README, the MAST-U-like
+description comes from UKAEA, the SPARC-like one from the public SPARC
+repository, and the ITER-like one from FUSE.jl.  Each case is the static inverse
+problem of an upstream test or example (Table~\ref{tab:cases}).  FreeGSNKE
+solves it, and a forward refinement at the resulting currents converges to a
+relative flux change below $10^{-9}$.  That refined equilibrium is the reference
+for both directions.
+
+\begin{table}[ht]
+\centering
+\caption{The three public cases.  Grid sizes are $n_R \times n_Z$.  Active
+filaments inside the computational rectangle require the coil field to be kept
+separate from the plasma field (Section~\ref{sec:bridge}).}
+\label{tab:cases}
+\begin{tabular}{lrrrrr}
+\toprule
+Case & $I_p$ (MA) & Grid & Circuits & Filaments (inside) & Profile class \\
+\midrule
+MAST-U-like & 0.6 & $65 \times 129$ & 12 & 876 (876) & \texttt{ConstrainPaxisIp} \\
+SPARC-like & 8.7 & $129 \times 129$ & 11 & 1380 (150) & \texttt{ConstrainPaxisIp} \\
+ITER-like & 15.0 & $129 \times 129$ & 10 & 20 (8) & \texttt{Fiesta\_Topeol} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{The SCPN predictive solver}
+
+SCPN-Fusion-Core's predictive solver finds the equilibrium from the coil
+currents, the profile functions $p'(\psi)$ and $FF'(\psi)$, and the plasma
+current.  The flux on the boundary of the computational rectangle is the coil
+flux plus the plasma's own flux there, written as a precomputed Green's-function
+response to the toroidal current density of every interior cell.  The current
+density is rescaled each iteration to the target plasma current.  The magnetic
+axis and the separatrix flux follow from smooth O- and X-point estimates of the
+current iterate, so the last closed flux surface is an output.  Plain Picard
+iteration on this coupled map is unstable, so the fixed point is found by
+Anderson mixing \citep{Anderson1965,WalkerNi2011}.  A cold start ramps the
+plasma current from the vacuum field; a warm start begins from a given flux.
+
+\subsection{The bridge between the codes}
+\label{sec:bridge}
+
+Four audits make the two codes solve the same problem.  First, FreeGSNKE's
+resolved circuit currents are mapped onto SCPN's filament Green's functions,
+and the two vacuum fluxes are compared inside the limiter.  Second, the
+converged FreeGSNKE profile is sampled on 8193 monotonic $\psi_N$ knots onto
+SCPN's $p'$ and $FF'$ source surface, with $\psi_N = (\psi -
+\psi_\mathrm{axis})/(\psi_\mathrm{boundary} - \psi_\mathrm{axis})$; the toroidal
+current density built by SCPN from those samples is compared with FreeGSNKE's
+on FreeGSNKE's plasma support.  Of five candidate flux conventions (identity,
+scaled by $\pm 2\pi$, by $1/2\pi$ and by $-1$), only the identity reproduces the
+source, at a relative $L_2$ error below $10^{-7}$, while the others miss by
+0.84 or more; both codes therefore use flux per radian with the same sign.
+Third, a constant flux offset leaves the source unchanged, as it must.  Fourth,
+active filaments lie inside the computational rectangle in all three cases, so
+SCPN forms the total flux as the sum of the coil flux and the plasma flux and
+keeps the two fields separate.
+
+\section{Forward parity}
+
+Table~\ref{tab:forward} lists the forward comparison.  The vacuum fluxes agree
+to rounding.  The sampled source reproduces FreeGSNKE's current density to a
+relative $L_2$ error of at most $9.2 \times 10^{-8}$.  Started from FreeGSNKE's
+flux, SCPN converges to its own fixed point, and the normalised flux of the two
+equilibria differs inside the limiter by a root-mean-square $\psi_N$ of
+$3.5 \times 10^{-3}$ on MAST-U-like and $4.6$ and $6.4 \times 10^{-4}$ on the
+SPARC- and ITER-like cases.  The magnetic axes agree to within 1.4~mm and the
+X-points to within 2.1~mm.
+
+\begin{table}[ht]
+\centering
+\caption{Forward parity.  Vacuum: largest absolute vacuum-flux difference
+inside the limiter.  Source: relative $L_2$ difference of the toroidal current
+density.  Warm: SCPN's own smooth topology.  Frozen: FreeGSNKE's plasma
+support imposed.  Axis and X-point: position differences of SCPN's warm
+equilibrium.}
+\label{tab:forward}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & Vacuum & Source & \multicolumn{2}{c}{$\psi_N$ RMSE} & Axis & X-point \\
+Case & (Wb\,rad$^{-1}$) & rel.\ $L_2$ & warm & frozen & (mm) & (mm) \\
+\midrule
+MAST-U-like & $1.1 \times 10^{-16}$ & $3.5 \times 10^{-8}$ & $3.54 \times 10^{-3}$ & $3.78 \times 10^{-4}$ & 1.35 & 2.11 \\
+SPARC-like & $1.8 \times 10^{-14}$ & $9.2 \times 10^{-8}$ & $4.59 \times 10^{-4}$ & $1.52 \times 10^{-4}$ & 0.12 & 1.19 \\
+ITER-like & $7.7 \times 10^{-13}$ & $3.0 \times 10^{-8}$ & $6.42 \times 10^{-4}$ & $1.22 \times 10^{-4}$ & 1.26 & 1.50 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The frozen-support control separates the two sources of that difference.  When
+SCPN is given FreeGSNKE's plasma support instead of finding its own, the
+$\psi_N$ difference falls by a factor of 9.4 on MAST-U-like, 3.0 on SPARC-like
+and 5.3 on ITER-like.  Most of the warm difference therefore comes from where
+each code places the plasma boundary, not from the source or the field solve.
+The thresholds of the comparison were fixed before the runs: a $\psi_N$ RMSE of
+at most 0.05; axis and X-point differences of at most 35~mm; a relative
+support-current difference of at most 0.1; a relative nonlinear residual of at
+most 0.05; a relative plasma-current error of at most $10^{-6}$; and relative
+errors of the implicit gradients, checked by finite differences, of at most
+0.05 for the coil currents and 0.01 for the profile.  All three cases pass every
+threshold.
+
+The cold start is a robustness test of SCPN alone.  From the vacuum field, the
+SPARC-like and ITER-like cases reach the warm-start fixed point, after 153 and
+270 iterations, with the same $\psi_N$ difference to three significant digits.
+The MAST-U-like case does not: after 600 iterations it has no magnetic axis
+inside the limiter.  The Grad--Shafranov problem can have several solutions
+\citep{HamFarrell2024}, and from the vacuum field SCPN does not reach the
+diverted solution that the warm start finds.
+The forward agreement on MAST-U-like is therefore a property of the warm start.
+
+\section{Inverse coil-current fits}
+
+\subsection{Targets and method}
+
+Each upstream problem names isoflux points, which must lie on one flux surface,
+and two null points, where the poloidal field must vanish
+(Table~\ref{tab:targets}).  The residual has three blocks: the flux
+differences of every pair of isoflux points, and $B_R$ and $B_Z$ at the null
+points.  We report the $L_2$ norm of each block and their root sum of squares
+as the total, in the mixed units FreeGSNKE uses (Wb\,rad$^{-1}$ and T).  With
+$n$ isoflux points the pairs fix only $n-1$ independent flux differences, so
+the three problems pose 11, 9 and 27 independent conditions on 11, 11 and 10
+controlled circuits.
+
+\begin{table}[ht]
+\centering
+\caption{Inverse targets.  Independent conditions: $n-1$ flux differences plus
+two field components at each null point.}
+\label{tab:targets}
+\begin{tabular}{lrrrr}
+\toprule
+Case & Isoflux points & Null points & Independent conditions & Controlled circuits \\
+\midrule
+MAST-U-like & 8 & 2 & 11 & 11 \\
+SPARC-like & 6 & 2 & 9 & 11 \\
+ITER-like & 24 & 2 & 27 & 10 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+SCPN fits the same controlled circuits by a Levenberg--Marquardt iteration
+\citep{Levenberg1944,Marquardt1963} with Marquardt scaling, adaptive damping, the
+upstream Tikhonov weights on the step and a projection onto the upstream current
+limits.  The flux at a target point is the exact filament coil flux plus a Keys
+cubic-convolution interpolation \citep{Keys1981} of the plasma flux.  The
+Jacobian is taken by central differences through the full free-boundary solve,
+and every forward solve must converge to $10^{-9}$ or the step is rejected.  The
+methods differ from FreeGSNKE's in three ways: FreeGSNKE linearises the targets
+with the plasma frozen, penalises limit violations through slack variables
+instead of projecting, and interpolates the plasma flux with a bicubic spline.
+Both apply the Tikhonov weight to the current step.  Each fit starts either
+from FreeGSNKE's currents or from a seeded $\pm 20\%$ perturbation of them,
+reached by continuation from FreeGSNKE's currents when the perturbed currents do
+not converge directly.  A fit stops when no step lowers the loss or after 30
+outer iterations.  FreeGSNKE is then refined at SCPN's fitted currents, so each
+code's currents are scored by both codes.
+
+\subsection{Results}
+
+Table~\ref{tab:inverse} lists the losses.  The two evaluators agree: applied to
+FreeGSNKE's own flux map, SCPN's evaluator reproduces FreeGSNKE's total loss to
+0.3\% in all three cases.  The $B_R$ block, a derivative of the flux, differs more: by up
+to 26\% on the SPARC-like case.  The two codes interpolate the plasma flux
+differently.  The totals that follow therefore differ mainly through the two
+equilibria, not through the evaluators.
+
+\begin{table}[ht]
+\centering
+\caption{Inverse losses (total $L_2$).  At FreeGSNKE's currents: FreeGSNKE's own
+loss, SCPN's evaluator on FreeGSNKE's flux map, and SCPN's own equilibrium.  At
+SCPN's fitted currents: SCPN's loss and FreeGSNKE's.  Change: relative $L_2$
+change of the controlled currents from FreeGSNKE's.  Stop: no descent step (n),
+the 30-iteration limit (m), or a forward solve in the Jacobian that did not
+converge (j).  Withheld: FreeGSNKE's refinement did not converge.}
+\label{tab:inverse}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{llrrrrrrl}
+\toprule
+ & & \multicolumn{3}{c}{At FreeGSNKE's currents} & \multicolumn{2}{c}{At SCPN's currents} & & \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-7}
+Case & Start & FreeGSNKE & SCPN eval. & SCPN & SCPN & FreeGSNKE & Change & Stop \\
+\midrule
+MAST-U-like & FreeGSNKE & $1.54 \times 10^{-3}$ & $1.55 \times 10^{-3}$ & $2.24 \times 10^{-3}$ & $1.92 \times 10^{-8}$ & $2.11 \times 10^{-3}$ & 1.40\% & n \\
+ & perturbed & & & & $1.96 \times 10^{-2}$ & withheld & 64.2\% & j \\
+SPARC-like & FreeGSNKE & $3.49 \times 10^{-2}$ & $3.48 \times 10^{-2}$ & $3.11 \times 10^{-2}$ & $4.92 \times 10^{-8}$ & $7.78 \times 10^{-3}$ & 0.97\% & n \\
+ & perturbed & & & & $1.21 \times 10^{-6}$ & $7.75 \times 10^{-3}$ & 12.7\% & n \\
+ITER-like & FreeGSNKE & 1.71 & 1.71 & 1.81 & 1.39 & 1.39 & 1.26\% & m \\
+ & perturbed & & & & 1.41 & 1.41 & 1.21\% & m \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At FreeGSNKE's currents, SCPN's own equilibrium scores $2.24 \times 10^{-3}$ on
+MAST-U-like, 1.45 times FreeGSNKE's loss, and 0.89 and 1.06 times FreeGSNKE's
+loss on the SPARC- and ITER-like cases.  This is the model difference between
+the codes, measured in target residuals.
+
+Started from FreeGSNKE's currents, SCPN meets the MAST-U-like and SPARC-like
+targets to $1.9 \times 10^{-8}$ and $4.9 \times 10^{-8}$ by moving the currents by
+1.40\% and 0.97\%.  FreeGSNKE scores those currents at $2.11 \times 10^{-3}$ on
+MAST-U-like, above its own $1.54 \times 10^{-3}$, and at $7.78 \times 10^{-3}$ on
+SPARC-like, 4.5 times below its own $3.49 \times 10^{-2}$.  SCPN's currents stay inside the current limits, so on the
+SPARC-like case the currents that FreeGSNKE's inverse solve returned with the
+upstream settings are not a minimiser of its own target loss.  Neither code meets the ITER-like
+targets, which overdetermine the ten circuits: SCPN stops at the iteration
+limit with 1.39, and FreeGSNKE scores SCPN's currents at the same 1.39, below
+the 1.71 of its own solution.
+
+The singular values of SCPN's Jacobian show why currents are a poor basis for
+comparison.  On the SPARC-like case six singular values lie between
+$2.5 \times 10^{-4}$ and $6.9 \times 10^{-7}$ and the remaining five between
+$1.2 \times 10^{-10}$ and $2.2 \times 10^{-21}$ (start from FreeGSNKE's currents);
+two of them are zero to rounding, as the nine independent conditions require.  The perturbed start meets the
+targets to $1.2 \times 10^{-6}$ with currents 12.7\% away from FreeGSNKE's, and
+FreeGSNKE scores both SCPN solutions alike ($7.78$ and
+$7.75 \times 10^{-3}$).  On the MAST-U-like case seven singular values lie above
+$2 \times 10^{-6}$ and four below $10^{-10}$.  The ITER-like spectrum decays from
+$2.2 \times 10^{-4}$ to $1.9 \times 10^{-9}$ without a gap of several orders.
+Where the spectrum has such a gap, the targets leave several current
+combinations nearly free: on the SPARC-like case two current sets 12.7\% apart
+both meet the targets to $1.2 \times 10^{-6}$ or better.  We therefore compare the codes by their target
+residuals under both evaluators, not by their currents.
+
+From the perturbed start the MAST-U-like fit fails.  SCPN reaches the
+perturbed currents by 387 continuation steps and lowers its loss over seven
+iterations to $1.96 \times 10^{-2}$.  It then stops because a forward solve
+inside the Jacobian does not converge.  Its currents then differ from
+FreeGSNKE's by 64.2\%, and FreeGSNKE's refinement at those currents does not
+converge either: its relative change stays at $2.6 \times 10^{-5}$ against the
+required $10^{-9}$.  The benchmark withholds that loss.  Its completeness gate,
+which requires every FreeGSNKE refinement at SCPN's currents to converge,
+fails the case, so the inverse report's status is fail.  The gate was declared
+before the runs and is kept.
+
+\section{Limitations}
+
+\begin{itemize}
+\item All three machine descriptions are synthetic configurations shipped with
+FreeGSNKE.  No measured discharge enters the comparison.
+\item Each case uses one grid.  Grid convergence of the differences above is not
+shown.
+\item The forward agreement is a warm-start result.  SCPN's cold start fails on
+the MAST-U-like case.
+\item The inverse comparison uses one perturbation seed per case.  On the
+ITER-like case neither code meets the targets, so the comparison there is
+between residual levels.
+\item Run times are recorded only to describe the runs.  The two codes were not
+timed on the same problem, tolerance and host, so no speed comparison is made.
+\end{itemize}
+
+\section{What this comparison does not show}
+
+It does not validate either code against experiment, and it does not show
+fitness for a plasma control system, for facility use or for safety analysis.
+FreeGSNKE's inverse solver is the one it inherits from FreeGS; this paper
+reports how its solutions score under a second code, not a defect of it.
+
+\section*{Software version and date}
+
+This preprint describes \texttt{scpn-fusion} at commit \texttt{86649a05a15a}
+of 16 November 2026, on the main line after release 4.1.0; the comparison code
+is not part of that release.  The forward report was produced at commit
+\texttt{422e4c0b3d15}.  The six inverse runs ran at commit
+\texttt{44852feeedf2}; commit \texttt{86649a05a15a} merged them and tracks the
+report.  The solver and benchmark sources named in the
+evidence manifest are byte-identical between the inverse run and the commit
+above.  Between the two runs no solver source changed; the shared benchmark
+helper changed only by naming two constant tables, with the same values.  All runs used one host (Intel Xeon E5-2640, 24 logical CPUs, Python
+3.12.3, NumPy 1.26.4, SciPy 1.15.3, JAX 0.7.1).
+
+\section*{Data and code availability}
+
+Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  The
+two reports cited here, with their source revisions, Git blob identities and
+SHA-256 digests, are in \texttt{evidence/} of this submission directory.  The
+generator in that directory checks every quoted value against them.  This is a
+venue-neutral preprint and has not been submitted.  No DOI has been reserved
+and the manuscript-content licence has not yet been selected by the author.
+
+\section*{Use of AI tools}
+
+Large language model coding agents were used substantively for generating and
+debugging the analysis code and for drafting and revising the manuscript text.
+The agents were commercially available models, which are not named because no
+vendor is involved in or sponsors this work.  They were coordinated through
+SYNAPSE CHANNEL (version 0.99.52 at the time of writing;
+\url{https://github.com/anulum/synapse-channel}), the open-source
+agent-coordination tool of the ANULUM Agentic Coordination, Assurance and
+Continuity Systems group.  The author specified the comparison, verified the
+code through its tests and every reported number against the committed
+reports, and takes full responsibility for the content.
+
+\bibliography{references}
+\end{document}

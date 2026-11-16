@@ -1,0 +1,1011 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE same-case FreeGSNKE comparison evidence.",
+  "benchmark_id": "freegsnke-public-machines-inverse-fit",
+  "cases": {
+    "iter_like": {
+      "checks": {
+        "freegsnke_refinement_converged": true,
+        "freegsnke_refinements_at_scpn_currents_converged": true,
+        "scpn_forward_at_freegsnke_currents_converged": true
+      },
+      "circuits": [
+        {
+          "circuit": "CS1",
+          "current_a": 229932789.76553524,
+          "filament_count": 2,
+          "signed_turns": 2.0
+        },
+        {
+          "circuit": "CS2",
+          "current_a": 242220457.8942584,
+          "filament_count": 2,
+          "signed_turns": 2.0
+        },
+        {
+          "circuit": "CS3",
+          "current_a": 297169139.72974837,
+          "filament_count": 2,
+          "signed_turns": 2.0
+        },
+        {
+          "circuit": "VS3",
+          "current_a": 8093.790691832401,
+          "filament_count": 8,
+          "signed_turns": 8.0
+        },
+        {
+          "circuit": "PF1",
+          "current_a": 85997897.7038705,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF2",
+          "current_a": 6557190.447021529,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF3",
+          "current_a": -1228870.4866903618,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF4",
+          "current_a": 644424.0178679656,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF5",
+          "current_a": -1908437.5343450436,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        },
+        {
+          "circuit": "PF6",
+          "current_a": 95727722.31757534,
+          "filament_count": 1,
+          "signed_turns": 1.0
+        }
+      ],
+      "controlled_circuits": [
+        "CS1",
+        "CS2",
+        "CS3",
+        "VS3",
+        "PF1",
+        "PF2",
+        "PF3",
+        "PF4",
+        "PF5",
+        "PF6"
+      ],
+      "freegsnke_controls_a": [
+        229932789.76553524,
+        242220457.8942584,
+        297169139.72974837,
+        8093.790691832401,
+        85997897.7038705,
+        6557190.447021529,
+        -1228870.4866903618,
+        644424.0178679656,
+        -1908437.5343450436,
+        95727722.31757534
+      ],
+      "freegsnke_loss": {
+        "isoflux_l2": 1.6992148477578417,
+        "null_b_r_l2": 0.14317866278720545,
+        "null_b_z_l2": 0.11241506749160132,
+        "total_l2": 1.7089377916464306
+      },
+      "freegsnke_run": {
+        "forward_refinement_relative_change": 1.0211241647843371e-10,
+        "forward_refinement_tolerance": 1e-09,
+        "inverse_relative_change": 9.75867798922652e-05,
+        "seconds_orientation_only": 15.148371485993266
+      },
+      "grid_shape_r_z": [
+        129,
+        129
+      ],
+      "passed": true,
+      "scpn_at_freegsnke_currents": {
+        "converged": true,
+        "inner_iterations": 13,
+        "loss": {
+          "isoflux_l2": 1.7982442939828285,
+          "null_b_r_l2": 0.14390610380615912,
+          "null_b_z_l2": 0.11357930627692703,
+          "total_l2": 1.8075651485821522
+        }
+      },
+      "scpn_evaluator_on_freegsnke_flux": {
+        "isoflux_l2": 1.699225474029707,
+        "null_b_r_l2": 0.14320422970082702,
+        "null_b_z_l2": 0.11243659584782924,
+        "total_l2": 1.70895191596532
+      },
+      "starts": {
+        "freegsnke": {
+          "bounds_active": 0,
+          "continuation_fraction_reached": null,
+          "continuation_steps": 0,
+          "controls_a": [
+            226924464.53808546,
+            238895821.87049085,
+            293645275.26535416,
+            22467.051069272435,
+            84866914.01367314,
+            6454195.600176755,
+            -1281090.6535716832,
+            533522.8881647177,
+            -2167372.0023979764,
+            95111621.72105207
+          ],
+          "converged_solution": true,
+          "freegsnke_at_scpn_currents": {
+            "converged": true,
+            "loss": {
+              "isoflux_l2": 1.379612515820558,
+              "null_b_r_l2": 0.14455980988869127,
+              "null_b_z_l2": 0.10667359138794248,
+              "total_l2": 1.3912611140772195
+            },
+            "relative_change": 1.2546057266619293e-10
+          },
+          "jacobian_singular_values": [
+            0.00022202789269506985,
+            4.2184474372579535e-05,
+            1.712602027805408e-05,
+            2.5578111987338398e-06,
+            1.460344497340817e-06,
+            9.321322716085916e-07,
+            3.1250514874062265e-07,
+            2.467995274203473e-07,
+            4.546000779504053e-08,
+            1.905900491309059e-09
+          ],
+          "loss": {
+            "isoflux_l2": 1.3785305205108735,
+            "null_b_r_l2": 0.14529816778469337,
+            "null_b_z_l2": 0.10781330992131785,
+            "total_l2": 1.3903530714670138
+          },
+          "max_abs_change_from_freegsnke_a": 3523864.464394212,
+          "objective_history": [
+            3.2672917663688184,
+            1.9607366198239589,
+            1.9567660686419779,
+            1.9563561303706858,
+            1.955735758976751,
+            1.95523313375837,
+            1.953948134630856,
+            1.9533873751291972,
+            1.9520096142998544,
+            1.9510971554051166,
+            1.9507364998466443,
+            1.9497400777382479,
+            1.9484334579488314,
+            1.9479785548835358,
+            1.9471344831626678,
+            1.9458933007914887,
+            1.9453003502144297,
+            1.944387204657459,
+            1.9435258367624417,
+            1.9424999208561444,
+            1.941398382656671,
+            1.9411188561195716,
+            1.9401996302854065,
+            1.939529424920077,
+            1.9386005248156348,
+            1.9370970455247656,
+            1.9359697158152647,
+            1.9353486235629136,
+            1.9343185426700003,
+            1.9340384998280196,
+            1.9330816633377592
+          ],
+          "outer_iterations": 30,
+          "relative_l2_change_from_freegsnke": 0.012583062232046615,
+          "seconds_orientation_only": 9883.505888803047,
+          "start_controls_a": [
+            229932789.76553524,
+            242220457.8942584,
+            297169139.72974837,
+            8093.790691832401,
+            85997897.7038705,
+            6557190.447021529,
+            -1228870.4866903618,
+            644424.0178679656,
+            -1908437.5343450436,
+            95727722.31757534
+          ],
+          "stop_reason": "max_outer_iterations"
+        },
+        "perturbed": {
+          "bounds_active": 0,
+          "continuation_fraction_reached": 1.0,
+          "continuation_steps": 17,
+          "controls_a": [
+            232930761.1850766,
+            244911899.8956272,
+            300866331.73798203,
+            23772.571827572337,
+            86723587.05144496,
+            6685964.172225514,
+            -1158214.1916971763,
+            649127.7101883494,
+            -1970403.3460889866,
+            96795164.34195632
+          ],
+          "converged_solution": true,
+          "freegsnke_at_scpn_currents": {
+            "converged": true,
+            "loss": {
+              "isoflux_l2": 1.3976565048876806,
+              "null_b_r_l2": 0.1450748878453887,
+              "null_b_z_l2": 0.1070329672764721,
+              "total_l2": 1.4092361352244007
+            },
+            "relative_change": 2.177750721113385e-10
+          },
+          "jacobian_singular_values": [
+            0.00022227336867705068,
+            4.2087279326757734e-05,
+            1.7114547098026824e-05,
+            2.5580994069999803e-06,
+            1.4591282405040753e-06,
+            9.325947146130943e-07,
+            3.1257887427408525e-07,
+            2.464192573203951e-07,
+            4.54560359598382e-08,
+            1.9191622336416792e-09
+          ],
+          "loss": {
+            "isoflux_l2": 1.3967750865931263,
+            "null_b_r_l2": 0.14581389830840857,
+            "null_b_z_l2": 0.10816740224664433,
+            "total_l2": 1.4085249455994444
+          },
+          "max_abs_change_from_freegsnke_a": 3697192.0082336664,
+          "objective_history": [
+            10243.633252118798,
+            1030.8109067038265,
+            80.50494549486632,
+            3.6032031654519936,
+            2.721377430000518,
+            2.4766534193861713,
+            2.3332459338026674,
+            2.2310470185731335,
+            2.1593404089954906,
+            2.1102952062402993,
+            2.0754419754223457,
+            2.0514250412893547,
+            2.034682948150451,
+            2.0236887914918786,
+            2.015554907391215,
+            2.009223740694884,
+            2.004192525038111,
+            2.0014253211328383,
+            1.9984711549089198,
+            1.9960347626559332,
+            1.9951791886363819,
+            1.9937420334457998,
+            1.9920404319630085,
+            1.990601468966075,
+            1.989717088928199,
+            1.9883503261339375,
+            1.9875575267091157,
+            1.9869137529521212,
+            1.9859436646029545,
+            1.984624121875253,
+            1.983942522375918
+          ],
+          "outer_iterations": 30,
+          "relative_l2_change_from_freegsnke": 0.012081113213964751,
+          "seconds_orientation_only": 12739.021270019002,
+          "start_controls_a": [
+            242529582.90826198,
+            219915510.8520755,
+            242605738.5277248,
+            6528.541042505443,
+            96774130.49763533,
+            7639797.218333663,
+            -1281287.1097566092,
+            703581.2562344412,
+            -1941739.7628042817,
+            112387119.18653132
+          ],
+          "stop_reason": "max_outer_iterations"
+        }
+      },
+      "targets": {
+        "isoflux_points": 24,
+        "null_points": 2
+      },
+      "tikhonov": [
+        1e-14,
+        1e-14,
+        1e-14,
+        1e-14,
+        1e-14,
+        1e-14,
+        1e-14,
+        1e-14,
+        1e-14,
+        1e-14
+      ],
+      "upstream_reference": "examples/example08 - static_inverse_solve_ITER.ipynb"
+    },
+    "mastu_like": {
+      "checks": {
+        "freegsnke_refinement_converged": true,
+        "freegsnke_refinements_at_scpn_currents_converged": false,
+        "scpn_forward_at_freegsnke_currents_converged": true
+      },
+      "circuits": [
+        {
+          "circuit": "Solenoid",
+          "current_a": 5000.0,
+          "filament_count": 324,
+          "signed_turns": 324.0
+        },
+        {
+          "circuit": "PX",
+          "current_a": 3696.8092224980783,
+          "filament_count": 84,
+          "signed_turns": 84.0
+        },
+        {
+          "circuit": "D1",
+          "current_a": 6941.23607795344,
+          "filament_count": 70,
+          "signed_turns": 70.0
+        },
+        {
+          "circuit": "D2",
+          "current_a": 4390.861651672075,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "D3",
+          "current_a": 2924.3553625651143,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "Dp",
+          "current_a": -2488.20042970495,
+          "filament_count": 48,
+          "signed_turns": 48.0
+        },
+        {
+          "circuit": "D5",
+          "current_a": 249.2075647513061,
+          "filament_count": 54,
+          "signed_turns": 54.0
+        },
+        {
+          "circuit": "D6",
+          "current_a": -314.99584474141585,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "D7",
+          "current_a": 511.0756239995471,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "P4",
+          "current_a": -3564.3804944559943,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "P5",
+          "current_a": -3954.2365660226087,
+          "filament_count": 46,
+          "signed_turns": 46.0
+        },
+        {
+          "circuit": "P6",
+          "current_a": 1.9555167641513577e-05,
+          "filament_count": 20,
+          "signed_turns": 0.0
+        }
+      ],
+      "controlled_circuits": [
+        "PX",
+        "D1",
+        "D2",
+        "D3",
+        "Dp",
+        "D5",
+        "D6",
+        "D7",
+        "P4",
+        "P5",
+        "P6"
+      ],
+      "freegsnke_controls_a": [
+        3696.8092224980783,
+        6941.23607795344,
+        4390.861651672075,
+        2924.3553625651143,
+        -2488.20042970495,
+        249.2075647513061,
+        -314.99584474141585,
+        511.0756239995471,
+        -3564.3804944559943,
+        -3954.2365660226087,
+        1.9555167641513577e-05
+      ],
+      "freegsnke_loss": {
+        "isoflux_l2": 0.0008396068651983009,
+        "null_b_r_l2": 0.00040956688225193496,
+        "null_b_z_l2": 0.00122890551269243,
+        "total_l2": 0.0015436623588892529
+      },
+      "freegsnke_run": {
+        "forward_refinement_relative_change": 1.4301211042541097e-10,
+        "forward_refinement_tolerance": 1e-09,
+        "inverse_relative_change": 7.783983575185629e-07,
+        "seconds_orientation_only": 28.358855249010958
+      },
+      "grid_shape_r_z": [
+        65,
+        129
+      ],
+      "passed": false,
+      "scpn_at_freegsnke_currents": {
+        "converged": true,
+        "inner_iterations": 13,
+        "loss": {
+          "isoflux_l2": 0.0007866466245756526,
+          "null_b_r_l2": 0.0010521987334119525,
+          "null_b_z_l2": 0.0018110125614737111,
+          "total_l2": 0.0022373425272777425
+        }
+      },
+      "scpn_evaluator_on_freegsnke_flux": {
+        "isoflux_l2": 0.0008392427389877785,
+        "null_b_r_l2": 0.00033201420299795704,
+        "null_b_z_l2": 0.0012565036290117686,
+        "total_l2": 0.0015470498297261862
+      },
+      "starts": {
+        "freegsnke": {
+          "bounds_active": 0,
+          "continuation_fraction_reached": null,
+          "continuation_steps": 0,
+          "controls_a": [
+            3705.3134459749526,
+            6841.745231178503,
+            4310.426589037192,
+            2883.3599554286006,
+            -2464.591650523292,
+            249.80053887789703,
+            -259.4483589076066,
+            543.4854107730699,
+            -3531.673060083507,
+            -3979.41781986025,
+            -0.0007464985294040255
+          ],
+          "converged_solution": true,
+          "freegsnke_at_scpn_currents": {
+            "converged": true,
+            "loss": {
+              "isoflux_l2": 0.001895547209678646,
+              "null_b_r_l2": 0.0006255573727746216,
+              "null_b_z_l2": 0.0006966303826484661,
+              "total_l2": 0.002114170083219923
+            },
+            "relative_change": 5.084884907849237e-10
+          },
+          "jacobian_singular_values": [
+            0.00027260251909882284,
+            4.640821828056083e-05,
+            2.3235870314096836e-05,
+            1.707126781929933e-05,
+            1.4242545024519916e-05,
+            4.717430762717503e-06,
+            2.130702159748544e-06,
+            9.546651484952657e-11,
+            1.4353501606673649e-11,
+            6.197444711975368e-12,
+            1.0819161546069793e-13
+          ],
+          "loss": {
+            "isoflux_l2": 1.115942567955585e-08,
+            "null_b_r_l2": 1.0356724929569463e-08,
+            "null_b_z_l2": 1.1644782131955293e-08,
+            "total_l2": 1.9167563321011918e-08
+          },
+          "max_abs_change_from_freegsnke_a": 99.49084677493738,
+          "objective_history": [
+            5.0057015843655566e-06,
+            7.223905917521404e-09,
+            1.5880917261310865e-10,
+            4.8388934422491276e-12,
+            1.59342602782399e-13,
+            5.5241291602313566e-15,
+            5.297769412632149e-16,
+            3.673954836650014e-16,
+            3.673954836650014e-16
+          ],
+          "outer_iterations": 8,
+          "relative_l2_change_from_freegsnke": 0.014025935961389088,
+          "seconds_orientation_only": 2825.2442593910964,
+          "start_controls_a": [
+            3696.8092224980783,
+            6941.23607795344,
+            4390.861651672075,
+            2924.3553625651143,
+            -2488.20042970495,
+            249.2075647513061,
+            -314.99584474141585,
+            511.0756239995471,
+            -3564.3804944559943,
+            -3954.2365660226087,
+            1.9555167641513577e-05
+          ],
+          "stop_reason": "no_descent_step"
+        },
+        "perturbed": {
+          "bounds_active": 0,
+          "continuation_fraction_reached": 1.0,
+          "continuation_steps": 387,
+          "controls_a": [
+            -2413.9789362526735,
+            4749.57256842093,
+            3370.5222002700443,
+            1338.9477607616504,
+            -2392.5894959252932,
+            -1269.1589431639816,
+            -1271.4371915203947,
+            -769.1390145560927,
+            -3611.2498219089093,
+            -4816.9769214464195,
+            0.14713030920522482
+          ],
+          "converged_solution": true,
+          "freegsnke_at_scpn_currents": {
+            "converged": false,
+            "loss": null,
+            "relative_change": 2.6154054024698385e-05
+          },
+          "jacobian_singular_values": [],
+          "loss": {
+            "isoflux_l2": 0.011018744751830647,
+            "null_b_r_l2": 0.010749677700534189,
+            "null_b_z_l2": 0.012178045234759806,
+            "total_l2": 0.01962837467319221
+          },
+          "max_abs_change_from_freegsnke_a": 6110.788158750752,
+          "objective_history": [
+            0.02387899808927462,
+            0.014786317540910279,
+            0.006848838149328946,
+            0.0019767971205629127,
+            0.0013012222465616369,
+            0.00038854176390586007,
+            0.00038527309231121346
+          ],
+          "outer_iterations": 7,
+          "relative_l2_change_from_freegsnke": 0.6416578664419439,
+          "seconds_orientation_only": 14704.593484048033,
+          "start_controls_a": [
+            3899.337714025618,
+            6302.050170734862,
+            3584.6529513317823,
+            2358.8173618874416,
+            -2799.992087221706,
+            290.35228965166635,
+            -328.4317752483915,
+            557.9916632438059,
+            -3626.5789219160592,
+            -4642.38828082648,
+            2.2025795321919356e-05
+          ],
+          "stop_reason": "jacobian_solve_not_converged"
+        }
+      },
+      "targets": {
+        "isoflux_points": 8,
+        "null_points": 2
+      },
+      "tikhonov": [
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-12,
+        1e-06
+      ],
+      "upstream_reference": "freegsnke/tests/test_inverse_static_solver.py"
+    },
+    "sparc_like": {
+      "checks": {
+        "freegsnke_refinement_converged": true,
+        "freegsnke_refinements_at_scpn_currents_converged": true,
+        "scpn_forward_at_freegsnke_currents_converged": true
+      },
+      "circuits": [
+        {
+          "circuit": "CS1I",
+          "current_a": -67721.88633375759,
+          "filament_count": 560,
+          "signed_turns": 560.0
+        },
+        {
+          "circuit": "CS1O",
+          "current_a": -61606.1690624716,
+          "filament_count": 270,
+          "signed_turns": 270.0
+        },
+        {
+          "circuit": "CS2",
+          "current_a": -162900.93096180883,
+          "filament_count": 80,
+          "signed_turns": 80.0
+        },
+        {
+          "circuit": "CS3",
+          "current_a": 57984.35035071355,
+          "filament_count": 80,
+          "signed_turns": 80.0
+        },
+        {
+          "circuit": "PF1",
+          "current_a": 100443.00042404016,
+          "filament_count": 50,
+          "signed_turns": 50.0
+        },
+        {
+          "circuit": "PF2",
+          "current_a": 88282.20001051229,
+          "filament_count": 60,
+          "signed_turns": 60.0
+        },
+        {
+          "circuit": "PF3",
+          "current_a": -97577.97125295279,
+          "filament_count": 70,
+          "signed_turns": 70.0
+        },
+        {
+          "circuit": "PF4",
+          "current_a": -140267.05115968845,
+          "filament_count": 60,
+          "signed_turns": 60.0
+        },
+        {
+          "circuit": "DV1",
+          "current_a": 19999.887889441045,
+          "filament_count": 50,
+          "signed_turns": 50.0
+        },
+        {
+          "circuit": "DV2",
+          "current_a": -8229.078008003433,
+          "filament_count": 50,
+          "signed_turns": 50.0
+        },
+        {
+          "circuit": "VS1",
+          "current_a": 4.7395432676864324e-05,
+          "filament_count": 50,
+          "signed_turns": 0.0
+        }
+      ],
+      "controlled_circuits": [
+        "CS1I",
+        "CS1O",
+        "CS2",
+        "CS3",
+        "PF1",
+        "PF2",
+        "PF3",
+        "PF4",
+        "DV1",
+        "DV2",
+        "VS1"
+      ],
+      "freegsnke_controls_a": [
+        -67721.88633375759,
+        -61606.1690624716,
+        -162900.93096180883,
+        57984.35035071355,
+        100443.00042404016,
+        88282.20001051229,
+        -97577.97125295279,
+        -140267.05115968845,
+        19999.887889441045,
+        -8229.078008003433,
+        4.7395432676864324e-05
+      ],
+      "freegsnke_loss": {
+        "isoflux_l2": 0.03392600521108171,
+        "null_b_r_l2": 0.000918273462066075,
+        "null_b_z_l2": 0.008047156420477231,
+        "total_l2": 0.03487941774441061
+      },
+      "freegsnke_run": {
+        "forward_refinement_relative_change": 5.780877878559683e-10,
+        "forward_refinement_tolerance": 1e-09,
+        "inverse_relative_change": 4.428320195640222e-07,
+        "seconds_orientation_only": 6.191621621954255
+      },
+      "grid_shape_r_z": [
+        129,
+        129
+      ],
+      "passed": true,
+      "scpn_at_freegsnke_currents": {
+        "converged": true,
+        "inner_iterations": 13,
+        "loss": {
+          "isoflux_l2": 0.030021227620993435,
+          "null_b_r_l2": 0.005953520489074622,
+          "null_b_z_l2": 0.005759721569957824,
+          "total_l2": 0.031143103677199035
+        }
+      },
+      "scpn_evaluator_on_freegsnke_flux": {
+        "isoflux_l2": 0.03392584680226985,
+        "null_b_r_l2": 0.0006794708257329025,
+        "null_b_z_l2": 0.007863367080823231,
+        "total_l2": 0.034831843242956295
+      },
+      "starts": {
+        "freegsnke": {
+          "bounds_active": 0,
+          "continuation_fraction_reached": null,
+          "continuation_steps": 0,
+          "controls_a": [
+            -67824.60574504844,
+            -61746.55545911803,
+            -161486.11314286178,
+            56628.64139319358,
+            98549.20435186729,
+            87922.52290520012,
+            -97301.78744110711,
+            -139827.52840449856,
+            19681.874283873767,
+            -8487.107517832492,
+            0.0011979024880025603
+          ],
+          "converged_solution": true,
+          "freegsnke_at_scpn_currents": {
+            "converged": true,
+            "loss": {
+              "isoflux_l2": 0.005515531799094484,
+              "null_b_r_l2": 0.0050119678545871805,
+              "null_b_z_l2": 0.0022361972006397107,
+              "total_l2": 0.007780841260582723
+            },
+            "relative_change": 9.048561653329855e-10
+          },
+          "jacobian_singular_values": [
+            0.0002462210441738754,
+            7.020951582835588e-05,
+            2.805172608632519e-05,
+            2.10903741242164e-05,
+            6.2828405326606275e-06,
+            6.861198349203144e-07,
+            1.2384422199465104e-10,
+            3.213389974641991e-12,
+            2.2899960805211284e-13,
+            9.242385266417785e-21,
+            2.2199095720266814e-21
+          ],
+          "loss": {
+            "isoflux_l2": 4.4862691579398316e-08,
+            "null_b_r_l2": 1.9625528468704968e-08,
+            "null_b_z_l2": 4.734471998027755e-09,
+            "total_l2": 4.919591129884957e-08
+          },
+          "max_abs_change_from_freegsnke_a": 1893.7960721728741,
+          "objective_history": [
+            0.0009698929066487679,
+            6.990658641276594e-08,
+            5.735345240681715e-11,
+            8.69562726907508e-14,
+            9.918913754202128e-15,
+            5.155190925493821e-15,
+            3.868818902156463e-15,
+            2.8770586981104195e-15,
+            2.4202376885242752e-15,
+            2.4202376885242752e-15
+          ],
+          "outer_iterations": 9,
+          "relative_l2_change_from_freegsnke": 0.009668388358676632,
+          "seconds_orientation_only": 3613.4593543929514,
+          "start_controls_a": [
+            -67721.88633375759,
+            -61606.1690624716,
+            -162900.93096180883,
+            57984.35035071355,
+            100443.00042404016,
+            88282.20001051229,
+            -97577.97125295279,
+            -140267.05115968845,
+            19999.887889441045,
+            -8229.078008003433,
+            4.7395432676864324e-05
+          ],
+          "stop_reason": "no_descent_step"
+        },
+        "perturbed": {
+          "bounds_active": 0,
+          "continuation_fraction_reached": null,
+          "continuation_steps": 0,
+          "controls_a": [
+            -73704.49400596612,
+            -59105.74845330234,
+            -177907.10851168318,
+            60605.53778781667,
+            67465.86340465657,
+            89574.49040093346,
+            -94822.40886298673,
+            -141640.65166406397,
+            17560.09491428605,
+            -7742.50018229991,
+            0.022481483890845786
+          ],
+          "converged_solution": true,
+          "freegsnke_at_scpn_currents": {
+            "converged": true,
+            "loss": {
+              "isoflux_l2": 0.0054652884262970354,
+              "null_b_r_l2": 0.005008093570800397,
+              "null_b_z_l2": 0.0022534133283559615,
+              "total_l2": 0.007747790034901623
+            },
+            "relative_change": 3.5265330722534385e-10
+          },
+          "jacobian_singular_values": [
+            0.0002461951246108877,
+            7.029331485579942e-05,
+            2.8049504941930572e-05,
+            2.109596142728622e-05,
+            6.286621663008308e-06,
+            6.857158039688527e-07,
+            2.369664244273001e-10,
+            1.1727903883139246e-11,
+            3.8759252064697915e-13,
+            5.632089626115767e-21,
+            7.603458914566429e-22
+          ],
+          "loss": {
+            "isoflux_l2": 1.1093181323864739e-06,
+            "null_b_r_l2": 4.583959820106993e-07,
+            "null_b_z_l2": 1.5365536055773251e-07,
+            "total_l2": 1.2100923787021778e-06
+          },
+          "max_abs_change_from_freegsnke_a": 32977.13701938359,
+          "objective_history": [
+            3.067033813170085,
+            0.02740322917299894,
+            4.0203867278502994e-06,
+            8.205706447390074e-11,
+            1.50080937670764e-12,
+            1.47567346118004e-12,
+            1.4705808180094337e-12,
+            1.4643235649930947e-12,
+            1.4643235649930947e-12
+          ],
+          "outer_iterations": 8,
+          "relative_l2_change_from_freegsnke": 0.1267532598903776,
+          "seconds_orientation_only": 3326.33064450603,
+          "start_controls_a": [
+            -71432.00786210285,
+            -55933.145609555526,
+            -132990.5948470439,
+            46770.81796415289,
+            113029.321531573,
+            102857.7881819868,
+            -101740.09231789126,
+            -153143.37350389446,
+            20348.885864835556,
+            -9661.175973795704,
+            5.338343902091049e-05
+          ],
+          "stop_reason": "no_descent_step"
+        }
+      },
+      "targets": {
+        "isoflux_points": 6,
+        "null_points": 2
+      },
+      "tikhonov": [
+        1e-16,
+        1e-16,
+        1e-16,
+        1e-16,
+        1e-16,
+        1e-16,
+        1e-16,
+        1e-16,
+        1e-16,
+        1e-16,
+        1e-05
+      ],
+      "upstream_reference": "examples/example07 - static_inverse_solve_SPARC.ipynb"
+    }
+  },
+  "claim_boundary": {
+    "control_admission": false,
+    "experimental_validation": false,
+    "facility_validation": false,
+    "same_case_inverse_comparison": true,
+    "speed_comparison": false
+  },
+  "generator": {
+    "path": "validation/benchmark_freegsnke_inverse_fit.py",
+    "sha256": "945696df1c21402e3d484f5309dae40265e3e462d4db972188aae99e84530fe6"
+  },
+  "merged_by": {
+    "path": "validation/benchmark_freegsnke_inverse_fit.py",
+    "sha256": "699d5e220bab2ec84c49d44c9c6ec2e4a2b1ce3821307d3c776021e823190106"
+  },
+  "method_differences": [
+    "FreeGSNKE linearises the targets with the plasma frozen; SCPN takes central differences through the full free-boundary solve.",
+    "FreeGSNKE penalises current-limit violations through slack variables; SCPN projects the currents onto the limits.",
+    "Both apply the Tikhonov weight to the current step.",
+    "FreeGSNKE interpolates the plasma flux with a bicubic spline; SCPN with Keys cubic convolution."
+  ],
+  "payload_sha256": "2bf02dd351da4a711f862bdb4a1060f2b6795b80e276f3405fee57b52f53ebf9",
+  "provenance": {
+    "freegsnke_source_commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+    "host": {
+      "cpu_model": "Intel(R) Xeon(R) CPU E5-2640 0 @ 2.50GHz",
+      "logical_cpus": 24,
+      "machine": "x86_64",
+      "python": "3.12.3",
+      "system": "Linux"
+    },
+    "scpn_source_revision": "44852feeedf2780f13d42ed5b90c8ee1b4f390a5",
+    "scpn_source_sha256": {
+      "src/scpn_fusion/core/free_boundary_coil_fit.py": "005447f78b837bfeb2c389d5b1789dd58630ce5a9d6491863e3ecb3dc18e37dd",
+      "src/scpn_fusion/core/jax_free_boundary_predictive.py": "6864163d4c4ccd43ee7b3bf289262400400d12587f35ce3858067d0dbfa600d9",
+      "validation/benchmark_freegsnke_inverse.py": "35c1046f8570dd81dd76f72ba2d2b6ab71e30a6be5742516d3fd44fe310ca208",
+      "validation/benchmark_freegsnke_multimachine.py": "c6b1ae377b36eea618276d483e8a6174c414879c5474ca3c856559a772fd5b0f"
+    },
+    "versions": {
+      "commit": "00b79a08fbb6e642ac5ed2e440383cc5962e0358",
+      "freegs4e": "0.13.1",
+      "freegsnke": "3.0.1",
+      "jax": "0.7.1",
+      "jaxlib": "0.7.1",
+      "numpy": "1.26.4",
+      "scipy": "1.15.3"
+    }
+  },
+  "schema_version": "scpn-fusion.freegsnke-inverse-fit.v1",
+  "settings": {
+    "inner_iterations": 300,
+    "inner_tolerance": 1e-09,
+    "max_outer": 30,
+    "perturbation": 0.2,
+    "perturbation_seed": 0,
+    "refinement_tolerance": 1e-09
+  },
+  "status": "fail"
+}

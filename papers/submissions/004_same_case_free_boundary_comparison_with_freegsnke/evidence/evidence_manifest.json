@@ -1,0 +1,74 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE same-case FreeGSNKE evidence manifest.",
+  "schema_version": "2.0",
+  "repository_revision": "86649a05a15a0d3d919c35d560e02ebda6c8cc00",
+  "claim_boundary": {
+    "forward": "same-case parity on three synthetic public machine descriptions shipped with FreeGSNKE 3.0.1; warm-started fixed points; no experimental comparison",
+    "inverse": "coil-current fits to FreeGSNKE's isoflux and null-point targets; each solution scored by both codes; agreement is reported, not gated",
+    "excluded": "facility, control, safety and speed claims; measured discharges"
+  },
+  "source_custody": {
+    "freegsnke_multimachine_parity.json": {
+      "source_path": "validation/reports/freegsnke_multimachine_parity.json",
+      "source_revision": "422e4c0b3d15629b4de0fa796a6f6ac3aac58df1",
+      "git_blob_oid_sha1": "0a0f27336e0dd2f17be39e2a1c66bdf8aae97365",
+      "source_sha256": "82e34d26567d5c1c2b652d06f459779aaf5163e6d67df86f4cd13cc762a575b7",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    },
+    "freegsnke_inverse_fit.json": {
+      "source_path": "validation/reports/freegsnke_inverse_fit.json",
+      "source_revision": "86649a05a15a0d3d919c35d560e02ebda6c8cc00",
+      "git_blob_oid_sha1": "7ad702997128536c5626f867b68aa591492c95bb",
+      "source_sha256": "abc4745331b4ed9d03cab47e022eb2f8a594f6f711c355951d25ef72f1ee5bb8",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    }
+  },
+  "implementation_sources": {
+    "src/scpn_fusion/core/jax_free_boundary_predictive.py": {
+      "git_blob_oid_sha1": "87dedb5642066e03ff5d02ff280ef0bcf650508a",
+      "sha256": "6864163d4c4ccd43ee7b3bf289262400400d12587f35ce3858067d0dbfa600d9",
+      "role": "SCPN predictive free-boundary solver"
+    },
+    "src/scpn_fusion/core/free_boundary_coil_fit.py": {
+      "git_blob_oid_sha1": "32f7b891a816570627a8afcb3ac76f4e3feceb23",
+      "sha256": "005447f78b837bfeb2c389d5b1789dd58630ce5a9d6491863e3ecb3dc18e37dd",
+      "role": "Levenberg-Marquardt coil-current fit to isoflux and null-point targets"
+    },
+    "validation/benchmark_freegsnke_inverse.py": {
+      "git_blob_oid_sha1": "6d813e88fa7f7d3cb599f0c63b34a620308f5cb6",
+      "sha256": "35c1046f8570dd81dd76f72ba2d2b6ab71e30a6be5742516d3fd44fe310ca208",
+      "role": "bridge audits shared by both benchmarks"
+    },
+    "validation/benchmark_freegsnke_multimachine.py": {
+      "git_blob_oid_sha1": "52279ce22d65db1bb715515ebfeb53ad2c3be0ef",
+      "sha256": "c6b1ae377b36eea618276d483e8a6174c414879c5474ca3c856559a772fd5b0f",
+      "role": "forward same-case parity on the three public cases"
+    },
+    "validation/benchmark_freegsnke_inverse_fit.py": {
+      "git_blob_oid_sha1": "5e435bce5aeee5ad6ef0575056d0b4a509e39df8",
+      "sha256": "699d5e220bab2ec84c49d44c9c6ec2e4a2b1ce3821307d3c776021e823190106",
+      "role": "inverse fits scored by both codes, and the merge of partial runs"
+    }
+  },
+  "generators": {
+    "papers/submissions/004_same_case_free_boundary_comparison_with_freegsnke/generate_evidence_manifest.py": {
+      "sha256": "9afb145132db2d004a72e33ee22a715ef6b1309837c7ff99c1a7997a1cd431c7"
+    }
+  },
+  "files": {
+    "freegsnke_multimachine_parity.json": {
+      "sha256": "7f50877b0f404e9244c191ec3518c66cefbb9ae696279f5167989d726bed58ba",
+      "role": "forward same-case parity: vacuum flux, profile source, warm and frozen-support equilibria, cold-start outcome"
+    },
+    "freegsnke_inverse_fit.json": {
+      "sha256": "58460c482c375770de6f7f893e80e142f691ed6d37ad674a6383e6f6bf585ef1",
+      "role": "inverse coil-current fits to FreeGSNKE's targets, each solution scored by both codes"
+    }
+  }
+}

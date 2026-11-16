@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN-FUSION-CORE — same-case FreeGSNKE comparison citation metadata.
+cff-version: 1.2.0
+message: "If you use this preprint and its software artefacts, use the preferred citation."
+type: software
+title: "Supporting materials for the same-case free-boundary comparison with FreeGSNKE"
+authors:
+  - family-names: "Sotek"
+    given-names: "Miroslav"
+    orcid: "https://orcid.org/0009-0009-3560-0851"
+    affiliation: "ANULUM CH&LI, Marbach SG, Switzerland"
+repository-code: "https://github.com/anulum/scpn-fusion-core"
+url: "https://www.anulum.li"
+version: "preprint-2026-11-16"
+date-released: 2026-11-16
+preferred-citation:
+  type: article
+  title: "Same-Case Comparison of Two Free-Boundary Grad-Shafranov Codes on FreeGSNKE's Public Machine Descriptions: Forward Parity and Inverse Coil-Current Fits"
+  authors:
+    - family-names: "Sotek"
+      given-names: "Miroslav"
+      orcid: "https://orcid.org/0009-0009-3560-0851"
+      affiliation: "ANULUM CH&LI, Marbach SG, Switzerland"
+  year: 2026
