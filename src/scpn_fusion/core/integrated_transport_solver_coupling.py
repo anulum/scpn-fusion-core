@@ -16,7 +16,7 @@ import logging
 import numpy as np
 
 from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
-from scpn_fusion.core.integrated_transport_solver_adaptive import AdaptiveTimeController
+from scpn_fusion.core.integrated_transport_solver_adaptive import run_adaptive_steps
 
 _logger = logging.getLogger(__name__)
 
@@ -237,8 +237,11 @@ class TransportSolverCouplingMixin(TransportSolverState):
         dict[str, Any]
             Final mean/core Ti in keV, confinement time in seconds, executed
             step count, and copied Ti/ne profiles in keV and 10^19 m^-3.
-            Adaptive results also contain the final timestep and diagnostic
-            histories. Self-consistent mode returns its coupled-loop result.
+            Adaptive results also contain the final timestep, the diagnostic
+            histories and ``stop_reason`` (``"completed"`` or
+            ``"minimum_step_exhausted"``); see
+            :func:`~scpn_fusion.core.integrated_transport_solver_adaptive.run_adaptive_steps`.
+            Self-consistent mode returns its coupled-loop result.
 
         Raises
         ------
@@ -255,6 +258,10 @@ class TransportSolverCouplingMixin(TransportSolverState):
         Ti Richardson estimate controls the timestep; other differences are
         diagnostics. Any nonfinite trial difference refuses the trial. Global
         fallback budgets count discarded trials as well as committed half steps.
+        An adaptive run stops early when a step taken at the minimum timestep
+        still exceeds ``tol``. Every adaptive run, including one ended by a
+        refusal, leaves its histories and stop reason in
+        ``self.adaptive_run_diagnostics``.
         """
         if self_consistent:
             return self.run_self_consistent(
@@ -290,30 +297,12 @@ class TransportSolverCouplingMixin(TransportSolverState):
                 "ne_profile": self.ne.copy(),
             }
 
-        atc = AdaptiveTimeController(dt_init=dt, tol=tol)
-
-        for _step in range(n_steps):
-            self.update_transport_model(P_aux)
-            error = atc.estimate_error(
-                self,
-                P_aux,
-                enforce_numerical_recovery=enforce_numerical_recovery,
-                max_numerical_recoveries=max_numerical_recoveries,
-            )
-            atc.adapt_dt(error)
-            t_avg = float(np.mean(self.Ti))
-            t_core = float(self.Ti[0])
-
-        tau_e = self.compute_confinement_time(P_aux)
-        return {
-            "T_avg": float(t_avg),
-            "T_core": float(t_core),
-            "tau_e": tau_e,
-            "n_steps": n_steps,
-            "Ti_profile": self.Ti.copy(),
-            "ne_profile": self.ne.copy(),
-            "dt_final": atc.dt,
-            "dt_history": atc.dt_history.copy(),
-            "error_history": atc.error_history.copy(),
-            "trial_difference_history": atc.trial_difference_history.copy(),
-        }
+        return run_adaptive_steps(
+            self,
+            P_aux,
+            n_steps,
+            dt,
+            tol,
+            enforce_numerical_recovery=enforce_numerical_recovery,
+            max_numerical_recoveries=max_numerical_recoveries,
+        )

@@ -452,6 +452,18 @@
 
 ### Changed
 
+- An adaptive `run_to_steady_state` now stops when a step taken at the
+  minimum timestep still exceeds the tolerance, instead of continuing at a
+  step that cannot meet it. The result carries `stop_reason`
+  (`"completed"` or `"minimum_step_exhausted"`) and `n_steps` counts the
+  steps executed. Every adaptive run leaves its timestep and error histories,
+  the completed step count and the stop reason in
+  `solver.adaptive_run_diagnostics`; when a recovery refusal or any other
+  exception ends the run, the exception propagates unchanged and the record
+  keeps the histories of the completed steps with `stop_reason = "raised"`.
+  The loop moved to `run_adaptive_steps` in the adaptive-controller module;
+  the fixed-step path is unchanged. Steps above the tolerance are still
+  committed: step rejection waits for an agreed estimator and error contract.
 - The real-TORAX runtime-contract evidence was regenerated at 9a02a20d:
   `validation/reports/torax_runtime_contract.json`, its result, NetCDF sidecar,
   sidecar manifest and review envelope, and the reference-data provenance

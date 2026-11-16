@@ -14,6 +14,9 @@ from typing import Any
 
 import numpy as np
 
+STOP_COMPLETED = "completed"
+STOP_MINIMUM_STEP_EXHAUSTED = "minimum_step_exhausted"
+STOP_RAISED = "raised"
 
 _TRIAL_FIELDS = frozenset(
     {
@@ -39,6 +42,7 @@ _TRIAL_FIELDS = frozenset(
 
 
 def _trial_state(solver: Any) -> dict[str, Any]:
+    """Return the solver attributes that one transport trial may change."""
     return {
         name: value
         for name, value in vars(solver).items()
@@ -47,6 +51,7 @@ def _trial_state(solver: Any) -> dict[str, Any]:
 
 
 def _install_trial_state(solver: Any, state: dict[str, Any]) -> None:
+    """Replace every trial attribute of the solver with the entries of ``state``."""
     for name in _trial_state(solver):
         delattr(solver, name)
     vars(solver).update(state)
@@ -75,6 +80,7 @@ class AdaptiveTimeController:
         tol: float = 1e-3,
         safety: float = 0.9,
     ) -> None:
+        """Set the timestep bounds, the tolerance and empty diagnostic histories."""
         self.dt = dt_init
         self.dt_min = dt_min
         self.dt_max = dt_max
@@ -85,7 +91,25 @@ class AdaptiveTimeController:
         self.dt_history: list[float] = []
         self.error_history: list[float] = []
         self.trial_difference_history: list[dict[str, float]] = []
+        self.minimum_step_exhausted = False
         self._err_prev: float = tol  # initialise for PI controller
+
+    def diagnostics(self) -> dict[str, Any]:
+        """Return copies of the current timestep and the diagnostic histories.
+
+        Returns
+        -------
+        dict[str, Any]
+            ``dt_final`` in seconds, ``dt_history`` in seconds, ``error_history``
+            in keV and ``trial_difference_history`` with units in its keys. The
+            lists and their entries are copies, so later steps do not change them.
+        """
+        return {
+            "dt_final": self.dt,
+            "dt_history": self.dt_history.copy(),
+            "error_history": self.error_history.copy(),
+            "trial_difference_history": [dict(entry) for entry in self.trial_difference_history],
+        }
 
     def estimate_error(
         self,
@@ -187,10 +211,17 @@ class AdaptiveTimeController:
         (err_prev/error)**(0.4/p)``, clamped to [0.1, 2]. The updated timestep
         is clamped to ``[dt_min, dt_max]`` in seconds. Successful updates record
         the supplied error and the timestep before adjustment.
+
+        ``minimum_step_exhausted`` becomes true when the step just measured was
+        taken at or below ``dt_min`` and its error still exceeds ``tol``: the
+        controller cannot shrink the step further, so the tolerance cannot be
+        met. It is recomputed on every successful update. Steps are never
+        rejected, so the measured step has already been committed.
         """
         if not np.isfinite(error) or error <= 0.0:
             raise ValueError("error must be finite and positive")
 
+        self.minimum_step_exhausted = bool(self.dt <= self.dt_min and error > self.tol)
         self.error_history.append(error)
         self.dt_history.append(self.dt)
 
@@ -205,3 +236,106 @@ class AdaptiveTimeController:
         self.dt = min(self.dt, self.dt_max)
 
         self._err_prev = error
+
+
+def run_adaptive_steps(
+    solver: Any,
+    P_aux: float,
+    n_steps: int,
+    dt: float,
+    tol: float,
+    *,
+    enforce_numerical_recovery: bool = False,
+    max_numerical_recoveries: int | None = None,
+) -> dict[str, Any]:
+    """Run up to ``n_steps`` adaptive transport steps and report why the run stopped.
+
+    Parameters
+    ----------
+    solver : TransportSolver-compatible object
+        Runtime with ``update_transport_model``, ``evolve_profiles`` and
+        ``compute_confinement_time``; see :meth:`AdaptiveTimeController.estimate_error`.
+    P_aux : float
+        Auxiliary heating power in MW.
+    n_steps : int
+        Positive maximum number of adaptive steps.
+    dt : float
+        Initial timestep in seconds.
+    tol : float
+        Ti Richardson L2 error target in keV.
+    enforce_numerical_recovery : bool, optional
+        Propagate recovery-budget refusals from profile evolution.
+    max_numerical_recoveries : int or None, optional
+        Per-evolution recovery limit, passed unchanged to the runtime.
+
+    Returns
+    -------
+    dict[str, Any]
+        Final mean/core Ti in keV, confinement time in seconds, the number of
+        executed steps as ``n_steps``, copied Ti/ne profiles, the controller
+        diagnostics of :meth:`AdaptiveTimeController.diagnostics` and
+        ``stop_reason``: ``"completed"`` after ``n_steps`` steps, or
+        ``"minimum_step_exhausted"`` after a step at the minimum timestep
+        exceeded ``tol`` (the run stops there instead of continuing at a step
+        that cannot meet the tolerance).
+
+    Raises
+    ------
+    ValueError
+        If ``n_steps`` is not positive; nothing is mutated.
+    Exception
+        Any refusal from the transport model, a trial or the controller
+        propagates unchanged.
+
+    Notes
+    -----
+    After every run that passes the ``n_steps`` check, ``solver.adaptive_run_diagnostics``
+    holds the controller diagnostics, ``steps_completed`` and ``stop_reason``.
+    When an exception ends the run, ``stop_reason`` is ``"raised"``, the entry
+    ``exception`` names its type and message, and the histories cover every
+    step completed before it, so a recovery refusal does not discard them.
+    """
+    if n_steps <= 0:
+        raise ValueError("n_steps must be positive")
+
+    controller = AdaptiveTimeController(dt_init=dt, tol=tol)
+    steps = 0
+    stop_reason = STOP_COMPLETED
+    try:
+        while steps < n_steps:
+            solver.update_transport_model(P_aux)
+            error = controller.estimate_error(
+                solver,
+                P_aux,
+                enforce_numerical_recovery=enforce_numerical_recovery,
+                max_numerical_recoveries=max_numerical_recoveries,
+            )
+            controller.adapt_dt(error)
+            steps += 1
+            if controller.minimum_step_exhausted:
+                stop_reason = STOP_MINIMUM_STEP_EXHAUSTED
+                break
+    except BaseException as exc:
+        solver.adaptive_run_diagnostics = {
+            **controller.diagnostics(),
+            "steps_completed": steps,
+            "stop_reason": STOP_RAISED,
+            "exception": f"{type(exc).__name__}: {exc}",
+        }
+        raise
+
+    solver.adaptive_run_diagnostics = {
+        **controller.diagnostics(),
+        "steps_completed": steps,
+        "stop_reason": stop_reason,
+    }
+    return {
+        "T_avg": float(np.mean(solver.Ti)),
+        "T_core": float(solver.Ti[0]),
+        "tau_e": solver.compute_confinement_time(P_aux),
+        "n_steps": steps,
+        "Ti_profile": solver.Ti.copy(),
+        "ne_profile": solver.ne.copy(),
+        **controller.diagnostics(),
+        "stop_reason": stop_reason,
+    }
