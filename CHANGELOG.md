@@ -30,6 +30,16 @@
 
   The cold start is not repeated. The gates concern completeness; the
   differences are reported, not gated. The FreeGSNKE workflow runs its tests.
+  The tracked report (`validation/reports/freegsnke_grid_convergence.json`,
+  bound to 220cd790) shows that the base grid reproduces the multi-machine
+  values exactly. From 65×129 to 129×257:
+  - the frozen-support ψ_N RMSE falls by a factor of 4.0, from 3.78e-4 to
+    9.43e-5;
+  - the warm one falls only to 0.82 of its base value, from 3.54e-3 to
+    2.90e-3;
+  - FreeGSNKE's own currents change by 4.9e-4 (relative L2).
+
+  So most of the warm difference does not come from the grid.
 - `validation/qlknn_conformal_profile_envelope.py` carries the QLKNN-10D
   conformal intervals into a steady transport profile as a frozen-coefficient
   sensitivity. It runs the integrated transport solver with the certified neural
