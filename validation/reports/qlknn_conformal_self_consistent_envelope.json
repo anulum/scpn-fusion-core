@@ -1,0 +1,242 @@
+{
+  "alpha": 0.1,
+  "case": {
+    "config": "validation/iter_config.json",
+    "dt_s": 0.01,
+    "neoclassical": {
+      "A_ion": 2.5,
+      "B0": 5.3,
+      "R0": 6.2,
+      "Z_eff": 1.7,
+      "a": 2.0,
+      "q0": 1.0,
+      "q_edge": 3.0
+    },
+    "p_aux_mw": 20.0
+  },
+  "certificate_radius_m2_s": {
+    "D_e": 0.393531312934,
+    "chi_e": 2.915758581324,
+    "chi_i": 3.302462278593
+  },
+  "checks": {
+    "every_run_converged": true,
+    "neural_run_reached_steady_state": true,
+    "nominal_fixed_point_independent_of_relaxation": true,
+    "nominal_reproduces_neural_steady_state": true,
+    "widths_match_frozen_report": true
+  },
+  "envelopes": {
+    "certificate": {
+      "lower_turbulence": {
+        "T_avg_keV": 2.5828666928416055,
+        "T_core_keV": 4.707316761536223,
+        "at_check_relaxation": {
+          "T_avg_keV": 2.503960723296471,
+          "T_core_keV": 4.606646515473568,
+          "converged": true,
+          "final_relative_residual": 9.987800727190984e-11,
+          "median_half_width_m2_s": {
+            "D_e": 0.393531312934,
+            "chi_e": 2.915758581324,
+            "chi_i": 3.302462278593
+          },
+          "steps": 11386,
+          "tau_e_s": 3.1524993042618825
+        },
+        "converged": true,
+        "final_relative_residual": 9.971583851458971e-11,
+        "median_half_width_m2_s": {
+          "D_e": 0.393531312934,
+          "chi_e": 2.915758581324,
+          "chi_i": 3.302462278593
+        },
+        "relaxation_relative_difference": 0.03730122505207989,
+        "steps": 5637,
+        "tau_e_s": 3.27009139028668
+      },
+      "upper_turbulence": {
+        "T_avg_keV": 0.18924996012247314,
+        "T_core_keV": 0.2809006805702778,
+        "at_check_relaxation": {
+          "T_avg_keV": 0.18924996010964798,
+          "T_core_keV": 0.28090068055033396,
+          "converged": true,
+          "final_relative_residual": 9.994735422190193e-11,
+          "median_half_width_m2_s": {
+            "D_e": 0.393531312934,
+            "chi_e": 2.915758581324,
+            "chi_i": 3.302462278593
+          },
+          "steps": 8227,
+          "tau_e_s": 0.25738288504829404
+        },
+        "converged": true,
+        "final_relative_residual": 9.962462380881459e-11,
+        "median_half_width_m2_s": {
+          "D_e": 0.393531312934,
+          "chi_e": 2.915758581324,
+          "chi_i": 3.302462278593
+        },
+        "relaxation_relative_difference": 7.099965060319846e-11,
+        "steps": 4123,
+        "tau_e_s": 0.2573828850655928
+      }
+    },
+    "normalised_prediction": {
+      "lower_turbulence": {
+        "T_avg_keV": 1.9077663898175032,
+        "T_core_keV": 3.522998497285076,
+        "at_check_relaxation": {
+          "T_avg_keV": 1.9077663898174688,
+          "T_core_keV": 3.522998497285033,
+          "converged": true,
+          "final_relative_residual": 9.991270404940326e-11,
+          "median_half_width_m2_s": {
+            "D_e": 0.22481544330447362,
+            "chi_e": 1.777416570057635,
+            "chi_i": 1.7832359872347516
+          },
+          "steps": 11492,
+          "tau_e_s": 2.410399433278378
+        },
+        "converged": true,
+        "final_relative_residual": 9.957635178214898e-11,
+        "median_half_width_m2_s": {
+          "D_e": 0.22481544330447417,
+          "chi_e": 1.7774165700576288,
+          "chi_i": 1.7832359872347523
+        },
+        "relaxation_relative_difference": 2.1094237467877974e-14,
+        "steps": 5903,
+        "tau_e_s": 2.4103994332784286
+      },
+      "upper_turbulence": {
+        "T_avg_keV": 0.34358113105538296,
+        "T_core_keV": 0.5933284893641131,
+        "at_check_relaxation": {
+          "T_avg_keV": 0.3435811310481409,
+          "T_core_keV": 0.5933284893574156,
+          "converged": true,
+          "final_relative_residual": 9.991101812641785e-11,
+          "median_half_width_m2_s": {
+            "D_e": 0.19756839638740864,
+            "chi_e": 1.2360548019367321,
+            "chi_i": 1.1371617308655928
+          },
+          "steps": 8644,
+          "tau_e_s": 0.4404726480800553
+        },
+        "converged": true,
+        "final_relative_residual": 9.991740229195686e-11,
+        "median_half_width_m2_s": {
+          "D_e": 0.1975683963874421,
+          "chi_e": 1.2360548019367497,
+          "chi_i": 1.1371617308656157
+        },
+        "relaxation_relative_difference": 2.7319702056161077e-11,
+        "steps": 4333,
+        "tau_e_s": 0.4404726480920889
+      }
+    }
+  },
+  "frozen_counterpart": {
+    "envelopes": {
+      "certificate": {
+        "lower_turbulence": {
+          "T_avg_keV": 3.77105243225872,
+          "T_core_keV": 7.223738279010957,
+          "tau_e_s": 4.532737907304694
+        },
+        "median_half_width_m2_s": {
+          "D_e": 0.393531312934,
+          "chi_e": 2.915758581324,
+          "chi_i": 3.302462278593
+        },
+        "upper_turbulence": {
+          "T_avg_keV": 0.17968709294643845,
+          "T_core_keV": 0.2619022267224748,
+          "tau_e_s": 0.2461915449976329
+        }
+      },
+      "normalised_prediction": {
+        "lower_turbulence": {
+          "T_avg_keV": 3.77105243225872,
+          "T_core_keV": 7.223738279010957,
+          "tau_e_s": 4.532737907304694
+        },
+        "median_half_width_m2_s": {
+          "D_e": 0.20311490833560752,
+          "chi_e": 1.3128203226214525,
+          "chi_i": 1.263886144659748
+        },
+        "upper_turbulence": {
+          "T_avg_keV": 0.2728980010496959,
+          "T_core_keV": 0.45468305224952354,
+          "tau_e_s": 0.35706213455468894
+        }
+      }
+    },
+    "report": "validation/reports/qlknn_conformal_profile_envelope.json",
+    "report_sha256": "7b9e2ec452032f16c2b9641dcaa3fea77456a0a7bdee4b4538500d05e46b1cc7"
+  },
+  "iteration": {
+    "check_relaxation": 0.0025,
+    "max_steps": 40000,
+    "relaxation": 0.005,
+    "residual_tolerance": 1e-10
+  },
+  "largest_end_relaxation_difference": 0.03730122505207989,
+  "neural_steady_state": {
+    "T_avg_keV": 0.9570848842962247,
+    "T_core_keV": 1.7017534066412965,
+    "tau_e_s": 1.242267966720441
+  },
+  "neural_steady_state_relative_change": 0.00023310705092239274,
+  "nominal": {
+    "T_avg_keV": 0.9569218456065939,
+    "T_core_keV": 1.701522899534369,
+    "converged": true,
+    "final_relative_residual": 9.98243775517945e-11,
+    "median_half_width_m2_s": {
+      "D_e": 0.393531312934,
+      "chi_e": 2.915758581324,
+      "chi_i": 3.302462278593
+    },
+    "steps": 4951,
+    "tau_e_s": 1.2420385758092516
+  },
+  "nominal_at_check_relaxation": {
+    "T_avg_keV": 0.9569218456065662,
+    "T_core_keV": 1.7015228995343832,
+    "converged": true,
+    "final_relative_residual": 9.976069701752193e-11,
+    "median_half_width_m2_s": {
+      "D_e": 0.393531312934,
+      "chi_e": 2.915758581324,
+      "chi_i": 3.302462278593
+    },
+    "steps": 9689,
+    "tau_e_s": 1.2420385758092094
+  },
+  "nominal_reproduction_relative_error": 0.00013545270779413698,
+  "normalised_prediction_quantile": {
+    "D_e": 0.49696801208476943,
+    "chi_e": 0.4239146224428023,
+    "chi_i": 0.344323663256879
+  },
+  "relaxation_independence_relative_difference": 3.397282455352979e-14,
+  "schema": "scpn-fusion-core.qlknn-conformal-self-consistent-envelope.v1",
+  "source_revision": "1846b1a63c6de9de152fc62101408491ec6e16fe",
+  "source_sha256": {
+    "src/scpn_fusion/core/_integrated_transport_solver_model_backend.py": "3dfa0779c988e16ff50de3a1f23f37e568ffbd47c8559eb1dd2ddcd46256be26",
+    "src/scpn_fusion/core/integrated_transport_solver_coupling.py": "8a4bcb50e7962313092c7792fe8ad71e57c53203ea1bb5169829018fa09f78bb",
+    "src/scpn_fusion/core/integrated_transport_solver_model.py": "1082df54e1863ba5969be1c05ee6fee2848e2862e69c107f8ab4f07aa3f6a091",
+    "src/scpn_fusion/core/integrated_transport_solver_runtime.py": "c0116d9c43061494df3550823e6b8a31b828c4d63048b82eecb70b42fa3ebdb8",
+    "src/scpn_fusion/core/neural_transport.py": "70bd82516ffb501b65874f40436f118f865eb4d17140b49d92945274e02c3808",
+    "validation/qlknn_conformal_profile_envelope.py": "3f1933afa3521c2fdc914763b4c5dba3756fcceb6c8d37690ac37b192c6c2baf",
+    "validation/qlknn_conformal_self_consistent_envelope.py": "a7021707ac16c8464cecb14e7246b0b14085376d4fd1dda03a98791c159487e8"
+  },
+  "status": "pass",
+  "weights_sha256": "0f44681e10686c09826e4a738bec0fe3bd49d82c1af9288489a12a4b2af6faad"
+}

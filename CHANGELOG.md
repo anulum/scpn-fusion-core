@@ -39,6 +39,17 @@
   run need not be unique. Each interval end is therefore run at relaxations
   0.005 and 0.0025, and the difference is reported, not gated.
 
+  The tracked run (`validation/reports/qlknn_conformal_self_consistent_envelope.json`,
+  bound to 1846b1a6) passes its gates. Its nominal fixed point reproduces the
+  neural steady state to 1.4e-4. Against the frozen study:
+  - the certificate interval spans T_core 0.281-4.707 keV (frozen 0.262-7.224
+    keV);
+  - the normalised interval spans 0.593-3.523 keV (frozen 0.455-7.224 keV);
+  - at the smaller relaxation the certificate's lower end changes by 3.7 %, to
+    4.607 keV; the other ends agree to better than 1e-10.
+
+  The UQ card for the QLKNN surrogate now states both propagations.
+
 - `validation/linear_mhd_miss_study.py` probes the two criteria that the linear
   reduced-MHD acceptance misses, without changing the acceptance or its bands:
   - the cylinder 2/1 tearing slope: the scan extends to η = 1e-10 and reports
