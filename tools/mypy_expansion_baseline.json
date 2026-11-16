@@ -106,6 +106,8 @@
     "validation/qlknn_conformal_regime_coverage.py",
     "tests/test_qlknn_conformal_regime_coverage.py",
     "validation/qlknn_conformal_variants.py",
-    "tests/test_qlknn_conformal_variants.py"
+    "tests/test_qlknn_conformal_variants.py",
+    "validation/qlknn_conformal_stability_sets.py",
+    "tests/test_qlknn_conformal_stability_sets.py"
   ]
 }

@@ -16,6 +16,16 @@
 
 ### Added
 
+- `validation/qlknn_conformal_stability_sets.py` bounds the QLKNN-10D
+  surrogate's false-stable rate. It was designed after the variant comparison
+  found the false-stable bias, and its own settings were fixed before it was
+  run. Each channel gets class-conditional split-conformal stability sets,
+  with the prediction as the score: the true label is in a row's set with
+  probability at least 0.90 for each class. They are followed by flux
+  intervals calibrated on the unstable rows, which bound the coverage of
+  unstable rows at 0.80 or more (a union bound). The report gives set coverage,
+  set sizes, flux coverage and widths per true class; it stops when the inputs
+  differ from the certificate or a class is too small.
 - `validation/qlknn_conformal_variants.py` compares four split-conformal
   variants for the QLKNN-10D surrogate on the same regimes:
   - the marginal absolute score, which reproduces the tracked certificate

@@ -114,7 +114,8 @@ def group_quantiles(
     return {int(g): rank_quantile(scores[groups == g], alpha) for g in np.unique(groups)}
 
 
-def _git_revision() -> str:
+def git_revision() -> str:
+    """Return the checkout's commit, which every report of this family records."""
     return subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT, check=True, capture_output=True, text=True
     ).stdout.strip()
@@ -269,7 +270,7 @@ def build_report(certificate_path: Path = regimes.CERTIFICATE_PATH) -> dict[str,
         "channels": channels,
         "checks": checks,
         "status": "pass" if all(checks.values()) else "fail",
-        "source_revision": _git_revision(),
+        "source_revision": git_revision(),
     }
 
 
