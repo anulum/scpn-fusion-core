@@ -1,0 +1,99 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE runaway kinetic Rust-kernel paper evidence manifest.",
+  "schema_version": "2.0",
+  "repository_revision": "8bfedda56df3894f9bdf92bfa76c75a66e5c2460",
+  "claim_boundary": {
+    "scope": "NumPy/Rust equivalence of the operator on a synthetic parity case",
+    "timing": "one loaded workstation and one small case; no portable speed-up",
+    "excluded": "DREAM equivalence, physical runaway scenarios"
+  },
+  "source_custody": {
+    "runaway_kinetic_rust_benchmark.json": {
+      "source_path": "validation/reports/runaway_kinetic_rust_benchmark.json",
+      "source_revision": "d8a10e8fdb4a99132cf5cf2ce82536752b3c5659",
+      "git_blob_oid_sha1": "ced1d2ce3ce98100bc87dfe3352dc1a6f38c564f",
+      "source_sha256": "f9de44ee14a815db1d3c5d93bb1262e4e83afcc02a9e5429106cd88bda786c58",
+      "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
+    }
+  },
+  "implementation_sources": {
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/coefficients.rs": {
+      "git_blob_oid_sha1": "1c82330c6547e4e499c7ac5bffc23078fd543275",
+      "sha256": "9151bbd823368f14cfa0e3fc4575bfcd15f5c168fa6c9b1cab1d1b9aaf930dfd",
+      "role": "Rust coefficient checks"
+    },
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/grid.rs": {
+      "git_blob_oid_sha1": "4f4fea12bb86ce263a8fda2f2b1f583941187f06",
+      "sha256": "5f36fd096f56e0d8c22b3aeac6f240df2776818a3047d62f45a985f8404cb7f3",
+      "role": "Rust grid"
+    },
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/mod.rs": {
+      "git_blob_oid_sha1": "d37b75f81a52706180c674293a10c688b26cbc2d",
+      "sha256": "7a0ca2f0cf7cb50255b25cc70b9ba46a9c8aafbc31b0051df8b29fcf081a6f8b",
+      "role": "Rust module root"
+    },
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/operator.rs": {
+      "git_blob_oid_sha1": "69c83a815604b76673398ce21b69f7ffc198c76f",
+      "sha256": "baee9e75ea89fff01d873a968a198905605372ba37e1290ec14259312207aeda",
+      "role": "Rust finite-volume operator"
+    },
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/solver.rs": {
+      "git_blob_oid_sha1": "44938b88ed4eb0a1369aef7a966493f21c0044e6",
+      "sha256": "d87fbbcf113c86262e2fbd695be2c183c4d4d003d8d71358599dbb17ed2218b4",
+      "role": "Rust SSPRK3 solver"
+    },
+    "scpn-fusion-rs/crates/fusion-python/src/bindings/runaway_kinetic.rs": {
+      "git_blob_oid_sha1": "42d80c84af3c8cedaa60c508377070bd682a6d63",
+      "sha256": "c3c46a6257780774fb6108d317c396ff27f13a1e9b00d31fdde600cdbdc30d2a",
+      "role": "Python binding of the Rust kernel"
+    },
+    "src/scpn_fusion/core/runaway_kinetic_coefficients.py": {
+      "git_blob_oid_sha1": "08a752da2bac5994ecdbc7aefd3c650b5a855407",
+      "sha256": "32f32f49a2cbbc301754b7f2bcb53d505abca67f5872728671f27b1fb7062829",
+      "role": "NumPy coefficient checks"
+    },
+    "src/scpn_fusion/core/runaway_kinetic_diagnostics.py": {
+      "git_blob_oid_sha1": "fcc514e7ace3cb8e580b71c4d018c919187f03a0",
+      "sha256": "d0f951d586ebb677e8e1b7331f49eeee8c102c9c21d8ae49e0191df76108f815",
+      "role": "moments and diagnostics"
+    },
+    "src/scpn_fusion/core/runaway_kinetic_grid.py": {
+      "git_blob_oid_sha1": "68d32c9f716596b7e73ac6173407f449f20addc7",
+      "sha256": "6a6785c3cfdeba08070cd7ee01fed0e0f32a0b2683fdacd9f3a901aaf898cdf4",
+      "role": "NumPy grid"
+    },
+    "src/scpn_fusion/core/runaway_kinetic_operator.py": {
+      "git_blob_oid_sha1": "9105266f8f61edf178dccd30507220cbd0cc5e9a",
+      "sha256": "77511f3ec134f142817861cde65b52e40bce155bb05de17d33b76b1892e8eb58",
+      "role": "NumPy finite-volume operator"
+    },
+    "src/scpn_fusion/core/runaway_kinetic_solver.py": {
+      "git_blob_oid_sha1": "103e61815d8ab16d8a0a62af7883d0cbde66a27a",
+      "sha256": "16c4dcf91c844e69c49601a2d2b32e2a44ff5201f2cef8feca5567d6d2aa7de1",
+      "role": "SSPRK3 solver and backend selection"
+    },
+    "validation/benchmark_runaway_kinetic_rust.py": {
+      "git_blob_oid_sha1": "3c7f5bb9371978eb8d5a74418348b8d8200cc5e1",
+      "sha256": "84fbc149b4ba98baf8efdd5a8bee8d3d07d18325f4444cdbc24e219516e631b5",
+      "role": "parity case, gates and timing"
+    }
+  },
+  "quoted_values": 41,
+  "generators": {
+    "papers/submissions/007_runaway_kinetic_operator_with_an_equivalent_rust_kernel/generate_evidence_manifest.py": {
+      "sha256": "529ed570d97cbfd364a06b624cbc88717515766c447ba5ebf271600bce8d2672"
+    }
+  },
+  "files": {
+    "runaway_kinetic_rust_benchmark.json": {
+      "sha256": "92b834dfe2cc664b2b822ed06b4a6d89cb4a2936d12a9408612d4cec2e1f8e30",
+      "role": "NumPy/Rust parity, gates and host-conditioned timing"
+    }
+  }
+}

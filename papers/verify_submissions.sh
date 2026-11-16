@@ -300,6 +300,7 @@ main() {
     ln -s -- "${REPO_ROOT}/validation" "${PAPER_VERIFY_ROOT}/validation"
     ln -s -- "${REPO_ROOT}/tools" "${PAPER_VERIFY_ROOT}/tools"
     ln -s -- "${REPO_ROOT}/weights" "${PAPER_VERIFY_ROOT}/weights"
+    ln -s -- "${REPO_ROOT}/scpn-fusion-rs" "${PAPER_VERIFY_ROOT}/scpn-fusion-rs"
 
     if [[ "$#" -gt 0 ]]; then
         for package_name in "$@"; do

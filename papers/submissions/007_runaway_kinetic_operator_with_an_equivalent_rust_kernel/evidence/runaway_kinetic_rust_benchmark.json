@@ -1,0 +1,190 @@
+{
+  "SPDX-License-Identifier": "AGPL-3.0-or-later",
+  "commercialLicense": "available",
+  "conceptsCopyright": "1996-2026 Miroslav Sotek. All rights reserved.",
+  "codeCopyright": "2020-2026 Miroslav Sotek. All rights reserved.",
+  "orcid": "0009-0009-3560-0851",
+  "contact": "www.anulum.li | protoscience@anulum.li",
+  "projectDescription": "SCPN-FUSION-CORE runaway kinetic Rust-kernel paper evidence.",
+  "all_pass": true,
+  "gates": {
+    "all_declared_outputs_compared": true,
+    "full_output_relative_l2_within_2e_12": true,
+    "internal_ssprk3_steps_exact": true,
+    "rust_measured_faster_on_this_host_problem": true
+  },
+  "generated_at_utc": "2026-11-15T19:43:57.172541+00:00",
+  "host": {
+    "concurrent_workload": null,
+    "conditioning": "Local shared host; no concurrent workload was declared. Timings are evidence for this host and problem only.",
+    "load_average_1m_5m_15m": [
+      7.560546875,
+      14.55517578125,
+      14.5869140625
+    ],
+    "logical_cpu_count": 12,
+    "platform": "Linux-7.0.0-42-generic-x86_64-with-glibc2.39",
+    "processor": "x86_64"
+  },
+  "language_selection": {
+    "go_role": "service and orchestration surfaces, not this tensor kernel",
+    "julia_gate": "Evaluate when a stiff implicit, sparse nonlinear, adjoint or differentiable kinetic branch is required; require measured advantage.",
+    "production_explicit_kernel": "rust",
+    "python_role": "orchestration, DREAM execution, HDF5 and validation"
+  },
+  "parity": {
+    "avalanche_generation": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "bremsstrahlung_loss": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "collisional_drag_diffusion": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "cross_diffusion": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "distribution": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "electric_acceleration": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "external_source": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "minimum_distribution": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "moments.current_density_a_m2": {
+      "maximum_absolute_error": 7.631228982063476e-12,
+      "relative_l2_error": 5.357357205665724e-14
+    },
+    "moments.density_m3": {
+      "maximum_absolute_error": 0.625,
+      "relative_l2_error": 7.818189126640911e-16
+    },
+    "moments.kinetic_energy_density_j_m3": {
+      "maximum_absolute_error": 5.684341886080801e-13,
+      "relative_l2_error": 5.565109430755781e-16
+    },
+    "pitch_scattering": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "radial_transport": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "runaway_density_avalanche_generation_m3_s": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "runaway_density_external_source_m3_s": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "runaway_density_m3": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "runaway_density_radial_transport_m3_s": {
+      "maximum_absolute_error": 0.0029296875,
+      "relative_l2_error": 5.22628075905332e-16
+    },
+    "runaway_density_tendency_m3_s": {
+      "maximum_absolute_error": 0.0029296875,
+      "relative_l2_error": 2.3686420478846443e-16
+    },
+    "synchrotron_loss": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "times_s": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    },
+    "total_tendency": {
+      "maximum_absolute_error": 0.0,
+      "relative_l2_error": 0.0
+    }
+  },
+  "problem": {
+    "all_declared_tendencies_returned": true,
+    "grid_shape_radius_pitch_momentum": [
+      8,
+      16,
+      32
+    ],
+    "internal_ssprk3_steps": 4,
+    "requested_output_times": 3
+  },
+  "runtime_provenance": {
+    "extension": {
+      "artifact_name": "scpn_fusion_rs.cpython-312-x86_64-linux-gnu.so",
+      "artifact_sha256": "35cdfc022687955c5eda281b72a2d795ac25e557f618bac3f02a59b53b6da9af"
+    },
+    "numpy_version": "2.5.4",
+    "python_version": "3.12.3"
+  },
+  "schema": "runaway-kinetic-rust-benchmark.v1",
+  "schema_version": 1,
+  "scientific_projection_sha256": "a3a4539fab7339e5da090aaa2fcd9c1281f6e87831b81f2cf2fa6bb0cd8ecffd",
+  "source_provenance": {
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/coefficients.rs": "9151bbd823368f14cfa0e3fc4575bfcd15f5c168fa6c9b1cab1d1b9aaf930dfd",
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/grid.rs": "5f36fd096f56e0d8c22b3aeac6f240df2776818a3047d62f45a985f8404cb7f3",
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/mod.rs": "7a0ca2f0cf7cb50255b25cc70b9ba46a9c8aafbc31b0051df8b29fcf081a6f8b",
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/operator.rs": "baee9e75ea89fff01d873a968a198905605372ba37e1290ec14259312207aeda",
+    "scpn-fusion-rs/crates/fusion-physics/src/runaway_kinetic/solver.rs": "d87fbbcf113c86262e2fbd695be2c183c4d4d003d8d71358599dbb17ed2218b4",
+    "scpn-fusion-rs/crates/fusion-python/src/bindings/runaway_kinetic.rs": "c3c46a6257780774fb6108d317c396ff27f13a1e9b00d31fdde600cdbdc30d2a",
+    "src/scpn_fusion/core/runaway_kinetic_coefficients.py": "32f32f49a2cbbc301754b7f2bcb53d505abca67f5872728671f27b1fb7062829",
+    "src/scpn_fusion/core/runaway_kinetic_diagnostics.py": "d0f951d586ebb677e8e1b7331f49eeee8c102c9c21d8ae49e0191df76108f815",
+    "src/scpn_fusion/core/runaway_kinetic_grid.py": "6a6785c3cfdeba08070cd7ee01fed0e0f32a0b2683fdacd9f3a901aaf898cdf4",
+    "src/scpn_fusion/core/runaway_kinetic_operator.py": "77511f3ec134f142817861cde65b52e40bce155bb05de17d33b76b1892e8eb58",
+    "src/scpn_fusion/core/runaway_kinetic_solver.py": "16c4dcf91c844e69c49601a2d2b32e2a44ff5201f2cef8feca5567d6d2aa7de1",
+    "validation/benchmark_runaway_kinetic_rust.py": "84fbc149b4ba98baf8efdd5a8bee8d3d07d18325f4444cdbc24e219516e631b5"
+  },
+  "source_revision": "98b6d4d2cfde1e8cf22129fa90e779b0291f8149",
+  "status": "accepted_full_kinetic_rust_backend_parity",
+  "timing_seconds": {
+    "numpy_median": 0.012564711971208453,
+    "numpy_samples": [
+      0.016353634011466056,
+      0.013952636974863708,
+      0.012611718033440411,
+      0.012292061990592629,
+      0.01287160097854212,
+      0.011706458986736834,
+      0.012564711971208453,
+      0.011283224972430617,
+      0.012845194025430828,
+      0.0124278370058164,
+      0.011737563007045537
+    ],
+    "repeats": 11,
+    "rust_median": 0.005990587989799678,
+    "rust_samples": [
+      0.0064592770067974925,
+      0.008842415001709014,
+      0.006446907005738467,
+      0.005869588989298791,
+      0.005670397018548101,
+      0.007309027016162872,
+      0.0055246929987333715,
+      0.005793017975520343,
+      0.005990587989799678,
+      0.006047918985132128,
+      0.005658060021232814
+    ],
+    "rust_speedup_over_numpy": 2.0974088007058236
+  }
+}

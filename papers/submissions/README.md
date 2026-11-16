@@ -24,6 +24,7 @@ submitted):
 - [`004_same_case_free_boundary_comparison_with_freegsnke/`](004_same_case_free_boundary_comparison_with_freegsnke/)
 - [`005_regime_conditional_conformal_coverage_of_a_neural_transport_surrogate/`](005_regime_conditional_conformal_coverage_of_a_neural_transport_surrogate/)
 - [`006_coupled_transport_model_intersection_with_torax/`](006_coupled_transport_model_intersection_with_torax/)
+- [`007_runaway_kinetic_operator_with_an_equivalent_rust_kernel/`](007_runaway_kinetic_operator_with_an_equivalent_rust_kernel/)
 
 The presence of a workspace does not authorize external upload or submission.
 Historical files from the superseded shared layout remain retrievable through

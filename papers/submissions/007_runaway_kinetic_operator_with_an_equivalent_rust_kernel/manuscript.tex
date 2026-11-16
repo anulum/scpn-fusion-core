@@ -1,0 +1,181 @@
+% SPDX-License-Identifier: AGPL-3.0-or-later
+% Commercial license available
+% © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+% © Code 2020–2026 Miroslav Šotek. All rights reserved.
+% ORCID: 0009-0009-3560-0851
+% Contact: www.anulum.li | protoscience@anulum.li
+% SCPN-FUSION-CORE — runaway kinetic operator with an equivalent Rust kernel.
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{natbib}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage[margin=1in]{geometry}
+\bibliographystyle{unsrtnat}
+
+\title{A Finite-Volume Runaway-Electron Kinetic Operator with a Bit-Identical
+Rust Kernel}
+\author{Miroslav \v{S}otek\\
+\small ANULUM CH\&LI, Marbach SG, Switzerland, \url{https://www.anulum.li}\\
+\small ORCID: \href{https://orcid.org/0009-0009-3560-0851}{0009-0009-3560-0851}\\
+\small \href{mailto:protoscience@anulum.li}{protoscience@anulum.li}}
+\date{Preprint --- 16 November 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+SCPN-Fusion-Core evolves a runaway-electron distribution on a grid of minor
+radius, pitch and momentum with a conservative finite-volume operator.  The
+operator returns each physical tendency separately: radial transport, electric
+acceleration, collisional drag and diffusion, pitch scattering, cross
+diffusion, synchrotron and bremsstrahlung losses, avalanche generation and an
+external source.  It also evolves the total runaway density, with its own
+budgets, alongside the distribution.  The operator has a NumPy implementation
+and a Rust kernel behind the same Python interface.  On a parity case of
+$8 \times 16 \times 32$ cells advanced by four steps of a three-stage
+strong-stability-preserving Runge--Kutta scheme, the two backends return
+bit-identical distributions, tendencies and runaway densities.  The integrated
+moments differ by at most a relative $L_2$ of $5.4 \times 10^{-14}$.  On one
+loaded workstation the Rust kernel ran 2.10 times faster than NumPy for this
+case.  The coefficients of the parity case are synthetic and chosen to exercise
+every term; it is not a physical runaway scenario.  We claim no equivalence
+with the DREAM code and no portable speed-up.
+\end{abstract}
+
+\noindent\textbf{Keywords:} runaway electrons; kinetic equation; finite volume;
+Rust; code equivalence; disruption
+
+\section{Introduction}
+
+Runaway electrons generated in tokamak disruptions are a central concern for
+machine protection.  DREAM solves flux-surface-averaged transport equations
+for the plasma density, temperature and poloidal flux, with a bounce-averaged
+kinetic equation for the electrons, to simulate the cooling and the runaway
+dynamics of a disruption self-consistently \citep{Hoppe2021}.  SCPN-Fusion-Core
+contains a smaller kinetic operator for the runaway distribution, with a
+NumPy implementation and a compiled Rust kernel.  This note establishes one
+property of that operator: its two implementations are equivalent to rounding,
+term by term.  A comparison with DREAM is a separate campaign and is not part
+of this note.
+
+\section{The operator}
+
+The distribution $f$ lives on cells of minor radius $r$, pitch $\xi$ and
+momentum $p$ (in units of $m_e c$).  The operator is written in conservative
+finite-volume form: every advection and diffusion term is the divergence of
+face fluxes, with upwind face values for advection.  It evaluates, and returns separately, the tendencies of radial
+transport, electric acceleration (in momentum and in pitch), collisional drag
+and momentum diffusion, pitch scattering, the two cross diffusions between
+momentum and pitch, the synchrotron and bremsstrahlung losses, avalanche
+generation and an external source.  Next to $f$ it evolves the total runaway
+density per radial cell, with separate budgets for its radial transport,
+avalanche generation and external source.
+
+A solver advances the state with a three-stage strong-stability-preserving
+Runge--Kutta scheme with a bounded step.  Every stage must stay finite, and
+the runaway density must stay non-negative, or the solver stops.  The backend is chosen per call: the
+same solver object runs either the NumPy operator or the Rust kernel through
+its Python binding.
+
+\section{Equivalence of the two backends}
+
+The parity case uses 8 radial cells on $0 \le r \le 0.2$\,m, 16 pitch cells on
+$-1 \le \xi \le 1$ and 32 momentum cells on $0.02 \le p \le 20$.  Every
+coefficient is a constant multiplied by $(1 + i/n)$, with $i$ the flat index of
+the face or cell and $n$ their number, so that each term varies in space and
+none vanishes.  The run returns the state at 0, 50 and 100\,ns with a largest
+step of 25\,ns, which is four steps.  These coefficients do not describe a
+physical runaway scenario; they exist to exercise the code.
+
+Table~\ref{tab:parity} lists the comparison.  The distribution, all nine
+tendencies, their total, the runaway density and its avalanche and
+external-source budgets are bit-identical.  Five quantities differ at rounding
+level: the three moments of the distribution (density, current density and
+kinetic-energy density), the radial-transport budget of the runaway density
+and its total tendency.  The largest difference is a relative $L_2$ of $5.4
+\times 10^{-14}$ in the current density.  Moments are reductions over the
+grid, so a different summation order between the backends would explain
+differences of this size; we did not verify that cause.
+
+\begin{table}[ht]
+\centering
+\caption{NumPy against Rust on the parity case: relative $L_2$ difference over
+all output times.}
+\label{tab:parity}
+\small
+\begin{tabular}{lr}
+\toprule
+Quantity & Relative $L_2$ \\
+\midrule
+Distribution, every tendency, total tendency, runaway density & 0 (bit-identical) \\
+Avalanche and external-source budgets of the runaway density & 0 (bit-identical) \\
+Moment: current density & $5.4 \times 10^{-14}$ \\
+Moment: density & $7.8 \times 10^{-16}$ \\
+Moment: kinetic-energy density & $5.6 \times 10^{-16}$ \\
+Runaway density: radial-transport budget & $5.2 \times 10^{-16}$ \\
+Runaway density: total tendency & $2.4 \times 10^{-16}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The declared gate of the benchmark is a relative $L_2$ of at most $2 \times
+10^{-12}$ for every output.  The number of internal steps must match
+exactly, and it does.
+
+\section{Cost on one host}
+
+Over 11 repeats on one workstation (12 logical CPUs; load averages 7.6, 14.6
+and 14.6 over 1, 5 and 15 minutes; no concurrent workload declared), the
+median run took 0.0126\,s with NumPy and 0.0060\,s with Rust, a ratio of
+2.10.  This is an observation for this host and this small case.  It is not a
+hardware-neutral speed-up, and larger grids may behave differently.
+
+\section{Limitations}
+
+\begin{itemize}
+\item The parity case is synthetic.  Physical coefficients, larger grids and
+long runs are not covered.
+\item No comparison with DREAM is reported.  The repository's DREAM campaign
+currently cannot run its pinned DREAM binary on the available hosts.
+\item The timing comes from one loaded workstation.
+\end{itemize}
+
+\section*{Software version and date}
+
+This preprint describes \texttt{scpn-fusion} at commit \texttt{8bfedda56df3}
+of 16 November 2026, on the main line after release 4.1.0.  The benchmark
+report was produced at commit \texttt{98b6d4d2cfde} and tracked at
+\texttt{d8a10e8fdb4a}.  The twelve sources it records are byte-identical at
+the commit above: the Rust and Python grid, coefficient, operator and solver
+modules, the Rust module root and Python binding, the Python diagnostics and
+the benchmark.  The run used NumPy 2.5.4 and Python 3.12.3.
+
+\section*{Data and code availability}
+
+Code is available at \url{https://github.com/anulum/scpn-fusion-core}.  The
+benchmark report cited here, with its source revision, Git blob identity and
+SHA-256 digest, is in \texttt{evidence/} of this submission directory.  The
+generator in that directory checks every quoted value against it.  This is a
+venue-neutral preprint and has not been submitted.  No DOI has been reserved
+and the manuscript-content licence has not yet been selected by the author.
+
+\section*{Use of AI tools}
+
+Large language model coding agents were used substantively for generating and
+debugging the analysis code and for drafting and revising the manuscript text.
+The agents were commercially available models, which are not named because no
+vendor is involved in or sponsors this work.  They were coordinated through
+SYNAPSE CHANNEL (version 0.99.52 at the time of writing;
+\url{https://github.com/anulum/synapse-channel}), the open-source
+agent-coordination tool of the ANULUM Agentic Coordination, Assurance and
+Continuity Systems group.  The author specified the comparison, verified the
+code through its tests and every reported number against the committed
+report, and takes full responsibility for the content.
+
+\bibliography{references}
+\end{document}
