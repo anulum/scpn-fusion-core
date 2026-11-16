@@ -29,6 +29,14 @@
   label, with Wilson intervals and widths. The certificate generator gains
   the public `gyro_bohm_scale`, and `residual_scores` now also returns the
   predictions; the certificate is unchanged.
+  The tracked run (`validation/reports/qlknn_conformal_variants.json`, bound to
+  940937b9) shows that none of the four recovers the unstable rows: their
+  coverage stays at 0.659-0.723 in every variant.
+  - Mondrian groups balance the input-label groups at about 0.90, as
+    guaranteed, and widen the intervals.
+  - Normalising by `|y_hat| + r0` cuts the median half-width from 2.92, 3.30
+    and 0.39 to 1.24, 1.14 and 0.20 m^2/s (chi_e, chi_i, D_e), at the same
+    marginal coverage.
 - `validation/qlknn_conformal_regime_coverage.py` measures how the QLKNN-10D
   split-conformal certificate covers each transport regime of the untouched
   holdout split. Two definitions are fixed in the module:

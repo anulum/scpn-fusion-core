@@ -1,0 +1,989 @@
+{
+  "alpha": 0.1,
+  "certificate_sha256": "bcc8ceef6837f0fb4cac328b85b5d9ba606c55bc3ae03df753ac4d9f4c53d744",
+  "channels": {
+    "D_e": {
+      "near_threshold_upper_value": 0.007297630821108093,
+      "quantiles": {
+        "marginal_absolute": 0.393531312934,
+        "mondrian_input_label": {
+          "itg_label": 0.548133335433,
+          "neither_label": 0.010575054175,
+          "tem_label": 0.188903034359
+        },
+        "normalised_gyro_bohm": 1.1159863358857676,
+        "normalised_prediction": 0.49696801208476943
+      },
+      "variants": {
+        "marginal_absolute": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8819448784450972,
+              "covered": 28224,
+              "median_relative_width": 4.1514578146257595,
+              "n": 32002,
+              "wilson95": [
+                0.8783636802977863,
+                0.8854343917339291
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9557479557479558,
+              "covered": 7948,
+              "median_relative_width": 2.9258825511421835,
+              "n": 8316,
+              "wilson95": [
+                0.9511134691973578,
+                0.959961584037423
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.9327563249001332,
+              "covered": 7005,
+              "median_relative_width": 5.121000928085276,
+              "n": 7510,
+              "wilson95": [
+                0.9268680137005737,
+                0.9382021419079775
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9027557079535,
+            "covered": 43177,
+            "median_relative_width": 4.183589480080334,
+            "n": 47828,
+            "wilson95": [
+              0.9000679069552637,
+              0.9053788169215022
+            ]
+          },
+          "median_half_width": 0.393531312934,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9931129476584022,
+              "covered": 1442,
+              "median_relative_width": 295.5131290375797,
+              "n": 1452,
+              "wilson95": [
+                0.9873687796488799,
+                0.9962548088426808
+              ]
+            },
+            "stable": {
+              "coverage": 0.9974052139935283,
+              "covered": 32673,
+              "median_relative_width": null,
+              "n": 32758,
+              "wilson95": [
+                0.9967929406109479,
+                0.9979008418176374
+              ]
+            },
+            "unstable": {
+              "coverage": 0.665442796299016,
+              "covered": 9062,
+              "median_relative_width": 3.0706866518320997,
+              "n": 13618,
+              "wilson95": [
+                0.6574724358144345,
+                0.6733198446288372
+              ]
+            }
+          }
+        },
+        "mondrian_input_label": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.9021623648521967,
+              "covered": 28871,
+              "median_relative_width": 5.782392262192992,
+              "n": 32002,
+              "wilson95": [
+                0.8988589043380371,
+                0.9053692873537063
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9010341510341511,
+              "covered": 7493,
+              "median_relative_width": 0.07862491616570558,
+              "n": 8316,
+              "wilson95": [
+                0.8944297295606634,
+                0.9072682394467231
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.9099866844207724,
+              "covered": 6834,
+              "median_relative_width": 2.458184603045308,
+              "n": 7510,
+              "wilson95": [
+                0.9033024376221043,
+                0.9162517190298124
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9031947812996571,
+            "covered": 43198,
+            "median_relative_width": 4.524422899704031,
+            "n": 47828,
+            "wilson95": [
+              0.9005123012650061,
+              0.9058124987785777
+            ]
+          },
+          "median_half_width": 0.548133335433,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9958677685950413,
+              "covered": 1446,
+              "median_relative_width": 334.36595784691133,
+              "n": 1452,
+              "wilson95": [
+                0.9910138654407528,
+                0.9981048268971295
+              ]
+            },
+            "stable": {
+              "coverage": 0.9958178154954515,
+              "covered": 32621,
+              "median_relative_width": null,
+              "n": 32758,
+              "wilson95": [
+                0.9950584605352963,
+                0.9964608971549627
+              ]
+            },
+            "unstable": {
+              "coverage": 0.6705096196210897,
+              "covered": 9131,
+              "median_relative_width": 3.3402304916003818,
+              "n": 13618,
+              "wilson95": [
+                0.6625681709425354,
+                0.6783548983824875
+              ]
+            }
+          }
+        },
+        "normalised_gyro_bohm": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8834447847009562,
+              "covered": 28272,
+              "median_relative_width": 3.139056171238294,
+              "n": 32002,
+              "wilson95": [
+                0.879882945432131,
+                0.8869145790627707
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.953944203944204,
+              "covered": 7933,
+              "median_relative_width": 2.615496816279638,
+              "n": 8316,
+              "wilson95": [
+                0.9492257767706076,
+                0.9582434385226108
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.9234354194407457,
+              "covered": 6935,
+              "median_relative_width": 3.7847752586155474,
+              "n": 7510,
+              "wilson95": [
+                0.9172028293694497,
+                0.9292350459644557
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9019821025340805,
+            "covered": 43140,
+            "median_relative_width": 3.144029953854819,
+            "n": 47828,
+            "wilson95": [
+              0.8992849668340518,
+              0.904614670463083
+            ]
+          },
+          "median_half_width": 0.3258516308750189,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9882920110192838,
+              "covered": 1435,
+              "median_relative_width": 83.14541678126137,
+              "n": 1452,
+              "wilson95": [
+                0.9813298082538688,
+                0.9926773485066291
+              ]
+            },
+            "stable": {
+              "coverage": 0.9990841931741865,
+              "covered": 32728,
+              "median_relative_width": null,
+              "n": 32758,
+              "wilson95": [
+                0.9986929449997598,
+                0.9993584020559013
+              ]
+            },
+            "unstable": {
+              "coverage": 0.6592010574239977,
+              "covered": 8977,
+              "median_relative_width": 2.511500999620629,
+              "n": 13618,
+              "wilson95": [
+                0.6511964898559793,
+                0.667115833269193
+              ]
+            }
+          }
+        },
+        "normalised_prediction": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8886632085494657,
+              "covered": 28439,
+              "median_relative_width": 2.902889579847782,
+              "n": 32002,
+              "wilson95": [
+                0.8851701952849169,
+                0.8920629242381526
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9454064454064454,
+              "covered": 7862,
+              "median_relative_width": 1.536035110665267,
+              "n": 8316,
+              "wilson95": [
+                0.9403147674862115,
+                0.9500868148836111
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.9135818908122504,
+              "covered": 6861,
+              "median_relative_width": 2.6512552241729725,
+              "n": 7510,
+              "wilson95": [
+                0.9070137192334942,
+                0.9197271740957857
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9024420841348164,
+            "covered": 43162,
+            "median_relative_width": 2.823456949077559,
+            "n": 47828,
+            "wilson95": [
+              0.899750492617757,
+              0.9050690339969963
+            ]
+          },
+          "median_half_width": 0.1955729022258117,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9931129476584022,
+              "covered": 1442,
+              "median_relative_width": 152.23315602569863,
+              "n": 1452,
+              "wilson95": [
+                0.9873687796488799,
+                0.9962548088426808
+              ]
+            },
+            "stable": {
+              "coverage": 0.9973441602051407,
+              "covered": 32671,
+              "median_relative_width": null,
+              "n": 32758,
+              "wilson95": [
+                0.9967255039274967,
+                0.9978461852419223
+              ]
+            },
+            "unstable": {
+              "coverage": 0.6644881774122485,
+              "covered": 9049,
+              "median_relative_width": 2.2377573778262327,
+              "n": 13618,
+              "wilson95": [
+                0.656512484960809,
+                0.6723710961279299
+              ]
+            }
+          }
+        }
+      }
+    },
+    "chi_e": {
+      "near_threshold_upper_value": 0.06605219126325629,
+      "quantiles": {
+        "marginal_absolute": 2.915758581324,
+        "mondrian_input_label": {
+          "itg_label": 3.275285793688,
+          "neither_label": 0.168817761125,
+          "tem_label": 5.704541904144
+        },
+        "normalised_gyro_bohm": 8.432494532126839,
+        "normalised_prediction": 0.4239146224428023
+      },
+      "variants": {
+        "marginal_absolute": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8919442534841573,
+              "covered": 28544,
+              "median_relative_width": 3.997777872442653,
+              "n": 32002,
+              "wilson95": [
+                0.8884957318946293,
+                0.8952986898916596
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9693362193362194,
+              "covered": 8061,
+              "median_relative_width": 7.671363164710214,
+              "n": 8316,
+              "wilson95": [
+                0.9654085893559002,
+                0.9728304430386511
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.8623169107856192,
+              "covered": 6476,
+              "median_relative_width": 1.7632670537269428,
+              "n": 7510,
+              "wilson95": [
+                0.8543385167809269,
+                0.8699248350378016
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9007485155139249,
+            "covered": 43081,
+            "median_relative_width": 3.6720185789949644,
+            "n": 47828,
+            "wilson95": [
+              0.8980366000125001,
+              0.9033960613873843
+            ]
+          },
+          "median_half_width": 2.915758581324,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9988558352402745,
+              "covered": 1746,
+              "median_relative_width": 216.07867885873952,
+              "n": 1748,
+              "wilson95": [
+                0.9958377037860524,
+                0.999686172657668
+              ]
+            },
+            "stable": {
+              "coverage": 0.9968775950838731,
+              "covered": 30011,
+              "median_relative_width": null,
+              "n": 30105,
+              "wilson95": [
+                0.996180837092099,
+                0.9974475640842442
+              ]
+            },
+            "unstable": {
+              "coverage": 0.7088575899843506,
+              "covered": 11324,
+              "median_relative_width": 2.7412563182377223,
+              "n": 15975,
+              "wilson95": [
+                0.701763388985918,
+                0.715851368454231
+              ]
+            }
+          }
+        },
+        "mondrian_input_label": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8994750328104494,
+              "covered": 28785,
+              "median_relative_width": 4.490723325243869,
+              "n": 32002,
+              "wilson95": [
+                0.8961324234464488,
+                0.902721749248753
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9024771524771524,
+              "covered": 7505,
+              "median_relative_width": 0.444159664842727,
+              "n": 8316,
+              "wilson95": [
+                0.8959138806454582,
+                0.9086687587151779
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.9050599201065246,
+              "covered": 6797,
+              "median_relative_width": 3.4497474724448587,
+              "n": 7510,
+              "wilson95": [
+                0.8982216283543624,
+                0.9114840372952414
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9008739650413984,
+            "covered": 43087,
+            "median_relative_width": 3.853466713787961,
+            "n": 47828,
+            "wilson95": [
+              0.898163546710859,
+              0.9035199935938306
+            ]
+          },
+          "median_half_width": 3.275285793688,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9977116704805492,
+              "covered": 1744,
+              "median_relative_width": 229.0926745209885,
+              "n": 1748,
+              "wilson95": [
+                0.9941308002013243,
+                0.9991097645991769
+              ]
+            },
+            "stable": {
+              "coverage": 0.9949177877428999,
+              "covered": 29952,
+              "median_relative_width": null,
+              "n": 30105,
+              "wilson95": [
+                0.9940489698847538,
+                0.9956603166965828
+              ]
+            },
+            "unstable": {
+              "coverage": 0.7130516431924883,
+              "covered": 11391,
+              "median_relative_width": 2.904302253682191,
+              "n": 15975,
+              "wilson95": [
+                0.7059866880157281,
+                0.7200141592636206
+              ]
+            }
+          }
+        },
+        "normalised_gyro_bohm": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8920067495781514,
+              "covered": 28546,
+              "median_relative_width": 3.1317410142733557,
+              "n": 32002,
+              "wilson95": [
+                0.8885590848860933,
+                0.8953603140861618
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9718614718614719,
+              "covered": 8082,
+              "median_relative_width": 6.294162160915848,
+              "n": 8316,
+              "wilson95": [
+                0.9680835353325854,
+                0.9752036701801534
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.8515312916111851,
+              "covered": 6395,
+              "median_relative_width": 1.320439925036549,
+              "n": 7510,
+              "wilson95": [
+                0.8433099548348418,
+                0.8593931869517967
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.8995358367483482,
+            "covered": 43023,
+            "median_relative_width": 2.7824335953759167,
+            "n": 47828,
+            "wilson95": [
+              0.8968095162497662,
+              0.902197982403669
+            ]
+          },
+          "median_half_width": 2.462164640624658,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9982837528604119,
+              "covered": 1745,
+              "median_relative_width": 55.68603817029275,
+              "n": 1748,
+              "wilson95": [
+                0.9949660673952196,
+                0.9994161532268913
+              ]
+            },
+            "stable": {
+              "coverage": 0.9991363560870288,
+              "covered": 30079,
+              "median_relative_width": null,
+              "n": 30105,
+              "wilson95": [
+                0.9987348140148162,
+                0.9994105327964498
+              ]
+            },
+            "unstable": {
+              "coverage": 0.7010328638497653,
+              "covered": 11199,
+              "median_relative_width": 2.2243426829479773,
+              "n": 15975,
+              "wilson95": [
+                0.6938860363150261,
+                0.7080830311266157
+              ]
+            }
+          }
+        },
+        "normalised_prediction": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8966314605337167,
+              "covered": 28694,
+              "median_relative_width": 2.3773433200589604,
+              "n": 32002,
+              "wilson95": [
+                0.8932482176488299,
+                0.8999194930849153
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9545454545454546,
+              "covered": 7938,
+              "median_relative_width": 3.3523177522997263,
+              "n": 8316,
+              "wilson95": [
+                0.9498547921343566,
+                0.9588163691393826
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.8476697736351532,
+              "covered": 6366,
+              "median_relative_width": 1.190147913515631,
+              "n": 7510,
+              "wilson95": [
+                0.8393650812470743,
+                0.855618972997211
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.8990131303838755,
+            "covered": 42998,
+            "median_relative_width": 2.1333799495060783,
+            "n": 47828,
+            "wilson95": [
+              0.8962806383422061,
+              0.9016815315412078
+            ]
+          },
+          "median_half_width": 1.237261131623666,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9982837528604119,
+              "covered": 1745,
+              "median_relative_width": 93.3614593060311,
+              "n": 1748,
+              "wilson95": [
+                0.9949660673952196,
+                0.9994161532268913
+              ]
+            },
+            "stable": {
+              "coverage": 0.9954160438465371,
+              "covered": 29967,
+              "median_relative_width": null,
+              "n": 30105,
+              "wilson95": [
+                0.9945872237958949,
+                0.996118447851969
+              ]
+            },
+            "unstable": {
+              "coverage": 0.7064788732394366,
+              "covered": 11286,
+              "median_relative_width": 1.7534814255548454,
+              "n": 15975,
+              "wilson95": [
+                0.6993684087667822,
+                0.7134900589138204
+              ]
+            }
+          }
+        }
+      }
+    },
+    "chi_i": {
+      "near_threshold_upper_value": 0.004071341344472331,
+      "quantiles": {
+        "marginal_absolute": 3.302462278593,
+        "mondrian_input_label": {
+          "itg_label": 5.725658064743,
+          "neither_label": 0.033013919168,
+          "tem_label": 0.340414671261
+        },
+        "normalised_gyro_bohm": 9.172604861268075,
+        "normalised_prediction": 0.344323663256879
+      },
+      "variants": {
+        "marginal_absolute": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8622273607899507,
+              "covered": 27593,
+              "median_relative_width": 2.63813582052099,
+              "n": 32002,
+              "wilson95": [
+                0.8584076879505784,
+                0.865960081908838
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9811207311207312,
+              "covered": 8159,
+              "median_relative_width": 28.083790949764975,
+              "n": 8316,
+              "wilson95": [
+                0.9779657105929928,
+                0.9838314630197668
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.9723035952063914,
+              "covered": 7302,
+              "median_relative_width": 197.44022848340913,
+              "n": 7510,
+              "wilson95": [
+                0.9683438041185449,
+                0.9757804549410029
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9001839926402944,
+            "covered": 43054,
+            "median_relative_width": 4.577706754581175,
+            "n": 47828,
+            "wilson95": [
+              0.8974653561561269,
+              0.9028383501721345
+            ]
+          },
+          "median_half_width": 3.302462278593,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9914917753828701,
+              "covered": 1748,
+              "median_relative_width": 12214.429273143392,
+              "n": 1763,
+              "wilson95": [
+                0.9860092143806346,
+                0.9948371379325595
+              ]
+            },
+            "stable": {
+              "coverage": 0.9953828267729613,
+              "covered": 29966,
+              "median_relative_width": null,
+              "n": 30105,
+              "wilson95": [
+                0.9945512739322622,
+                0.9960879720444997
+              ]
+            },
+            "unstable": {
+              "coverage": 0.7105263157894737,
+              "covered": 11340,
+              "median_relative_width": 3.168697046648672,
+              "n": 15960,
+              "wilson95": [
+                0.7034403127934289,
+                0.7175109987899694
+              ]
+            }
+          }
+        },
+        "mondrian_input_label": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8989750640584964,
+              "covered": 28769,
+              "median_relative_width": 4.573879233857244,
+              "n": 32002,
+              "wilson95": [
+                0.8956252522039599,
+                0.9022291030035133
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9039201539201539,
+              "covered": 7517,
+              "median_relative_width": 0.28074688705954326,
+              "n": 8316,
+              "wilson95": [
+                0.8973984594136886,
+                0.9100688503001977
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.9078561917443408,
+              "covered": 6818,
+              "median_relative_width": 20.351950999879897,
+              "n": 7510,
+              "wilson95": [
+                0.901104638510473,
+                0.9141907112215245
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9012294053692398,
+            "covered": 43104,
+            "median_relative_width": 4.691866202927721,
+            "n": 47828,
+            "wilson95": [
+              0.8985232362033714,
+              0.9038711276649326
+            ]
+          },
+          "median_half_width": 5.725658064743,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9869540555870675,
+              "covered": 1740,
+              "median_relative_width": 5717.621126997434,
+              "n": 1763,
+              "wilson95": [
+                0.9804994618366062,
+                0.9912911826652716
+              ]
+            },
+            "stable": {
+              "coverage": 0.994153795050656,
+              "covered": 29929,
+              "median_relative_width": null,
+              "n": 30105,
+              "wilson95": [
+                0.9932273207936034,
+                0.9949541753523917
+              ]
+            },
+            "unstable": {
+              "coverage": 0.7164786967418546,
+              "covered": 11435,
+              "median_relative_width": 3.311908364319901,
+              "n": 15960,
+              "wilson95": [
+                0.7094348537416794,
+                0.7234183550442256
+              ]
+            }
+          }
+        },
+        "normalised_gyro_bohm": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8607899506280857,
+              "covered": 27547,
+              "median_relative_width": 1.764657061282297,
+              "n": 32002,
+              "wilson95": [
+                0.8569539719881365,
+                0.8645393225940601
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9852092352092352,
+              "covered": 8193,
+              "median_relative_width": 19.94848898507689,
+              "n": 8316,
+              "wilson95": [
+                0.9823816649347926,
+                0.9875887413455083
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.9813581890812251,
+              "covered": 7370,
+              "median_relative_width": 164.1123792397865,
+              "n": 7510,
+              "wilson95": [
+                0.9780439452263243,
+                0.9841802432428794
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9013548548967132,
+            "covered": 43110,
+            "median_relative_width": 2.9781136940551223,
+            "n": 47828,
+            "wilson95": [
+              0.8986501879772355,
+              0.9039950547958735
+            ]
+          },
+          "median_half_width": 2.6782659942193714,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9914917753828701,
+              "covered": 1748,
+              "median_relative_width": 6597.325469715608,
+              "n": 1763,
+              "wilson95": [
+                0.9860092143806346,
+                0.9948371379325595
+              ]
+            },
+            "stable": {
+              "coverage": 0.9979737585118751,
+              "covered": 30044,
+              "median_relative_width": null,
+              "n": 30105,
+              "wilson95": [
+                0.997398333244673,
+                0.9984221150780297
+              ]
+            },
+            "unstable": {
+              "coverage": 0.7091478696741854,
+              "covered": 11318,
+              "median_relative_width": 2.1925607318703557,
+              "n": 15960,
+              "wilson95": [
+                0.7020523143046737,
+                0.7161427684528807
+              ]
+            }
+          }
+        },
+        "normalised_prediction": {
+          "input_labels": {
+            "itg_label": {
+              "coverage": 0.8741641147428286,
+              "covered": 27975,
+              "median_relative_width": 1.612771904239417,
+              "n": 32002,
+              "wilson95": [
+                0.87048536975197,
+                0.8777530426269683
+              ]
+            },
+            "neither_label": {
+              "coverage": 0.9672919672919673,
+              "covered": 8044,
+              "median_relative_width": 9.70407598189961,
+              "n": 8316,
+              "wilson95": [
+                0.963248071149753,
+                0.9709043449110276
+              ]
+            },
+            "tem_label": {
+              "coverage": 0.9498002663115845,
+              "covered": 7133,
+              "median_relative_width": 68.45963031524582,
+              "n": 7510,
+              "wilson95": [
+                0.9446277165016539,
+                0.9545128944662493
+              ]
+            }
+          },
+          "marginal": {
+            "coverage": 0.9022330015890273,
+            "covered": 43152,
+            "median_relative_width": 2.211718175677329,
+            "n": 47828,
+            "wilson95": [
+              0.8995388877467931,
+              0.9048625073599514
+            ]
+          },
+          "median_half_width": 1.1371236875515707,
+          "target_regimes": {
+            "near_threshold": {
+              "coverage": 0.9875212705615428,
+              "covered": 1741,
+              "median_relative_width": 4331.833612019136,
+              "n": 1763,
+              "wilson95": [
+                0.9811777290484458,
+                0.9917448789298464
+              ]
+            },
+            "stable": {
+              "coverage": 0.9922936389304102,
+              "covered": 29873,
+              "median_relative_width": null,
+              "n": 30105,
+              "wilson95": [
+                0.991241087007458,
+                0.9932205715568362
+              ]
+            },
+            "unstable": {
+              "coverage": 0.7229323308270676,
+              "covered": 11538,
+              "median_relative_width": 1.734066986898434,
+              "n": 15960,
+              "wilson95": [
+                0.7159358943431331,
+                0.7298214766728581
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "checks": {
+    "marginal_variant_reproduces_certificate": true
+  },
+  "holdout_rows": 47828,
+  "output_unit": "physical transport coefficient (m^2/s)",
+  "schema": "scpn-fusion-core.qlknn-conformal-variants.v1",
+  "source_revision": "940937b9f8d720933b879d4e7063f3dde8692a66",
+  "status": "pass",
+  "variants": [
+    "marginal_absolute",
+    "mondrian_input_label",
+    "normalised_gyro_bohm",
+    "normalised_prediction"
+  ]
+}
