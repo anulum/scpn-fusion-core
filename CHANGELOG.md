@@ -142,11 +142,16 @@
     currents.
 
   The fit starts from FreeGSNKE's currents, or from a seeded ±20 %
-  perturbation reached by continuation. The gates check only that every
-  reported number comes from a converged solve; agreement is reported, not
-  gated. Cases and starts can run separately, and `--merge` joins the
-  partial reports. The FreeGSNKE workflow runs its tests. No tracked report
-  yet.
+  perturbation reached by continuation. The gates check completeness: the
+  FreeGSNKE refinement at its own currents, SCPN's solve at FreeGSNKE's
+  currents, and every FreeGSNKE refinement at SCPN's fitted currents must
+  converge. A refinement that does not converge withholds its loss and fails
+  its case. Agreement is reported, not gated. Cases and starts can run
+  separately, and `--merge` joins the partial reports. The FreeGSNKE workflow
+  runs its tests. The tracked report is
+  `validation/reports/freegsnke_inverse_fit.json`. Its status is fail, because
+  on the MAST-U-like perturbed start FreeGSNKE's refinement at SCPN's fitted
+  currents, which are 64 % away from its own, did not converge.
 - `validation/reports/linear_mhd_reduced_model_acceptance.json` is the tracked
   run of the fixed linear-MHD acceptance at c1bc7f63, on a Xeon E5-2640 host
   with OpenBLAS at 8 threads. It passes 7 of 9 criteria and misses two:

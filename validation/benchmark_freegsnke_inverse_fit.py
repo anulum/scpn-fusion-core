@@ -25,9 +25,11 @@ For every selected case and start this benchmark
    currents of each code are scored by both evaluators.
 
 The two methods differ, and the report says how (``method_differences``). The gates concern
-completeness, not agreement: every FreeGSNKE refinement and every SCPN solve that a reported
-number comes from must have converged. A perturbed start that SCPN cannot reach is a robustness
-result of SCPN's forward solver; it is recorded, not gated. The cases are synthetic public
+completeness, not agreement: the FreeGSNKE refinement at its own currents, SCPN's solve at
+FreeGSNKE's currents, and every FreeGSNKE refinement at SCPN's fitted currents must have
+converged. A refinement that does not converge withholds its loss and fails its case. How
+SCPN's own fit stops, and a perturbed start that SCPN cannot reach, are robustness results of
+SCPN's solver; they are recorded, not gated. The cases are synthetic public
 machine descriptions: there is no facility, control, safety or speed claim and no comparison
 with measured discharges.
 
