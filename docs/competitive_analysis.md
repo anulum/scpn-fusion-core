@@ -195,7 +195,7 @@ Y = implemented and tested. N = not present. P = partial.
 
 | Area | Detail | Who Does It Better |
 |------|--------|-------------------|
-| JAX GPU training | TORAX trains end-to-end on GPU with JAX; SCPN uses JAX solvers but training was done offline on L40S | TORAX |
+| JAX GPU training | TORAX trains end-to-end on GPU with JAX; SCPN uses JAX solvers but training was done offline on a GPU | TORAX |
 | Production gyrokinetics | GENE and GS2 are gold-standard nonlinear 5D Vlasov codes with decades of validation against experiment. SCPN's native production path remains linear/reduced-order; full nonlinear production fidelity is reached through external solver decks and site installations. | GENE, GS2, CGYRO |
 | Runaway electron physics | DREAM solves the full kinetic RE distribution including hot-tail, Dreicer, avalanche, and synchrotron radiation loss. SCPN's Fokker-Planck RE model covers the primary mechanisms but with reduced-order approximations. | DREAM |
 | Stellarator geometry | FUSE supports stellarator equilibria natively. SCPN Fusion Core is tokamak-only in the current public scope. | FUSE |

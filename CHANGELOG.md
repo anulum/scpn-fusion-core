@@ -142,6 +142,12 @@
 
 ### Fixed
 
+- `docs/BENCHMARKS.md` now describes the QLKNN-10D transport weights that ship:
+  `weights/neural_transport_qlknn.npz`, a 14→1024→512→256→3 MLP that is not
+  gated, with test relative L2 0.0943 per its metrics record. The page had
+  described the superseded 2026-03-08 model (six gated outputs, 0.201). The page
+  and `docs/competitive_analysis.md` no longer name a training GPU that the
+  record does not give.
 - The QLKNN-10D UQ card (`docs/SURROGATE_UQ_CARDS.md`) no longer says that the
   transport uncertainty-envelope benchmark propagates the surrogate's spread
   through the transport lane. That benchmark checks the IPB98(y,2)
