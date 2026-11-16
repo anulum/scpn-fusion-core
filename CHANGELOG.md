@@ -37,6 +37,11 @@
   - Normalising by `|y_hat| + r0` cuts the median half-width from 2.92, 3.30
     and 0.39 to 1.24, 1.14 and 0.20 m^2/s (chi_e, chi_i, D_e), at the same
     marginal coverage.
+  Two post-hoc variants follow (Mondrian by predicted-flux class, alone and
+  with the `|y_hat| + r0` score). They are marked as chosen after seeing that
+  comparison. The report now also records, per channel, the share of unstable
+  rows the surrogate predicts at or below the certificate radius, and the
+  median ratio of prediction to target there.
 - `validation/qlknn_conformal_regime_coverage.py` measures how the QLKNN-10D
   split-conformal certificate covers each transport regime of the untouched
   holdout split. Two definitions are fixed in the module:

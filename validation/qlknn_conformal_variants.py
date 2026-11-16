@@ -23,6 +23,17 @@ their scores are fixed here before any result was seen:
 * ``normalised_prediction``: score ``|y - y_hat| / (|y_hat| + r0)``, with ``r0`` the
   channel's certificate radius. The interval is ``y_hat +- q (|y_hat| + r0)``.
 
+Two further variants were added after the first comparison (940937b9, report 753c658a),
+so they were chosen after seeing its results and are reported as post hoc:
+
+* ``mondrian_predicted_flux``: the absolute score, with one radius per predicted-flux class
+  (``y_hat <= r0`` or ``y_hat > r0``), a group known at prediction time.
+* ``mondrian_predicted_flux_normalised_prediction``: the ``|y_hat| + r0`` score with the same
+  two groups.
+
+Per channel the report also gives two diagnostics of the surrogate itself on the unstable
+rows: the share predicted at most ``r0``, and the median ratio of prediction to target.
+
 Every variant is scored on the same groups as the per-regime coverage report (target
 regimes, which are known only for evaluation, and input labels), with Wilson intervals and
 the median relative width ``2h/y`` on positive targets. The report gates only its
@@ -62,6 +73,14 @@ VARIANTS = (
     "normalised_gyro_bohm",
     "normalised_prediction",
 )
+POST_HOC_VARIANTS = (
+    "mondrian_predicted_flux",
+    "mondrian_predicted_flux_normalised_prediction",
+)
+POST_HOC_NOTE = (
+    "added after the first comparison (940937b9, report 753c658a); chosen after seeing its results"
+)
+PREDICTED_CLASSES = {0: "predicted_at_most_r0", 1: "predicted_above_r0"}
 MARKDOWN_HEADER = (
     "<!-- SPDX-License-Identifier: AGPL-3.0-or-later -->",
     "<!-- Commercial license available -->",
@@ -178,6 +197,10 @@ def build_report(certificate_path: Path = regimes.CERTIFICATE_PATH) -> dict[str,
         cal_pred_scale = np.abs(data.calibration_predictions[:, index]) + r0
         test_pred_scale = np.abs(data.holdout_predictions[:, index]) + r0
         ones = np.ones_like(test_abs)
+        cal_class = (data.calibration_predictions[:, index] > r0).astype(np.int64)
+        test_class = (data.holdout_predictions[:, index] > r0).astype(np.int64)
+        by_class = group_quantiles(cal_abs, cal_class, test_class, alpha)
+        by_class_norm = group_quantiles(cal_abs / cal_pred_scale, cal_class, test_class, alpha)
         marginal_q = rank_quantile(cal_abs, alpha)
         mondrian = group_quantiles(cal_abs, cal_labels, test_labels, alpha)
         gb_q = rank_quantile(cal_abs / cal_gb, alpha)
@@ -195,6 +218,16 @@ def build_report(certificate_path: Path = regimes.CERTIFICATE_PATH) -> dict[str,
                 np.full_like(test_abs, pred_q),
                 test_pred_scale,
             ),
+            "mondrian_predicted_flux": (
+                test_abs,
+                np.array([by_class[int(g)] for g in test_class], dtype=np.float64),
+                ones,
+            ),
+            "mondrian_predicted_flux_normalised_prediction": (
+                test_abs / test_pred_scale,
+                np.array([by_class_norm[int(g)] for g in test_class], dtype=np.float64),
+                test_pred_scale,
+            ),
         }
         results = {
             name: evaluate(scores, q, scale, targets, test_labels, threshold)
@@ -202,13 +235,24 @@ def build_report(certificate_path: Path = regimes.CERTIFICATE_PATH) -> dict[str,
         }
         baseline = results["marginal_absolute"]["marginal"]["coverage"]
         reproduced &= marginal_q == r0 and baseline == channel["holdout_empirical_coverage"]
+        unstable = targets > threshold
+        predicted = data.holdout_predictions[:, index][unstable]
         channels[channel["name"]] = {
             "near_threshold_upper_value": threshold,
+            "unstable_diagnostics": {
+                "rows": int(unstable.sum()),
+                "share_predicted_at_most_r0": float(np.mean(predicted <= r0)),
+                "median_prediction_over_target": float(np.median(predicted / targets[unstable])),
+            },
             "quantiles": {
                 "marginal_absolute": marginal_q,
                 "mondrian_input_label": {regimes.INPUT_LABELS[g]: q for g, q in mondrian.items()},
                 "normalised_gyro_bohm": gb_q,
                 "normalised_prediction": pred_q,
+                "mondrian_predicted_flux": {PREDICTED_CLASSES[g]: q for g, q in by_class.items()},
+                "mondrian_predicted_flux_normalised_prediction": {
+                    PREDICTED_CLASSES[g]: q for g, q in by_class_norm.items()
+                },
             },
             "variants": results,
         }
@@ -218,6 +262,8 @@ def build_report(certificate_path: Path = regimes.CERTIFICATE_PATH) -> dict[str,
         "alpha": alpha,
         "certificate_sha256": _sha256(certificate_path),
         "variants": list(VARIANTS),
+        "post_hoc_variants": list(POST_HOC_VARIANTS),
+        "post_hoc_note": POST_HOC_NOTE,
         "holdout_rows": int(data.holdout_scores.shape[0]),
         "output_unit": data.output_unit,
         "channels": channels,
@@ -237,6 +283,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"{1 - report['alpha']:.2f}; holdout rows {report['holdout_rows']}.",
         "",
         "Cells: coverage, then the median relative width 2h/y in brackets (positive targets).",
+        f"Variants marked (post hoc) were {POST_HOC_NOTE}.",
         "",
         "| Channel | Variant | Marginal | Zero flux | Near threshold | Unstable |",
         "|---|---|---:|---:|---:|---:|",
@@ -249,11 +296,20 @@ def render_markdown(report: dict[str, Any]) -> str:
                 width = group["median_relative_width"]
                 cell = "—" if group["coverage"] is None else f"{group['coverage']:.3f}"
                 cells.append(cell + ("" if width is None else f" ({width:.3g})"))
+            label = f"{variant} (post hoc)" if variant in POST_HOC_VARIANTS else variant
             lines.append(
-                f"| {name} | {variant} | {result['marginal']['coverage']:.3f} | "
+                f"| {name} | {label} | {result['marginal']['coverage']:.3f} | "
                 + " | ".join(cells)
                 + " |"
             )
+    lines += ["", "Surrogate on the unstable rows:", ""]
+    for name, channel in report["channels"].items():
+        diagnostics = channel["unstable_diagnostics"]
+        lines.append(
+            f"- {name}: {diagnostics['share_predicted_at_most_r0']:.3f} of "
+            f"{diagnostics['rows']} rows predicted at most r0; median prediction/target "
+            f"{diagnostics['median_prediction_over_target']:.3f}."
+        )
     lines += ["", f"Source revision: `{report['source_revision']}`", ""]
     return "\n".join(lines)
 

@@ -7,8 +7,8 @@
 # SCPN Fusion Core — tests of the per-regime coverage report of the QLKNN certificate
 """Per-regime coverage of a split-conformal certificate, on small synthetic splits.
 
-A zero-weight network predicts zero for every row, so each residual is the target itself
-and every coverage figure can be counted by hand.
+A zero-weight network predicts ln 2 (the softplus of zero) for every row, so each residual
+is ``|y - ln 2|`` and every coverage figure can be counted by hand.
 """
 
 from __future__ import annotations
@@ -121,7 +121,7 @@ def test_report_reproduces_the_certificate_and_counts_each_group(tmp_path: Path)
         assert labels["tem_label"]["n"] == 0
         regimes = channel["target_regimes"]
         assert sum(group["n"] for group in regimes.values()) == ROWS
-        # Zero predictions cover every zero target.
+        # The constant prediction ln 2 lies within the radius, so every zero target is covered.
         assert regimes["stable"]["n"] == ROWS // 2 and regimes["stable"]["coverage"] == 1.0
         assert regimes["stable"]["median_relative_width"] is None
         assert math.isfinite(channel["near_threshold_upper_value"])

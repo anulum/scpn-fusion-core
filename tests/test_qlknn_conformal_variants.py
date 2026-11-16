@@ -7,8 +7,8 @@
 # SCPN Fusion Core — tests of the split-conformal variant comparison for the QLKNN surrogate
 """Split-conformal variants, calibrated and scored on small synthetic splits.
 
-A zero-weight network predicts zero for every row, so each residual equals its target and
-the quantiles can be checked against sorted values by hand.
+A zero-weight network predicts ln 2 (the softplus of zero) for every row, so each residual
+is ``|y - ln 2|`` and the quantiles can be checked against sorted values by hand.
 """
 
 from __future__ import annotations
@@ -108,9 +108,16 @@ def test_report_reproduces_the_certificate_and_balances_mondrian_groups(tmp_path
 
     assert report["status"] == "pass", report["checks"]
     assert report["variants"] == list(variants.VARIANTS)
+    assert report["post_hoc_variants"] == list(variants.POST_HOC_VARIANTS)
+    assert "after seeing" in report["post_hoc_note"]
     assert len(report["source_revision"]) == 40
     for channel in report["channels"].values():
-        assert set(channel["variants"]) == set(variants.VARIANTS)
+        assert set(channel["variants"]) == {*variants.VARIANTS, *variants.POST_HOC_VARIANTS}
+        # The constant prediction ln 2 is below every radius: all rows fall in one class.
+        diagnostics = channel["unstable_diagnostics"]
+        assert diagnostics["share_predicted_at_most_r0"] == 1.0
+        assert 0.0 < diagnostics["median_prediction_over_target"] < 1.0
+        assert set(channel["quantiles"]["mondrian_predicted_flux"]) == {"predicted_at_most_r0"}
         assert set(channel["quantiles"]["mondrian_input_label"]) == {
             "neither_label",
             "itg_label",
@@ -139,6 +146,8 @@ def test_command_line_writes_reports_and_fails_when_the_marginal_is_not_reproduc
     text = markdown.read_text(encoding="utf-8")
     assert text.splitlines()[:7] == list(variants.MARKDOWN_HEADER)
     assert "| chi_e | normalised_prediction |" in text
+    assert "| chi_e | mondrian_predicted_flux (post hoc) |" in text
+    assert "rows predicted at most r0; median prediction/target" in text
 
     payload = json.loads(certificate.read_text(encoding="utf-8"))
     payload["certificates"][0]["channels"][1]["radius"] = 0.0
