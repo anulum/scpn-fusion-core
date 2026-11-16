@@ -16,6 +16,15 @@
 
 ### Added
 
+- `validation/qlknn_conformal_profile_envelope.py` carries the QLKNN-10D
+  conformal intervals into a steady transport profile as a frozen-coefficient
+  sensitivity. It runs the integrated transport solver with the certified neural
+  closure on a declared L-mode case and recovers the turbulent diffusivity as
+  `chi - chi_base`. Each turbulent part is frozen at the ends of the interval,
+  both for the certificate radius and for the `|y_hat| + r` normalised score, and
+  each frozen case is run again to steady state. The module refuses auxiliary
+  power where the pedestal modifier would act. Its gates require that the neural
+  run reached steady state and that the nominal frozen run reproduces it.
 - `validation/qlknn_conformal_stability_sets.py` bounds the QLKNN-10D
   surrogate's false-stable rate. It was designed after the variant comparison
   found the false-stable bias, and its own settings were fixed before it was

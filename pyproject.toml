@@ -626,6 +626,8 @@ files = [
     "tests/test_qlknn_conformal_variants.py",
     "validation/qlknn_conformal_stability_sets.py",
     "tests/test_qlknn_conformal_stability_sets.py",
+    "validation/qlknn_conformal_profile_envelope.py",
+    "tests/test_qlknn_conformal_profile_envelope.py",
     "tools/generate_surrogate_uq_cards.py",
     "tests/test_surrogate_uq_cards.py",
     "tests/test_free_boundary_plotting.py",
