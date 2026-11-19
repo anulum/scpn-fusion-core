@@ -312,7 +312,8 @@ def test_unrecorded_models_never_get_the_calibrated_wording(rows: list[dict[str,
     assert UNKNOWN_NOTE in markdown
     assert CALIBRATED_NOTE not in markdown
     if rows:
-        assert "for `SPARC_V2C`" in markdown
+        assert "`SPARC_V2C`; the beta_N RMSE cannot be attributed" in markdown
+        assert ("`ITER_15MA_baseline`, `SPARC_V2C`;" in markdown) == ("beta_n_model" not in rows[0])
     else:
         assert "(no beta_N rows were recorded)" in markdown
 
