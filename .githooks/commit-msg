@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# ──────────────────────────────────────────────────────────────────────
+# SCPN Fusion Core — Local Git Commit-Message Guard
+# © 1998–2026 Miroslav Sotek. All rights reserved.
+# License: GNU AGPL v3 | Commercial licensing available
+# ──────────────────────────────────────────────────────────────────────
+#
+# core.hooksPath points at .githooks, so the commit-msg stage declared in
+# .pre-commit-config.yaml never ran on its own. This hook runs the same
+# check on the message Git is about to record.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+if command -v python >/dev/null 2>&1; then
+  PYTHON_BIN=(python)
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN=(python3)
+elif command -v py >/dev/null 2>&1; then
+  PYTHON_BIN=(py -3)
+else
+  echo "[commit-msg] Python is required for the commit-message check."
+  exit 1
+fi
+
+if ! "${PYTHON_BIN[@]}" tools/check_commit_trailers.py "$1"; then
+  echo "[commit-msg] Commit message refused. Fix the message and commit again."
+  exit 1
+fi

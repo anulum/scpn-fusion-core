@@ -22,6 +22,14 @@ else
   exit 1
 fi
 
+# A pushed commit message is public and cannot be changed afterwards, so every
+# commit this push would publish is checked first (stdin carries the push ranges).
+echo "[pre-push] Checking the messages of every commit being pushed..."
+if ! "${PYTHON_BIN[@]}" tools/check_commit_trailers.py --pre-push; then
+  echo "[pre-push] A commit message being pushed breaks the message policy. Push blocked."
+  exit 1
+fi
+
 GATE="${SCPN_PREPUSH_GATE:-release}"
 TIMEOUT_SECONDS="${SCPN_PREPUSH_TIMEOUT_SECONDS:-1800}"
 

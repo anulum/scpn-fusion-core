@@ -233,6 +233,7 @@ def test_audit_range_passes_clean_fake_history(
     clean_sha = "abc1234567890"
 
     def fake_run_git(_git_executable: str, *args: str) -> subprocess.CompletedProcess[str]:
+        """Answer the git calls the checker makes with a fixed fake history."""
         if args == ("rev-list", "HEAD"):
             return subprocess.CompletedProcess(args, 0, stdout=f"{clean_sha}\n")
         if args == ("log", "-1", "--format=%B", clean_sha):
@@ -263,6 +264,7 @@ def test_audit_range_reports_policy_violations(
     failing_sha = "bad9999000000"
 
     def fake_run_git(_git_executable: str, *args: str) -> subprocess.CompletedProcess[str]:
+        """Answer the git calls the checker makes with a fixed fake history."""
         if args == ("rev-list", "HEAD"):
             return subprocess.CompletedProcess(args, 0, stdout=f"{failing_sha}\n")
         if args == ("log", "-1", "--format=%B", failing_sha):
@@ -306,6 +308,7 @@ def test_audit_range_reports_rev_list_failure(
     monkeypatch.setattr(check_commit_trailers, "_resolve_git_executable", lambda: sys.executable)
 
     def fake_run_git(_git_executable: str, *args: str) -> subprocess.CompletedProcess[str]:
+        """Answer the git calls the checker makes with a fixed fake history."""
         raise subprocess.CalledProcessError(128, ["git", *args], stderr="bad revision")
 
     monkeypatch.setattr(check_commit_trailers, "_run_git", fake_run_git)
@@ -345,3 +348,118 @@ def test_resolve_git_executable_and_run_git_admit_current_git() -> None:
     assert git_executable is not None
     result = check_commit_trailers._run_git(git_executable, "--version")
     assert result.stdout.startswith("git version ")
+
+
+def _valid_body(*body: str) -> str:
+    """Build an otherwise valid message whose body holds ``body``."""
+    return _message(
+        "fix: describe the change", "", *body, "", VALID_SEAT_TRAILER, REQUIRED_AUTHORSHIP_LINE
+    )
+
+
+def test_body_seat_id_and_vendor_names_are_rejected() -> None:
+    """A seat id or a vendor name anywhere in the message is a public-surface violation."""
+    violations = check_commit_trailers.message_violations(
+        _valid_body("Reviewed by codex-01a1beef; logs in runs/claude09bd_case/."),
+        private_patterns=[],
+    )
+
+    assert "agent seat id in the message: codex-01a1beef" in violations
+    assert "vendor or model name in the message: claude, codex" in violations
+
+
+def test_words_merely_containing_a_vendor_name_pass() -> None:
+    """Letters around a name make another word, which is not a vendor reference."""
+    assert (
+        check_commit_trailers.message_violations(
+            _valid_body("The codexes and Groking tables are unaffected."), private_patterns=[]
+        )
+        == []
+    )
+
+
+def test_private_patterns_reject_planning_codes(tmp_path: Path) -> None:
+    """Codes matched by the private pattern file are refused; other text passes."""
+    patterns_file = tmp_path / "patterns.txt"
+    patterns_file.write_text("# private\n\n\\bTASK-[0-9]+\\b\n", encoding="utf-8")
+    patterns = check_commit_trailers.load_private_patterns(patterns_file)
+
+    leaked = check_commit_trailers.message_violations(_valid_body("Closes TASK-7."), patterns)
+    clean = check_commit_trailers.message_violations(_valid_body("Closes the task."), patterns)
+
+    assert leaked == ["internal planning code in the message: TASK-7"]
+    assert clean == []
+
+
+def test_private_pattern_misconfiguration_fails_closed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A configured but missing file, or an invalid line, stops the check with exit 2."""
+    message_file = _message_file(tmp_path, _valid_body("A clean body."))
+    monkeypatch.setenv(check_commit_trailers.PRIVATE_PATTERNS_ENV, str(tmp_path / "missing.txt"))
+    assert check_commit_trailers.main([str(message_file)]) == 2
+    assert "private commit pattern file not found" in capsys.readouterr().err
+
+    broken = tmp_path / "broken.txt"
+    broken.write_text("valid\n(unclosed\n", encoding="utf-8")
+    monkeypatch.setenv(check_commit_trailers.PRIVATE_PATTERNS_ENV, str(broken))
+    assert check_commit_trailers.main([str(message_file)]) == 2
+    assert "invalid private commit pattern on line 2" in capsys.readouterr().err
+
+
+def test_private_patterns_path_searches_the_coordination_tree(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Without the variable, the file is found above the checkout, or there is none."""
+    monkeypatch.delenv(check_commit_trailers.PRIVATE_PATTERNS_ENV, raising=False)
+    outside = Path("/nonexistent-checkout-root/repo/tools/check_commit_trailers.py")
+    monkeypatch.setattr(check_commit_trailers, "__file__", str(outside))
+    assert check_commit_trailers.private_patterns_path() is None
+
+    # The nearest coordination tree wins, even when another one exists further up.
+    module_file = tmp_path / "repositories" / "repo" / "tools" / "check_commit_trailers.py"
+    monkeypatch.setattr(check_commit_trailers, "__file__", str(module_file))
+    expected = tmp_path / check_commit_trailers.PRIVATE_PATTERNS_RELATIVE
+    expected.parent.mkdir(parents=True)
+    expected.write_text("\\bTASK-[0-9]+\\b\n", encoding="utf-8")
+    assert check_commit_trailers.private_patterns_path() == expected
+    assert check_commit_trailers.load_private_patterns(None) == []
+
+
+def test_pre_push_audits_each_published_range(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Updates check remote..local, new refs check unpublished commits, deletions nothing."""
+    import io
+
+    monkeypatch.setattr(check_commit_trailers, "_resolve_git_executable", lambda: sys.executable)
+    monkeypatch.setattr(check_commit_trailers, "private_patterns_path", lambda: None)
+    zero = check_commit_trailers.ZERO_SHA
+    local, remote, fresh = "a" * 40, "b" * 40, "c" * 40
+    rev_lists: list[tuple[str, ...]] = []
+
+    def fake_run_git(_git_executable: str, *args: str) -> subprocess.CompletedProcess[str]:
+        """Answer the git calls the checker makes with a fixed fake history."""
+        if args[0] == "rev-list":
+            rev_lists.append(args[1:])
+            sha = "1111111111111" if args[1] == f"{remote}..{local}" else "2222222222222"
+            return subprocess.CompletedProcess(args, 0, stdout=f"{sha}\n")
+        if args[:3] == ("log", "-1", "--format=%B"):
+            body = "Leaks codex-0123abcd." if args[3] == "2222222222222" else "Clean."
+            return subprocess.CompletedProcess(args, 0, stdout=_valid_body(body))
+        raise AssertionError(f"unexpected git args: {args}")
+
+    monkeypatch.setattr(check_commit_trailers, "_run_git", fake_run_git)
+    stdin = io.StringIO(
+        f"refs/heads/main {local} refs/heads/main {remote}\n"
+        f"refs/heads/new {fresh} refs/heads/new {zero}\n"
+        f"refs/heads/gone {zero} refs/heads/gone {remote}\n"
+        "malformed line\n"
+    )
+    monkeypatch.setattr(sys, "stdin", stdin)
+
+    assert check_commit_trailers.main(["--pre-push"]) == 1
+    assert rev_lists == [(f"{remote}..{local}",), (fresh, "--not", "--remotes")]
+    out = capsys.readouterr().out
+    assert "agent seat id in the message: codex-0123abcd" in out
+    assert "Trailer audit passed." in out

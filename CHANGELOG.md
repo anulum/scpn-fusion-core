@@ -277,6 +277,15 @@
 
 ### Fixed
 
+- The commit-message check now runs. `core.hooksPath` points at `.githooks`, so
+  the `commit-msg` stage declared in `.pre-commit-config.yaml` never ran; a new
+  `.githooks/commit-msg` hook runs `tools/check_commit_trailers.py`. The check
+  now reads the whole message, not only the trailers. It refuses agent seat ids
+  and vendor or model names anywhere, including inside paths, and refuses
+  internal planning codes matched by a private pattern file outside the
+  repository. Where that file is absent, as in CI, the code check is skipped,
+  so the list of codes is never published. The `pre-push` hook first checks
+  every commit the push would publish, through the new `--pre-push` mode.
 - Corrections from an independent review of the adaptive driver and of the
   validation handler and logging changes:
   - The adaptive `run_to_steady_state` now builds its final result (mean and
