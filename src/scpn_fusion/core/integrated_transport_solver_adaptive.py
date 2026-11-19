@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import operator
 from copy import deepcopy
 from typing import Any
 
@@ -283,26 +284,34 @@ def run_adaptive_steps(
     ------
     ValueError
         If ``n_steps`` is not positive; nothing is mutated.
+    TypeError
+        If ``n_steps`` is not an integer (no ``__index__``), as ``range`` refuses
+        it: fractional, NaN and infinite counts are never rounded or run;
+        nothing is mutated.
     Exception
-        Any refusal from the transport model, a trial or the controller
-        propagates unchanged.
+        Any refusal from the transport model, a trial, the controller or the
+        final result (for example the confinement-time estimate) propagates
+        unchanged.
 
     Notes
     -----
     After every run that passes the ``n_steps`` check, ``solver.adaptive_run_diagnostics``
     holds the controller diagnostics, ``steps_completed`` and ``stop_reason``.
-    When an exception ends the run, ``stop_reason`` is ``"raised"``, the entry
-    ``exception`` names its type and message, and the histories cover every
-    step completed before it, so a recovery refusal does not discard them.
+    When an exception ends the run, including one raised while the final
+    result is built after the last step, ``stop_reason`` is ``"raised"``, the
+    entry ``exception`` names its type and message, and the histories cover
+    every step completed before it, so a recovery refusal does not discard them.
     """
     if n_steps <= 0:
         raise ValueError("n_steps must be positive")
+    # Same contract as range(n_steps): only integer counts, refused before any mutation.
+    step_limit = operator.index(n_steps)
 
     controller = AdaptiveTimeController(dt_init=dt, tol=tol)
     steps = 0
     stop_reason = STOP_COMPLETED
     try:
-        while steps < n_steps:
+        while steps < step_limit:
             solver.update_transport_model(P_aux)
             error = controller.estimate_error(
                 solver,
@@ -315,6 +324,16 @@ def run_adaptive_steps(
             if controller.minimum_step_exhausted:
                 stop_reason = STOP_MINIMUM_STEP_EXHAUSTED
                 break
+        result = {
+            "T_avg": float(np.mean(solver.Ti)),
+            "T_core": float(solver.Ti[0]),
+            "tau_e": solver.compute_confinement_time(P_aux),
+            "n_steps": steps,
+            "Ti_profile": solver.Ti.copy(),
+            "ne_profile": solver.ne.copy(),
+            **controller.diagnostics(),
+            "stop_reason": stop_reason,
+        }
     except BaseException as exc:
         solver.adaptive_run_diagnostics = {
             **controller.diagnostics(),
@@ -329,13 +348,4 @@ def run_adaptive_steps(
         "steps_completed": steps,
         "stop_reason": stop_reason,
     }
-    return {
-        "T_avg": float(np.mean(solver.Ti)),
-        "T_core": float(solver.Ti[0]),
-        "tau_e": solver.compute_confinement_time(P_aux),
-        "n_steps": steps,
-        "Ti_profile": solver.Ti.copy(),
-        "ne_profile": solver.ne.copy(),
-        **controller.diagnostics(),
-        "stop_reason": stop_reason,
-    }
+    return result

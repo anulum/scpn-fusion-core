@@ -106,14 +106,12 @@ class TestFullPulseScenario(unittest.TestCase):
 
         config_path = str(default_iter_config_path())
 
-        try:
-            # Must identify system to build response matrix
-            summary = OptimalController(config_path, verbose=False).run_optimal_shot(
-                shot_steps=10, target_r=6.2, target_z=0.0, save_plot=False, identify_first=True
-            )
-        except Exception as exc:
-            # A configuration or solver failure is reported as a skip, never as a pass.
-            self.skipTest(f"Config/Solver issue: {type(exc).__name__}: {exc}")
+        # The kernel and the configuration ship with the repository, so no environment can be
+        # missing here: any configuration or solver exception is a defect and fails the test.
+        # Must identify system to build response matrix
+        summary = OptimalController(config_path, verbose=False).run_optimal_shot(
+            shot_steps=10, target_r=6.2, target_z=0.0, save_plot=False, identify_first=True
+        )
 
         err = summary["mean_error_norm"]
         print(f"  Mean Position Error: {err:.4f} m")

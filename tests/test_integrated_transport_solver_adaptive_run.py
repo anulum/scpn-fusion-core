@@ -216,3 +216,79 @@ def test_refusal_keeps_the_histories_of_completed_steps(
     assert "recovery" in diagnostics["exception"]
     _assert_histories(diagnostics, controller)
     np.testing.assert_array_equal(solver.Ti[:3], -1.0)
+
+
+def test_final_result_refusal_reports_raised_with_histories(
+    config_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A real confinement-time refusal after the last step leaves ``raised``, not a success.
+
+    After the run's last half step the volume element is given a wrong shape, so the
+    final ``compute_confinement_time`` raises its own profile/geometry PhysicsError.
+    """
+    solver = _solver(config_path)
+    _, controller, _ = _reference_steps(config_path, 2, 1e-3)
+    evolve = solver.evolve_profiles
+    calls: list[int] = []
+
+    def evolve_then_break_geometry(*args: Any, **kwargs: Any) -> Any:
+        """Evolve; after the sixth evolution (step two's last half step) truncate dV."""
+        result = evolve(*args, **kwargs)
+        calls.append(1)
+        if len(calls) == 6:
+            solver._dV_cache = np.asarray(solver._rho_volume_element())[:-1]
+        return result
+
+    monkeypatch.setattr(solver, "evolve_profiles", evolve_then_break_geometry)
+
+    with pytest.raises(PhysicsError, match="Profile and geometry shape mismatch"):
+        solver.run_to_steady_state(P_AUX_MW, n_steps=2, dt=DT_S, adaptive=True)
+
+    diagnostics = solver.adaptive_run_diagnostics
+    assert len(calls) == 6
+    assert diagnostics["stop_reason"] == "raised"
+    assert diagnostics["steps_completed"] == 2
+    assert diagnostics["exception"].startswith("PhysicsError: Profile and geometry shape mismatch")
+    _assert_histories(diagnostics, controller)
+
+
+@pytest.mark.parametrize("adaptive", [False, True])
+@pytest.mark.parametrize("n_steps", [1.5, float("nan"), float("inf")])
+def test_non_integer_step_counts_are_refused_before_mutation(
+    config_path: Path, adaptive: bool, n_steps: float
+) -> None:
+    """Fractional, NaN and infinite counts are refused like ``range`` does, before mutation."""
+    solver = _solver(config_path)
+    before = dict(vars(solver))
+    arrays = {name: value.copy() for name, value in before.items() if isinstance(value, np.ndarray)}
+
+    count: Any = n_steps  # a deliberate non-integer, outside the declared int type
+    with pytest.raises(TypeError, match="cannot be interpreted as an integer"):
+        solver.run_to_steady_state(P_AUX_MW, n_steps=count, dt=DT_S, adaptive=adaptive)
+
+    assert vars(solver).keys() == before.keys()
+    for name, value in arrays.items():
+        np.testing.assert_array_equal(getattr(solver, name), value)
+    assert not hasattr(solver, "adaptive_run_diagnostics")
+
+
+def test_direct_call_refuses_a_fractional_count(config_path: Path) -> None:
+    """The adaptive helper itself applies the integer contract, not only its caller."""
+    solver = _solver(config_path)
+    fractional: Any = 1.5
+
+    with pytest.raises(TypeError, match="cannot be interpreted as an integer"):
+        adaptive_mod.run_adaptive_steps(solver, P_AUX_MW, fractional, DT_S, 1e-3)
+
+    assert not hasattr(solver, "adaptive_run_diagnostics")
+
+
+def test_integer_like_step_counts_still_run(config_path: Path) -> None:
+    """Index-compatible counts such as numpy integers keep working."""
+    solver = _solver(config_path)
+
+    count: Any = np.int64(1)  # index-compatible at run time, outside the declared int type
+    result = solver.run_to_steady_state(P_AUX_MW, n_steps=count, dt=DT_S, adaptive=True)
+
+    assert result["n_steps"] == 1
+    assert result["stop_reason"] == "completed"

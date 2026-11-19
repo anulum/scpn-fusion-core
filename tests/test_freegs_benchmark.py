@@ -442,3 +442,25 @@ class TestFreeGSComparison:
         assert report["thresholds"]["flux_area_rel_error"] == pytest.approx(
             FREEGS_FLUX_AREA_REL_ERROR
         )
+
+
+def test_script_entry_configures_stdout_logging_and_refuses_conflicting_flags(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Run as a script, the benchmark sets INFO logging on stdout and exits 2 on bad flags."""
+    import runpy
+
+    configured: list[dict[str, Any]] = []
+    monkeypatch.setattr(logging, "basicConfig", lambda **kwargs: configured.append(kwargs))
+    monkeypatch.setattr(
+        sys, "argv", ["benchmark_vs_freegs.py", "--force-solovev", "--strict-backend"]
+    )
+
+    with pytest.raises(SystemExit) as stopped:
+        runpy.run_path(str(ROOT / "validation" / "benchmark_vs_freegs.py"), run_name="__main__")
+
+    assert stopped.value.code == 2
+    assert configured == [{"level": logging.INFO, "format": "%(message)s", "stream": sys.stdout}]
+    assert "ERROR: require_freegs_backend cannot be combined with force_solovev." in (
+        capsys.readouterr().err
+    )

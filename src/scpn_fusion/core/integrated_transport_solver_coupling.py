@@ -248,6 +248,9 @@ class TransportSolverCouplingMixin(TransportSolverState):
         ValueError
             If fixed or adaptive mode receives a nonpositive ``n_steps``.
             Refusal occurs before transport-model or profile mutation.
+        TypeError
+            If fixed or adaptive mode receives a non-integer ``n_steps`` (for
+            example 1.5, NaN or infinity), before any mutation.
         PhysicsError
             If profile evolution exceeds an enforced numerical recovery budget.
 

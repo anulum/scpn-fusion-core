@@ -224,3 +224,97 @@ def test_run_comparison_reports_progress_through_its_logger(
     assert (logging.INFO, "=== 4-Way Controller Comparison ===") in messages
     assert (logging.INFO, "--- Running FailingCtrl (1 episodes) ---") in messages
     assert (logging.WARNING, "  Episode 0 failed: plant unavailable") in messages
+
+
+@pytest.mark.parametrize("n_episodes", [0, -1, 1.5, True])
+def test_run_comparison_refuses_a_non_positive_or_non_integer_count(
+    monkeypatch: pytest.MonkeyPatch, n_episodes: Any
+) -> None:
+    """An empty or fractional run is refused before any controller runs."""
+    import validation.controller_comparison as mod
+
+    calls: list[tuple[Any, ...]] = []
+    # Any call would be recorded; the refusal must come before the first one.
+    monkeypatch.setattr(mod, "CONTROLLERS", {"Ctrl": lambda *args: calls.append(args)})
+
+    with pytest.raises(ValueError, match="n_episodes must be a positive integer"):
+        mod.run_comparison(n_episodes=n_episodes, shot_duration=20, config_path="unused.json")
+    assert calls == []
+
+
+def test_run_comparison_accepts_numpy_integer_counts(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Integer counts from numpy are integers and run."""
+    import validation.controller_comparison as mod
+
+    def run_stable(config_path: Any, shot_duration: int) -> mod.EpisodeResult:
+        """Return a stable episode."""
+        return mod.EpisodeResult(
+            mean_abs_r_error=0.1,
+            mean_abs_z_error=0.1,
+            reward=-0.2,
+            latency_us=1.0,
+            disrupted=False,
+            t_disruption=float(shot_duration),
+            energy_efficiency=1.0,
+        )
+
+    monkeypatch.setattr(mod, "CONTROLLERS", {"Ctrl": run_stable})
+
+    results = mod.run_comparison(
+        n_episodes=np.int64(2), shot_duration=20, config_path="unused.json"
+    )
+
+    assert results["Ctrl"].n_episodes == 2
+
+
+def test_command_line_refuses_a_negative_episode_count() -> None:
+    """The real command line exits nonzero with the reason on stderr for --episodes -1."""
+    import os
+    import subprocess
+
+    environment = {**os.environ, "PYTHONPATH": str(repo_root / "src"), "MPLBACKEND": "Agg"}
+    completed = subprocess.run(
+        [sys.executable, "validation/controller_comparison.py", "--episodes", "-1"],
+        cwd=repo_root,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+
+    assert completed.returncode == 2
+    assert "argument --episodes: must be a positive integer, got -1" in completed.stderr
+    assert "| Controller |" not in completed.stdout
+
+
+def test_positive_int_parses_counts_and_refuses_below_one() -> None:
+    """The episode-count parser keeps positive integers and refuses zero and negatives."""
+    import argparse
+
+    import validation.controller_comparison as mod
+
+    assert mod._positive_int("3") == 3
+    for text in ("0", "-1"):
+        with pytest.raises(argparse.ArgumentTypeError, match="must be a positive integer"):
+            mod._positive_int(text)
+
+
+def test_script_entry_configures_stdout_logging_and_refuses_a_negative_count(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Run as a script, the comparison sets INFO logging on stdout, then argparse refuses -1."""
+    import logging
+    import runpy
+
+    configured: list[dict[str, Any]] = []
+    monkeypatch.setattr(logging, "basicConfig", lambda **kwargs: configured.append(kwargs))
+    monkeypatch.setattr(sys, "argv", ["controller_comparison.py", "--episodes", "-1"])
+
+    with pytest.raises(SystemExit) as stopped:
+        runpy.run_path(
+            str(repo_root / "validation" / "controller_comparison.py"), run_name="__main__"
+        )
+
+    assert stopped.value.code == 2
+    assert configured == [{"level": logging.INFO, "format": "%(message)s", "stream": sys.stdout}]

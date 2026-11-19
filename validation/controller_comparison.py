@@ -24,6 +24,7 @@ import os
 import sys
 import time
 from dataclasses import dataclass, field
+from numbers import Integral
 from pathlib import Path
 from typing import Any, Callable, cast
 
@@ -316,12 +317,29 @@ def _build_controller_registry() -> dict[str, Callable[[Any, int], EpisodeResult
 CONTROLLERS = _build_controller_registry()
 
 
+def _positive_int(text: str) -> int:
+    """Parse a command-line episode count, refusing anything below one."""
+    value = int(text)
+    if value < 1:
+        raise argparse.ArgumentTypeError(f"must be a positive integer, got {value}")
+    return value
+
+
 def run_comparison(
     n_episodes: int = 100,
     shot_duration: int = 30,
     config_path: Any = None,
 ) -> dict[str, ControllerMetrics]:
-    """Run all available controllers on identical scenarios."""
+    """Run all available controllers on identical scenarios.
+
+    Raises
+    ------
+    ValueError
+        If ``n_episodes`` is not a positive integer; nothing is run, so an empty
+        comparison can never be reported as a result.
+    """
+    if isinstance(n_episodes, bool) or not isinstance(n_episodes, Integral) or n_episodes < 1:
+        raise ValueError(f"n_episodes must be a positive integer, got {n_episodes!r}")
     if config_path is None:
         config_path = default_iter_config_path()
 
@@ -486,7 +504,7 @@ if __name__ == "__main__":
     # Progress goes through the module logger; the command line shows it on stdout as before.
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stdout)
     parser = argparse.ArgumentParser(description="4-Way Controller Comparison")
-    parser.add_argument("--episodes", type=int, default=100)
+    parser.add_argument("--episodes", type=_positive_int, default=100)
     parser.add_argument("--quick", action="store_true", help="5 episodes for CI")
     parser.add_argument(
         "--output-json",

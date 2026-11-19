@@ -215,3 +215,23 @@ def test_available_controllers_are_logged_as_initialised(
     assert "    [SNN] Initialised: 50 neurons, backend=unit-test-backend" in infos
     assert build["SNN"]["backend"] == "unit-test-backend"
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+def test_script_entry_configures_stdout_logging_and_writes_its_report(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Run as a script, the benchmark sets INFO logging on stdout and writes its JSON report."""
+    import runpy
+
+    configured: list[dict[str, object]] = []
+    monkeypatch.setattr(logging, "basicConfig", lambda **kwargs: configured.append(kwargs))
+    monkeypatch.setattr(
+        sys, "argv", ["benchmark_disturbance_rejection.py", "--output-dir", str(tmp_path)]
+    )
+
+    runpy.run_path(
+        str(repo_root / "validation" / "benchmark_disturbance_rejection.py"), run_name="__main__"
+    )
+
+    assert configured == [{"level": logging.INFO, "format": "%(message)s", "stream": sys.stdout}]
+    assert (tmp_path / "disturbance_rejection_benchmark.json").is_file()

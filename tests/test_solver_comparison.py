@@ -162,3 +162,22 @@ def test_main_renders_markdown_table(
     assert "| SOR | 33x33 | 200 | 1.2 |" in out
     assert "| Newton-K | 65x65 | 4 | 2.5 |" in out
     assert "Neural:  0.125 ms" in out
+
+
+def test_script_entry_configures_stdout_logging_and_prints_the_table(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Run as a script, the comparison sets INFO logging on stdout and prints its table."""
+    import runpy
+    import sys
+
+    configured: list[dict[str, object]] = []
+    monkeypatch.setattr(logging, "basicConfig", lambda **kwargs: configured.append(kwargs))
+    monkeypatch.chdir(tmp_path)  # the script writes its temporary configurations to the cwd
+    script = Path(solver.__file__).resolve()
+
+    runpy.run_path(str(script), run_name="__main__")
+
+    assert configured == [{"level": logging.INFO, "format": "%(message)s", "stream": sys.stdout}]
+    assert "| Solver | Grid | Iterations | Wall Time (ms) |" in capsys.readouterr().out
+    assert list(tmp_path.iterdir()) == []

@@ -95,6 +95,10 @@ def _flag(value: float, key: str) -> str:
     return "FAIL"
 
 
+# The model behind each beta_N estimate; only the dynamic model carries the peaking calibration.
+BETA_N_MODEL_DYNAMIC = "dynamic_burn_model"
+BETA_N_MODEL_LEGACY = "legacy_fusion_burn_physics"
+
 # Each verdict renders as itself in brackets; derived so no status word is a literal mapping key.
 _FLAG_EMOJI = {flag: f"[{flag}]" if flag else "" for flag in ("PASS", "WARN", "FAIL", "")}
 
@@ -333,7 +337,7 @@ def estimate_beta_n_from_burn(
             "P_fusion_MW": result["P_fus_final_MW"],
             "Q": result["Q_final"],
             "W_MJ": result["W_MJ"][-1],
-            "beta_n_model": "dynamic_burn_model",
+            "beta_n_model": BETA_N_MODEL_DYNAMIC,
         }
         return beta_n, metrics
     except Exception as exc:
@@ -342,7 +346,7 @@ def estimate_beta_n_from_burn(
         sim = FusionBurnPhysics(str(config_path))
         sim.solve_equilibrium()
         metrics = dict(sim.calculate_thermodynamics(P_aux_MW=p_aux))
-        metrics["beta_n_model"] = "legacy_fusion_burn_physics"
+        metrics["beta_n_model"] = BETA_N_MODEL_LEGACY
         metrics["fallback_reason"] = f"{type(exc).__name__}: {exc}"
 
         w_thermal_j = float(metrics["W_MJ"]) * 1e6
@@ -381,6 +385,7 @@ def beta_rmse_iter_sparc(reference_dir: Path, validation_dir: Path) -> dict[str,
                 "model_q": float(metrics["Q"]),
                 "model_p_fusion_mw": float(metrics["P_fusion_MW"]),
                 "beta_n_model": metrics["beta_n_model"],
+                "beta_n_fallback_reason": metrics.get("fallback_reason"),
             }
         )
 
@@ -465,6 +470,17 @@ def forward_diagnostics_rmse() -> dict[str, Any]:
     }
 
 
+def _beta_n_model_label(row: dict[str, Any]) -> str:
+    """Describe which model produced a beta_N row and, for a fallback, why."""
+    model = row.get("beta_n_model")
+    if model == BETA_N_MODEL_DYNAMIC:
+        return "`DynamicBurnModel` (calibrated)"
+    if model == BETA_N_MODEL_LEGACY:
+        reason = row.get("beta_n_fallback_reason") or "reason not recorded"
+        return f"legacy `FusionBurnPhysics` fallback, uncalibrated ({reason})"
+    return "model not recorded"
+
+
 def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
     """Render markdown validation report with auto-flagged summary rows."""
     lines: list[str] = []
@@ -530,6 +546,9 @@ def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
     lines.append("")
     lines.append(f"- Samples: `{beta['count']}`")
     lines.append(f"- `beta_N` RMSE: `{beta['beta_n_rmse']:.4f}` **{_FLAG_EMOJI[beta_flag]}**")
+    beta_rows = [row for row in beta.get("rows", []) if isinstance(row, dict)]
+    for row in beta_rows:
+        lines.append(f"- `{row.get('scenario', '?')}`: {_beta_n_model_label(row)}")
     lines.append("")
 
     if plot_dir:
@@ -573,12 +592,23 @@ def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
 
     lines.append("## Notes")
     lines.append("")
-    lines.append(
-        "- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy "
-        f"with a profile/normalization correction factor ({BETA_N_PROFILE_PEAKING_FACTOR:.3f}), "
-        "fitted to the ITER and SPARC targets as a reduced-order regression guard; the "
-        "two-point beta_N RMSE is a fit residual, not a validation result."
-    )
+    fallback_rows = [row for row in beta_rows if row.get("beta_n_model") == BETA_N_MODEL_LEGACY]
+    if fallback_rows:
+        scenarios = ", ".join(f"`{row.get('scenario', '?')}`" for row in fallback_rows)
+        lines.append(
+            f"- `beta_N` estimates for {scenarios} come from the legacy `FusionBurnPhysics` "
+            "fallback, which carries no profile/normalization calibration; the beta_N RMSE "
+            "therefore is not the calibrated model's fit residual and tracks the uncalibrated "
+            "fallback only."
+        )
+    else:
+        lines.append(
+            "- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy "
+            "with a profile/normalization correction factor "
+            f"({BETA_N_PROFILE_PEAKING_FACTOR:.3f}), "
+            "fitted to the ITER and SPARC targets as a reduced-order regression guard; the "
+            "two-point beta_N RMSE is a fit residual, not a validation result."
+        )
     lines.append(
         "- Use this report for trend tracking; not as a replacement for full transport/MHD validation."
     )

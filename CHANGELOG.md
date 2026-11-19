@@ -277,6 +277,27 @@
 
 ### Fixed
 
+- Corrections from an independent review of the adaptive driver and of the
+  validation handler and logging changes:
+  - The adaptive `run_to_steady_state` now builds its final result (mean and
+    core temperature, confinement time, profiles) inside the same exception
+    boundary as the steps. A refusal there, such as the confinement-time
+    estimate's profile and geometry check, leaves `stop_reason = "raised"`
+    with the exception and the completed histories, instead of reporting a
+    successful run.
+  - Non-integer step counts (1.5, NaN, infinity) are refused with `TypeError`
+    before any mutation, as `range` refused them before the loop became a
+    `while`. Before this fix an infinite count gave the adaptive loop no
+    bound. numpy integer counts still run.
+  - `rmse_dashboard.py` keeps the fallback reason in each beta_N row of the
+    JSON report. The Markdown names the model behind each row and keeps the
+    calibrated fit-residual wording only when every row comes from the
+    dynamic model.
+  - `validation/test_full_pulse_scenario.py` no longer turns a configuration
+    or solver exception into a skipped test; it fails with its traceback.
+  - `controller_comparison.py` refuses a non-positive or non-integer episode
+    count. The command line exits 2 on `--episodes -1`; before, it printed an
+    empty table with a 0.00% disruption rate and exited 0.
 - Four broad exception handlers in `validation/` no longer hide what happened:
   - `test_full_pulse_scenario.py`: the handler around the optimal-control
     check also caught the test's own assertion, so the test could not fail. A

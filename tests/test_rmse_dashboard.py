@@ -144,3 +144,70 @@ def test_beta_fallback_records_the_legacy_model_and_reason(
     assert metrics["beta_n_model"] == "legacy_fusion_burn_physics"
     assert metrics["fallback_reason"] == "RuntimeError: dynamic model unavailable"
     assert beta_n >= 0.0
+
+
+def test_report_carries_a_real_fallback_into_json_and_markdown(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Through ``main``, a real legacy fallback keeps its reason and honest wording."""
+    import json
+    import sys
+
+    import scpn_fusion.core.fusion_ignition_sim as ignition
+
+    class FailingModel:
+        """Stand-in for the dynamic burn model that refuses to build."""
+
+        def __init__(self, **_: object) -> None:
+            """Refuse every construction."""
+            raise RuntimeError("dynamic model unavailable")
+
+    monkeypatch.setattr(ignition, "DynamicBurnModel", FailingModel)
+    monkeypatch.setattr(rmse_dashboard, "render_plots", lambda report, output_dir: [])
+    out_json, out_md = tmp_path / "dashboard.json", tmp_path / "dashboard.md"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["rmse_dashboard.py", "--output-json", str(out_json), "--output-md", str(out_md)],
+    )
+
+    assert rmse_dashboard.main() == 0
+
+    rows = json.loads(out_json.read_text(encoding="utf-8"))["beta_iter_sparc"]["rows"]
+    assert [row["beta_n_model"] for row in rows] == ["legacy_fusion_burn_physics"] * 2
+    assert [row["beta_n_fallback_reason"] for row in rows] == [
+        "RuntimeError: dynamic model unavailable"
+    ] * 2
+    markdown = out_md.read_text(encoding="utf-8")
+    assert (
+        "legacy `FusionBurnPhysics` fallback, uncalibrated "
+        "(RuntimeError: dynamic model unavailable)"
+    ) in markdown
+    assert "is not the calibrated model's fit residual" in markdown
+    assert "is a fit residual, not a validation result" not in markdown
+
+
+def test_beta_n_model_label_names_every_recorded_state() -> None:
+    """Calibrated, fallback (with or without a reason) and unrecorded rows read differently."""
+    label = rmse_dashboard._beta_n_model_label
+
+    assert label({"beta_n_model": "dynamic_burn_model"}) == "`DynamicBurnModel` (calibrated)"
+    assert (
+        label({"beta_n_model": "legacy_fusion_burn_physics", "beta_n_fallback_reason": "E: x"})
+        == "legacy `FusionBurnPhysics` fallback, uncalibrated (E: x)"
+    )
+    assert label({"beta_n_model": "legacy_fusion_burn_physics"}).endswith("(reason not recorded)")
+    assert label({}) == "model not recorded"
+
+
+def test_healthy_rows_keep_the_calibrated_wording() -> None:
+    """With only dynamic-model rows the report keeps the fit-residual note and names the model."""
+    report = rmse_dashboard.beta_rmse_iter_sparc(
+        ROOT / "validation" / "reference_data", ROOT / "validation"
+    )
+
+    assert [row["beta_n_fallback_reason"] for row in report["rows"]] == [None, None]
+    lines = []
+    for row in report["rows"]:
+        lines.append(rmse_dashboard._beta_n_model_label(row))
+    assert lines == ["`DynamicBurnModel` (calibrated)"] * 2

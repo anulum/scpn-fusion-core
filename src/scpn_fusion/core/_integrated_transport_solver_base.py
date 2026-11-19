@@ -71,6 +71,10 @@ class TransportSolverState:
     _last_numerical_recovery_count: int
     _last_numerical_recovery_breakdown: dict[str, Any]
 
+    # Set by every adaptive run_to_steady_state (histories, steps_completed, stop_reason and, when
+    # an exception ended the run, its text); absent until the first adaptive run.
+    adaptive_run_diagnostics: dict[str, Any]
+
     def _record_recovery(self, label: str, count: int) -> None:
         """Record a numerical-recovery event against the per-step budget."""
         raise NotImplementedError
