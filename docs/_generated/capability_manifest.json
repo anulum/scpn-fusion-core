@@ -3117,7 +3117,7 @@
     "python_capability_classes": 650,
     "python_capability_source_modules": 375,
     "rust_workspace_crates": 13,
-    "test_files": 703
+    "test_files": 705
   },
   "documentation": {
     "public_pages": [
@@ -3492,6 +3492,7 @@
       "tests/test_full_fidelity_end_to_end_campaign.py",
       "tests/test_full_fidelity_public_source_downloads.py",
       "tests/test_full_fidelity_reference_artifact_conversion.py",
+      "tests/test_full_pulse_scenario_contract.py",
       "tests/test_full_validation_pipeline.py",
       "tests/test_fusion_burn_physics.py",
       "tests/test_fusion_control_room.py",
@@ -3630,6 +3631,7 @@
       "tests/test_integrated_transport_runtime_physics_hardening.py",
       "tests/test_integrated_transport_solver.py",
       "tests/test_integrated_transport_solver_adaptive.py",
+      "tests/test_integrated_transport_solver_adaptive_run.py",
       "tests/test_integrated_transport_solver_base.py",
       "tests/test_integrated_transport_solver_contracts.py",
       "tests/test_integrated_transport_solver_coupled.py",
