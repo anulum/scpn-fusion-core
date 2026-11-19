@@ -208,7 +208,7 @@
       "unstable_flux_quantile": 13.813941123714
     }
   },
-  "design_note": "designed after the variant comparison (9bd8a7a7, report b2f13559) found the false-stable bias; the settings of this experiment were fixed before it was run",
+  "design_note": "designed after the variant comparison (6c88fa34, report f5616990) found the false-stable bias; the settings of this experiment were fixed before it was run",
   "guarantees": {
     "set": "true label in the set with probability >= 1 - alpha, per class",
     "unstable_flux": "unstable rows covered with probability >= 1 - 2 alpha"
@@ -216,5 +216,5 @@
   "holdout_rows": 47828,
   "output_unit": "physical transport coefficient (m^2/s)",
   "schema": "scpn-fusion-core.qlknn-conformal-stability-sets.v1",
-  "source_revision": "43e96cb33df93859d2682834c8b60645fa934d77"
+  "source_revision": "3219ba09d75ad84729f45265c59d6a43a0888b5a"
 }

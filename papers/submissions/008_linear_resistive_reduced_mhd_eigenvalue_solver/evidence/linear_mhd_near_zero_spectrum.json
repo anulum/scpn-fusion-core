@@ -49,7 +49,7 @@
     "numpy": "2.5.4",
     "python": "3.12.3",
     "scipy": "1.17.1",
-    "source_revision": "d9c74c6c27b25cf4df9c6964d2c6d7eaafae4d2d",
+    "source_revision": "b5a7614169f1230d24a1ea04895509a9148a5707",
     "source_sha256": {
       "src/scpn_fusion/core/linear_mhd_1d.py": "bb16a5957a0339dc4528e68ea8e71b75a7e3c6a4f338427dfd8953369d2e0ff2",
       "validation/linear_mhd_near_zero_spectrum.py": "c31f4abab673667a05df02d1a4d39a6aae5f5085647aff5573ade1d706d0856c"

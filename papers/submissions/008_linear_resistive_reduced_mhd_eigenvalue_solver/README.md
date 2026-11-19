@@ -8,7 +8,7 @@
 
 # Linear resistive reduced-MHD eigenvalue solver
 
-Status: dated preprint of 16 November 2026, describing commit 576ce6f6 on main
+Status: dated preprint of 19 November 2026, describing commit 3a0c3f14 on main
 after release 4.1.0. The preprint has not been deposited or submitted.
 
 The manuscript tests the repository's linear resistive reduced-MHD eigenvalue
@@ -40,10 +40,10 @@ It is not named for, formatted for, or submitted to any specific venue.
 
 ## Custody
 
-The acceptance report was run at c1bc7f63 and tracked at 44852fee. The
-follow-up study was run at 03fdaf1d and tracked at 0acee588; the near-zero
-diagnostic was run at d9c74c6c and tracked at 576ce6f6. The sources the three
-reports record (seven files) are byte-identical at 576ce6f6, where the
+The acceptance report was run at c1bc7f63 and tracked at f20ec514. The
+follow-up study was run at f6136eb6 and tracked at 0f4f966f; the near-zero
+diagnostic was run at b5a76141 and tracked at 7baf9463. The sources the three
+reports record (seven files) are byte-identical at 3a0c3f14, where the
 manifest binds them.
 
 ## Statements still open before any deposit

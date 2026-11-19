@@ -981,7 +981,7 @@
       "python": "3.12.3",
       "system": "Linux"
     },
-    "scpn_source_revision": "44852feeedf2780f13d42ed5b90c8ee1b4f390a5",
+    "scpn_source_revision": "f20ec514a0665f30d7cb68d6aedec20f05841081",
     "scpn_source_sha256": {
       "src/scpn_fusion/core/free_boundary_coil_fit.py": "005447f78b837bfeb2c389d5b1789dd58630ce5a9d6491863e3ecb3dc18e37dd",
       "src/scpn_fusion/core/jax_free_boundary_predictive.py": "6864163d4c4ccd43ee7b3bf289262400400d12587f35ce3858067d0dbfa600d9",

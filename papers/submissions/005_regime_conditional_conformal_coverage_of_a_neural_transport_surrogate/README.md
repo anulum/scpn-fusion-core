@@ -8,7 +8,7 @@
 
 # Regime-conditional conformal coverage of a neural transport surrogate
 
-Status: dated preprint of 16 November 2026, describing commit 94877d0f on main
+Status: dated preprint of 19 November 2026, describing commit 3a0c3f14 on main
 after release 4.1.0. The analysis modules are not in that release. The preprint
 has not been deposited or submitted.
 

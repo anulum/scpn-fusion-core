@@ -8,7 +8,7 @@
 
 # Coupled transport model intersection with TORAX
 
-Status: dated preprint of 16 November 2026, describing commit 1445bb14 on main
+Status: dated preprint of 16 November 2026, describing commit 33110ebb on main
 after release 4.1.0. The preprint has not been deposited or submitted.
 
 The manuscript checks SCPN-Fusion-Core's four-state coupled transport step
@@ -34,13 +34,13 @@ submitted to any specific venue.
 - No TORAX equivalence outside the intersection, no experimental data and no
   speed comparison.
 - `validation/reports/torax_runtime_contract.json` (the real-TORAX runtime
-  contract, regenerated in 8b83a050) is not part of this preprint's evidence.
+  contract, regenerated in 7fa0bdfe) is not part of this preprint's evidence.
 
 ## Custody
 
 The parity report (849b9b2c) and the gradient report (d84af539) record source
 digests. Every one of them matches the package commit, so the manifest binds
-those eleven sources at 1445bb14.
+those eleven sources at 33110ebb.
 
 ## Statements still open before any deposit
 

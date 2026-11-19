@@ -7,7 +7,7 @@
   "contact": "www.anulum.li | protoscience@anulum.li",
   "projectDescription": "SCPN-FUSION-CORE TORAX model-intersection paper evidence manifest.",
   "schema_version": "2.0",
-  "repository_revision": "1445bb1405ed03341781d92afa6f62caa8fdb095",
+  "repository_revision": "33110ebbb12fd5d36c5d69b8275d594917f4442b",
   "claim_boundary": {
     "scope": "the declared circular prescribed-coefficient model intersection only",
     "duration": "two 10 ms steps on 16 cells, refined with 5 ms steps",
@@ -97,7 +97,7 @@
   "quoted_values": 65,
   "generators": {
     "papers/submissions/006_coupled_transport_model_intersection_with_torax/generate_evidence_manifest.py": {
-      "sha256": "87e0d6ea6df6e7546b3aa1f16405b2c21a87b4d12b2ecc9cb939b7c93356e7c0"
+      "sha256": "88101eeb3370ee4322488b5feccb0341d2ea31dc7e36fa511d85c57116e87747"
     }
   },
   "files": {

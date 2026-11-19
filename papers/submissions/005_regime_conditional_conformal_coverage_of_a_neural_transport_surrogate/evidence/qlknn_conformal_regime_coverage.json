@@ -234,6 +234,6 @@
   "holdout_rows": 47828,
   "output_unit": "physical transport coefficient (m^2/s)",
   "schema": "scpn-fusion-core.qlknn-conformal-regime-coverage.v1",
-  "source_revision": "50f11e83d60e02dd6f8b60601cff11681613eb08",
+  "source_revision": "772a8243781cff1134615b30d198a89201379290",
   "status": "pass"
 }

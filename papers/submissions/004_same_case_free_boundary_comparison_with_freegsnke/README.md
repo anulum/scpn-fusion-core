@@ -8,8 +8,8 @@
 
 # Same-case free-boundary comparison with FreeGSNKE
 
-Status: dated preprint of 16 November 2026, describing commit
-9e2ea47c on main after release 4.1.0. The comparison code is not in
+Status: dated preprint of 19 November 2026, describing commit
+3a0c3f14 on main after release 4.1.0. The comparison code is not in
 that release. The preprint has not been deposited or submitted.
 
 The manuscript compares SCPN-Fusion-Core's predictive free-boundary solver with
@@ -49,9 +49,9 @@ venue.
 The two reports were produced at different commits:
 
 - the forward report at 422e4c0b;
-- the grid-convergence report at 220cd790;
-- the inverse report from six runs at 44852fee, merged and tracked at
-  86649a05. Its status is fail: on the MAST-U-like perturbed start,
+- the grid-convergence report at 0ea6d5d3;
+- the inverse report from six runs at f20ec514, merged and tracked at
+  770da145. Its status is fail: on the MAST-U-like perturbed start,
   FreeGSNKE's refinement at SCPN's fitted currents did not converge.
 
 Between them no forward-solver source changed.

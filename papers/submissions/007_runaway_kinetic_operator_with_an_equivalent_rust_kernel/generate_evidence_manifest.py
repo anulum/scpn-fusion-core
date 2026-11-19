@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_REVISION = "8bfedda56df3894f9bdf92bfa76c75a66e5c2460"
+PACKAGE_REVISION = "6f22c716d09934ac5bff8164bd2a605e5981d37c"
 PACKAGING_TRANSFORM = "seven structured Tier-0 fields added first; scientific payload unchanged"
 TIER0_HEADER: dict[str, str] = {
     "SPDX-License-Identifier": "AGPL-3.0-or-later",

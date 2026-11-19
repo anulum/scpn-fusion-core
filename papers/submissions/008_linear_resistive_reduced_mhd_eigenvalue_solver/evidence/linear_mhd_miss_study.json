@@ -17,7 +17,7 @@
     "numpy": "2.5.4",
     "python": "3.12.3",
     "scipy": "1.17.1",
-    "source_revision": "03fdaf1d158f43539656d4e2aea4b8c2272681ea",
+    "source_revision": "f6136eb6e0e184fe528aca53b3830320792cc8c8",
     "source_sha256": {
       "src/scpn_fusion/core/linear_mhd_1d.py": "bb16a5957a0339dc4528e68ea8e71b75a7e3c6a4f338427dfd8953369d2e0ff2",
       "src/scpn_fusion/core/linear_mhd_delta_prime.py": "8990e06a3752ffe98d0b2c41969ca3e4f7dc36cf0fdd375087e7e88ee6cf560d",

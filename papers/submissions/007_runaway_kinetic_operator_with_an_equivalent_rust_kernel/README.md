@@ -8,7 +8,7 @@
 
 # Runaway kinetic operator with an equivalent Rust kernel
 
-Status: dated preprint of 16 November 2026, describing commit 8bfedda5 on main
+Status: dated preprint of 16 November 2026, describing commit 6f22c716 on main
 after release 4.1.0. The preprint has not been deposited or submitted.
 
 The manuscript shows that the NumPy and Rust implementations of the
@@ -36,7 +36,7 @@ or submitted to any specific venue.
 ## Custody
 
 The benchmark report was produced at 98b6d4d2 and tracked at d8a10e8f. The
-twelve sources it records are byte-identical at 8bfedda5, where the manifest
+twelve sources it records are byte-identical at 6f22c716, where the manifest
 binds them.
 
 ## Statements still open before any deposit

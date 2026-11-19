@@ -277,6 +277,15 @@
 
 ### Fixed
 
+- Revision ids in the run records and paper packages now name commits that
+  will be published. The messages of commits not yet published were reworded
+  before their first publication. Their trees did not change, but the commits
+  received new ids. The reports, the reference data, the two QLKNN analysis
+  notes and this changelog now cite the new id of each tree. The digests that
+  bind those files were updated with them. Submissions 004, 005 and 008 bind
+  their evidence at the rebinding commit and are dated 19 November 2026.
+  Submissions 006 and 007 name the new id of the same commit. All five
+  manuscripts were rebuilt. No number, threshold or result changed.
 - The commit-message check now runs. `core.hooksPath` points at `.githooks`, so
   the `commit-msg` stage declared in `.pre-commit-config.yaml` never ran; a new
   `.githooks/commit-msg` hook runs `tools/check_commit_trailers.py`. The check

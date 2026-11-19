@@ -16,8 +16,8 @@ authors:
     affiliation: "ANULUM CH&LI, Marbach SG, Switzerland"
 repository-code: "https://github.com/anulum/scpn-fusion-core"
 url: "https://www.anulum.li"
-version: "preprint-2026-11-16"
-date-released: 2026-11-16
+version: "preprint-2026-11-19"
+date-released: 2026-11-19
 preferred-citation:
   type: article
   title: "A Linear Resistive Reduced-MHD Eigenvalue Solver Checked Against Tearing and Resistive-Kink Asymptotics, with Two Recorded Misses"

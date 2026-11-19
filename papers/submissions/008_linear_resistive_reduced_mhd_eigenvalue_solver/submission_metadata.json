@@ -15,7 +15,7 @@
     "orcid": "0009-0009-3560-0851",
     "affiliation": "ANULUM CH&LI, Marbach SG, Switzerland"
   },
-  "repository_revision": "576ce6f684cb2c5bb44a3877ef6887da006b3dc6",
+  "repository_revision": "3a0c3f1451b0cb144364191710d057e7547bd9b1",
   "companion_catalogue_ids": [],
   "evidence_files": [
     "evidence/evidence_manifest.json",
@@ -31,7 +31,7 @@
   "doi": null,
   "manuscript_content_license": null,
   "preprint": {
-    "date": "2026-11-16",
-    "software_described": "scpn-fusion main at 576ce6f6 (2026-11-16), after release 4.1.0; the sources the three reports record are byte-identical there"
+    "date": "2026-11-19",
+    "software_described": "scpn-fusion main at 3a0c3f14 (2026-11-19), after release 4.1.0; the sources the three reports record are byte-identical there"
   }
 }

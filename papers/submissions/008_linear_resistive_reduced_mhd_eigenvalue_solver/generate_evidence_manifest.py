@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_REVISION = "576ce6f684cb2c5bb44a3877ef6887da006b3dc6"
+PACKAGE_REVISION = "3a0c3f1451b0cb144364191710d057e7547bd9b1"
 PACKAGING_TRANSFORM = "seven structured Tier-0 fields added first; scientific payload unchanged"
 TIER0_HEADER: dict[str, str] = {
     "SPDX-License-Identifier": "AGPL-3.0-or-later",
@@ -37,23 +37,23 @@ TIER0_HEADER: dict[str, str] = {
 SOURCE_CUSTODY: dict[str, dict[str, str]] = {
     "linear_mhd_reduced_model_acceptance.json": {
         "source_path": "validation/reports/linear_mhd_reduced_model_acceptance.json",
-        "source_revision": "44852feeedf2780f13d42ed5b90c8ee1b4f390a5",
+        "source_revision": "f20ec514a0665f30d7cb68d6aedec20f05841081",
         "git_blob_oid_sha1": "ab2a84765c79ebb007502d62370c945a60bd4a26",
         "source_sha256": "bcbbc302cfcc78747b7ed957a3d9de9842aae362587745b0a9c16e4c1ef60dd9",
         "packaging_transform": PACKAGING_TRANSFORM,
     },
     "linear_mhd_miss_study.json": {
         "source_path": "validation/reports/linear_mhd_miss_study.json",
-        "source_revision": "0acee5884d0a7de889ce3e088bc67ac2eeca513c",
-        "git_blob_oid_sha1": "f9d17e3b1705a1bf98ddb4f3e9a7039d3272c864",
-        "source_sha256": "fe2315e0a5fb14a2bd7df6491bcc3d483f88c2b77736c0080cbdf3e008ef3db3",
+        "source_revision": "3a0c3f1451b0cb144364191710d057e7547bd9b1",
+        "git_blob_oid_sha1": "2927749dc42f022dae29caa809d2b32518607fd4",
+        "source_sha256": "60659bf0de278ec075866dc7f1a029eea242970a1d3a736b3ba3d098dbeea8cb",
         "packaging_transform": PACKAGING_TRANSFORM,
     },
     "linear_mhd_near_zero_spectrum.json": {
         "source_path": "validation/reports/linear_mhd_near_zero_spectrum.json",
-        "source_revision": "576ce6f684cb2c5bb44a3877ef6887da006b3dc6",
-        "git_blob_oid_sha1": "b236cd39ee6e6d92e6142e4c5f0cd83c2b1e2063",
-        "source_sha256": "af6ffbcfefbbd97c38673f3a6243f3d8d291c397762e52716e0ec2944eeda7ed",
+        "source_revision": "3a0c3f1451b0cb144364191710d057e7547bd9b1",
+        "git_blob_oid_sha1": "ef95cafa7886f8bfd358518ae3ac866e0cfce939",
+        "source_sha256": "c677064efaf6c515adf5e5b9d4b1d4e6ce217accfe887b80b0a5e7b414439274",
         "packaging_transform": PACKAGING_TRANSFORM,
     },
 }
@@ -210,7 +210,7 @@ def quoted() -> list[tuple[str, str, str, str]]:
             "1.2%",
         ),
         ("study", "checks.every_solve_complete_dense", "{}", "True"),
-        ("study", "provenance.source_revision", "{}", "03fdaf1d158f43539656d4e2aea4b8c2272681ea"),
+        ("study", "provenance.source_revision", "{}", "f6136eb6e0e184fe528aca53b3830320792cc8c8"),
         ("study", "provenance.numpy", "{}", "2.5.4"),
         ("study", "provenance.scipy", "{}", "1.17.1"),
         ("study", "provenance.threads.OPENBLAS_NUM_THREADS", "{}", "8"),
@@ -237,7 +237,7 @@ def quoted() -> list[tuple[str, str, str, str]]:
             "spectrum",
             "provenance.source_revision",
             "{}",
-            "d9c74c6c27b25cf4df9c6964d2c6d7eaafae4d2d",
+            "b5a7614169f1230d24a1ea04895509a9148a5707",
         ),
         ("spectrum", "provenance.threads.OPENBLAS_NUM_THREADS", "{}", "4"),
     ]

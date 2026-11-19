@@ -185,7 +185,7 @@
       }
     },
     "report": "validation/reports/qlknn_conformal_profile_envelope.json",
-    "report_sha256": "7b9e2ec452032f16c2b9641dcaa3fea77456a0a7bdee4b4538500d05e46b1cc7"
+    "report_sha256": "7c7a3a69722a20285d4cca1e630b98ff0364bd9d03a6fb2576ba2460e68c47a7"
   },
   "iteration": {
     "check_relaxation": 0.0025,
@@ -234,7 +234,7 @@
   },
   "relaxation_independence_relative_difference": 3.397282455352979e-14,
   "schema": "scpn-fusion-core.qlknn-conformal-self-consistent-envelope.v1",
-  "source_revision": "1846b1a63c6de9de152fc62101408491ec6e16fe",
+  "source_revision": "7869c4a247a9821427c3003550759e0efa938668",
   "source_sha256": {
     "src/scpn_fusion/core/_integrated_transport_solver_model_backend.py": "3dfa0779c988e16ff50de3a1f23f37e568ffbd47c8559eb1dd2ddcd46256be26",
     "src/scpn_fusion/core/integrated_transport_solver_coupling.py": "8a4bcb50e7962313092c7792fe8ad71e57c53203ea1bb5169829018fa09f78bb",

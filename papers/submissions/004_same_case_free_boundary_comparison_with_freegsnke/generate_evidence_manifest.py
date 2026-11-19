@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 
-PACKAGE_REVISION = "9e2ea47ce506156b39291a478b1285ead8608314"
+PACKAGE_REVISION = "3a0c3f1451b0cb144364191710d057e7547bd9b1"
 PACKAGING_TRANSFORM = "seven structured Tier-0 fields added first; scientific payload unchanged"
 TIER0_HEADER: dict[str, str] = {
     "SPDX-License-Identifier": "AGPL-3.0-or-later",
@@ -44,16 +44,16 @@ SOURCE_CUSTODY: dict[str, dict[str, str]] = {
     },
     "freegsnke_inverse_fit.json": {
         "source_path": "validation/reports/freegsnke_inverse_fit.json",
-        "source_revision": "86649a05a15a0d3d919c35d560e02ebda6c8cc00",
-        "git_blob_oid_sha1": "7ad702997128536c5626f867b68aa591492c95bb",
-        "source_sha256": "abc4745331b4ed9d03cab47e022eb2f8a594f6f711c355951d25ef72f1ee5bb8",
+        "source_revision": "3a0c3f1451b0cb144364191710d057e7547bd9b1",
+        "git_blob_oid_sha1": "a11d40a77b10ab3aa206993c204676ddb1947aa9",
+        "source_sha256": "d7cfe0df0532722a41c659fe5a5ce706d8c9f9e7ac9ab3d26bc0063039d87241",
         "packaging_transform": PACKAGING_TRANSFORM,
     },
     "freegsnke_grid_convergence.json": {
         "source_path": "validation/reports/freegsnke_grid_convergence.json",
-        "source_revision": "9e2ea47ce506156b39291a478b1285ead8608314",
-        "git_blob_oid_sha1": "fd1d05319a42806fb4ce7a8c7d32e820c551d284",
-        "source_sha256": "2e6fa4b2394a18eb97065db00bc46d1bd39e0a6dc123c570e76c4517219c7649",
+        "source_revision": "3a0c3f1451b0cb144364191710d057e7547bd9b1",
+        "git_blob_oid_sha1": "366b833507ff49e38bf7c4c2cb60626af70d271a",
+        "source_sha256": "adf11f9842e238e326df03010e710179628674247eaef0820fab7e81953fef72",
         "packaging_transform": PACKAGING_TRANSFORM,
     },
 }

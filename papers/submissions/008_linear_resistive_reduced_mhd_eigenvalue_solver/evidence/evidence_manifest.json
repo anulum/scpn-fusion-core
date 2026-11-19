@@ -7,7 +7,7 @@
   "contact": "www.anulum.li | protoscience@anulum.li",
   "projectDescription": "SCPN-FUSION-CORE linear reduced-MHD paper evidence manifest.",
   "schema_version": "2.0",
-  "repository_revision": "576ce6f684cb2c5bb44a3877ef6887da006b3dc6",
+  "repository_revision": "3a0c3f1451b0cb144364191710d057e7547bd9b1",
   "claim_boundary": {
     "scope": "linear resistive reduced MHD in a Harris slab and a periodic cylinder",
     "misses": "cylinder tearing slope (explained by the follow-up scan) and the negative-Delta-prime Harris root (sign undetermined in double precision)",
@@ -16,23 +16,23 @@
   "source_custody": {
     "linear_mhd_reduced_model_acceptance.json": {
       "source_path": "validation/reports/linear_mhd_reduced_model_acceptance.json",
-      "source_revision": "44852feeedf2780f13d42ed5b90c8ee1b4f390a5",
+      "source_revision": "f20ec514a0665f30d7cb68d6aedec20f05841081",
       "git_blob_oid_sha1": "ab2a84765c79ebb007502d62370c945a60bd4a26",
       "source_sha256": "bcbbc302cfcc78747b7ed957a3d9de9842aae362587745b0a9c16e4c1ef60dd9",
       "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
     },
     "linear_mhd_miss_study.json": {
       "source_path": "validation/reports/linear_mhd_miss_study.json",
-      "source_revision": "0acee5884d0a7de889ce3e088bc67ac2eeca513c",
-      "git_blob_oid_sha1": "f9d17e3b1705a1bf98ddb4f3e9a7039d3272c864",
-      "source_sha256": "fe2315e0a5fb14a2bd7df6491bcc3d483f88c2b77736c0080cbdf3e008ef3db3",
+      "source_revision": "3a0c3f1451b0cb144364191710d057e7547bd9b1",
+      "git_blob_oid_sha1": "2927749dc42f022dae29caa809d2b32518607fd4",
+      "source_sha256": "60659bf0de278ec075866dc7f1a029eea242970a1d3a736b3ba3d098dbeea8cb",
       "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
     },
     "linear_mhd_near_zero_spectrum.json": {
       "source_path": "validation/reports/linear_mhd_near_zero_spectrum.json",
-      "source_revision": "576ce6f684cb2c5bb44a3877ef6887da006b3dc6",
-      "git_blob_oid_sha1": "b236cd39ee6e6d92e6142e4c5f0cd83c2b1e2063",
-      "source_sha256": "af6ffbcfefbbd97c38673f3a6243f3d8d291c397762e52716e0ec2944eeda7ed",
+      "source_revision": "3a0c3f1451b0cb144364191710d057e7547bd9b1",
+      "git_blob_oid_sha1": "ef95cafa7886f8bfd358518ae3ac866e0cfce939",
+      "source_sha256": "c677064efaf6c515adf5e5b9d4b1d4e6ce217accfe887b80b0a5e7b414439274",
       "packaging_transform": "seven structured Tier-0 fields added first; scientific payload unchanged"
     }
   },
@@ -76,7 +76,7 @@
   "quoted_values": 77,
   "generators": {
     "papers/submissions/008_linear_resistive_reduced_mhd_eigenvalue_solver/generate_evidence_manifest.py": {
-      "sha256": "4e5d8bcae133605e3d668ec8bffdea89a516c666aae1db22549e2a78ed8569b9"
+      "sha256": "4fec1377b9e607e97e001c4b531b5e38942e834ce9cfdce0c6133b7645037715"
     }
   },
   "files": {
@@ -85,11 +85,11 @@
       "role": "nine fixed acceptance criteria, seven passed"
     },
     "linear_mhd_miss_study.json": {
-      "sha256": "0a56701d3cdbd5c728f6e4a5e584647023812c41b1eba3277fdbd116dce71ac3",
+      "sha256": "2cb277f015ae75f6c22bedabdc353341d149d3db4df1b8cfb1d9a3bd95887b5d",
       "role": "follow-up study: slope to eta 1e-10, Harris root by grid"
     },
     "linear_mhd_near_zero_spectrum.json": {
-      "sha256": "15b2ddb91820f44da462c5ec58e7a9fe56d9e8a0adb612f5b2416e5769cf04a7",
+      "sha256": "07f1b77c877a93d062b134d9c03db0409673d73b057e2c1303486f75574b9297",
       "role": "conditioning of the near-zero Harris eigenvalues"
     }
   }

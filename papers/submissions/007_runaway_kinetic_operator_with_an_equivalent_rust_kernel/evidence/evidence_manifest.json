@@ -7,7 +7,7 @@
   "contact": "www.anulum.li | protoscience@anulum.li",
   "projectDescription": "SCPN-FUSION-CORE runaway kinetic Rust-kernel paper evidence manifest.",
   "schema_version": "2.0",
-  "repository_revision": "8bfedda56df3894f9bdf92bfa76c75a66e5c2460",
+  "repository_revision": "6f22c716d09934ac5bff8164bd2a605e5981d37c",
   "claim_boundary": {
     "scope": "NumPy/Rust equivalence of the operator on a synthetic parity case",
     "timing": "one loaded workstation and one small case; no portable speed-up",
@@ -87,7 +87,7 @@
   "quoted_values": 41,
   "generators": {
     "papers/submissions/007_runaway_kinetic_operator_with_an_equivalent_rust_kernel/generate_evidence_manifest.py": {
-      "sha256": "529ed570d97cbfd364a06b624cbc88717515766c447ba5ebf271600bce8d2672"
+      "sha256": "c409a7c5cf9dfa7aa9d89567dfa803338617eed1b083190bf6a94c7ecbad75c9"
     }
   },
   "files": {
