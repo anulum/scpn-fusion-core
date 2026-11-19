@@ -30,4 +30,4 @@ Singular values of A: largest 1.324e+02, smallest 1.454e-17. Finite eigenvalues 
 
 Largest real part: 6.052e-10. After relative perturbations of 1e-15 to A: -8.866e-12, 3.831e-11, 6.224e-10.
 
-Source revision: `d9c74c6c27b25cf4df9c6964d2c6d7eaafae4d2d`
+Source revision: `b5a7614169f1230d24a1ea04895509a9148a5707`

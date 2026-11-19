@@ -82,7 +82,7 @@
     "chi_i": 0.344323663256879
   },
   "schema": "scpn-fusion-core.qlknn-conformal-profile-envelope.v1",
-  "source_revision": "18379b8a3f2e093daedac4c3f55b122effef20be",
+  "source_revision": "5d206db1a993d805e9e8cf2034b21ca67a230c03",
   "status": "pass",
   "steady_state_relative_change": 0.00023310705092239274,
   "weights_sha256": "0f44681e10686c09826e4a738bec0fe3bd49d82c1af9288489a12a4b2af6faad"

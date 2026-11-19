@@ -65,7 +65,7 @@ MARKDOWN_PATH = ROOT / "validation/reports/qlknn_conformal_stability_sets.md"
 SCHEMA = "scpn-fusion-core.qlknn-conformal-stability-sets.v1"
 RESPLIT_SEEDS = tuple(range(20))
 DESIGN_NOTE = (
-    "designed after the variant comparison (9bd8a7a7, report b2f13559) found the false-stable "
+    "designed after the variant comparison (6c88fa34, report f5616990) found the false-stable "
     "bias; the settings of this experiment were fixed before it was run"
 )
 MARKDOWN_HEADER = (

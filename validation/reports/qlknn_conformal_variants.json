@@ -1478,13 +1478,13 @@
   },
   "holdout_rows": 47828,
   "output_unit": "physical transport coefficient (m^2/s)",
-  "post_hoc_note": "added after the first comparison (940937b9, report 753c658a); chosen after seeing its results",
+  "post_hoc_note": "added after the first comparison (139fb79c, report c93ac4fb); chosen after seeing its results",
   "post_hoc_variants": [
     "mondrian_predicted_flux",
     "mondrian_predicted_flux_normalised_prediction"
   ],
   "schema": "scpn-fusion-core.qlknn-conformal-variants.v1",
-  "source_revision": "9bd8a7a762c14dd7a25cfae458cd308bc4c05980",
+  "source_revision": "6c88fa34bf01b5c2204faa58a7db3a3d2e9114a2",
   "status": "pass",
   "variants": [
     "marginal_absolute",

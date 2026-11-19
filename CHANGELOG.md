@@ -30,7 +30,7 @@
   Findings are reported, not gated; the gates concern completeness.
 
   The tracked run (`validation/reports/linear_mhd_near_zero_spectrum.json`,
-  bound to d9c74c6c, on WS) passes both gates.
+  bound to b5a76141, on WS) passes both gates.
   - A is numerically singular: singular values 1.454e-17 to 1.324e2.
   - 158 finite eigenvalues lie below 1e-4. The twelve smallest have
     condition numbers of 1.6e10 to 1.9e12 and error bounds of 4.6e-4 to
@@ -66,7 +66,7 @@
   0.005 and 0.0025, and the difference is reported, not gated.
 
   The tracked run (`validation/reports/qlknn_conformal_self_consistent_envelope.json`,
-  bound to 1846b1a6) passes its gates. Its nominal fixed point reproduces the
+  bound to 7869c4a2) passes its gates. Its nominal fixed point reproduces the
   neural steady state to 1.4e-4. Against the frozen study:
   - the certificate interval spans T_core 0.281-4.707 keV (frozen 0.262-7.224
     keV);
@@ -94,7 +94,7 @@
   a complete dense search; each solve's method and completeness are recorded.
 
   The tracked run (`validation/reports/linear_mhd_miss_study.json`, bound to
-  03fdaf1d, on ML350) passes both gates.
+  f6136eb6, on ML350) passes both gates.
   - The cylinder slope miss is explained. The local slope rises from 0.537 to
     0.595 and the ratio to the constant-ψ rate from 0.77 to 0.99 between
     η = 1e-6 and 1e-10, as the Δ′-times-layer-width explanation predicts.
@@ -120,7 +120,7 @@
   The cold start is not repeated. The gates concern completeness; the
   differences are reported, not gated. The FreeGSNKE workflow runs its tests.
   The tracked report (`validation/reports/freegsnke_grid_convergence.json`,
-  bound to 220cd790) shows that the base grid reproduces the multi-machine
+  bound to 0ea6d5d3) shows that the base grid reproduces the multi-machine
   values exactly. From 65×129 to 129×257:
   - the frozen-support ψ_N RMSE falls by a factor of 4.0, from 3.78e-4 to
     9.43e-5;
@@ -139,7 +139,7 @@
   power where the pedestal modifier would act. Its gates require that the neural
   run reached steady state and that the nominal frozen run reproduces it.
   The tracked run (`validation/reports/qlknn_conformal_profile_envelope.json`,
-  bound to 18379b8a) starts from a neural steady state of T_core 1.702 keV and
+  bound to 5d206db1) starts from a neural steady state of T_core 1.702 keV and
   tau_E 1.242 s.
   - The certificate interval spans T_core 0.262-7.224 keV and tau_E 0.246-4.533 s.
   - The normalised interval's upper end gives 0.455 keV.
@@ -155,7 +155,7 @@
   set sizes, flux coverage and widths per true class; it stops when the inputs
   differ from the certificate or a class is too small.
   The tracked run (`validation/reports/qlknn_conformal_stability_sets.json`,
-  bound to 2af7ea79) gives:
+  bound to 679d9507) gives:
   - set coverage 0.891-0.903 per class;
   - flux coverage 0.792-0.797 on all rows with nonzero flux. On the same rows
     the certificate covers 0.697-0.738, derived from the regime-coverage
@@ -180,7 +180,7 @@
   the public `gyro_bohm_scale`, and `residual_scores` now also returns the
   predictions; the certificate is unchanged.
   The tracked run (`validation/reports/qlknn_conformal_variants.json`, bound to
-  940937b9) shows that none of the four recovers the unstable rows: their
+  139fb79c) shows that none of the four recovers the unstable rows: their
   coverage stays at 0.659-0.723 in every variant.
   - Mondrian groups balance the input-label groups at about 0.90, as
     guaranteed, and widen the intervals.
@@ -192,7 +192,7 @@
   comparison. The report now also records, per channel, the share of unstable
   rows the surrogate predicts at or below the certificate radius, and the
   median ratio of prediction to target there.
-  In the tracked run (bound to 9bd8a7a7), the surrogate predicts at most the
+  In the tracked run (bound to 6c88fa34), the surrogate predicts at most the
   radius on 64.5-73.8 % of unstable rows (median prediction/target
   0.30-0.60). The post-hoc variants keep unstable coverage at 0.666-0.735.
   The QLKNN UQ card lists this false-stable bias as a gap.
@@ -211,7 +211,7 @@
   `tools/generate_surrogate_conformal_certificates.py` gains the public
   `residual_scores`, which it uses itself; the certificate is unchanged.
   The tracked run (`validation/reports/qlknn_conformal_regime_coverage.json`,
-  bound to 50f11e83) shows coverage that the marginal 90 % hides:
+  bound to 772a8243) shows coverage that the marginal 90 % hides:
   - zero-flux rows: 99.5-99.7 % per channel;
   - unstable rows: 66.5-71.1 %;
   - near-threshold rows: covered, but by intervals with a median width two to
@@ -529,7 +529,7 @@
   The loop moved to `run_adaptive_steps` in the adaptive-controller module;
   the fixed-step path is unchanged. Steps above the tolerance are still
   committed: step rejection waits for an agreed estimator and error contract.
-- The real-TORAX runtime-contract evidence was regenerated at 9a02a20d:
+- The real-TORAX runtime-contract evidence was regenerated at fae449cd:
   `validation/reports/torax_runtime_contract.json`, its result, NetCDF sidecar,
   sidecar manifest and review envelope, and the reference-data provenance
   manifest. The report of 2026-08-30 recorded digests of

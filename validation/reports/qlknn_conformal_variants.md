@@ -10,7 +10,7 @@
 Status: **PASS** (completeness gates). Level 0.90; holdout rows 47828.
 
 Cells: coverage, then the median relative width 2h/y in brackets (positive targets).
-Variants marked (post hoc) were added after the first comparison (940937b9, report 753c658a); chosen after seeing its results.
+Variants marked (post hoc) were added after the first comparison (139fb79c, report c93ac4fb); chosen after seeing its results.
 
 | Channel | Variant | Marginal | Zero flux | Near threshold | Unstable |
 |---|---|---:|---:|---:|---:|
@@ -39,4 +39,4 @@ Surrogate on the unstable rows:
 - chi_i: 0.645 of 15960 rows predicted at most r0; median prediction/target 0.602.
 - D_e: 0.738 of 13618 rows predicted at most r0; median prediction/target 0.305.
 
-Source revision: `9bd8a7a762c14dd7a25cfae458cd308bc4c05980`
+Source revision: `6c88fa34bf01b5c2204faa58a7db3a3d2e9114a2`

@@ -20,4 +20,4 @@ Neural steady state: T_core 1.7018 keV. Nominal fixed point: T_core 1.7015 keV a
 
 Failed checks: none.
 
-Source revision: `1846b1a63c6de9de152fc62101408491ec6e16fe`
+Source revision: `7869c4a247a9821427c3003550759e0efa938668`

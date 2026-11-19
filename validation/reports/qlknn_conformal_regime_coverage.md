@@ -35,4 +35,4 @@ Holdout rows: 47828. Coverage with 95 % Wilson interval.
 | D_e | near_threshold | 0.993 [0.987, 0.996] (n=1452) | 296 |
 | D_e | unstable | 0.665 [0.657, 0.673] (n=13618) | 3.07 |
 
-Source revision: `50f11e83d60e02dd6f8b60601cff11681613eb08`
+Source revision: `772a8243781cff1134615b30d198a89201379290`

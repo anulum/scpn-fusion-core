@@ -23,7 +23,7 @@ their scores are fixed here before any result was seen:
 * ``normalised_prediction``: score ``|y - y_hat| / (|y_hat| + r0)``, with ``r0`` the
   channel's certificate radius. The interval is ``y_hat +- q (|y_hat| + r0)``.
 
-Two further variants were added after the first comparison (940937b9, report 753c658a),
+Two further variants were added after the first comparison (139fb79c, report c93ac4fb),
 so they were chosen after seeing its results and are reported as post hoc:
 
 * ``mondrian_predicted_flux``: the absolute score, with one radius per predicted-flux class
@@ -78,7 +78,7 @@ POST_HOC_VARIANTS = (
     "mondrian_predicted_flux_normalised_prediction",
 )
 POST_HOC_NOTE = (
-    "added after the first comparison (940937b9, report 753c658a); chosen after seeing its results"
+    "added after the first comparison (139fb79c, report c93ac4fb); chosen after seeing its results"
 )
 PREDICTED_CLASSES = {0: "predicted_at_most_r0", 1: "predicted_above_r0"}
 MARKDOWN_HEADER = (

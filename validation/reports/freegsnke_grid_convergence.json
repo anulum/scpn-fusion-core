@@ -109,7 +109,7 @@
       "python": "3.12.3",
       "system": "Linux"
     },
-    "scpn_source_revision": "220cd790a6b38630632fcc154071cc38925ba02d",
+    "scpn_source_revision": "0ea6d5d3a5ffe4dcf0e351208cbb0d23e94e29af",
     "scpn_source_sha256": {
       "src/scpn_fusion/core/jax_free_boundary_predictive.py": "6864163d4c4ccd43ee7b3bf289262400400d12587f35ce3858067d0dbfa600d9",
       "validation/benchmark_freegsnke_inverse.py": "35c1046f8570dd81dd76f72ba2d2b6ab71e30a6be5742516d3fd44fe310ca208",

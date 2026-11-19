@@ -7,7 +7,7 @@
 <!-- SCPN Fusion Core — conformal stability sets for the QLKNN-10D surrogate -->
 # Class-conditional conformal stability sets for the QLKNN-10D surrogate
 
-Set level 0.90 per class; unstable flux bound 0.80. This experiment was designed after the variant comparison (9bd8a7a7, report b2f13559) found the false-stable bias; the settings of this experiment were fixed before it was run.
+Set level 0.90 per class; unstable flux bound 0.80. This experiment was designed after the variant comparison (6c88fa34, report f5616990) found the false-stable bias; the settings of this experiment were fixed before it was run.
 
 | Channel | Class | n | Set coverage | Both labels | Flux coverage | Median width |
 |---|---|---:|---:|---:|---:|---:|
@@ -32,4 +32,4 @@ Random halvings of the pooled rows (20 seeds): mean [min, max].
 | chi_i | 0.900 [0.895, 0.903] | 0.900 [0.895, 0.904] | 0.800 [0.791, 0.807] |
 | D_e | 0.901 [0.894, 0.909] | 0.900 [0.896, 0.905] | 0.803 [0.795, 0.810] |
 
-Source revision: `43e96cb33df93859d2682834c8b60645fa934d77`
+Source revision: `3219ba09d75ad84729f45265c59d6a43a0888b5a`
