@@ -277,6 +277,19 @@
 
 ### Fixed
 
+- Transport step counts are converted with `operator.index` before their sign
+  is checked, in fixed and adaptive `run_to_steady_state` and in
+  `run_adaptive_steps`, through the new `positive_step_count`. A negative
+  fractional count now raises `TypeError` like every other non-integer, and an
+  object that implements only `__index__` is accepted, as `range` accepts it.
+  The fixed-mode result reports the converted `int`.
+- The RMSE dashboard classifies the pooled `beta_N` RMSE as `all_dynamic`,
+  `all_fallback`, `mixed` or `unknown`. The report records the class as
+  `beta_n_aggregate_model`, and the Markdown names it. The calibrated
+  fit-residual wording is kept only for a non-empty, fully dynamic aggregate.
+  A mixed aggregate is no longer called fallback-only, and rows without a
+  recorded model are no longer called calibrated. The RMSE itself is
+  unchanged.
 - Revision ids in the run records and paper packages now name commits that
   will be published. The messages of commits not yet published were reworded
   before their first publication. Their trees did not change, but the commits

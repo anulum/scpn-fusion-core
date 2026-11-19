@@ -253,11 +253,11 @@ def test_final_result_refusal_reports_raised_with_histories(
 
 
 @pytest.mark.parametrize("adaptive", [False, True])
-@pytest.mark.parametrize("n_steps", [1.5, float("nan"), float("inf")])
+@pytest.mark.parametrize("n_steps", [1.5, -1.5, float("nan"), float("inf")])
 def test_non_integer_step_counts_are_refused_before_mutation(
     config_path: Path, adaptive: bool, n_steps: float
 ) -> None:
-    """Fractional, NaN and infinite counts are refused like ``range`` does, before mutation."""
+    """Fractional (also negative), NaN and infinite counts are refused like ``range``, unmutated."""
     solver = _solver(config_path)
     before = dict(vars(solver))
     arrays = {name: value.copy() for name, value in before.items() if isinstance(value, np.ndarray)}
@@ -272,10 +272,11 @@ def test_non_integer_step_counts_are_refused_before_mutation(
     assert not hasattr(solver, "adaptive_run_diagnostics")
 
 
-def test_direct_call_refuses_a_fractional_count(config_path: Path) -> None:
-    """The adaptive helper itself applies the integer contract, not only its caller."""
+@pytest.mark.parametrize("value", [1.5, -1.5])
+def test_direct_call_refuses_a_fractional_count(config_path: Path, value: float) -> None:
+    """The adaptive helper itself converts before the sign check, not only its caller."""
     solver = _solver(config_path)
-    fractional: Any = 1.5
+    fractional: Any = value
 
     with pytest.raises(TypeError, match="cannot be interpreted as an integer"):
         adaptive_mod.run_adaptive_steps(solver, P_AUX_MW, fractional, DT_S, 1e-3)
@@ -292,3 +293,67 @@ def test_integer_like_step_counts_still_run(config_path: Path) -> None:
 
     assert result["n_steps"] == 1
     assert result["stop_reason"] == "completed"
+
+
+class _IndexOnly:
+    """A step count that implements only ``__index__``, which ``range`` accepts."""
+
+    def __init__(self, value: int) -> None:
+        """Hold the integer the count converts to."""
+        self.value = value
+
+    def __index__(self) -> int:
+        """Return the held integer."""
+        return self.value
+
+
+def test_positive_step_count_converts_before_the_sign_check() -> None:
+    """Conversion comes first: no float reaches the sign check, index-only objects pass."""
+    count = adaptive_mod.positive_step_count
+
+    assert count(3) == 3
+    assert type(count(np.int64(2))) is int
+    assert count(_IndexOnly(4)) == 4
+    # Deliberate non-integers, outside the declared SupportsIndex type.
+    non_integers: list[Any] = [1.5, -1.5, float("nan"), float("inf")]
+    for value in non_integers:
+        with pytest.raises(TypeError, match="cannot be interpreted as an integer"):
+            count(value)
+    nonpositive: list[Any] = [0, -2, _IndexOnly(0), _IndexOnly(-2)]
+    for value in nonpositive:
+        with pytest.raises(ValueError, match="^n_steps must be positive$"):
+            count(value)
+
+
+@pytest.mark.parametrize("adaptive", [False, True])
+def test_index_only_step_counts_run_in_both_modes(config_path: Path, adaptive: bool) -> None:
+    """An object with only ``__index__`` runs, and the result reports a plain ``int``."""
+    solver = _solver(config_path)
+
+    count: Any = _IndexOnly(1)  # index-compatible at run time, outside the declared int type
+    result = solver.run_to_steady_state(P_AUX_MW, n_steps=count, dt=DT_S, adaptive=adaptive)
+
+    assert result["n_steps"] == 1
+    assert type(result["n_steps"]) is int
+
+
+@pytest.mark.parametrize("adaptive", [False, True])
+@pytest.mark.parametrize("value", [0, -2])
+def test_index_only_nonpositive_counts_are_refused_before_mutation(
+    config_path: Path, adaptive: bool, value: int
+) -> None:
+    """An index-only count is converted first, then its sign is refused, before mutation."""
+    solver = _solver(config_path)
+    before = dict(vars(solver))
+    arrays = {name: v.copy() for name, v in before.items() if isinstance(v, np.ndarray)}
+
+    count: Any = _IndexOnly(value)
+    with pytest.raises(ValueError, match="^n_steps must be positive$"):
+        solver.run_to_steady_state(P_AUX_MW, n_steps=count, dt=DT_S, adaptive=adaptive)
+    with pytest.raises(ValueError, match="^n_steps must be positive$"):
+        adaptive_mod.run_adaptive_steps(solver, P_AUX_MW, count, DT_S, 1e-3)
+
+    assert vars(solver).keys() == before.keys()
+    for name, value_array in arrays.items():
+        np.testing.assert_array_equal(getattr(solver, name), value_array)
+    assert not hasattr(solver, "adaptive_run_diagnostics")

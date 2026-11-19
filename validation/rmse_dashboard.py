@@ -99,6 +99,12 @@ def _flag(value: float, key: str) -> str:
 BETA_N_MODEL_DYNAMIC = "dynamic_burn_model"
 BETA_N_MODEL_LEGACY = "legacy_fusion_burn_physics"
 
+# Which models the pooled beta_N RMSE covers; only "all_dynamic" is the calibrated fit residual.
+BETA_N_AGGREGATE_ALL_DYNAMIC = "all_dynamic"
+BETA_N_AGGREGATE_ALL_FALLBACK = "all_fallback"
+BETA_N_AGGREGATE_MIXED = "mixed"
+BETA_N_AGGREGATE_UNKNOWN = "unknown"
+
 # Each verdict renders as itself in brackets; derived so no status word is a literal mapping key.
 _FLAG_EMOJI = {flag: f"[{flag}]" if flag else "" for flag in ("PASS", "WARN", "FAIL", "")}
 
@@ -392,8 +398,40 @@ def beta_rmse_iter_sparc(reference_dir: Path, validation_dir: Path) -> dict[str,
     return {
         "count": len(beta_true),
         "beta_n_rmse": rmse(beta_true, beta_pred),
+        "beta_n_aggregate_model": beta_n_aggregate_model(rows),
         "rows": rows,
     }
+
+
+def beta_n_aggregate_model(rows: list[Any]) -> str:
+    """Classify which models contribute to the pooled beta_N RMSE.
+
+    Each scenario selects its model independently, and the RMSE pools every row,
+    so the aggregate is only the calibrated model's fit residual when every row
+    comes from that model.
+
+    Parameters
+    ----------
+    rows : list
+        beta_N rows, each a dict that records its ``beta_n_model``.
+
+    Returns
+    -------
+    str
+        ``"all_dynamic"`` when there is at least one row and every row comes from
+        the calibrated dynamic model; ``"all_fallback"`` when every row comes from
+        the legacy fallback; ``"mixed"`` when both recorded models contribute;
+        ``"unknown"`` when there are no rows or any row records no known model.
+    """
+    models = [row.get("beta_n_model") if isinstance(row, dict) else None for row in rows]
+    known = {BETA_N_MODEL_DYNAMIC, BETA_N_MODEL_LEGACY}
+    if not models or any(model not in known for model in models):
+        return BETA_N_AGGREGATE_UNKNOWN
+    if all(model == BETA_N_MODEL_DYNAMIC for model in models):
+        return BETA_N_AGGREGATE_ALL_DYNAMIC
+    if all(model == BETA_N_MODEL_LEGACY for model in models):
+        return BETA_N_AGGREGATE_ALL_FALLBACK
+    return BETA_N_AGGREGATE_MIXED
 
 
 def sparc_axis_rmse(sparc_dir: Path) -> dict[str, Any]:
@@ -481,6 +519,47 @@ def _beta_n_model_label(row: dict[str, Any]) -> str:
     return "model not recorded"
 
 
+def _beta_n_aggregate_note(rows: list[dict[str, Any]]) -> str:
+    """Return the Notes line that attributes the pooled beta_N RMSE to its models."""
+
+    def scenarios(selected: list[dict[str, Any]]) -> str:
+        """Name the selected rows' scenarios."""
+        return ", ".join(f"`{row.get('scenario', '?')}`" for row in selected)
+
+    disposition = beta_n_aggregate_model(rows)
+    dynamic = [row for row in rows if row.get("beta_n_model") == BETA_N_MODEL_DYNAMIC]
+    fallback = [row for row in rows if row.get("beta_n_model") == BETA_N_MODEL_LEGACY]
+    if disposition == BETA_N_AGGREGATE_ALL_DYNAMIC:
+        return (
+            "- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy "
+            "with a profile/normalization correction factor "
+            f"({BETA_N_PROFILE_PEAKING_FACTOR:.3f}), "
+            "fitted to the ITER and SPARC targets as a reduced-order regression guard; the "
+            "two-point beta_N RMSE is a fit residual, not a validation result."
+        )
+    if disposition == BETA_N_AGGREGATE_ALL_FALLBACK:
+        return (
+            f"- `beta_N` estimates for {scenarios(fallback)} come from the legacy "
+            "`FusionBurnPhysics` fallback, which carries no profile/normalization calibration; "
+            "the beta_N RMSE therefore is not the calibrated model's fit residual and tracks the "
+            "uncalibrated fallback only."
+        )
+    if disposition == BETA_N_AGGREGATE_MIXED:
+        return (
+            f"- `beta_N` estimates mix models: {scenarios(dynamic)} from the calibrated "
+            f"`DynamicBurnModel` and {scenarios(fallback)} from the uncalibrated legacy "
+            "`FusionBurnPhysics` fallback. The pooled beta_N RMSE is neither the calibrated "
+            "model's fit residual nor a fallback-only figure."
+        )
+    known = {BETA_N_MODEL_DYNAMIC, BETA_N_MODEL_LEGACY}
+    unrecorded = [row for row in rows if row.get("beta_n_model") not in known]
+    where = f"for {scenarios(unrecorded)}" if unrecorded else "(no beta_N rows were recorded)"
+    return (
+        f"- The model behind `beta_N` is not recorded {where}; the beta_N RMSE cannot be "
+        "attributed to a model and is not the calibrated model's fit residual."
+    )
+
+
 def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
     """Render markdown validation report with auto-flagged summary rows."""
     lines: list[str] = []
@@ -549,6 +628,7 @@ def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
     beta_rows = [row for row in beta.get("rows", []) if isinstance(row, dict)]
     for row in beta_rows:
         lines.append(f"- `{row.get('scenario', '?')}`: {_beta_n_model_label(row)}")
+    lines.append(f"- Aggregate model attribution: `{beta_n_aggregate_model(beta_rows)}`")
     lines.append("")
 
     if plot_dir:
@@ -592,23 +672,7 @@ def render_markdown(report: dict[str, Any], plot_dir: str | None = None) -> str:
 
     lines.append("## Notes")
     lines.append("")
-    fallback_rows = [row for row in beta_rows if row.get("beta_n_model") == BETA_N_MODEL_LEGACY]
-    if fallback_rows:
-        scenarios = ", ".join(f"`{row.get('scenario', '?')}`" for row in fallback_rows)
-        lines.append(
-            f"- `beta_N` estimates for {scenarios} come from the legacy `FusionBurnPhysics` "
-            "fallback, which carries no profile/normalization calibration; the beta_N RMSE "
-            "therefore is not the calibrated model's fit residual and tracks the uncalibrated "
-            "fallback only."
-        )
-    else:
-        lines.append(
-            "- `beta_N` estimates are derived from `DynamicBurnModel` steady-state thermal energy "
-            "with a profile/normalization correction factor "
-            f"({BETA_N_PROFILE_PEAKING_FACTOR:.3f}), "
-            "fitted to the ITER and SPARC targets as a reduced-order regression guard; the "
-            "two-point beta_N RMSE is a fit residual, not a validation result."
-        )
+    lines.append(_beta_n_aggregate_note(beta_rows))
     lines.append(
         "- Use this report for trend tracking; not as a replacement for full transport/MHD validation."
     )

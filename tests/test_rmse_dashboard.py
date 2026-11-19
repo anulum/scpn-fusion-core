@@ -211,3 +211,129 @@ def test_healthy_rows_keep_the_calibrated_wording() -> None:
     for row in report["rows"]:
         lines.append(rmse_dashboard._beta_n_model_label(row))
     assert lines == ["`DynamicBurnModel` (calibrated)"] * 2
+
+
+def _report_with_beta(beta: dict[str, object]) -> dict[str, object]:
+    """Build the smallest report the renderer accepts, around one beta_N section."""
+    return {
+        "generated_at_utc": "2026-11-19T00:00:00+00:00",
+        "runtime_seconds": 1.0,
+        "confinement_itpa": {
+            "count": 2,
+            "tau_rmse_s": 0.1,
+            "tau_mae_rel_pct": 5.0,
+            "h98_rmse": 0.2,
+        },
+        "confinement_iter_sparc": {"count": 2, "tau_rmse_s": 0.3},
+        "beta_iter_sparc": beta,
+        "sparc_axis": {"count": 5, "axis_rmse_m": 0.01},
+    }
+
+
+CALIBRATED_NOTE = "is a fit residual, not a validation result"
+FALLBACK_ONLY_NOTE = "tracks the uncalibrated fallback only"
+MIXED_NOTE = "is neither the calibrated model's fit residual nor a fallback-only figure"
+UNKNOWN_NOTE = "cannot be attributed to a model"
+
+
+def test_beta_n_aggregate_model_classifies_every_state() -> None:
+    """All-dynamic, all-fallback, mixed and unknown aggregates are told apart."""
+    classify = rmse_dashboard.beta_n_aggregate_model
+    dynamic = {"beta_n_model": "dynamic_burn_model"}
+    fallback = {"beta_n_model": "legacy_fusion_burn_physics"}
+
+    assert classify([dynamic, dynamic]) == "all_dynamic"
+    assert classify([fallback, fallback]) == "all_fallback"
+    assert classify([dynamic, fallback]) == "mixed"
+    assert classify([]) == "unknown"
+    assert classify([{}, {}]) == "unknown"
+    assert classify([dynamic, {}]) == "unknown"
+    assert classify([dynamic, {"beta_n_model": "other"}]) == "unknown"
+    assert classify([dynamic, "not a row"]) == "unknown"
+
+
+def test_mixed_models_reach_the_report_entry_and_its_markdown(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One calibrated and one fallback scenario: pooled RMSE kept, wording names the mix."""
+    estimates = {
+        "iter_validated_config.json": (1.8, {"beta_n_model": "dynamic_burn_model"}),
+        "sparc_config.json": (
+            2.4,
+            {"beta_n_model": "legacy_fusion_burn_physics", "fallback_reason": "E: down"},
+        ),
+    }
+
+    def fake_estimate(
+        reference: dict[str, object], config_path: Path
+    ) -> tuple[float, dict[str, object]]:
+        """Return a fixed estimate per configuration, with its recorded model."""
+        beta_n, metrics = estimates[config_path.name]
+        return beta_n, {"Q": 1.0, "P_fusion_MW": 1.0, **metrics}
+
+    monkeypatch.setattr(rmse_dashboard, "estimate_beta_n_from_burn", fake_estimate)
+    beta = rmse_dashboard.beta_rmse_iter_sparc(
+        ROOT / "validation" / "reference_data", ROOT / "validation"
+    )
+
+    measured = [row["beta_n_measured"] for row in beta["rows"]]
+    assert beta["beta_n_rmse"] == rmse_dashboard.rmse(measured, [1.8, 2.4])
+    assert beta["beta_n_aggregate_model"] == "mixed"
+    markdown = rmse_dashboard.render_markdown(_report_with_beta(beta))
+    assert "- Aggregate model attribution: `mixed`" in markdown
+    assert MIXED_NOTE in markdown
+    assert (
+        "mix models: `ITER_15MA_baseline` from the calibrated `DynamicBurnModel` and "
+        "`SPARC_V2C` from the uncalibrated legacy `FusionBurnPhysics` fallback"
+    ) in markdown
+    assert "(E: down)" in markdown
+    assert CALIBRATED_NOTE not in markdown
+    assert FALLBACK_ONLY_NOTE not in markdown
+
+
+@pytest.mark.parametrize(
+    "rows",
+    [
+        [],
+        [{"scenario": "ITER_15MA_baseline"}, {"scenario": "SPARC_V2C"}],
+        [
+            {"scenario": "ITER_15MA_baseline", "beta_n_model": "dynamic_burn_model"},
+            {"scenario": "SPARC_V2C"},
+        ],
+    ],
+)
+def test_unrecorded_models_never_get_the_calibrated_wording(rows: list[dict[str, str]]) -> None:
+    """Rows without a recorded model, the tracked report's old shape, are not called calibrated."""
+    markdown = rmse_dashboard.render_markdown(
+        _report_with_beta({"count": 2, "beta_n_rmse": 0.09, "rows": rows})
+    )
+
+    assert "- Aggregate model attribution: `unknown`" in markdown
+    assert UNKNOWN_NOTE in markdown
+    assert CALIBRATED_NOTE not in markdown
+    if rows:
+        assert "for `SPARC_V2C`" in markdown
+    else:
+        assert "(no beta_N rows were recorded)" in markdown
+
+
+def test_only_an_all_dynamic_aggregate_keeps_the_calibrated_wording() -> None:
+    """The fit-residual wording appears for a nonempty, fully dynamic aggregate and no other."""
+    dynamic = [
+        {"scenario": "ITER_15MA_baseline", "beta_n_model": "dynamic_burn_model"},
+        {"scenario": "SPARC_V2C", "beta_n_model": "dynamic_burn_model"},
+    ]
+    fallback = [{**row, "beta_n_model": "legacy_fusion_burn_physics"} for row in dynamic]
+
+    calibrated = rmse_dashboard.render_markdown(
+        _report_with_beta({"count": 2, "beta_n_rmse": 0.09, "rows": dynamic})
+    )
+    fallback_only = rmse_dashboard.render_markdown(
+        _report_with_beta({"count": 2, "beta_n_rmse": 0.09, "rows": fallback})
+    )
+
+    assert "- Aggregate model attribution: `all_dynamic`" in calibrated
+    assert CALIBRATED_NOTE in calibrated
+    assert "- Aggregate model attribution: `all_fallback`" in fallback_only
+    assert FALLBACK_ONLY_NOTE in fallback_only
+    assert CALIBRATED_NOTE not in fallback_only

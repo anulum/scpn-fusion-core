@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import operator
 from copy import deepcopy
-from typing import Any
+from typing import Any, SupportsIndex
 
 import numpy as np
 
@@ -239,6 +239,36 @@ class AdaptiveTimeController:
         self._err_prev = error
 
 
+def positive_step_count(n_steps: SupportsIndex) -> int:
+    """Return a transport step count as a positive ``int``, converted as ``range`` does.
+
+    The count is converted with :func:`operator.index` before its sign is checked.
+    Every value without ``__index__``, such as 1.5, -1.5, NaN or infinity, therefore
+    raises ``TypeError``, and an object that implements only ``__index__`` is accepted.
+
+    Parameters
+    ----------
+    n_steps : SupportsIndex
+        Requested number of transport steps.
+
+    Returns
+    -------
+    int
+        The converted count, at least 1.
+
+    Raises
+    ------
+    TypeError
+        If ``n_steps`` has no ``__index__``.
+    ValueError
+        If the converted count is zero or negative.
+    """
+    count = operator.index(n_steps)
+    if count <= 0:
+        raise ValueError("n_steps must be positive")
+    return count
+
+
 def run_adaptive_steps(
     solver: Any,
     P_aux: float,
@@ -282,12 +312,13 @@ def run_adaptive_steps(
 
     Raises
     ------
-    ValueError
-        If ``n_steps`` is not positive; nothing is mutated.
     TypeError
-        If ``n_steps`` is not an integer (no ``__index__``), as ``range`` refuses
-        it: fractional, NaN and infinite counts are never rounded or run;
-        nothing is mutated.
+        If ``n_steps`` has no ``__index__``, as ``range`` refuses it: fractional
+        (including negative fractional), NaN and infinite counts are never
+        rounded or run. The conversion precedes the sign check; nothing is
+        mutated. See :func:`positive_step_count`.
+    ValueError
+        If ``n_steps`` converts to zero or a negative integer; nothing is mutated.
     Exception
         Any refusal from the transport model, a trial, the controller or the
         final result (for example the confinement-time estimate) propagates
@@ -302,10 +333,8 @@ def run_adaptive_steps(
     entry ``exception`` names its type and message, and the histories cover
     every step completed before it, so a recovery refusal does not discard them.
     """
-    if n_steps <= 0:
-        raise ValueError("n_steps must be positive")
-    # Same contract as range(n_steps): only integer counts, refused before any mutation.
-    step_limit = operator.index(n_steps)
+    # Same contract as range(n_steps): index conversion first, then the sign, before any mutation.
+    step_limit = positive_step_count(n_steps)
 
     controller = AdaptiveTimeController(dt_init=dt, tol=tol)
     steps = 0

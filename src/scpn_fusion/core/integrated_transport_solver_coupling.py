@@ -16,7 +16,10 @@ import logging
 import numpy as np
 
 from scpn_fusion.core._integrated_transport_solver_base import TransportSolverState
-from scpn_fusion.core.integrated_transport_solver_adaptive import run_adaptive_steps
+from scpn_fusion.core.integrated_transport_solver_adaptive import (
+    positive_step_count,
+    run_adaptive_steps,
+)
 
 _logger = logging.getLogger(__name__)
 
@@ -245,12 +248,15 @@ class TransportSolverCouplingMixin(TransportSolverState):
 
         Raises
         ------
-        ValueError
-            If fixed or adaptive mode receives a nonpositive ``n_steps``.
-            Refusal occurs before transport-model or profile mutation.
         TypeError
-            If fixed or adaptive mode receives a non-integer ``n_steps`` (for
-            example 1.5, NaN or infinity), before any mutation.
+            If fixed or adaptive mode receives an ``n_steps`` without
+            ``__index__`` (for example 1.5, -1.5, NaN or infinity). The count is
+            converted with :func:`operator.index` before its sign is checked, and
+            the refusal occurs before any mutation.
+        ValueError
+            If fixed or adaptive mode receives an ``n_steps`` that converts to
+            zero or a negative integer. Refusal occurs before transport-model or
+            profile mutation.
         PhysicsError
             If profile evolution exceeds an enforced numerical recovery budget.
 
@@ -277,11 +283,10 @@ class TransportSolverCouplingMixin(TransportSolverState):
                 max_numerical_recoveries=max_numerical_recoveries,
             )
 
-        if n_steps <= 0:
-            raise ValueError("n_steps must be positive")
+        step_count = positive_step_count(n_steps)
 
         if not adaptive:
-            for _ in range(n_steps):
+            for _ in range(step_count):
                 self.update_transport_model(P_aux)
                 t_avg, t_core = self.evolve_profiles(
                     dt,
@@ -295,7 +300,7 @@ class TransportSolverCouplingMixin(TransportSolverState):
                 "T_avg": float(t_avg),
                 "T_core": float(t_core),
                 "tau_e": tau_e,
-                "n_steps": n_steps,
+                "n_steps": step_count,
                 "Ti_profile": self.Ti.copy(),
                 "ne_profile": self.ne.copy(),
             }
@@ -303,7 +308,7 @@ class TransportSolverCouplingMixin(TransportSolverState):
         return run_adaptive_steps(
             self,
             P_aux,
-            n_steps,
+            step_count,
             dt,
             tol,
             enforce_numerical_recovery=enforce_numerical_recovery,
