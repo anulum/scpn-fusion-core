@@ -1,7 +1,7 @@
 # SCPN RMSE Dashboard
 
-- Generated: `2026-10-31T11:54:34.529841+00:00`
-- Runtime: `6.04s`
+- Generated: `2026-11-19T13:27:14.537377+00:00`
+- Runtime: `22.24s`
 
 ## Auto-Flag Summary
 
@@ -29,6 +29,9 @@
 
 - Samples: `2`
 - `beta_N` RMSE: `0.0894` **[WARN]**
+- `ITER_15MA_baseline`: `DynamicBurnModel` (calibrated)
+- `SPARC_V2C`: `DynamicBurnModel` (calibrated)
+- Aggregate model attribution: `all_dynamic`
 
 ![beta_N scatter](./beta_n_scatter.png)
 
