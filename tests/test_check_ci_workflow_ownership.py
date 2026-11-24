@@ -38,8 +38,8 @@ def test_current_distributed_workflows_satisfy_ownership() -> None:
         json.loads(result.stdout)
         == check_workflow_ownership(ROOT)
         == {
-            "reusable_workflows": 17,
-            "executable_jobs": 22,
+            "reusable_workflows": 18,
+            "executable_jobs": 25,
         }
     )
 
@@ -355,7 +355,7 @@ def test_secret_routing_drift_is_rejected(
     assert f"{diagnostic}: {group}" in result.stderr
 
 
-@pytest.mark.parametrize("group", ["python-tests", "rust-coverage"])
+@pytest.mark.parametrize("group", ["python-test-union", "rust-coverage"])
 @pytest.mark.parametrize(
     ("surface", "replacement", "diagnostic"),
     [

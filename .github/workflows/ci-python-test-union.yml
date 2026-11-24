@@ -1,0 +1,144 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Commercial license available
+# © Concepts 1996–2026 Miroslav Šotek. All rights reserved.
+# © Code 2020–2026 Miroslav Šotek. All rights reserved.
+# ORCID: 0009-0009-3560-0851
+# Contact: www.anulum.li | protoscience@anulum.li
+# SCPN Fusion Core — reusable CI validation
+#
+# Union of the sharded Python test runs (ci-python-tests.yml). It runs after
+# failed shards too, so the coverage gap inventory is always written. It
+# succeeds only when, for each interpreter, every declared shard succeeded and
+# the shards ran every test of that interpreter's full collection exactly once,
+# and when the Python 3.12 coverage union meets the unchanged thresholds.
+# Codecov receives the union only after all of these checks have passed.
+name: CI python-test-union
+'on':
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: false
+permissions: {}
+env:
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: init.defaultBranch
+  GIT_CONFIG_VALUE_0: main
+jobs:
+  python-test-union:
+    name: Python test union and coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        lfs: false
+    - name: Set up Python 3.12
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+      with:
+        python-version: '3.12'
+    - name: Install the coverage lane's hash-locked tools
+      # The same lock as the Python 3.12 shards, so the union uses their coverage release.
+      run: |
+        pip install --require-hashes -r requirements/ci-benchmark.txt
+        pip install --no-deps -e .
+    - name: Retrieve every test shard
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+      with:
+        pattern: python-shard-*
+        path: ${{ runner.temp }}/shards
+    - name: Retrieve every interpreter's test inventory
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+      with:
+        pattern: python-inventory-*
+        path: ${{ runner.temp }}/inventory
+    - name: Require every admitted test exactly once per interpreter
+      run: |
+        status=0
+        for lane in 3.11 3.12; do
+          python tools/ci_test_shards.py verify --lane "$lane" --expect-shards 4 \
+            --shards-dir "$RUNNER_TEMP/shards" \
+            --inventory "$RUNNER_TEMP/inventory/python-inventory-$lane/inventory.json" \
+            --commit "$GITHUB_SHA" || status=1
+        done
+        exit "$status"
+    - name: Combine the Python 3.12 shard coverage
+      if: ${{ !cancelled() }}
+      run: |
+        python tools/ci_test_shards.py combine --lane 3.12 --expect-shards 4 \
+          --shards-dir "$RUNNER_TEMP/shards" --output .coverage
+        python -m coverage xml -o coverage-python.xml
+    - name: Coverage regression guard
+      # Persist the complete 100% gap inventory even when tests or gates fail.
+      if: ${{ !cancelled() }}
+      run: |
+        python tools/coverage_guard.py \
+          --coverage-xml coverage-python.xml \
+          --thresholds tools/coverage_guard_thresholds.json \
+          --summary-json artifacts/coverage_guard_summary.json
+    - name: Coverage delta report
+      if: ${{ !cancelled() }}
+      run: |
+        python tools/coverage_delta_report.py \
+          --coverage-summary artifacts/coverage_guard_summary.json \
+          --thresholds tools/coverage_guard_thresholds.json \
+          --output-json artifacts/coverage_delta_report.json \
+          --output-md artifacts/coverage_delta_report.md
+    - name: Upload Python coverage to Codecov
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5
+      with:
+        files: coverage-python.xml
+        flags: python
+        fail_ci_if_error: false
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    - name: Record this run's Python 3.12 durations for the next timing snapshot
+      if: ${{ !cancelled() }}
+      run: |
+        mkdir -p "$RUNNER_TEMP/junit-3.12" artifacts
+        cp -R "$RUNNER_TEMP"/shards/python-shard-3.12-* "$RUNNER_TEMP/junit-3.12/"
+        python tools/ci_test_shards.py record --junit-dir "$RUNNER_TEMP/junit-3.12" \
+          --previous tools/ci_test_timings.json --output artifacts/ci_test_timings.json \
+          --source "run_id=$GITHUB_RUN_ID" --source "run_attempt=$GITHUB_RUN_ATTEMPT" \
+          --source "commit=$GITHUB_SHA" --source "lane=3.12"
+    - name: Gather the Python 3.12 shard manifests and logs
+      if: always()
+      run: |
+        mkdir -p artifacts/python312_shards
+        for shard in "$RUNNER_TEMP"/shards/python-shard-3.12-*; do
+          [ -d "$shard" ] || continue
+          for name in manifest.json pytest.log; do
+            if [ -f "$shard/$name" ]; then
+              cp "$shard/$name" "artifacts/python312_shards/$(basename "$shard")-$name"
+            fi
+          done
+        done
+    - name: Upload Python 3.12 coverage diagnostics
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: python312-coverage-diagnostics
+        if-no-files-found: warn
+        overwrite: true
+        path: |
+          coverage-python.xml
+          artifacts/python312_shards/
+    - name: Upload coverage guard summary
+      if: always()
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: coverage-guard-summary
+        if-no-files-found: warn
+        overwrite: true
+        path: |
+          artifacts/coverage_guard_summary.json
+          artifacts/coverage_delta_report.json
+          artifacts/coverage_delta_report.md
+    - name: Upload the next timing snapshot
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+      with:
+        name: ci-test-timings
+        if-no-files-found: warn
+        overwrite: true
+        path: artifacts/ci_test_timings.json

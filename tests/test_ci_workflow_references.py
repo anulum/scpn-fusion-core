@@ -17,10 +17,12 @@ import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from threading import Thread
+from typing import Any
 
 import pytest
 
 from tools.check_ci_workflow_ownership import workflow_sources
+from tools.ci_test_shards import SHARD_COUNT
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -99,13 +101,72 @@ def test_ci_uses_local_paths_for_routine_guarded_evidence() -> None:
 
 
 def test_ci_does_not_rerun_hypothesis_file_after_full_suite() -> None:
-    """The three full-suite matrix lanes already include property tests once."""
+    """The sharded full-suite lanes already include the property tests once."""
     workflow = _workflow_text()
 
-    assert 'pytest tests/ -v -m "not experimental"' in workflow
-    assert 'timeout --signal=TERM 75m pytest tests/ -q -m "not experimental"' in workflow
+    assert "python tools/ci_test_shards.py run --lane" in workflow
+    assert "lane_args=(-v)" in workflow
+    assert "lane_args=(-q --cov=scpn_fusion --cov-branch --cov-report=)" in workflow
+    assert "--timeout-minutes 75" in workflow
     assert "tests/test_hypothesis_properties.py" not in workflow
     assert "--hypothesis-seed" not in workflow
+
+
+def _python_test_jobs() -> tuple[dict[str, Any], dict[str, Any]]:
+    """Return the jobs of the sharded test workflow and of its union workflow."""
+    import yaml
+
+    workflows = ROOT / ".github" / "workflows"
+    tests = yaml.load((workflows / "ci-python-tests.yml").read_text(), Loader=yaml.BaseLoader)
+    union = yaml.load((workflows / "ci-python-test-union.yml").read_text(), Loader=yaml.BaseLoader)
+    return tests["jobs"], union["jobs"]["python-test-union"]
+
+
+def test_python_test_shards_match_the_scheduler_and_the_union() -> None:
+    """Matrix, names, shard arguments and the union's expectations share one shard count."""
+    jobs, union = _python_test_jobs()
+    count = SHARD_COUNT
+    shard_job = jobs["python-tests"]
+    lanes = shard_job["strategy"]["matrix"]["python-version"]
+
+    assert lanes == ["3.11", "3.12"]
+    assert shard_job["strategy"]["matrix"]["shard"] == [str(index) for index in range(1, count + 1)]
+    assert shard_job["name"].endswith(f"shard ${{{{ matrix.shard }}}}/{count}")
+    assert jobs["python-test-inventory"]["strategy"]["matrix"]["python-version"] == lanes
+    run = next(
+        step["run"] for step in shard_job["steps"] if "ci_test_shards.py run" in step.get("run", "")
+    )
+    assert f'--shard "${{{{ matrix.shard }}}}/{count}"' in run
+    assert "--timings tools/ci_test_timings.json" in run
+    commands = "\n".join(step.get("run", "") for step in union["steps"])
+    assert f"for lane in {' '.join(lanes)}; do" in commands
+    assert commands.count(f"--expect-shards {count}") == 2
+    assert "python tools/ci_test_shards.py combine --lane 3.12" in commands
+    codecov = next(step for step in union["steps"] if step.get("uses", "").startswith("codecov/"))
+    assert "if" not in codecov, "Codecov receives the union only after every check passed"
+
+
+def test_inventory_and_preflight_share_the_shards_environment() -> None:
+    """Every job collects or tests in the same set-up, through the native extension build."""
+    jobs, _ = _python_test_jobs()
+
+    def setup(job: dict[str, Any]) -> list[dict[str, Any]]:
+        """Return a job's steps up to and including the native extension build."""
+        steps: list[dict[str, Any]] = job["steps"]
+        end = next(
+            i
+            for i, step in enumerate(steps)
+            if step.get("name", "").startswith("Build and install")
+        )
+        return steps[: end + 1]
+
+    reference = setup(jobs["python-tests"])
+    assert reference[1]["name"] == "Checkout pinned DREAM Python API fixture"
+    assert all(setup(job) == reference for job in jobs.values())
+    preflight = [step.get("name", "") for step in jobs["python-release-gate"]["steps"]]
+    assert preflight.index("Python preflight release gate") < preflight.index(
+        "Reject silent tracked evidence drift"
+    )
 
 
 def test_ci_materializes_the_pinned_dream_api_for_custody_tests() -> None:
@@ -123,7 +184,7 @@ def test_ci_materializes_the_pinned_dream_api_for_custody_tests() -> None:
     assert "path: data/external/full_fidelity_public_sources/repos/dream" in checkout
     assert "persist-credentials: false" in checkout
     assert checkout_start < workflow.index("Python preflight release gate")
-    assert checkout_start < workflow.index("Run release test suite")
+    assert checkout_start < workflow.index("Run this shard of the release test suite")
 
 
 def test_required_dependency_policy_covers_every_committed_lock() -> None:

@@ -561,6 +561,36 @@
 
 ### Changed
 
+- CI runs the Python test suite in four duration-balanced shards each for
+  Python 3.11 and 3.12, instead of one job per interpreter. The unsharded
+  Python 3.12 coverage step took 37–66 min on green runs. On a slow runner it
+  once reached its 75-minute limit.
+  - `tools/ci_test_shards.py` partitions the test modules of `tests/`. It
+    places the longest first, using the tracked snapshot
+    `tools/ci_test_timings.json`, so every shard of a run uses the same
+    partition. Unmeasured modules weigh the median, and a missing snapshot
+    falls back to round-robin.
+  - Each shard runs the real pytest with the unchanged selection (`-m "not
+    experimental"` and the one evidence-host deselection). It records the
+    collected node ids, the exit code and the JUnit report.
+  - Next to the shards, one job per interpreter collects the complete
+    admitted suite and runs the CI contract checks. One Python 3.12 job runs
+    the release preflight, the evidence-drift check and the disruption
+    false-positive gate.
+  - The new `python-test-union` job fails in any of these cases:
+    - a shard is missing, failed or timed out;
+    - shards overlap;
+    - a module or a test of the full collection was not run.
+
+    It combines exactly one coverage data file per Python 3.12 shard and
+    applies the unchanged coverage guard once, to the union. Codecov receives
+    the union only when all of this passed. The job also writes the next
+    timing snapshot from the shards' JUnit durations.
+  - The required check `Python 3.12` now also requires the union.
+  - The tool has 100% statement and branch coverage. Its tests drive real
+    pytest runs: complete union, failing test, collection error, empty shard,
+    timeout with SIGTERM and with kill, and every refused manifest or
+    inventory.
 - `SCPN_PREPUSH_GATE=none` lets a push omit the full local preflight in
   `.githooks/pre-push`, following the standing rule that no full suite runs before
   a push and remote CI validates. The commit-message check of every pushed commit

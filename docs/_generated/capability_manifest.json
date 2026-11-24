@@ -3110,14 +3110,14 @@
   },
   "counts": {
     "capability_documentation_pages": 71,
-    "github_workflows": 38,
+    "github_workflows": 39,
     "optional_extras": 14,
     "public_api_exports": 2,
     "public_documentation_pages": 71,
     "python_capability_classes": 650,
     "python_capability_source_modules": 375,
     "rust_workspace_crates": 13,
-    "test_files": 705
+    "test_files": 706
   },
   "documentation": {
     "public_pages": [
@@ -3255,6 +3255,7 @@
       ".github/workflows/ci-geometry-3d-smoke.yml",
       ".github/workflows/ci-lean-safety-proofs.yml",
       ".github/workflows/ci-python-research-gate.yml",
+      ".github/workflows/ci-python-test-union.yml",
       ".github/workflows/ci-python-tests.yml",
       ".github/workflows/ci-reference-evidence.yml",
       ".github/workflows/ci-runtime-parity-perf-gate.yml",
@@ -3343,6 +3344,7 @@
       "tests/test_check_test_module_linkage.py",
       "tests/test_checkpoint.py",
       "tests/test_ci_rmse_gate.py",
+      "tests/test_ci_test_shards.py",
       "tests/test_ci_workflow_references.py",
       "tests/test_claim_boundary_regressions.py",
       "tests/test_claim_range_guard.py",

@@ -182,9 +182,9 @@ checksums, thresholds, grid or scaling evidence, and native comparisons.
 | Capability documentation pages | 71 |
 | Rust workspace crates | 13 |
 | Optional extras | 14 |
-| Python test files | 705 |
+| Python test files | 706 |
 | Public documentation pages | 71 |
-| GitHub Actions workflows | 38 |
+| GitHub Actions workflows | 39 |
 
 Evidence boundary: this snapshot is a static inventory. Performance, coverage, hardware, and scientific-fidelity claims require their own committed evidence artifacts.
 <!-- capability-snapshot:end -->

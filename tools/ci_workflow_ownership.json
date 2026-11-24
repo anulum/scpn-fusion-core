@@ -12,6 +12,7 @@
         "geometry-3d-smoke",
         "lean-safety-proofs",
         "python-research-gate",
+        "python-test-union",
         "python-tests",
         "reference-evidence",
         "runtime-parity-perf-gate",
@@ -33,7 +34,7 @@
           "name": "Require every declared CI category",
           "env": {
             "CATEGORY_RESULTS": "${{ toJSON(needs) }}",
-            "EXPECTED_CATEGORIES": "[\"ci-chain-guard\", \"dependency-policy\", \"geometry-3d-smoke\", \"lean-safety-proofs\", \"python-research-gate\", \"python-tests\", \"reference-evidence\", \"runtime-parity-perf-gate\", \"rust-benchmarks\", \"rust-coverage\", \"rust-fuzz\", \"rust-python-interop\", \"rust-tests\", \"smoke-install\", \"stress-test\", \"studio-conformance\", \"validation-regression\"]",
+            "EXPECTED_CATEGORIES": "[\"ci-chain-guard\", \"dependency-policy\", \"geometry-3d-smoke\", \"lean-safety-proofs\", \"python-research-gate\", \"python-test-union\", \"python-tests\", \"reference-evidence\", \"runtime-parity-perf-gate\", \"rust-benchmarks\", \"rust-coverage\", \"rust-fuzz\", \"rust-python-interop\", \"rust-tests\", \"smoke-install\", \"stress-test\", \"studio-conformance\", \"validation-regression\"]",
             "EVENT_NAME": "${{ github.event_name }}",
             "REF_NAME": "${{ github.ref }}"
           },
@@ -104,13 +105,31 @@
       "path": ".github/workflows/ci-python-tests.yml",
       "category": 4,
       "jobs": [
-        "python-tests"
+        "python-tests",
+        "python-test-inventory",
+        "python-release-gate"
       ],
       "needs": [
         "ci-chain-guard",
         "lean-safety-proofs"
       ],
       "condition": null,
+      "permissions": {
+        "contents": "read"
+      },
+      "secrets": {},
+      "workflow_call": {}
+    },
+    "python-test-union": {
+      "path": ".github/workflows/ci-python-test-union.yml",
+      "category": 4,
+      "jobs": [
+        "python-test-union"
+      ],
+      "needs": [
+        "python-tests"
+      ],
+      "condition": "${{ !cancelled() }}",
       "permissions": {
         "contents": "read"
       },

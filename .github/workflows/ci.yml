@@ -43,6 +43,13 @@ jobs:
     needs:
     - ci-chain-guard
     - lean-safety-proofs
+  python-test-union:
+    uses: ./.github/workflows/ci-python-test-union.yml
+    permissions:
+      contents: read
+    needs:
+    - python-tests
+    if: ${{ !cancelled() }}
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   python-research-gate:
@@ -138,6 +145,7 @@ jobs:
     - geometry-3d-smoke
     - lean-safety-proofs
     - python-research-gate
+    - python-test-union
     - python-tests
     - reference-evidence
     - runtime-parity-perf-gate
@@ -158,9 +166,9 @@ jobs:
       env:
         CATEGORY_RESULTS: ${{ toJSON(needs) }}
         EXPECTED_CATEGORIES: '["ci-chain-guard", "dependency-policy", "geometry-3d-smoke", "lean-safety-proofs",
-          "python-research-gate", "python-tests", "reference-evidence", "runtime-parity-perf-gate", "rust-benchmarks",
-          "rust-coverage", "rust-fuzz", "rust-python-interop", "rust-tests", "smoke-install", "stress-test",
-          "studio-conformance", "validation-regression"]'
+          "python-research-gate", "python-test-union", "python-tests", "reference-evidence", "runtime-parity-perf-gate",
+          "rust-benchmarks", "rust-coverage", "rust-fuzz", "rust-python-interop", "rust-tests", "smoke-install",
+          "stress-test", "studio-conformance", "validation-regression"]'
         EVENT_NAME: ${{ github.event_name }}
         REF_NAME: ${{ github.ref }}
       run: |

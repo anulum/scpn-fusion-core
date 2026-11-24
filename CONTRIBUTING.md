@@ -278,11 +278,34 @@ The CI pipeline runs on every push and pull request. It checks:
 - `ruff check` (Python formatting/linting; ruff format is configured for style checks)
 - `python tools/run_mypy_strict.py` (strict Python typing)
 - `cargo fmt --check` and `cargo clippy` (Rust formatting/linting)
-- `pytest tests/` (Python test suite)
+- `pytest tests/` (Python test suite, in four shards per interpreter; see below)
 - `cargo test` (Rust test suite)
 - `cargo audit` (Rust dependency vulnerability scan)
 
 Your PR will not be merged until all CI checks pass.
+
+#### Sharded Python test suite
+
+CI runs the Python test suite in four duration-balanced shards each for Python 3.11
+and 3.12, through `tools/ci_test_shards.py`. Every shard derives the same partition
+from the test modules under `tests/` and the timing snapshot
+`tools/ci_test_timings.json` at the commit under test. Timings only order the
+modules; they never add or remove one, and a new module enters automatically.
+
+The union job (`ci-python-test-union.yml`) passes only when two conditions hold.
+First, for each interpreter every shard succeeded and the shards together ran every
+test of a full collection exactly once. Second, the combined Python 3.12 coverage
+meets `tools/coverage_guard_thresholds.json`.
+
+To reproduce one shard locally, run:
+
+```bash
+python tools/ci_test_shards.py run --lane 3.12 --shard 2/4 \
+  --timings tools/ci_test_timings.json --out-dir /path/to/shard-2 -- -q
+```
+
+The union job uploads the next timing snapshot as the `ci-test-timings` artifact.
+Commit it to `tools/ci_test_timings.json` when the shards drift out of balance.
 
 ---
 
