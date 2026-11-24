@@ -594,6 +594,15 @@
     pytest runs: complete union, failing test, collection error, empty shard,
     timeout with SIGTERM and with kill, and every refused manifest or
     inventory.
+  - Sharding showed two import branches that only test order had covered:
+    - the import of `control/jax_traceable_runtime.py` without JAX was
+      reached when another module blocked JAX before the runtime's first
+      import;
+    - the lazy package export `scpn_fusion.setup_fusion_logging` was
+      reached by chance.
+
+    Both now have explicit tests, so their coverage no longer depends on
+    which modules share a process.
 - `SCPN_PREPUSH_GATE=none` lets a push omit the full local preflight in
   `.githooks/pre-push`, following the standing rule that no full suite runs before
   a push and remote CI validates. The commit-message check of every pushed commit

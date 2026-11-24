@@ -147,3 +147,14 @@ def test_setup_fusion_logging_writes_text_file(tmp_path: Path) -> None:
         assert "plain file log" in text
     finally:
         _restore_logger(logger, old_handlers, old_level)
+
+
+def test_package_exports_setup_fusion_logging_lazily(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``scpn_fusion.setup_fusion_logging`` resolves on first access; other names raise."""
+    import scpn_fusion
+
+    monkeypatch.delitem(vars(scpn_fusion), "setup_fusion_logging", raising=False)
+    assert scpn_fusion.setup_fusion_logging is setup_fusion_logging
+    assert vars(scpn_fusion)["setup_fusion_logging"] is setup_fusion_logging
+    with pytest.raises(AttributeError, match="has no attribute 'missing_export'"):
+        scpn_fusion.__getattr__("missing_export")

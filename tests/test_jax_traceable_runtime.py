@@ -8,6 +8,9 @@
 
 from __future__ import annotations
 
+import importlib.util
+import sys
+
 import numpy as np
 import pytest
 
@@ -297,3 +300,25 @@ def test_validate_traceable_backend_parity_rejects_unavailable_backend(
             atol=1e-8,
             backends=["jax"],
         )
+
+
+def test_module_import_without_jax_disables_the_jax_backend(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Importing the runtime where JAX cannot load leaves the JAX backend unavailable.
+
+    A separate copy of the module is executed, so the imported module used by the other
+    tests keeps its backends.
+    """
+    monkeypatch.setitem(sys.modules, "jax", None)
+    monkeypatch.setitem(sys.modules, "jax.numpy", None)
+    name = "_jax_traceable_runtime_without_jax"
+    spec = importlib.util.spec_from_file_location(name, runtime.__file__)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    monkeypatch.setitem(sys.modules, name, module)
+    spec.loader.exec_module(module)
+    assert (module._HAS_JAX, module.jax, module.jnp) == (False, None, None)
+    commands = np.asarray([0.1, 0.2], dtype=np.float64)
+    with pytest.raises(RuntimeError, match="JAX backend requested"):
+        module.run_traceable_control_loop(commands, backend="jax")
