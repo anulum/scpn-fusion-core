@@ -4,6 +4,14 @@
 
 ### Security
 
+- Nine `unsound` RustSec advisories against heapless 0.8.0 (RUSTSEC-2026-0574 to
+  RUSTSEC-2026-0582, 2026-11-18) are accepted as a time-boxed cargo-audit exception
+  for the pinned external RustBCA closure only, where heapless arrives through
+  geo 0.28 and rstar 0.12.2. rstar uses only `BinaryHeap`, which none of the nine
+  advisories affects, and no release of geo or rstar moves the closure to
+  heapless 0.9.4 yet. The exception is reviewed by 2026-12-24. The expired
+  review date of the `paste` exception is renewed to the same day; paste still
+  has no release beyond 1.0.15.
 - soupsieve moves to 4.1 in the build and docs locks (GHSA-mmhr-3c5m-f64f,
   CVE-2026-126190, high: polynomial-time denial of service in the descendant
   combinator; fixed in 4.0). The `.in` floors require 4.0. The build lock

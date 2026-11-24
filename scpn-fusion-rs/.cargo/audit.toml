@@ -7,14 +7,41 @@
 # SCPN Fusion Core — cargo-audit configuration
 #
 # `cargo audit --deny warnings` is used in CI so that unmaintained, yanked, and
-# unsound advisories fail the build alongside vulnerabilities. The single ignore
-# below is a transitive, unmaintained-only advisory with no upstream fix path
-# available to this workspace; every other warning class remains a hard failure.
+# unsound advisories fail the build alongside vulnerabilities. Every ignore below
+# is a transitive advisory in the pinned external RustBCA dependency closure, has
+# no upstream fix path available to this workspace, carries its evidence and a
+# review-by date, and is removed once the closure no longer needs it. Every other
+# advisory and warning class remains a hard failure.
 
 [advisories]
 # RUSTSEC-2024-0436 — `paste` (proc-macro helper) is no longer maintained. It is
-# present in the pinned external RustBCA dependency closure. The registry
-# still has no release beyond paste1.0.15; replacing it requires an upstream
-# dependency migration. This is an unmaintained notice, not a vulnerability.
-# Review-by: 2026-10-22. Remove this exception when the source closure drops paste.
-ignore = ["RUSTSEC-2024-0436"]
+# present in the pinned external RustBCA dependency closure (through simba). The
+# registry still has no release beyond paste 1.0.15 (re-checked 2026-11-24);
+# replacing it requires an upstream dependency migration. This is an unmaintained
+# notice, not a vulnerability.
+# Review-by: 2026-12-24. Remove this exception when the source closure drops paste.
+#
+# RUSTSEC-2026-0574 to RUSTSEC-2026-0582 — nine `unsound` advisories against
+# heapless 0.8.0, published 2026-11-18 and patched in heapless >= 0.9.4. In the
+# RustBCA closure heapless comes only through RustBCA -> geo 0.28 -> rstar 0.12.2.
+# rstar uses only heapless::binary_heap::BinaryHeap (nearest-neighbour search).
+# None of the nine advisories lists a binary_heap function; they affect
+# sorted_linked_list, spsc, index_map, deque, history_buf, vec::IntoIter::drop and
+# the pools. No upstream fix path exists yet: every rstar below 0.14 requires
+# heapless ^0.8, and every geo release up to 0.33.1 requires rstar ^0.12.
+# Accepted by the owner on 2026-11-24 as a time-boxed exception, pending a
+# second-eye review.
+# Review-by: 2026-12-24. Remove these exceptions when geo/rstar move the closure to
+# heapless >= 0.9.4.
+ignore = [
+    "RUSTSEC-2024-0436",
+    "RUSTSEC-2026-0574",
+    "RUSTSEC-2026-0575",
+    "RUSTSEC-2026-0576",
+    "RUSTSEC-2026-0577",
+    "RUSTSEC-2026-0578",
+    "RUSTSEC-2026-0579",
+    "RUSTSEC-2026-0580",
+    "RUSTSEC-2026-0581",
+    "RUSTSEC-2026-0582",
+]
