@@ -23,7 +23,9 @@ in any of these cases:
 - the modules of the shards overlap, or their union is not the discovery;
 - the collected node ids overlap, or their union differs from a full collection of the
   same lane;
-- a shard failed or timed out, or its JUnit report omits a collected test.
+- a shard failed or timed out, or its JUnit report does not hold exactly one test case
+  per collected test. JUnit entries of modules skipped during collection carry no
+  classname and are counted separately.
 
 The coverage union combines exactly one data file per shard before the original thresholds
 are applied once.
@@ -466,7 +468,12 @@ def run_shard(
             )
             manifest["timed_out"] = _wait(process, log, timeout_minutes * 60.0)
             returncode = TIMEOUT_RETURNCODE if manifest["timed_out"] else process.returncode
-    manifest["junit_testcases"] = len(_junit_cases(out_dir)) if junit.exists() else 0
+    # A module skipped while it is collected (``allow_module_level`` skips, ``importorskip``)
+    # yields no node id but one JUnit entry with an empty ``classname``; every test item has
+    # a classname. Only test items are compared with the collected node ids.
+    cases = _junit_cases(out_dir) if junit.exists() else []
+    manifest["junit_testcases"] = sum(1 for case in cases if case.get("classname"))
+    manifest["junit_collection_reports"] = len(cases) - manifest["junit_testcases"]
     manifest["pytest_returncode"] = returncode
     manifest["elapsed_seconds"] = round(time.monotonic() - started, 3)
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")

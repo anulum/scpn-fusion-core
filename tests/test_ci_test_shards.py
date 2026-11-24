@@ -40,6 +40,11 @@ MODULES = {
     "tests/test_gamma.py": (
         "import pytest\n\n\n@pytest.mark.experimental\ndef test_only_research():\n    assert 1\n"
     ),
+    # Skipped while it is collected: no node id, one JUnit entry with an empty classname.
+    "tests/test_epsilon.py": (
+        "import pytest\n\npytest.skip('needs hardware', allow_module_level=True)\n\n\n"
+        "def test_never():\n    assert 0\n"
+    ),
     "tests/sub/test_delta.py": "def test_nested():\n    assert 1\n",
     "tests/sub/thing_test.py": "def test_suffix():\n    assert 1\n",
     "tests/helper.py": "VALUE = 1\n",
@@ -51,6 +56,7 @@ DISCOVERED = [
     "tests/sub/thing_test.py",
     "tests/test_alpha.py",
     "tests/test_beta.py",
+    "tests/test_epsilon.py",
     "tests/test_gamma.py",
 ]
 ADMITTED = {
@@ -251,11 +257,17 @@ def test_shards_and_inventory_form_a_complete_union(finished_run: tuple[Path, Pa
     assert first["files"] == [
         "tests/sub/test_delta.py",
         "tests/test_alpha.py",
+        "tests/test_epsilon.py",
+    ]
+    assert second["files"] == [
+        "tests/sub/thing_test.py",
+        "tests/test_beta.py",
         "tests/test_gamma.py",
     ]
-    assert second["files"] == ["tests/sub/thing_test.py", "tests/test_beta.py"]
     assert set(first["nodeids"]) | set(second["nodeids"]) == ADMITTED
     assert (first["junit_testcases"], second["junit_testcases"]) == (4, 2)
+    # The module skipped during collection is reported, but not as a test case.
+    assert (first["junit_collection_reports"], second["junit_collection_reports"]) == (1, 0)
     assert first["selection"] == list(shards.SELECTION) and first["commit"] == COMMIT
     assert set(json.loads(inventory.read_text())["nodeids"]) == ADMITTED
     assert (shard_dir / "python-shard-3.12-1" / "pytest.log").read_text().strip()
@@ -402,13 +414,18 @@ def test_collection_error_fails_the_shard_and_the_inventory(tmp_path: Path, comm
     assert json.loads(inventory.read_text())["nodeids"] == []
 
 
-def test_shard_without_admitted_tests_is_empty_not_failed(tmp_path: Path, commit: str) -> None:
-    """A shard whose only module holds experimental tests runs nothing and succeeds."""
+@pytest.mark.parametrize(
+    ("index", "module"), [(5, "tests/test_epsilon.py"), (6, "tests/test_gamma.py")]
+)
+def test_shard_without_admitted_tests_is_empty_not_failed(
+    tmp_path: Path, commit: str, index: int, module: str
+) -> None:
+    """A shard whose only module is skipped or experimental runs nothing and succeeds."""
     project = _project(tmp_path / "project")
     out = tmp_path / "shard"
-    assert _run(project, 5, 5, out) == 0
+    assert _run(project, index, 6, out) == 0
     manifest = json.loads((out / "manifest.json").read_text())
-    assert manifest["files"] == ["tests/test_gamma.py"]
+    assert manifest["files"] == [module]
     assert (manifest["nodeids"], manifest["junit_testcases"], manifest["pytest_returncode"]) == (
         [],
         0,
@@ -546,7 +563,8 @@ def test_timing_record_measures_live_modules_and_drops_removed_ones(
     )
     snapshot = json.loads(output.read_text())
     assert measured == 4 and snapshot["source"] == source
-    assert set(snapshot["durations"]) == set(DISCOVERED)
+    # The module skipped during collection has no test-case duration and no previous entry.
+    assert set(snapshot["durations"]) == set(DISCOVERED) - {"tests/test_epsilon.py"}
     assert snapshot["durations"]["tests/test_gamma.py"] == 7.0
     assert all(value >= 0.001 for value in snapshot["durations"].values())
     assert shards.read_timings(output) == snapshot["durations"]

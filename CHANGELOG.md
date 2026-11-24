@@ -572,7 +572,10 @@
     falls back to round-robin.
   - Each shard runs the real pytest with the unchanged selection (`-m "not
     experimental"` and the one evidence-host deselection). It records the
-    collected node ids, the exit code and the JUnit report.
+    collected node ids, the exit code and the JUnit report. A module that is
+    skipped while it is collected leaves a JUnit entry with an empty
+    classname. Such entries are counted separately from the test cases,
+    which must match the collected node ids one for one.
   - Next to the shards, one job per interpreter collects the complete
     admitted suite and runs the CI contract checks. One Python 3.12 job runs
     the release preflight, the evidence-drift check and the disruption
