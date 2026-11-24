@@ -292,6 +292,15 @@
   artifacts named github-pages-…" (upstream deploy-pages issue 451). The deploy
   job reads the artifact name from the assemble job, so a re-run of only the
   deploy job still finds it.
+- The coupled TORAX parity test no longer depends on the speed of the host it
+  runs on. The warm-cost gate divides the TORAX warm time recorded on the
+  reference host by the native warm time measured in the test process, so a
+  runner much faster than that host crossed the limit of 100 with no change in
+  the code (CI on 2026-11-24: only `cost_completeness` false). The test now runs
+  every native case for real but reports the native wall times recorded with
+  the tracked report. A new test pins a native warm time past the limit in
+  either direction and checks that only the cost gate fails, and that the strict
+  run exits 1. The benchmark and its gate are unchanged.
 - Transport step counts are converted with `operator.index` before their sign
   is checked, in fixed and adaptive `run_to_steady_state` and in
   `run_adaptive_steps`, through the new `positive_step_count`. A negative

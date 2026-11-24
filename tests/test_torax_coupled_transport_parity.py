@@ -17,10 +17,44 @@ from typing import Any, cast
 import pytest
 
 from validation import benchmark_torax_coupled_transport_parity as benchmark
+from validation.reference_data.torax.coupled_transport_model_intersection_deck import (
+    MODEL_INTERSECTION,
+)
 
 
 def _payload() -> dict[str, Any]:
     return cast(dict[str, Any], json.loads(benchmark.REFERENCE_PATH.read_text(encoding="utf-8")))
+
+
+def _pin_native_wall_times(
+    monkeypatch: pytest.MonkeyPatch, *, cold_s: float, warm_s: float
+) -> None:
+    """Run every native case for real, but report fixed wall times for it.
+
+    The warm-cost gate divides the TORAX warm time recorded on the reference host by
+    the native warm time measured in this process. On a runner much faster or slower
+    than that host, the ratio crosses its limit with no change in the code. A test
+    that asserts the gate's decision therefore fixes the native times. The first
+    call is the cold run; every later call reports ``warm_s``.
+    """
+    run_native = benchmark._run_native
+    calls = 0
+
+    def pinned(reference_case: Any, *, dt_s: float) -> tuple[dict[str, Any], float]:
+        """Return the real native case with the pinned wall time for this call."""
+        nonlocal calls
+        case, _measured = run_native(reference_case, dt_s=dt_s)
+        calls += 1
+        return case, cold_s if calls == 1 else warm_s
+
+    monkeypatch.setattr(benchmark, "_run_native", pinned)
+
+
+def _tracked_native_runtime() -> dict[str, float]:
+    """Native wall times recorded with the tracked report on the reference host."""
+    report = json.loads(benchmark.REPORT_JSON.read_text(encoding="utf-8"))
+    runtime = report["runtime_seconds"]
+    return {"cold": float(runtime["native_cold"]), "warm": float(runtime["native_warm"])}
 
 
 def test_reference_authenticates_pinned_deck_and_deterministic_replay() -> None:
@@ -82,8 +116,10 @@ def test_reference_needs_one_identical_replay_per_warm_sample(tmp_path: Path) ->
 
 
 def test_build_report_exercises_four_state_pareto_gate(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    tracked = _tracked_native_runtime()
+    _pin_native_wall_times(monkeypatch, cold_s=tracked["cold"], warm_s=tracked["warm"])
     report_json = tmp_path / "parity.json"
     report_md = tmp_path / "parity.md"
     argv = ["--report-json", str(report_json), "--report-md", str(report_md), "--strict"]
@@ -116,6 +152,34 @@ def test_build_report_exercises_four_state_pareto_gate(
     assert report["runtime_seconds"]["torax_warm"] == min(samples["torax_warm"])
     assert report["performance_superiority_claimed"] is False
     assert report["physics_equivalence_claimed"] is False
+
+
+@pytest.mark.parametrize("direction", ["native_faster", "native_slower"])
+def test_warm_cost_gate_fails_strict_beyond_the_ratio_limit(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    direction: str,
+) -> None:
+    """A warm ratio past the limit, in either direction, fails only the cost gate."""
+    torax_warm = float(benchmark.load_reference()["runtime_seconds"]["warm_primary"])
+    limit = float(MODEL_INTERSECTION["thresholds"]["maximum_warm_cost_ratio"])
+    warm_s = (
+        torax_warm / (2.0 * limit) if direction == "native_faster" else torax_warm * 2.0 * limit
+    )
+    _pin_native_wall_times(monkeypatch, cold_s=_tracked_native_runtime()["cold"], warm_s=warm_s)
+    report_json = tmp_path / "parity.json"
+    report_md = tmp_path / "parity.md"
+    argv = ["--report-json", str(report_json), "--report-md", str(report_md), "--strict"]
+
+    assert benchmark.main(argv) == 1
+
+    gates = json.loads(capsys.readouterr().out)
+    assert gates.pop("cost_completeness") is False
+    assert all(gates.values())
+    report = json.loads(report_json.read_text(encoding="utf-8"))
+    assert report["passes_thresholds"] is False
+    assert report["runtime_seconds"]["warm_max_over_min_ratio"] == pytest.approx(2.0 * limit)
 
 
 def test_tracked_report_and_markdown_are_current() -> None:
