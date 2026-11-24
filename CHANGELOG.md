@@ -285,6 +285,12 @@
 
 ### Fixed
 
+- The OpenSSF Scorecard workflow pins `ossf/scorecard-action` v2.5.0 again
+  (`fa7117db`). Since about 10:40 UTC on 2026-11-24, the v2.6.0 image index on
+  ghcr.io lists platform manifests that return 404 (upstream
+  scorecard-action issue 1752), so every run of the v2.6.0 pin failed to pull
+  its image. v2.5.0 still pulls. The pin returns to the v2.6.x line once its
+  image is available.
 - The Documentation workflow uploads the GitHub Pages artifact in its own
   `assemble-site` job, and the deploy job only deploys it. With upload and
   deployment in one job, the deployment could list the run's artifacts before
