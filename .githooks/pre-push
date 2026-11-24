@@ -35,8 +35,14 @@ TIMEOUT_SECONDS="${SCPN_PREPUSH_TIMEOUT_SECONDS:-1800}"
 
 case "$GATE" in
   release|research|all) ;;
+  none)
+    # The owner's standing order (2026-11-11) is that no full suite runs before a push: remote CI
+    # validates. "none" omits only the full local preflight; the message check above always runs.
+    echo "[pre-push] Full local preflight omitted (SCPN_PREPUSH_GATE=none); remote CI validates."
+    exit 0
+    ;;
   *)
-    echo "[pre-push] Invalid SCPN_PREPUSH_GATE='$GATE'. Use: release | research | all."
+    echo "[pre-push] Invalid SCPN_PREPUSH_GATE='$GATE'. Use: release | research | all | none."
     exit 1
     ;;
 esac

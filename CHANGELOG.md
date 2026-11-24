@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `SCPN_PREPUSH_GATE=none` lets a push omit the full local preflight in
+  `.githooks/pre-push`, following the standing rule that no full suite runs before
+  a push and remote CI validates. The commit-message check of every pushed commit
+  still runs. The default gate stays `release`.
+
 ### Security
 
 - soupsieve moves to 4.1 in the build and docs locks (GHSA-mmhr-3c5m-f64f,
