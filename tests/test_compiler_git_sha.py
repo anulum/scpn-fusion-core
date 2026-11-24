@@ -57,3 +57,22 @@ def test_resolve_git_sha_falls_back_on_timeout(monkeypatch) -> None:
 
     monkeypatch.setattr(compiler.subprocess, "run", fake_run)
     assert compiler._resolve_git_sha() == "0000000"
+
+
+def test_resolve_git_sha_falls_back_on_empty_git_output(monkeypatch) -> None:
+    """A git probe that succeeds but prints nothing yields the synthetic SHA."""
+    monkeypatch.delenv("SCPN_GIT_SHA", raising=False)
+    monkeypatch.delenv("GITHUB_SHA", raising=False)
+    monkeypatch.delenv("CI_COMMIT_SHA", raising=False)
+
+    def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
+        _ = args, kwargs
+        return subprocess.CompletedProcess(
+            args=["git", "rev-parse", "--short", "HEAD"],
+            returncode=0,
+            stdout="  \n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(compiler.subprocess, "run", fake_run)
+    assert compiler._resolve_git_sha() == "0000000"

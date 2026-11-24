@@ -301,6 +301,17 @@
   the tracked report. A new test pins a native warm time past the limit in
   either direction and checks that only the cost gate fails, and that the strict
   run exits 1. The benchmark and its gate are unchanged.
+- Three branches of `scpn/compiler.py` that no test reached are now tested:
+  - a git probe that succeeds but prints nothing falls back to the synthetic
+    SHA;
+  - a compile without sc_neurocore builds the dense net with no LIF neurons and
+    no packed weights;
+  - with the backend present, that dense net matches the backend compile.
+
+  Removing the unreachable popcount fallbacks had dropped the file's branch
+  rate from the CI floor of 94.23% to 93.48%, and the `scpn` domain from
+  96.38% to 96.35%, without any loss of tested behaviour. The coverage guard
+  failed on that drop. The floors are unchanged.
 - Transport step counts are converted with `operator.index` before their sign
   is checked, in fixed and adaptive `run_to_steady_state` and in
   `run_adaptive_steps`, through the new `positive_step_count`. A negative

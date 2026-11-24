@@ -113,3 +113,51 @@ class TestCompileWeightGuards:
         )
         with pytest.raises(RuntimeError, match="no W_out matrix"):
             compiler.compile(net)
+
+
+def _relay_net() -> StochasticPetriNet:
+    """Two places joined through one transition: p_in -> t_relay -> p_out."""
+    net = StochasticPetriNet()
+    net.add_place("p_in", initial_tokens=0.75)
+    net.add_place("p_out", initial_tokens=0.0)
+    net.add_transition("t_relay", threshold=0.25)
+    net.add_arc("p_in", "t_relay", weight=1.0)
+    net.add_arc("t_relay", "p_out", weight=0.5)
+    return net
+
+
+class TestCompileWithoutScNeurocore:
+    """Without sc_neurocore, ``compile`` builds the dense net with no stochastic path."""
+
+    def test_dense_contract_without_neurons_or_packed_weights(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The compiled net keeps its dense weights and fires through the numpy comparator."""
+        monkeypatch.setattr(compiler_mod, "_HAS_SC_NEUROCORE", False)
+        compiled = FusionCompiler(bitstream_length=64, seed=7).compile(_relay_net())
+
+        assert compiled.neurons == []
+        assert compiled.W_in_packed is None
+        assert compiled.W_out_packed is None
+        assert compiled.has_stochastic_path is False
+        np.testing.assert_array_equal(compiled.W_in, np.array([[1.0, 0.0]]))
+        np.testing.assert_array_equal(compiled.W_out, np.array([[0.0], [0.5]]))
+        np.testing.assert_array_equal(compiled.thresholds, np.array([0.25]))
+        np.testing.assert_array_equal(compiled.initial_marking, np.array([0.75, 0.0]))
+        # The numpy threshold comparator fires the relay once its input crosses 0.25.
+        assert compiled.lif_fire(np.array([0.75])).tolist() == [1.0]
+        assert compiled.lif_fire(np.array([0.10])).tolist() == [0.0]
+
+    @pytest.mark.skipif(not SC_NEUROCORE_AVAILABLE, reason="sc_neurocore not installed")
+    def test_dense_matrices_match_the_sc_neurocore_compile(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Dropping the backend changes only the stochastic path, not the dense contract."""
+        with_backend = FusionCompiler(bitstream_length=64, seed=7).compile(_relay_net())
+        monkeypatch.setattr(compiler_mod, "_HAS_SC_NEUROCORE", False)
+        without_backend = FusionCompiler(bitstream_length=64, seed=7).compile(_relay_net())
+
+        assert with_backend.has_stochastic_path is True
+        np.testing.assert_array_equal(without_backend.W_in, with_backend.W_in)
+        np.testing.assert_array_equal(without_backend.W_out, with_backend.W_out)
+        np.testing.assert_array_equal(without_backend.thresholds, with_backend.thresholds)
