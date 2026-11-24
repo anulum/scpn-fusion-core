@@ -285,6 +285,13 @@
 
 ### Fixed
 
+- The Documentation workflow uploads the GitHub Pages artifact in its own
+  `assemble-site` job, and the deploy job only deploys it. With upload and
+  deployment in one job, the deployment could list the run's artifacts before
+  the artifact finalized a moment earlier appeared, and failed with "No
+  artifacts named github-pages-…" (upstream deploy-pages issue 451). The deploy
+  job reads the artifact name from the assemble job, so a re-run of only the
+  deploy job still finds it.
 - Transport step counts are converted with `operator.index` before their sign
   is checked, in fixed and adaptive `run_to_steady_state` and in
   `run_adaptive_steps`, through the new `positive_step_count`. A negative

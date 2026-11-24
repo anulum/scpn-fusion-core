@@ -197,15 +197,20 @@ jobs:
           path: docs/notebooks/
           if-no-files-found: error
 
-  deploy:
-    name: Deploy to GitHub Pages
+  assemble-site:
+    # The Pages artifact is uploaded here, one job before the deployment. When upload-pages-artifact
+    # and deploy-pages share a job, deploy-pages can list the run's artifacts before the artifact
+    # finalized a moment earlier appears, and fails with "No artifacts named ..." (upstream
+    # actions/deploy-pages issue 451).
+    name: Assemble GitHub Pages site
     needs: [build-python-docs, build-rust-docs, build-go-docs, build-julia-docs, build-cpp-docs, build-lean-docs, build-notebook-html]
     runs-on: ubuntu-latest
     env:
       PAGES_ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      # The deployment reads the name from this job, so a re-run of only the deploy job still finds
+      # the artifact this job uploaded in its own attempt.
+      artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -360,8 +365,16 @@ jobs:
           path: site/
           include-hidden-files: true
 
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: [assemble-site]
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - name: Deploy to Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346  # v5.0.1
         with:
-          artifact_name: ${{ env.PAGES_ARTIFACT_NAME }}
+          artifact_name: ${{ needs.assemble-site.outputs.artifact_name }}
